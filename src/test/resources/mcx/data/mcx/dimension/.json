@@ -3,7 +3,12 @@
   "generator": {
     "type": "flat",
     "settings": {
-      "layers": [],
+      "layers": [
+        {
+          "height": 4064,
+          "block": "stone"
+        }
+      ],
       "biome": "mcx:"
     }
   }
