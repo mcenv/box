@@ -62,8 +62,8 @@ class McfunctionMinifier(input: Reader) : FilterReader(
 )
 
 tasks.register<ProcessResources>("minifyDatapack") {
-  from(layout.projectDirectory.dir("mcx.zip"))
-  into(layout.buildDirectory.dir("tmp/mcx.zip"))
+  from(layout.projectDirectory.dir("datapack"))
+  into(layout.buildDirectory.dir("tmp/datapack"))
   filesMatching(
     listOf(
       "**/*.json",
@@ -79,7 +79,7 @@ tasks.register<ProcessResources>("minifyDatapack") {
 
 tasks.register<Zip>("zipDatapack") {
   dependsOn(tasks.getByName("minifyDatapack"))
-  from(layout.buildDirectory.dir("tmp/mcx.zip"))
+  from(layout.buildDirectory.dir("tmp/datapack"))
   archiveFileName.set("mcx.zip")
   isPreserveFileTimestamps = false
   isReproducibleFileOrder = true
