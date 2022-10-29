@@ -1,4 +1,21 @@
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.FilterReader
+import java.io.Reader
+import java.io.StringReader
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+  }
+}
 
 plugins {
   kotlin("jvm") version "1.7.20"
@@ -28,14 +45,47 @@ application {
   mainClass.set("mcx.cli.MainKt")
 }
 
+class JsonMinifier(input: Reader) : FilterReader(StringReader(Json.encodeToString(Json.decodeFromString<JsonElement>(input.readText()))))
+
+class McfunctionMinifier(input: Reader) : FilterReader(
+  StringReader(mutableListOf<String>().let { output ->
+    input
+      .readLines()
+      .forEach {
+        val trimmed = it.trim()
+        if (trimmed.isNotEmpty() && !trimmed.startsWith('#')) {
+          output += trimmed
+        }
+      }
+    output.joinToString("\n")
+  })
+)
+
+tasks.register<ProcessResources>("minifyDatapack") {
+  from(layout.projectDirectory.dir("mcx.zip"))
+  into(layout.buildDirectory.dir("tmp/mcx.zip"))
+  filesMatching(
+    listOf(
+      "**/*.json",
+      "**/*.mcmeta",
+    )
+  ) {
+    filter(JsonMinifier::class)
+  }
+  filesMatching("**/*.mcfunction") {
+    filter(McfunctionMinifier::class)
+  }
+}
+
 tasks.register<Zip>("zipDatapack") {
+  dependsOn(tasks.getByName("minifyDatapack"))
+  from(layout.buildDirectory.dir("tmp/mcx.zip"))
   archiveFileName.set("mcx.zip")
   isPreserveFileTimestamps = false
   isReproducibleFileOrder = true
-  from(layout.projectDirectory.dir("mcx.zip"))
 }
 
-tasks.withType<ProcessResources> {
+tasks.getByName<ProcessResources>("processResources") {
   dependsOn(tasks.getByName("zipDatapack"))
   from(layout.buildDirectory.file("distributions/mcx.zip"))
 }
