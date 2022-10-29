@@ -6,6 +6,8 @@ import kotlinx.cli.ExperimentalCli
 @OptIn(ExperimentalCli::class)
 fun main(args: Array<String>) {
   val parser = ArgParser("mcx")
-  parser.subcommands()
+  parser.subcommands(
+    Build,
+  )
   parser.parse(args)
 }
