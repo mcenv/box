@@ -30,6 +30,7 @@ repositories {
 
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.5")
+  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.17.0")
   testImplementation(kotlin("test"))
 }
 

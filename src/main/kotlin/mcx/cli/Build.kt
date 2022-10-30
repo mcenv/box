@@ -10,7 +10,7 @@ import kotlin.io.path.outputStream
 @OptIn(ExperimentalCli::class)
 object Build : Subcommand(
   "build",
-  "Build"
+  "Build",
 ) {
   override fun execute() {
     val serverProperties = Properties().apply {
@@ -31,7 +31,7 @@ object Build : Subcommand(
           .get(
             levelName,
             "datapacks",
-            "mcx.zip"
+            "mcx.zip",
           )
           .outputStream()
           .buffered()
