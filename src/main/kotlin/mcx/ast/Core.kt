@@ -22,6 +22,8 @@ object Core {
   sealed interface Type0 {
     object Int : Type0
 
+    object String : Type0
+
     data class Ref(
       val element: Type0,
     ) : Type0
@@ -36,6 +38,12 @@ object Core {
       val value: Int,
     ) : Term0 {
       override val type: Type0 get() = Type0.Int
+    }
+
+    data class StringOf(
+      val value: String,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.String
     }
 
     data class RefOf(

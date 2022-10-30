@@ -9,7 +9,7 @@
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:int|ref)\\b"
+      "match": "\\b(?:int|string|ref)\\b"
     },
     {
       "name": "keyword.mcx",
@@ -18,6 +18,33 @@
     {
       "name": "constant.numeric.mcx",
       "match": "\\b(?:[-+]?[0-9]+)\\b"
+    },
+    {
+      "include": "#string"
     }
-  ]
+  ],
+  "repository": {
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.json",
+      "patterns": [
+        {
+          "include": "#stringcontent"
+        }
+      ]
+    },
+    "stringcontent": {
+      "patterns": [
+        {
+          "match": "\\\\(?:[\"\\\\])",
+          "name": "constant.character.escape.mcx"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.mcx"
+        }
+      ]
+    }
+  }
 }

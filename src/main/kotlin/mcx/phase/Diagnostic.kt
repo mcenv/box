@@ -16,6 +16,15 @@ sealed class Diagnostic(
   severity,
   "mcx",
 ) {
+  class InvalidEscape(
+    escape: Char,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "invalid escape: \\$escape",
+    DiagnosticSeverity.Error,
+  )
+
   class ExpectedToken(
     token: Char,
     position: Position,

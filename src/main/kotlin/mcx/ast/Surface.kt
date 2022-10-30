@@ -33,6 +33,10 @@ object Surface {
       override val range: Range,
     ) : Type0
 
+    data class String(
+      override val range: Range,
+    ) : Type0
+
     data class Ref(
       val element: Type0,
       override val range: Range,
@@ -48,6 +52,11 @@ object Surface {
 
     data class IntOf(
       val value: Int,
+      override val range: Range,
+    ) : Term0
+
+    data class StringOf(
+      val value: String,
       override val range: Range,
     ) : Term0
 

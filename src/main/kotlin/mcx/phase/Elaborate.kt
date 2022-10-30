@@ -43,9 +43,10 @@ class Elaborate private constructor(
     type: S.Type0,
   ): C.Type0 {
     return when (type) {
-      is S.Type0.Int -> C.Type0.Int
-      is S.Type0.Ref -> C.Type0.Ref(elaborateType0(type.element))
-      is S.Type0.Hole -> C.Type0.Hole
+      is S.Type0.Int    -> C.Type0.Int
+      is S.Type0.String -> C.Type0.String
+      is S.Type0.Ref    -> C.Type0.Ref(elaborateType0(type.element))
+      is S.Type0.Hole   -> C.Type0.Hole
     }
   }
 
@@ -55,15 +56,16 @@ class Elaborate private constructor(
     expected: C.Type0? = null,
   ): C.Term0 {
     return when {
-      term is S.Term0.IntOf && expected is C.Type0.Int? -> C.Term0.IntOf(term.value)
-      term is S.Term0.RefOf && expected is C.Type0.Ref? -> C.Term0.RefOf(
+      term is S.Term0.IntOf && expected is C.Type0.Int?       -> C.Term0.IntOf(term.value)
+      term is S.Term0.StringOf && expected is C.Type0.String? -> C.Term0.StringOf(term.value)
+      term is S.Term0.RefOf && expected is C.Type0.Ref?       -> C.Term0.RefOf(
         elaborateTerm0(
           env,
           term.value,
           expected?.element,
         )
       )
-      term is S.Term0.Let                               -> {
+      term is S.Term0.Let                                     -> {
         val init = elaborateTerm0(
           env,
           term.init,
@@ -131,12 +133,13 @@ class Elaborate private constructor(
     type2: C.Type0,
   ): Boolean {
     return when {
-      type1 is C.Type0.Int && type2 is C.Type0.Int -> true
-      type1 is C.Type0.Ref && type2 is C.Type0.Ref -> convType(
+      type1 is C.Type0.Int && type2 is C.Type0.Int       -> true
+      type1 is C.Type0.String && type2 is C.Type0.String -> true
+      type1 is C.Type0.Ref && type2 is C.Type0.Ref       -> convType(
         type1.element,
         type2.element,
       )
-      else                                         -> false
+      else                                               -> false
     }
   }
 

@@ -100,8 +100,9 @@ class Parse private constructor(
             type
           }
           else -> when (readWord()) {
-            "int" -> S.Type0.Int(until())
-            "ref" -> {
+            "int"    -> S.Type0.Int(until())
+            "string" -> S.Type0.String(until())
+            "ref"    -> {
               skipWhitespaces()
               expect('[')
               val type = S.Type0.Ref(
@@ -112,7 +113,7 @@ class Parse private constructor(
               expect(']')
               type
             }
-            else  -> null
+            else     -> null
           }
         }
       } else {
@@ -137,6 +138,11 @@ class Parse private constructor(
             expect(')')
             term
           }
+          '"'  ->
+            S.Term0.StringOf(
+              readString(),
+              until(),
+            )
           '&'  -> {
             skip()
             skipWhitespaces()
@@ -224,6 +230,46 @@ class Parse private constructor(
     expect(postfix)
 
     return elements
+  }
+
+  private fun readString(): String {
+    if (!canRead()) {
+      return ""
+    }
+    expect('"')
+
+    val builder = StringBuilder()
+    var escaped = false
+    while (canRead()) {
+      if (escaped) {
+        when (val char = peek()) {
+          '"', '\\' -> {
+            builder.append(char)
+          }
+          else      -> context += Diagnostic.InvalidEscape(
+            char,
+            Position(
+              line,
+              character - 1
+            )..Position(
+              line,
+              character + 1
+            ),
+          )
+        }
+        escaped = false
+      } else {
+        when (val char = peek()) {
+          '\\' -> escaped = true
+          '"'  -> break
+          else -> builder.append(char)
+        }
+      }
+      skip()
+    }
+
+    expect('"')
+    return builder.toString()
   }
 
   private fun readWord(): String {
