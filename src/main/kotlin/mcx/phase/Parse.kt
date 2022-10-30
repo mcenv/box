@@ -250,10 +250,10 @@ class Parse private constructor(
             char,
             Position(
               line,
-              character - 1
+              character - 1,
             )..Position(
               line,
-              character + 1
+              character + 1,
             ),
           )
         }

@@ -86,7 +86,7 @@ class Elaborate private constructor(
           body,
         )
       }
-      term is S.Term0.Var && expected == null           -> {
+      term is S.Term0.Var && expected == null -> {
         when (val type = env[term.name]) {
           null -> {
             context += Diagnostic.NotFound(
@@ -101,12 +101,12 @@ class Elaborate private constructor(
           )
         }
       }
-      term is S.Term0.Hole                              -> C.Term0.Hole(
+      term is S.Term0.Hole                    -> C.Term0.Hole(
         expected
         ?: C.Type0.Hole
       )
-      expected == null                                  -> throw IllegalArgumentException("$term")
-      else                                              -> {
+      expected == null                        -> throw IllegalArgumentException()
+      else                                    -> {
         val actual = elaborateTerm0(
           env,
           term,
