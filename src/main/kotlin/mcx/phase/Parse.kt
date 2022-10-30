@@ -211,7 +211,11 @@ class Parse private constructor(
         break
       }
       skipWhitespaces()
-      expect(separator)
+      when (peek()) {
+        separator -> skip()
+        postfix   -> break
+        else      -> expect(separator)
+      }
     }
 
     while (canRead() && peek() != postfix) {
