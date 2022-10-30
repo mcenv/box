@@ -1,13 +1,11 @@
 package mcx.lsp
 
-import mcx.phase.Context
-import mcx.phase.Parse
-import mcx.phase.Phase
+import mcx.phase.*
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
 import org.eclipse.lsp4j.services.TextDocumentService
 import java.util.concurrent.CompletableFuture
-import mcx.ast.Surface as S
+import mcx.ast.Core as C
 
 class McxTextDocumentService : TextDocumentService {
   private val texts: HashMap<String, String> = hashMapOf()
@@ -48,6 +46,6 @@ class McxTextDocumentService : TextDocumentService {
     }
 
   companion object {
-    private val phase: Phase<String, S.Root> = Parse
+    private val phase: Phase<String, C.Root> = Parse..Elaborate
   }
 }
