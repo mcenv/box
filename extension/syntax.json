@@ -2,5 +2,22 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "mcx",
   "scopeName": "source.mcx",
-  "patterns": []
+  "patterns": [
+    {
+      "name": "keyword.operator.mcx",
+      "match": "[:=,;&]"
+    },
+    {
+      "name": "support.type.mcx",
+      "match": "\\b(?:int|ref)\\b"
+    },
+    {
+      "name": "keyword.mcx",
+      "match": "\\b(?:function|let)\\b"
+    },
+    {
+      "name": "constant.numeric.mcx",
+      "match": "\\b(?:[-+]?[0-9]+)\\b"
+    }
+  ]
 }
