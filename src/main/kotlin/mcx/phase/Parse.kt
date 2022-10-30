@@ -103,10 +103,14 @@ class Parse private constructor(
             "int" -> S.Type0.Int(until())
             "ref" -> {
               skipWhitespaces()
-              S.Type0.Ref(
+              expect('[')
+              val type = S.Type0.Ref(
                 parseType0(),
                 until(),
               )
+              skipWhitespaces()
+              expect(']')
+              type
             }
             else  -> null
           }
