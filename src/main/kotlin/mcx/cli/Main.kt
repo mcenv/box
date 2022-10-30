@@ -8,6 +8,7 @@ fun main(args: Array<String>) {
   val parser = ArgParser("mcx")
   parser.subcommands(
     Build,
+    Lsp,
   )
   parser.parse(args)
 }
