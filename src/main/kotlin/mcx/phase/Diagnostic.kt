@@ -75,6 +75,15 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class AlreadyUsed(
+    name: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "already used: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
   class NotConvertible(
     expected: C.Type0,
     actual: C.Type0,
