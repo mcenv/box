@@ -17,6 +17,7 @@ object Lsp : Subcommand(
       System.`in`,
       System.out,
     )
+    server.connect(launcher.remoteProxy)
     launcher.startListening()
   }
 }
