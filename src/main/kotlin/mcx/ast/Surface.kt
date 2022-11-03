@@ -77,6 +77,13 @@ object Surface {
       override val range: Range,
     ) : Term0
 
+    data class Run(
+      val module: List<String>,
+      val name: String,
+      val args: List<Term0>,
+      override val range: Range,
+    ) : Term0
+
     data class Hole(
       override val range: Range,
     ) : Term0

@@ -123,6 +123,8 @@ class Elaborate private constructor(
         }
       }
 
+      term is S.Term0.Run         -> TODO()
+
       term is S.Term0.Hole        -> C.Term0.Hole(
         expected
         ?: C.Type0.Hole

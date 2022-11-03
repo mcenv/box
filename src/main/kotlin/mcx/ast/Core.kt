@@ -65,6 +65,13 @@ object Core {
       override val type: Type0,
     ) : Term0
 
+    data class Run(
+      val module: List<String>,
+      val name: String,
+      val args: List<Term0>,
+      override val type: Type0,
+    ) : Term0
+
     data class Hole(
       override val type: Type0,
     ) : Term0
