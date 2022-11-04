@@ -111,6 +111,19 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class MismatchedArity(
+    expected: Int,
+    actual: Int,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    """mismatched arity:
+      |  expected: $expected
+      |  actual  : $actual
+    """.trimMargin(),
+    DiagnosticSeverity.Error,
+  )
+
   class NotConvertible(
     expected: C.Type0,
     actual: C.Type0,

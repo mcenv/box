@@ -4,6 +4,7 @@ import mcx.ast.Core
 import mcx.ast.Location
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
+import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
@@ -169,11 +170,18 @@ class Elaborate private constructor(
           C.Term0.Hole(C.Type0.Hole)
         }
         else                        -> {
-          val args = (term.args zip resource.params).map { (arg, param) ->
+          if (resource.params.size != term.args.size) {
+            diagnostics += Diagnostic.MismatchedArity(
+              resource.params.size,
+              term.args.size,
+              term.range.end..term.range.end,
+            )
+          }
+          val args = term.args.mapIndexed { index, arg ->
             elaborateTerm0(
               env,
               arg,
-              param.second,
+              resource.params.getOrNull(index)?.second,
             )
           }
           C.Term0.Run(
