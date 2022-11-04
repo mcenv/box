@@ -163,7 +163,7 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (peek()) {
-          '('                   -> {
+          '('  -> {
             skip()
             skipWhitespaces()
             val term = parseTerm0()
@@ -171,19 +171,12 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '-', '+', in '0'..'9' -> when (val value = readWord().toIntOrNull()) {
-            null -> TODO()
-            else -> S.Term0.IntOf(
-              value,
-              until(),
-            )
-          }
-          '"'                   ->
+          '"'  ->
             S.Term0.StringOf(
               readString(),
               until(),
             )
-          '&'                   -> {
+          '&'  -> {
             skip()
             skipWhitespaces()
             S.Term0.RefOf(
@@ -191,7 +184,7 @@ class Parse private constructor(
               until(),
             )
           }
-          else                  -> when (val word = readWord()) {
+          else -> when (val word = readWord()) {
             "let" -> {
               skipWhitespaces()
               val name = readWord()
@@ -224,7 +217,15 @@ class Parse private constructor(
                 until(),
               )
             } else {
-              S.Term0.Var(
+              word
+                .toIntOrNull()
+                ?.let {
+                  S.Term0.IntOf(
+                    it,
+                    until(),
+                  )
+                }
+              ?: S.Term0.Var(
                 word,
                 until(),
               )
@@ -343,7 +344,7 @@ class Parse private constructor(
     when (this) {
       in 'a'..'z',
       in '0'..'9',
-      '_',
+      '_', '-', '+',
       -> true
 
       else
