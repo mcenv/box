@@ -1,7 +1,6 @@
 package mcx.lsp
 
 import org.eclipse.lsp4j.*
-import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import org.eclipse.lsp4j.services.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
@@ -21,11 +20,12 @@ class McxLanguageServer : LanguageServer,
     return completedFuture(
       InitializeResult().apply {
         capabilities = ServerCapabilities().apply {
-          textDocumentSync = forLeft(TextDocumentSyncKind.Full)
+          setTextDocumentSync(TextDocumentSyncKind.Full)
           diagnosticProvider = DiagnosticRegistrationOptions(
             true,
             false,
           )
+          setHoverProvider(true)
         }
       },
     )

@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Location
 import mcx.ast.Packed
+import org.eclipse.lsp4j.Position
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -74,7 +75,10 @@ class Cache(
     }
   }
 
-  fun fetchCore(location: Location): Trace<Elaborate.Result>? {
+  fun fetchCore(
+    location: Location,
+    position: Position? = null,
+  ): Trace<Elaborate.Result>? {
     val surface = fetchSurface(location)
                   ?: return null
     var dirtyImports = false
@@ -84,11 +88,12 @@ class Cache(
                                       ?: false)
       it to import?.value?.root
     }
-    return if (surface.dirty || dirtyImports || location !in elaborateResults) {
+    return if (surface.dirty || dirtyImports || location !in elaborateResults || position != null) {
       Trace(
         Elaborate(
           imports,
           surface.value,
+          position,
         ),
         true,
       ).also {

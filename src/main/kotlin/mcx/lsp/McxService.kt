@@ -2,6 +2,7 @@ package mcx.lsp
 
 import mcx.ast.Location
 import mcx.phase.Cache
+import mcx.phase.prettyType0
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
 import org.eclipse.lsp4j.services.LanguageClient
@@ -70,6 +71,26 @@ class McxService : TextDocumentService,
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
+    }
+
+  override fun hover(params: HoverParams): CompletableFuture<Hover> =
+    computeAsync {
+      val core = cache.fetchCore(
+        params.textDocument.uri.toLocation(),
+        params.position,
+      )!!
+      Hover(
+        when (val hover = core.value.hover) {
+          null -> MarkupContent(
+            MarkupKind.PLAINTEXT,
+            "",
+          )
+          else -> MarkupContent(
+            MarkupKind.MARKDOWN,
+            "```mcx\n${prettyType0(hover)}\n```",
+          )
+        }
+      )
     }
 
   override fun didChangeConfiguration(

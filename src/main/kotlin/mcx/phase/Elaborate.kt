@@ -3,13 +3,17 @@ package mcx.phase
 import mcx.ast.Core
 import mcx.ast.Location
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
+import mcx.util.contains
+import org.eclipse.lsp4j.Position
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
 class Elaborate private constructor(
   private val imports: List<Pair<S.Ranged<Location>, C.Root?>>,
+  private val position: Position?,
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private var hover: C.Type0? = null
 
   private fun elaborateRoot(
     root: S.Root,
@@ -207,6 +211,10 @@ class Elaborate private constructor(
         }
         actual
       }
+    }.also {
+      if (position != null && hover == null && position in term.range) {
+        hover = it.type
+      }
     }
   }
 
@@ -285,19 +293,23 @@ class Elaborate private constructor(
   data class Result(
     val root: C.Root,
     val diagnostics: List<Diagnostic>,
+    val hover: C.Type0?,
   )
 
   companion object {
     operator fun invoke(
       imports: List<Pair<S.Ranged<Location>, C.Root?>>,
       input: Parse.Result,
+      position: Position? = null,
     ): Result =
       Elaborate(
         imports,
+        position,
       ).run {
         Result(
           elaborateRoot(input.root),
           input.diagnostics + diagnostics,
+          hover,
         )
       }
   }
