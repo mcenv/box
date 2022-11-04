@@ -14,6 +14,7 @@ object Core {
       override val module: Location,
       override val name: String,
       val params: List<Pair<String, Type0>>,
+      val result: Type0,
       val body: Term0,
     ) : Resource0
 

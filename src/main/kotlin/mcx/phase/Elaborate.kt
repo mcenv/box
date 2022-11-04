@@ -64,6 +64,7 @@ class Elaborate private constructor(
           module,
           resource.name,
           params,
+          result,
           body,
         )
       }
@@ -174,7 +175,7 @@ class Elaborate private constructor(
             resource.module,
             term.name,
             args,
-            resource.body.type,
+            resource.result,
           )
         }
       }
