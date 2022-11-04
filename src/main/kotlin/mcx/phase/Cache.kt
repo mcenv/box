@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Core
 import mcx.ast.Location
+import mcx.ast.Packed
 import mcx.ast.Surface
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -10,15 +11,17 @@ import kotlin.io.path.readText
 class Cache(
   private val src: Path,
 ) {
-  private val texts: HashMap<Location, Trace<String>> = hashMapOf()
-  private val surfaces: HashMap<Location, Trace<Surface.Root>> = hashMapOf()
-  private val cores: HashMap<Location, Trace<Core.Root>> = hashMapOf()
+  private val textMap: HashMap<Location, Trace<String>> = hashMapOf()
+  private val surfaceMap: HashMap<Location, Trace<Surface.Root>> = hashMapOf()
+  private val coreMap: HashMap<Location, Trace<Core.Root>> = hashMapOf()
+  private val packedMap: HashMap<Location, Trace<Packed.Root>> = hashMapOf()
+  private val generatedMap: HashMap<Location, Trace<Unit>> = hashMapOf()
 
   fun changeText(
     location: Location,
     text: String,
   ) {
-    texts[location] = Trace(
+    textMap[location] = Trace(
       text,
       true,
     )
@@ -27,16 +30,18 @@ class Cache(
   fun closeText(
     location: Location,
   ) {
-    texts -= location
-    surfaces -= location
-    cores -= location
+    textMap -= location
+    surfaceMap -= location
+    coreMap -= location
+    packedMap -= location
+    generatedMap -= location
   }
 
   // TODO: track external modification?
   fun fetchText(
     location: Location,
   ): Trace<String>? {
-    return when (val text = texts[location]) {
+    return when (val text = textMap[location]) {
       null -> {
         val path = location.toPath()
         if (path.exists()) {
@@ -44,7 +49,7 @@ class Cache(
             path.readText(),
             true,
           ).also {
-            texts[location] = it
+            textMap[location] = it
           }
         } else {
           null
@@ -60,7 +65,7 @@ class Cache(
   ): Trace<Surface.Root>? {
     val text = fetchText(location)
                ?: return null
-    return if (text.dirty) {
+    return if (text.dirty || location !in surfaceMap) {
       Trace(
         Parse(
           context,
@@ -70,10 +75,10 @@ class Cache(
         true,
       ).also {
         text.dirty = false
-        surfaces[location] = it
+        surfaceMap[location] = it
       }
     } else {
-      surfaces[location]!!.also {
+      surfaceMap[location]!!.also {
         it.dirty = false
       }
     }
@@ -98,7 +103,7 @@ class Cache(
                                       ?: false)
       it to import?.value
     }
-    return if (surface.dirty) {
+    return if (surface.dirty || dirtyImports || location !in coreMap) {
       Trace(
         Elaborate(
           context,
@@ -108,10 +113,67 @@ class Cache(
         true,
       ).also {
         surface.dirty = false
-        cores[location] = it
+        coreMap[location] = it
       }
     } else {
-      cores[location]!!.also {
+      coreMap[location]!!.also {
+        it.dirty = false
+      }
+    }
+  }
+
+  fun fetchPacked(
+    context: Context,
+    location: Location,
+  ): Trace<Packed.Root>? {
+    val core = fetchCore(
+      context,
+      location,
+    )
+               ?: return null
+    if (context.diagnostics.isNotEmpty()) {
+      return null
+    }
+    return if (core.dirty || location !in packedMap) {
+      Trace(
+        Pack(core.value),
+        true,
+      ).also {
+        core.dirty = false
+        packedMap[location] = it
+      }
+    } else {
+      packedMap[location]!!.also {
+        it.dirty = false
+      }
+    }
+  }
+
+  fun fetchGenerated(
+    pack: String,
+    generator: Generate.Generator,
+    context: Context,
+    location: Location,
+  ): Trace<Unit>? {
+    val packed = fetchPacked(
+      context,
+      location,
+    )
+                 ?: return null
+    return if (packed.dirty || location !in generatedMap) {
+      Trace(
+        Generate(
+          pack,
+          generator,
+          packed.value,
+        ),
+        true,
+      ).also {
+        packed.dirty = false
+        generatedMap[location] = it
+      }
+    } else {
+      generatedMap[location]!!.also {
         it.dirty = false
       }
     }

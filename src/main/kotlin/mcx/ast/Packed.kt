@@ -1,6 +1,6 @@
 package mcx.ast
 
-object Pack {
+object Packed {
   data class Root(
     val module: Location,
     val resources: List<Resource>,
@@ -24,7 +24,8 @@ object Pack {
 
   sealed interface Instruction {
     data class Push(
-      val value: Tag,
+      val tag: Tag,
+      val type: Type,
     ) : Instruction
 
     data class Copy(
