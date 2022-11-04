@@ -16,8 +16,9 @@ class McxLanguageServer : LanguageServer,
 
   override fun initialize(
     params: InitializeParams,
-  ): CompletableFuture<InitializeResult> =
-    completedFuture(
+  ): CompletableFuture<InitializeResult> {
+    service.workspace = params.workspaceFolders.first()
+    return completedFuture(
       InitializeResult().apply {
         capabilities = ServerCapabilities().apply {
           textDocumentSync = forLeft(TextDocumentSyncKind.Full)
@@ -28,6 +29,7 @@ class McxLanguageServer : LanguageServer,
         }
       },
     )
+  }
 
   override fun shutdown(): CompletableFuture<Any> =
     completedFuture(null)

@@ -1,8 +1,7 @@
 package mcx.lsp
 
+import mcx.phase.Cache
 import mcx.phase.Context
-import mcx.phase.Elaborate
-import mcx.phase.Parse
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
 import org.eclipse.lsp4j.services.LanguageClient
@@ -15,7 +14,8 @@ class McxService : TextDocumentService,
                    WorkspaceService,
                    LanguageClientAware {
   private lateinit var client: LanguageClient
-  private val texts: HashMap<String, String> = hashMapOf()
+  private val cache: Cache = Cache()
+  lateinit var workspace: WorkspaceFolder
 
   override fun connect(client: LanguageClient) {
     this.client = client
@@ -24,19 +24,25 @@ class McxService : TextDocumentService,
   override fun didOpen(
     params: DidOpenTextDocumentParams,
   ) {
-    texts[params.textDocument.uri] = params.textDocument.text
+    cache.changeText(
+      params.textDocument.uri,
+      params.textDocument.text,
+    )
   }
 
   override fun didChange(
     params: DidChangeTextDocumentParams,
   ) {
-    texts[params.textDocument.uri] = params.contentChanges.last().text
+    cache.changeText(
+      params.textDocument.uri,
+      params.contentChanges.last().text,
+    )
   }
 
   override fun didClose(
     params: DidCloseTextDocumentParams,
   ) {
-    texts -= params.textDocument.uri
+    cache.closeText(params.textDocument.uri)
   }
 
   override fun didSave(
@@ -49,18 +55,15 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     computeAsync {
       val context = Context()
-      Elaborate(
+      val core = cache.fetchCore(
         context,
-        Parse(
-          context,
-          texts[params.textDocument.uri]!!,
-        ),
+        params.textDocument.uri,
       )
-      DocumentDiagnosticReport(
-        RelatedFullDocumentDiagnosticReport(
-          context.diagnostics
-        )
-      )
+      if (core.dirty) {
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(context.diagnostics))
+      } else {
+        DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
+      }
     }
 
   override fun didChangeConfiguration(

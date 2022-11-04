@@ -9,9 +9,9 @@ import mcx.ast.Surface as S
 @Suppress("NOTHING_TO_INLINE")
 class Parse private constructor(
   private val context: Context,
-  private val string: String,
+  private val text: String,
 ) {
-  private val length: Int = string.length
+  private val length: Int = text.length
   private var cursor: Int = 0
   private var line: Int = 0
   private var character: Int = 0
@@ -300,7 +300,7 @@ class Parse private constructor(
     while (canRead() && peek().isWordPart()) {
       skip()
     }
-    return string.substring(
+    return text.substring(
       start,
       cursor,
     )
@@ -367,7 +367,7 @@ class Parse private constructor(
   }
 
   private inline fun peek(): Char =
-    string[cursor]
+    text[cursor]
 
   private inline fun canRead(): Boolean =
     cursor < length
@@ -388,14 +388,14 @@ class Parse private constructor(
       start..here()
   }
 
-  companion object : Phase<String, S.Root> {
-    override fun invoke(
+  companion object {
+    operator fun invoke(
       context: Context,
-      input: String,
+      text: String,
     ): Surface.Root {
       return Parse(
         context,
-        input,
+        text,
       ).parseRoot()
     }
   }

@@ -219,12 +219,12 @@ class Elaborate private constructor(
     }
   }
 
-  companion object : Phase<S.Root, C.Root> {
-    override fun invoke(
+  companion object {
+    operator fun invoke(
       context: Context,
-      input: S.Root,
+      root: S.Root,
     ): C.Root {
-      return Elaborate(context).elaborateRoot(input)
+      return Elaborate(context).elaborateRoot(root)
     }
   }
 }
