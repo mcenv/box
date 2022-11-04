@@ -227,6 +227,9 @@ class Elaborate private constructor(
         type2.element,
       )
 
+      type1 is C.Type0.Hole   -> true
+      type2 is C.Type0.Hole   -> true
+
       else                    -> false
     }
   }
