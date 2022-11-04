@@ -34,12 +34,14 @@ class Parse private constructor(
         '{',
         '}',
       ) {
-        val parts = mutableListOf(readWord())
-        while (canRead() && peek() == '/') {
-          skip()
-          parts += readWord()
+        parseRanged {
+          val parts = mutableListOf(readWord())
+          while (canRead() && peek() == '/') {
+            skip()
+            parts += readWord()
+          }
+          Location(parts)
         }
-        parseRanged { Location(parts) }
       }
     } else {
       emptyList()
