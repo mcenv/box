@@ -93,7 +93,9 @@ object Build : Subcommand(
                   .split('/')
               ),
             )
-          context.diagnostics.forEach { println(it) }
+          context.diagnostics.forEach {
+            println("[Ln ${it.range.start.line + 1}, Col ${it.range.start.character + 1}] ${it.message}")
+          }
         }
     }
   }
