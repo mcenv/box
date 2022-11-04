@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.ast.Location
 import mcx.ast.Surface
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
@@ -16,7 +17,34 @@ class Parse private constructor(
   private var line: Int = 0
   private var character: Int = 0
 
-  private fun parseRoot(): S.Root {
+  private fun parseRoot(
+    module: Location,
+  ): S.Root {
+    skipWhitespaces()
+    val imports = if (
+      text.startsWith(
+        "import",
+        cursor,
+      )
+    ) {
+      skip("import".length)
+      skipWhitespaces()
+      parseList(
+        ',',
+        '{',
+        '}',
+      ) {
+        val parts = mutableListOf(readWord())
+        while (canRead() && peek() == '/') {
+          skip()
+          parts += readWord()
+        }
+        parseRanged { Location(parts) }
+      }
+    } else {
+      emptyList()
+    }
+
     val resources = mutableListOf<S.Resource0>()
     while (true) {
       skipWhitespaces()
@@ -35,7 +63,11 @@ class Parse private constructor(
       context += Diagnostic.ExpectedEndOfFile(here())
     }
 
-    return S.Root(resources)
+    return S.Root(
+      module,
+      imports,
+      resources,
+    )
   }
 
   private fun parseResource0(): S.Resource0 =
@@ -177,34 +209,24 @@ class Parse private constructor(
                 until(),
               )
             }
-            else  -> {
-              val module = mutableListOf(word)
-              while (canRead() && peek() == '/') {
-                skip()
-                module += readWord()
+            else  -> if (canRead() && peek() == '[') {
+              val args = parseList(
+                ',',
+                '[',
+                ']',
+              ) {
+                parseTerm0()
               }
-              if (module.size == 1) {
-                S.Term0.Var(
-                  word,
-                  until(),
-                )
-              } else {
-                expect('.')
-                val name = readWord()
-                val args = parseList(
-                  ',',
-                  '[',
-                  ']',
-                ) {
-                  parseTerm0()
-                }
-                S.Term0.Run(
-                  module,
-                  name,
-                  args,
-                  until(),
-                )
-              }
+              S.Term0.Run(
+                word,
+                args,
+                until(),
+              )
+            } else {
+              S.Term0.Var(
+                word,
+                until(),
+              )
             }
           }
         }
@@ -216,6 +238,16 @@ class Parse private constructor(
         context += Diagnostic.ExpectedTerm0(range)
         S.Term0.Hole(range)
       }
+    }
+
+  private fun <R> parseRanged(
+    parse: () -> R,
+  ): S.Ranged<R> =
+    ranging {
+      S.Ranged(
+        parse(),
+        until(),
+      )
     }
 
   private inline fun <R> parseList(
@@ -391,12 +423,13 @@ class Parse private constructor(
   companion object {
     operator fun invoke(
       context: Context,
+      module: Location,
       text: String,
     ): Surface.Root {
       return Parse(
         context,
         text,
-      ).parseRoot()
+      ).parseRoot(module)
     }
   }
 }

@@ -13,7 +13,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:function|let)\\b"
+      "match": "\\b(?:import|function|let)\\b"
     },
     {
       "name": "constant.numeric.mcx",

@@ -2,19 +2,23 @@ package mcx.ast
 
 object Core {
   data class Root(
+    val module: Location,
     val resources: List<Resource0>,
   )
 
   sealed interface Resource0 {
+    val module: Location
     val name: String
 
     data class Function(
+      override val module: Location,
       override val name: String,
       val params: List<Pair<String, Type0>>,
       val body: Term0,
     ) : Resource0
 
     object Hole : Resource0 {
+      override val module: Location get() = throw IllegalStateException()
       override val name: String get() = throw IllegalStateException()
     }
   }
@@ -66,7 +70,7 @@ object Core {
     ) : Term0
 
     data class Run(
-      val module: List<String>,
+      val module: Location,
       val name: String,
       val args: List<Term0>,
       override val type: Type0,

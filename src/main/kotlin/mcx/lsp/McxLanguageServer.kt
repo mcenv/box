@@ -17,7 +17,7 @@ class McxLanguageServer : LanguageServer,
   override fun initialize(
     params: InitializeParams,
   ): CompletableFuture<InitializeResult> {
-    service.workspace = params.workspaceFolders.first()
+    service.setup(params.workspaceFolders.first())
     return completedFuture(
       InitializeResult().apply {
         capabilities = ServerCapabilities().apply {

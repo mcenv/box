@@ -4,6 +4,8 @@ import org.eclipse.lsp4j.Range
 
 object Surface {
   data class Root(
+    val module: Location,
+    val imports: List<Ranged<Location>>,
     val resources: List<Resource0>,
   )
 
@@ -78,7 +80,6 @@ object Surface {
     ) : Term0
 
     data class Run(
-      val module: List<String>,
       val name: String,
       val args: List<Term0>,
       override val range: Range,
@@ -88,4 +89,9 @@ object Surface {
       override val range: Range,
     ) : Term0
   }
+
+  data class Ranged<T>(
+    val value: T,
+    val range: Range,
+  )
 }

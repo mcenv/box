@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.ast.Location
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
@@ -66,21 +67,47 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class NotFound(
-    name: String,
+  class ModuleNotFound(
+    location: Location,
     range: Range,
   ) : Diagnostic(
     range,
-    "not found: '$name'",
+    "module not found: '$location'",
     DiagnosticSeverity.Error,
   )
 
-  class AlreadyUsed(
+  class VarNotFound(
     name: String,
     range: Range,
   ) : Diagnostic(
     range,
-    "already used: '$name'",
+    "variable not found: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
+  class VarAlreadyUsed(
+    name: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "variable already used: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
+  class ResourceNotFound(
+    name: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "resource not found: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
+  class ExpectedFunction(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: function",
     DiagnosticSeverity.Error,
   )
 

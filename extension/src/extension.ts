@@ -1,4 +1,4 @@
-import { ExtensionContext } from "vscode";
+import { ExtensionContext, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
@@ -9,7 +9,11 @@ export function activate(context: ExtensionContext) {
     args: ["lsp"],
   };
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", language: "mcx" }],
+    documentSelector: [{
+      scheme: "file",
+      language: "mcx",
+      pattern: `${workspace.workspaceFolders!![0].uri.fsPath}/src/**/*.mcx`,
+    }],
   };
   client = new LanguageClient(
     "mcx",

@@ -1,26 +1,51 @@
 package mcx.phase
 
+import mcx.ast.Core
+import mcx.ast.Location
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
 class Elaborate private constructor(
   private val context: Context,
+  private val imports: List<Pair<S.Ranged<Location>, C.Root?>>,
 ) {
   private fun elaborateRoot(
     root: S.Root,
   ): C.Root {
-    return C.Root(root.resources.map {
-      elaborateResource0(it)
-    })
+    val resources = hashMapOf<String, C.Resource0>().also {
+      imports.forEach { (location, import) ->
+        when (import) {
+          null -> context += Diagnostic.ModuleNotFound(
+            location.value,
+            location.range,
+          )
+          else -> import.resources.forEach { resource ->
+            it[resource.name] = resource // TODO: handle name duplication
+          }
+        }
+      }
+    }
+    return C.Root(
+      root.module,
+      root.resources.map {
+        elaborateResource0(
+          resources,
+          root.module,
+          it,
+        )
+      },
+    )
   }
 
   private fun elaborateResource0(
+    resources: Map<String, C.Resource0>,
+    module: Location,
     resource: S.Resource0,
   ): C.Resource0 {
     return when (resource) {
       is S.Resource0.Function -> {
-        val env = emptyEnv()
+        val env = emptyEnv(resources)
         val params = resource.params.map {
           val type = elaborateType0(it.second)
           env.bind(
@@ -36,6 +61,7 @@ class Elaborate private constructor(
           result,
         )
         C.Resource0.Function(
+          module,
           resource.name,
           params,
           body,
@@ -102,14 +128,14 @@ class Elaborate private constructor(
       term is S.Term0.Var &&
       expected == null            -> when (val entry = env[term.name]) {
         null -> {
-          context += Diagnostic.NotFound(
+          context += Diagnostic.VarNotFound(
             term.name,
             term.range,
           )
           C.Term0.Hole(C.Type0.Hole)
         }
         else -> if (entry.used) {
-          context += Diagnostic.AlreadyUsed(
+          context += Diagnostic.VarAlreadyUsed(
             term.name,
             term.range,
           )
@@ -123,7 +149,35 @@ class Elaborate private constructor(
         }
       }
 
-      term is S.Term0.Run         -> TODO()
+      term is S.Term0.Run &&
+      expected == null            -> when (val resource = env.resources[term.name]) {
+        null                        -> {
+          context += Diagnostic.ResourceNotFound(
+            term.name,
+            term.range,
+          )
+          C.Term0.Hole(C.Type0.Hole)
+        }
+        !is Core.Resource0.Function -> {
+          context += Diagnostic.ExpectedFunction(term.range)
+          C.Term0.Hole(C.Type0.Hole)
+        }
+        else                        -> {
+          val args = (term.args zip resource.params).map { (arg, param) ->
+            elaborateTerm0(
+              env,
+              arg,
+              param.second,
+            )
+          }
+          C.Term0.Run(
+            resource.module,
+            term.name,
+            args,
+            resource.body.type,
+          )
+        }
+      }
 
       term is S.Term0.Hole        -> C.Term0.Hole(
         expected
@@ -176,6 +230,7 @@ class Elaborate private constructor(
   }
 
   private class Env private constructor(
+    val resources: Map<String, C.Resource0>,
     private val entries: MutableList<Entry>,
   ) {
     operator fun get(name: String): Entry? =
@@ -214,17 +269,24 @@ class Elaborate private constructor(
     )
 
     companion object {
-      fun emptyEnv(): Env =
-        Env(mutableListOf())
+      fun emptyEnv(resources: Map<String, Core.Resource0>): Env =
+        Env(
+          resources,
+          mutableListOf(),
+        )
     }
   }
 
   companion object {
     operator fun invoke(
       context: Context,
+      imports: List<Pair<S.Ranged<Location>, C.Root?>>,
       root: S.Root,
     ): C.Root {
-      return Elaborate(context).elaborateRoot(root)
+      return Elaborate(
+        context,
+        imports,
+      ).elaborateRoot(root)
     }
   }
 }
