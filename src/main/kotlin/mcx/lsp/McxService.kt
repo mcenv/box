@@ -2,7 +2,6 @@ package mcx.lsp
 
 import mcx.ast.Location
 import mcx.phase.Cache
-import mcx.phase.Context
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
 import org.eclipse.lsp4j.services.LanguageClient
@@ -65,13 +64,9 @@ class McxService : TextDocumentService,
     params: DocumentDiagnosticParams,
   ): CompletableFuture<DocumentDiagnosticReport> =
     computeAsync {
-      val context = Context()
-      val core = cache.fetchCore(
-        context,
-        params.textDocument.uri.toLocation(),
-      )!!
+      val core = cache.fetchCore(params.textDocument.uri.toLocation())!!
       if (core.dirty) {
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(context.diagnostics))
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.value.diagnostics))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }

@@ -7,16 +7,17 @@ import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
 class Elaborate private constructor(
-  private val context: Context,
   private val imports: List<Pair<S.Ranged<Location>, C.Root?>>,
 ) {
+  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+
   private fun elaborateRoot(
     root: S.Root,
   ): C.Root {
     val resources = hashMapOf<String, C.Resource0>().also {
       imports.forEach { (location, import) ->
         when (import) {
-          null -> context += Diagnostic.ModuleNotFound(
+          null -> diagnostics += Diagnostic.ModuleNotFound(
             location.value,
             location.range,
           )
@@ -129,14 +130,14 @@ class Elaborate private constructor(
       term is S.Term0.Var &&
       expected == null            -> when (val entry = env[term.name]) {
         null -> {
-          context += Diagnostic.VarNotFound(
+          diagnostics += Diagnostic.VarNotFound(
             term.name,
             term.range,
           )
           C.Term0.Hole(C.Type0.Hole)
         }
         else -> if (entry.used) {
-          context += Diagnostic.VarAlreadyUsed(
+          diagnostics += Diagnostic.VarAlreadyUsed(
             term.name,
             term.range,
           )
@@ -153,14 +154,14 @@ class Elaborate private constructor(
       term is S.Term0.Run &&
       expected == null            -> when (val resource = env.resources[term.name]) {
         null                        -> {
-          context += Diagnostic.ResourceNotFound(
+          diagnostics += Diagnostic.ResourceNotFound(
             term.name,
             term.range,
           )
           C.Term0.Hole(C.Type0.Hole)
         }
         !is Core.Resource0.Function -> {
-          context += Diagnostic.ExpectedFunction(term.range)
+          diagnostics += Diagnostic.ExpectedFunction(term.range)
           C.Term0.Hole(C.Type0.Hole)
         }
         else                        -> {
@@ -198,7 +199,7 @@ class Elaborate private constructor(
             actual.type,
           )
         ) {
-          context += Diagnostic.NotConvertible(
+          diagnostics += Diagnostic.NotConvertible(
             expected,
             actual.type,
             term.range,
@@ -278,16 +279,23 @@ class Elaborate private constructor(
     }
   }
 
+  data class Result(
+    val root: C.Root,
+    val diagnostics: List<Diagnostic>,
+  )
+
   companion object {
     operator fun invoke(
-      context: Context,
       imports: List<Pair<S.Ranged<Location>, C.Root?>>,
-      root: S.Root,
-    ): C.Root {
-      return Elaborate(
-        context,
+      input: Parse.Result,
+    ): Result =
+      Elaborate(
         imports,
-      ).elaborateRoot(root)
-    }
+      ).run {
+        Result(
+          elaborateRoot(input.root),
+          input.diagnostics + diagnostics,
+        )
+      }
   }
 }

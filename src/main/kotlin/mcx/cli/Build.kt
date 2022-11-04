@@ -4,19 +4,21 @@ import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
 import mcx.ast.Location
 import mcx.phase.Cache
-import mcx.phase.Context
 import mcx.phase.Generate
 import java.io.Closeable
 import java.io.OutputStream
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import java.util.stream.Stream
 import kotlin.io.path.*
+import kotlin.system.exitProcess
 
 @OptIn(ExperimentalCli::class)
 object Build : Subcommand(
   "build",
-  "Build",
+  "Build the current pack",
 ) {
   override fun execute() {
     val serverProperties = Properties().apply {
@@ -53,50 +55,65 @@ object Build : Subcommand(
       .toAbsolutePath()
       .last()
       .toString()
-    object : Generate.Generator,
-             Closeable {
-      private var output: OutputStream? = null
 
-      override fun entry(name: String) {
-        output?.close()
-        output = datapacks
-          .resolve(pack)
-          .resolve(name)
-          .also { it.parent.createDirectories() }
-          .outputStream()
-          .buffered()
-      }
+    fun Path.toLocation(): Location =
+      Location(
+        src
+          .relativize(this)
+          .invariantSeparatorsPathString
+          .dropLast(".mcx".length)
+          .split('/')
+      )
 
-      override fun write(string: String) {
-        output!!.write(string.toByteArray())
-      }
-
-      override fun close() {
-        output?.close()
-      }
-    }.use { generator ->
+    fun inputs(): Stream<Path> =
       Files
         .walk(src)
         .filter { it.extension == "mcx" }
-        .forEach { path ->
-          val context = Context()
-          cache
-            .fetchGenerated(
-              pack,
-              generator,
-              context,
-              Location(
-                src
-                  .relativize(path)
-                  .invariantSeparatorsPathString
-                  .dropLast(".mcx".length)
-                  .split('/')
-              ),
-            )
-          context.diagnostics.forEach {
-            println("[Ln ${it.range.start.line + 1}, Col ${it.range.start.character + 1}] ${it.message}")
-          }
+
+    var valid = true
+    inputs().forEach { path ->
+      val core = cache.fetchCore(path.toLocation())!!
+      if (core.value.diagnostics.isNotEmpty()) {
+        valid = false
+        core.value.diagnostics.forEach {
+          println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString} ${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
         }
+      }
+    }
+
+    if (valid) {
+      object : Generate.Generator,
+               Closeable {
+        private var output: OutputStream? = null
+
+        override fun entry(name: String) {
+          output?.close()
+          output = datapacks
+            .resolve(pack)
+            .resolve(name)
+            .also { it.parent.createDirectories() }
+            .outputStream()
+            .buffered()
+        }
+
+        override fun write(string: String) {
+          output!!.write(string.toByteArray())
+        }
+
+        override fun close() {
+          output?.close()
+        }
+      }.use { generator ->
+        inputs().forEach { path ->
+          cache.fetchGenerated(
+            pack,
+            generator,
+            path.toLocation(),
+          )
+        }
+      }
+    } else {
+      exitProcess(-1)
     }
   }
 }

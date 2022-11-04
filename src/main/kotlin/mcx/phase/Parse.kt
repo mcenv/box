@@ -1,7 +1,6 @@
 package mcx.phase
 
 import mcx.ast.Location
-import mcx.ast.Surface
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -9,9 +8,9 @@ import mcx.ast.Surface as S
 
 @Suppress("NOTHING_TO_INLINE")
 class Parse private constructor(
-  private val context: Context,
   private val text: String,
 ) {
+  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private val length: Int = text.length
   private var cursor: Int = 0
   private var line: Int = 0
@@ -62,7 +61,7 @@ class Parse private constructor(
 
     skipWhitespaces()
     if (canRead()) {
-      context += Diagnostic.ExpectedEndOfFile(here())
+      diagnostics += Diagnostic.ExpectedEndOfFile(here())
     }
 
     return S.Root(
@@ -116,7 +115,7 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        context += Diagnostic.ExpectedResource0(range)
+        diagnostics += Diagnostic.ExpectedResource0(range)
         S.Resource0.Hole(range)
       }
     }
@@ -155,7 +154,7 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        context += Diagnostic.ExpectedType0(range)
+        diagnostics += Diagnostic.ExpectedType0(range)
         S.Type0.Hole(range)
       }
     }
@@ -237,7 +236,7 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        context += Diagnostic.ExpectedTerm0(range)
+        diagnostics += Diagnostic.ExpectedTerm0(range)
         S.Term0.Hole(range)
       }
     }
@@ -303,7 +302,7 @@ class Parse private constructor(
           '"', '\\' -> {
             builder.append(char)
           }
-          else      -> context += Diagnostic.InvalidEscape(
+          else      -> diagnostics += Diagnostic.InvalidEscape(
             char,
             Position(
               line,
@@ -358,7 +357,7 @@ class Parse private constructor(
       skip()
       true
     } else {
-      context += Diagnostic.ExpectedToken(
+      diagnostics += Diagnostic.ExpectedToken(
         expected,
         here(),
       )
@@ -422,16 +421,21 @@ class Parse private constructor(
       start..here()
   }
 
+  data class Result(
+    val root: S.Root,
+    val diagnostics: List<Diagnostic>,
+  )
+
   companion object {
     operator fun invoke(
-      context: Context,
       module: Location,
       text: String,
-    ): Surface.Root {
-      return Parse(
-        context,
-        text,
-      ).parseRoot(module)
-    }
+    ): Result =
+      Parse(text).run {
+        Result(
+          parseRoot(module),
+          diagnostics,
+        )
+      }
   }
 }
