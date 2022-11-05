@@ -1,4 +1,4 @@
-import { ExtensionContext, workspace } from "vscode";
+import { ExtensionContext, RelativePattern, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
@@ -8,12 +8,16 @@ export function activate(context: ExtensionContext) {
     command: `mcx${process.platform === "win32" ? ".bat" : ""}`,
     args: ["lsp"],
   };
+  const folder = workspace.workspaceFolders!![0];
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{
       scheme: "file",
       language: "mcx",
-      pattern: `${workspace.workspaceFolders!![0].uri.fsPath}/src/**/*.mcx`,
+      pattern: `${folder.uri.fsPath}/src/**/*.mcx`,
     }],
+    synchronize: {
+      fileEvents: workspace.createFileSystemWatcher(new RelativePattern(folder, "pack.json")),
+    },
   };
   client = new LanguageClient(
     "mcx",

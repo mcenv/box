@@ -199,6 +199,7 @@ class Pack private constructor() {
       error("unexpected: hole")
 
     operator fun invoke(
+      config: Config,
       root: C.Root,
     ): P.Root {
       return Pack().packRoot(root)

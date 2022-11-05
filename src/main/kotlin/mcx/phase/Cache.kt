@@ -54,12 +54,16 @@ class Cache(
     }
   }
 
-  fun fetchSurface(location: Location): Trace<Parse.Result>? {
+  fun fetchSurface(
+    config: Config,
+    location: Location,
+  ): Trace<Parse.Result>? {
     val text = fetchText(location)
                ?: return null
     return if (text.dirty || location !in parseResults) {
       Trace(
         Parse(
+          config,
           location,
           text.value,
         ),
@@ -76,14 +80,21 @@ class Cache(
   }
 
   fun fetchCore(
+    config: Config,
     location: Location,
     position: Position? = null,
   ): Trace<Elaborate.Result>? {
-    val surface = fetchSurface(location)
+    val surface = fetchSurface(
+      config,
+      location,
+    )
                   ?: return null
     var dirtyImports = false
     val imports = surface.value.root.imports.map {
-      val import = fetchCore(it.value)
+      val import = fetchCore(
+        config,
+        it.value,
+      )
       dirtyImports = dirtyImports or (import?.dirty
                                       ?: false)
       it to import?.value?.root
@@ -91,6 +102,7 @@ class Cache(
     return if (surface.dirty || dirtyImports || location !in elaborateResults || position != null) {
       Trace(
         Elaborate(
+          config,
           imports,
           surface.value,
           position,
@@ -107,15 +119,24 @@ class Cache(
     }
   }
 
-  fun fetchPacked(location: Location): Trace<Packed.Root>? {
-    val core = fetchCore(location)
+  fun fetchPacked(
+    config: Config,
+    location: Location,
+  ): Trace<Packed.Root>? {
+    val core = fetchCore(
+      config,
+      location,
+    )
                ?: return null
     if (core.value.diagnostics.isNotEmpty()) {
       return null
     }
     return if (core.dirty || location !in packResults) {
       Trace(
-        Pack(core.value.root),
+        Pack(
+          config,
+          core.value.root,
+        ),
         true,
       ).also {
         core.dirty = false
@@ -129,16 +150,19 @@ class Cache(
   }
 
   fun fetchGenerated(
-    pack: String,
+    config: Config,
     generator: Generate.Generator,
     location: Location,
   ): Trace<Unit>? {
-    val packed = fetchPacked(location)
+    val packed = fetchPacked(
+      config,
+      location,
+    )
                  ?: return null
     return if (packed.dirty || location !in generateResults) {
       Trace(
         Generate(
-          pack,
+          config,
           generator,
           packed.value,
         ),

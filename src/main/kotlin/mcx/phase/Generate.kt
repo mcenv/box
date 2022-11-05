@@ -6,7 +6,7 @@ import mcx.util.quoted
 import mcx.ast.Packed as P
 
 class Generate private constructor(
-  private val pack: String,
+  private val config: Config,
   private val generator: Generator,
 ) {
   private fun generateRoot(
@@ -69,7 +69,7 @@ class Generate private constructor(
           )
         }"
       )
-      is P.Instruction.Debug -> {
+      is P.Instruction.Debug -> if (config.debug) {
         generator.write("# ")
         generator.write(instruction.message)
       }
@@ -133,13 +133,13 @@ class Generate private constructor(
     name: String,
     extension: String,
   ): String =
-    "data/$pack/$registry/$module/$name.$extension"
+    "data/${config.name}/$registry/$module/$name.$extension"
 
   private fun generateResourceLocation(
     module: Location,
     name: String,
   ): String =
-    "$pack:$module/$name"
+    "${config.name}:$module/$name"
 
   interface Generator {
     fun entry(name: String)
@@ -149,12 +149,12 @@ class Generate private constructor(
 
   companion object {
     operator fun invoke(
-      pack: String,
+      config: Config,
       generator: Generator,
       root: P.Root,
     ) {
       Generate(
-        pack,
+        config,
         generator,
       ).generateRoot(root)
     }

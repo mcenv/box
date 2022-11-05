@@ -2,8 +2,12 @@ package mcx.cli
 
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
 import mcx.phase.Cache
+import mcx.phase.Config
 import mcx.phase.Generate
 import java.io.Closeable
 import java.io.OutputStream
@@ -15,7 +19,10 @@ import java.util.stream.Stream
 import kotlin.io.path.*
 import kotlin.system.exitProcess
 
-@OptIn(ExperimentalCli::class)
+@OptIn(
+  ExperimentalCli::class,
+  ExperimentalSerializationApi::class,
+)
 object Build : Subcommand(
   "build",
   "Build the current pack",
@@ -51,10 +58,13 @@ object Build : Subcommand(
     val root = Paths.get("")
     val src = root.resolve("src")
     val cache = Cache(src)
-    val pack = root
-      .toAbsolutePath()
-      .last()
-      .toString()
+    val config = Paths
+      .get("pack.json")
+      .inputStream()
+      .buffered()
+      .use {
+        Json.decodeFromStream<Config>(it)
+      }
 
     fun Path.toLocation(): Location =
       Location(
@@ -72,7 +82,10 @@ object Build : Subcommand(
 
     var valid = true
     inputs().forEach { path ->
-      val core = cache.fetchCore(path.toLocation())!!
+      val core = cache.fetchCore(
+        config,
+        path.toLocation(),
+      )!!
       if (core.value.diagnostics.isNotEmpty()) {
         valid = false
         core.value.diagnostics.forEach {
@@ -89,7 +102,7 @@ object Build : Subcommand(
         override fun entry(name: String) {
           output?.close()
           output = datapacks
-            .resolve(pack)
+            .resolve(config.name)
             .resolve(name)
             .also { it.parent.createDirectories() }
             .outputStream()
@@ -106,7 +119,7 @@ object Build : Subcommand(
       }.use { generator ->
         inputs().forEach { path ->
           cache.fetchGenerated(
-            pack,
+            config,
             generator,
             path.toLocation(),
           )

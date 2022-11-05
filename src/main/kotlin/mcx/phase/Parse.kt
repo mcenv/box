@@ -560,6 +560,7 @@ class Parse private constructor(
 
   companion object {
     operator fun invoke(
+      config: Config,
       module: Location,
       text: String,
     ): Result =

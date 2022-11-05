@@ -347,6 +347,7 @@ class Elaborate private constructor(
 
   companion object {
     operator fun invoke(
+      config: Config,
       imports: List<Pair<S.Ranged<Location>, C.Root?>>,
       input: Parse.Result,
       position: Position? = null,
