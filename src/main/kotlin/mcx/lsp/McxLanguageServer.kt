@@ -25,6 +25,7 @@ class McxLanguageServer : LanguageServer,
             true,
             false,
           )
+          completionProvider = CompletionOptions()
           setHoverProvider(true)
         }
       },

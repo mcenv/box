@@ -9,6 +9,8 @@ import mcx.phase.Config
 import mcx.phase.prettyType0
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
+import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
@@ -77,11 +79,24 @@ class McxService : TextDocumentService,
         fetchConfig(),
         params.textDocument.uri.toLocation(),
       )!!
-      if (core.dirty) {
+      if (core.dirty) { // TODO
         DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.value.diagnostics))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
+    }
+
+  override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
+    computeAsync {
+      val core = cache.fetchCore(
+        fetchConfig(),
+        params.textDocument.uri.toLocation(),
+        params.position,
+      )!!
+      forLeft(
+        core.value.completionItems
+        ?: resourceCompletionItems
+      )
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
@@ -93,14 +108,8 @@ class McxService : TextDocumentService,
       )!!
       Hover(
         when (val hover = core.value.hover) {
-          null -> MarkupContent(
-            MarkupKind.PLAINTEXT,
-            "",
-          )
-          else -> MarkupContent(
-            MarkupKind.MARKDOWN,
-            "```mcx\n${prettyType0(hover)}\n```",
-          )
+          null -> throw CancellationException()
+          else -> highlight(prettyType0(hover))
         }
       )
     }

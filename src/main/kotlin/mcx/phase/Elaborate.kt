@@ -3,10 +3,15 @@ package mcx.phase
 import mcx.ast.Core
 import mcx.ast.Json
 import mcx.ast.Location
+import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
 import mcx.util.rangeTo
+import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.CompletionItemKind
+import org.eclipse.lsp4j.CompletionItemLabelDetails
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
@@ -15,6 +20,7 @@ class Elaborate private constructor(
   private val position: Position?,
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private var completionItems: List<CompletionItem>? = null
   private var hover: C.Type0? = null
 
   private fun elaborateRoot(
@@ -246,8 +252,24 @@ class Elaborate private constructor(
         actual
       }
     }.also {
-      if (position != null && hover == null && position in term.range) {
-        hover = it.type
+      if (position != null && position in term.range) {
+        if (completionItems == null) {
+          completionItems = env.entries
+            .filter { entry -> !entry.used }
+            .map { entry ->
+              CompletionItem(entry.name).apply {
+                val type = prettyType0(entry.type)
+                documentation = forRight(highlight(type))
+                labelDetails = CompletionItemLabelDetails().apply {
+                  detail = " : $type"
+                }
+                kind = CompletionItemKind.Variable
+              }
+            }
+        }
+        if (hover == null) {
+          hover = it.type
+        }
       }
     }
   }
@@ -293,16 +315,18 @@ class Elaborate private constructor(
 
   private class Env private constructor(
     val resources: Map<String, C.Resource0>,
-    private val entries: MutableList<Entry>,
+    private val _entries: MutableList<Entry>,
   ) {
+    val entries: List<Entry> get() = _entries
+
     operator fun get(name: String): Entry? =
-      entries.lastOrNull { it.name == name }
+      _entries.lastOrNull { it.name == name }
 
     fun bind(
       name: String,
       type: C.Type0,
     ) {
-      entries += Entry(
+      _entries += Entry(
         name,
         false,
         type,
@@ -314,13 +338,13 @@ class Elaborate private constructor(
       type: C.Type0,
       action: () -> R,
     ): R {
-      entries += Entry(
+      _entries += Entry(
         name,
         false,
         type,
       )
       val result = action()
-      entries.removeLast()
+      _entries.removeLast()
       return result
     }
 
@@ -342,6 +366,7 @@ class Elaborate private constructor(
   data class Result(
     val root: C.Root,
     val diagnostics: List<Diagnostic>,
+    val completionItems: List<CompletionItem>?,
     val hover: C.Type0?,
   )
 
@@ -359,6 +384,7 @@ class Elaborate private constructor(
         Result(
           elaborateRoot(input.root),
           input.diagnostics + diagnostics,
+          completionItems,
           hover,
         )
       }

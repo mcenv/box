@@ -226,6 +226,7 @@ class Parse private constructor(
 
   private fun parseTerm0(): S.Term0 =
     ranging {
+      skipWhitespaces()
       if (canRead()) {
         when (peek()) {
           '('  -> {
@@ -259,7 +260,6 @@ class Parse private constructor(
               val init = parseTerm0()
               skipWhitespaces()
               expect(';')
-              skipWhitespaces()
               val body = parseTerm0()
               S.Term0.Let(
                 name,
