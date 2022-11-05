@@ -113,7 +113,7 @@ object Build : Subcommand(
         }
       }
     } else {
-      exitProcess(-1)
+      exitProcess(1)
     }
   }
 }
