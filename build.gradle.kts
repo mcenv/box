@@ -19,6 +19,7 @@ buildscript {
 
 plugins {
   kotlin("jvm") version "1.7.20"
+  kotlin("plugin.serialization") version "1.7.20"
   application
 }
 
@@ -30,6 +31,7 @@ repositories {
 
 dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.5")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.17.0")
   testImplementation(kotlin("test"))
 }
