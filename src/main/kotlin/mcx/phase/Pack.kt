@@ -20,7 +20,37 @@ class Pack private constructor() {
     resource: C.Resource0,
   ): P.Resource {
     return when (resource) {
-      is C.Resource0.Function -> {
+      is C.Resource0.Predicate    -> P.Resource.JsonResource(
+        resource.module,
+        resource.name,
+        P.Registry.PREDICATES,
+        resource.body,
+      )
+      is C.Resource0.Recipe       -> P.Resource.JsonResource(
+        resource.module,
+        resource.name,
+        P.Registry.RECIPES,
+        resource.body,
+      )
+      is C.Resource0.LootTable    -> P.Resource.JsonResource(
+        resource.module,
+        resource.name,
+        P.Registry.LOOT_TABLES,
+        resource.body,
+      )
+      is C.Resource0.ItemModifier -> P.Resource.JsonResource(
+        resource.module,
+        resource.name,
+        P.Registry.ITEM_MODIFIERS,
+        resource.body,
+      )
+      is C.Resource0.Advancement  -> P.Resource.JsonResource(
+        resource.module,
+        resource.name,
+        P.Registry.ADVANCEMENTS,
+        resource.body,
+      )
+      is C.Resource0.Function     -> {
         val env = emptyEnv()
         resource.params.forEach { (name, type) ->
           env.bind(

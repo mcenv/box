@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.ast.Json
 import mcx.ast.Location
 import mcx.util.quoted
 import mcx.ast.Packed as P
@@ -20,7 +21,18 @@ class Generate private constructor(
     resource: P.Resource,
   ) {
     when (resource) {
-      is P.Resource.Function -> {
+      is P.Resource.JsonResource -> {
+        generator.entry(
+          generatePath(
+            resource.registry.name.lowercase(),
+            resource.module,
+            resource.name,
+            "json",
+          )
+        )
+        generateJson(resource.body)
+      }
+      is P.Resource.Function     -> {
         generator.entry(
           generatePath(
             "functions",
@@ -79,6 +91,41 @@ class Generate private constructor(
       is P.Tag.IntOf    -> "${tag.value}"
       is P.Tag.StringOf -> tag.value.quoted('"')
     }
+
+  private fun generateJson(
+    json: Json,
+  ) {
+    when (json) {
+      is Json.ObjectOf -> {
+        generator.write("{")
+        json.members.forEachIndexed { index, (key, value) ->
+          if (index != 0) {
+            generator.write(",")
+          }
+          generator.write(key.quoted('"'))
+          generator.write(":")
+          generateJson(value)
+        }
+        generator.write("}")
+      }
+      is Json.ArrayOf  -> {
+        generator.write("[")
+        json.elements.forEachIndexed { index, element ->
+          if (index != 0) {
+            generator.write(",")
+          }
+          generateJson(element)
+        }
+        generator.write("]")
+      }
+      is Json.StringOf -> generator.write(json.value.quoted('"'))
+      is Json.NumberOf -> generator.write(json.value.toString())
+      is Json.True     -> generator.write("true")
+      is Json.False    -> generator.write("false")
+      is Json.Null     -> generator.write("null")
+      is Json.Hole     -> error("unexpected: hole")
+    }
+  }
 
   private fun generatePath(
     registry: String,

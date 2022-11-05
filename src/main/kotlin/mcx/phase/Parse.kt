@@ -75,7 +75,72 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "function" -> {
+          "predicate"     -> {
+            skipWhitespaces()
+            val name = readWord()
+            skipWhitespaces()
+            expect('=')
+            skipWhitespaces()
+            val body = parseJson()
+            S.Resource0.Predicate(
+              name,
+              body,
+              until(),
+            )
+          }
+          "recipe"        -> {
+            skipWhitespaces()
+            val name = readWord()
+            skipWhitespaces()
+            expect('=')
+            skipWhitespaces()
+            val body = parseJson()
+            S.Resource0.Recipe(
+              name,
+              body,
+              until(),
+            )
+          }
+          "loot_table"    -> {
+            skipWhitespaces()
+            val name = readWord()
+            skipWhitespaces()
+            expect('=')
+            skipWhitespaces()
+            val body = parseJson()
+            S.Resource0.LootTable(
+              name,
+              body,
+              until(),
+            )
+          }
+          "item_modifier" -> {
+            skipWhitespaces()
+            val name = readWord()
+            skipWhitespaces()
+            expect('=')
+            skipWhitespaces()
+            val body = parseJson()
+            S.Resource0.ItemModifier(
+              name,
+              body,
+              until(),
+            )
+          }
+          "advancement"   -> {
+            skipWhitespaces()
+            val name = readWord()
+            skipWhitespaces()
+            expect('=')
+            skipWhitespaces()
+            val body = parseJson()
+            S.Resource0.Advancement(
+              name,
+              body,
+              until(),
+            )
+          }
+          "function"      -> {
             skipWhitespaces()
             val name = readWord()
             skipWhitespaces()
@@ -242,6 +307,69 @@ class Parse private constructor(
       }
     }
 
+  private fun parseJson(): S.Json =
+    ranging {
+      if (canRead()) {
+        when (peek()) {
+          '{'  -> {
+            val elements = parseList(
+              ',',
+              '{',
+              '}',
+            ) {
+              val key = readString()
+              skipWhitespaces()
+              expect(':')
+              skipWhitespaces()
+              val value = parseJson()
+              key to value
+            }
+            S.Json.ObjectOf(
+              elements,
+              until(),
+            )
+          }
+          '['  -> {
+            val elements = parseList(
+              ',',
+              '[',
+              ']',
+            ) {
+              parseJson()
+            }
+            S.Json.ArrayOf(
+              elements,
+              until(),
+            )
+          }
+          '"'  -> S.Json.StringOf(
+            readString(),
+            until(),
+          )
+          else -> when (val word = readWord()) {
+            "true"  -> S.Json.True(until())
+            "false" -> S.Json.False(until())
+            "null"  -> S.Json.Null(until())
+            else    -> word
+              .toDoubleOrNull()
+              ?.let {
+                S.Json.NumberOf(
+                  it,
+                  until(),
+                )
+              }
+          }
+        }
+      } else {
+        null
+      }
+      ?: run {
+        val range = until()
+        diagnostics += Diagnostic.ExpectedJson(range)
+        S.Json.Hole(range)
+      }
+    }
+
   private fun <R> parseRanged(
     parse: () -> R,
   ): S.Ranged<R> =
@@ -274,6 +402,9 @@ class Parse private constructor(
         break
       }
       skipWhitespaces()
+      if (!canRead()) {
+        break
+      }
       when (peek()) {
         separator -> skip()
         postfix   -> break

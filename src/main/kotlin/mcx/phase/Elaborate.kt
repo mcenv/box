@@ -1,6 +1,7 @@
 package mcx.phase
 
 import mcx.ast.Core
+import mcx.ast.Json
 import mcx.ast.Location
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
@@ -50,7 +51,32 @@ class Elaborate private constructor(
     resource: S.Resource0,
   ): C.Resource0 {
     return when (resource) {
-      is S.Resource0.Function -> {
+      is S.Resource0.Predicate    -> C.Resource0.Predicate(
+        module,
+        resource.name,
+        elaborateJson(resource.body),
+      )
+      is S.Resource0.Recipe       -> C.Resource0.Recipe(
+        module,
+        resource.name,
+        elaborateJson(resource.body),
+      )
+      is S.Resource0.LootTable    -> C.Resource0.LootTable(
+        module,
+        resource.name,
+        elaborateJson(resource.body),
+      )
+      is S.Resource0.ItemModifier -> C.Resource0.ItemModifier(
+        module,
+        resource.name,
+        elaborateJson(resource.body),
+      )
+      is S.Resource0.Advancement  -> C.Resource0.Advancement(
+        module,
+        resource.name,
+        elaborateJson(resource.body),
+      )
+      is S.Resource0.Function     -> {
         val env = emptyEnv(resources)
         val params = resource.params.map {
           val type = elaborateType0(it.second)
@@ -74,7 +100,7 @@ class Elaborate private constructor(
           body,
         )
       }
-      is S.Resource0.Hole     -> C.Resource0.Hole
+      is S.Resource0.Hole         -> C.Resource0.Hole
     }
   }
 
@@ -223,6 +249,21 @@ class Elaborate private constructor(
       if (position != null && hover == null && position in term.range) {
         hover = it.type
       }
+    }
+  }
+
+  private fun elaborateJson(
+    json: S.Json,
+  ): Json {
+    return when (json) {
+      is S.Json.ObjectOf -> Json.ObjectOf(json.members.map { it.first to elaborateJson(it.second) })
+      is S.Json.ArrayOf  -> Json.ArrayOf(json.elements.map { elaborateJson(it) })
+      is S.Json.StringOf -> Json.StringOf(json.value)
+      is S.Json.NumberOf -> Json.NumberOf(json.value)
+      is S.Json.True     -> Json.True
+      is S.Json.False    -> Json.False
+      is S.Json.Null     -> Json.Null
+      is S.Json.Hole     -> Json.Hole
     }
   }
 

@@ -67,6 +67,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class ExpectedJson(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: json",
+    DiagnosticSeverity.Error,
+  )
+
   class ModuleNotFound(
     location: Location,
     range: Range,

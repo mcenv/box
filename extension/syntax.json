@@ -13,7 +13,11 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|function|let)\\b"
+      "match": "\\b(?:import|predicate|recipe|loot_table|item_modifier|advancement|function|let)\\b"
+    },
+    {
+      "name": "constant.language.mcx",
+      "match": "\\b(?:true|false|null)\\b"
     },
     {
       "name": "constant.numeric.mcx",
