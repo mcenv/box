@@ -1,5 +1,8 @@
 package mcx.lsp
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.future
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -8,7 +11,6 @@ import mcx.phase.Cache
 import mcx.phase.Config
 import mcx.phase.prettyType0
 import org.eclipse.lsp4j.*
-import org.eclipse.lsp4j.jsonrpc.CompletableFutures.computeAsync
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import org.eclipse.lsp4j.services.LanguageClient
@@ -74,40 +76,36 @@ class McxService : TextDocumentService,
   override fun diagnostic(
     params: DocumentDiagnosticParams,
   ): CompletableFuture<DocumentDiagnosticReport> =
-    computeAsync {
+    CoroutineScope(Dispatchers.Default).future {
       val core = cache.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
       )!!
-      if (core.dirty) { // TODO
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.value.diagnostics))
-      } else {
-        DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
-      }
+      DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.diagnostics))
     }
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
-    computeAsync {
+    CoroutineScope(Dispatchers.Default).future {
       val core = cache.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
         params.position,
       )!!
       forLeft(
-        core.value.completionItems
+        core.completionItems
         ?: resourceCompletionItems
       )
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
-    computeAsync {
+    CoroutineScope(Dispatchers.Default).future {
       val core = cache.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
         params.position,
       )!!
       Hover(
-        when (val hover = core.value.hover) {
+        when (val hover = core.hover) {
           null -> throw CancellationException()
           else -> highlight(prettyType0(hover))
         }
@@ -151,7 +149,7 @@ class McxService : TextDocumentService,
     Location(
       root
         .resolve("src")
-        .relativize(URI(this).toPath())
+        .relativize(URI(dropLast(".mcx".length)).toPath())
         .map { it.toString() }
     )
 }

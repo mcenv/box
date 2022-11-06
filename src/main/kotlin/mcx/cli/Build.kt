@@ -2,6 +2,9 @@ package mcx.cli
 
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -15,7 +18,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
-import java.util.stream.Stream
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.*
 import kotlin.system.exitProcess
 
@@ -37,12 +40,13 @@ object Build : Subcommand(
       )
     }
     val levelName = serverProperties.getProperty("level-name")
-    val datapacks = Paths
-      .get(
-        levelName,
-        "datapacks",
-      )
-      .also { it.createDirectories() }
+    val datapacks =
+      Paths
+        .get(
+          levelName,
+          "datapacks",
+        )
+        .also { it.createDirectories() }
 
     Build::class.java
       .getResourceAsStream("/mcx.zip")!!
@@ -58,13 +62,14 @@ object Build : Subcommand(
     val root = Paths.get("")
     val src = root.resolve("src")
     val cache = Cache(src)
-    val config = Paths
-      .get("pack.json")
-      .inputStream()
-      .buffered()
-      .use {
-        Json.decodeFromStream<Config>(it)
-      }
+    val config =
+      Paths
+        .get("pack.json")
+        .inputStream()
+        .buffered()
+        .use {
+          Json.decodeFromStream<Config>(it)
+        }
 
     fun Path.toLocation(): Location =
       Location(
@@ -75,38 +80,44 @@ object Build : Subcommand(
           .split('/')
       )
 
-    fun inputs(): Stream<Path> =
+    val inputs: List<Path> =
       Files
         .walk(src)
         .filter { it.extension == "mcx" }
+        .toList()
 
-    var valid = true
-    inputs().forEach { path ->
-      val core = cache.fetchCore(
-        config,
-        path.toLocation(),
-      )!!
-      if (core.value.diagnostics.isNotEmpty()) {
-        valid = false
-        core.value.diagnostics.forEach {
-          println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString} ${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
+    val valid = AtomicBoolean(true)
+    val diagnostics = runBlocking {
+      inputs
+        .map { path ->
+          async {
+            val core = cache.fetchCore(
+              config,
+              path.toLocation(),
+            )!!
+            if (core.diagnostics.isNotEmpty()) {
+              valid.set(false)
+            }
+            path to core.diagnostics
+          }
         }
-      }
+        .awaitAll()
     }
 
-    if (valid) {
+    if (valid.get()) {
       object : Generate.Generator,
                Closeable {
         private var output: OutputStream? = null
 
         override fun entry(name: String) {
           output?.close()
-          output = datapacks
-            .resolve(config.name)
-            .resolve(name)
-            .also { it.parent.createDirectories() }
-            .outputStream()
-            .buffered()
+          output =
+            datapacks
+              .resolve(config.name)
+              .resolve(name)
+              .also { it.parent.createDirectories() }
+              .outputStream()
+              .buffered()
         }
 
         override fun write(string: String) {
@@ -117,15 +128,26 @@ object Build : Subcommand(
           output?.close()
         }
       }.use { generator ->
-        inputs().forEach { path ->
-          cache.fetchGenerated(
-            config,
-            generator,
-            path.toLocation(),
-          )
+        runBlocking {
+          inputs
+            .map { path ->
+              async {
+                cache.fetchGenerated(
+                  config,
+                  generator,
+                  path.toLocation(),
+                )
+              }
+            }
+            .awaitAll()
         }
       }
     } else {
+      diagnostics.forEach { (path, diagnostics) ->
+        diagnostics.forEach {
+          println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString} ${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
+        }
+      }
       exitProcess(1)
     }
   }

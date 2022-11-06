@@ -1,51 +1,45 @@
 package mcx.phase
 
+import kotlinx.coroutines.*
 import mcx.ast.Location
 import mcx.ast.Packed
 import org.eclipse.lsp4j.Position
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 
+// TODO
 class Cache(
   private val src: Path,
 ) {
-  private val texts: HashMap<Location, Trace<String>> = hashMapOf()
-  private val parseResults: HashMap<Location, Trace<Parse.Result>> = hashMapOf()
-  private val elaborateResults: HashMap<Location, Trace<Elaborate.Result>> = hashMapOf()
-  private val packResults: HashMap<Location, Trace<Packed.Root>> = hashMapOf()
-  private val generateResults: HashMap<Location, Trace<Unit>> = hashMapOf()
+  private val texts: ConcurrentMap<Location, String> = ConcurrentHashMap()
 
   fun changeText(
     location: Location,
     text: String,
   ) {
-    texts[location] = Trace(
-      text,
-      true,
-    )
+    texts[location] = text
   }
 
-  fun closeText(location: Location) {
+  fun closeText(
+    location: Location,
+  ) {
     texts -= location
-    parseResults -= location
-    elaborateResults -= location
-    packResults -= location
-    generateResults -= location
   }
 
   // TODO: track external modification?
-  fun fetchText(location: Location): Trace<String>? {
+  suspend fun fetchText(location: Location): String? {
     return when (val text = texts[location]) {
-      null -> {
+      null -> withContext(Dispatchers.IO) {
         val path = location.toPath()
         if (path.exists()) {
-          Trace(
-            path.readText(),
-            true,
-          ).also {
-            texts[location] = it
-          }
+          path
+            .readText()
+            .also {
+              texts[location] = it
+            }
         } else {
           null
         }
@@ -54,135 +48,85 @@ class Cache(
     }
   }
 
-  fun fetchSurface(
+  suspend fun fetchSurface(
     config: Config,
     location: Location,
-  ): Trace<Parse.Result>? {
+  ): Parse.Result? {
     val text = fetchText(location)
                ?: return null
-    return if (text.dirty || location !in parseResults) {
-      Trace(
-        Parse(
-          config,
-          location,
-          text.value,
-        ),
-        true,
-      ).also {
-        text.dirty = false
-        parseResults[location] = it
-      }
-    } else {
-      parseResults[location]!!.also {
-        it.dirty = false
-      }
-    }
+    return Parse(
+      config,
+      location,
+      text,
+    )
   }
 
-  fun fetchCore(
+  suspend fun fetchCore(
     config: Config,
     location: Location,
     position: Position? = null,
-  ): Trace<Elaborate.Result>? {
-    val surface = fetchSurface(
-      config,
-      location,
-    )
-                  ?: return null
-    var dirtyImports = false
-    val imports = surface.value.root.imports.map {
-      val import = fetchCore(
+  ): Elaborate.Result? =
+    coroutineScope {
+      val surface = fetchSurface(
         config,
-        it.value,
+        location,
       )
-      dirtyImports = dirtyImports or (import?.dirty
-                                      ?: false)
-      it to import?.value?.root
+                    ?: return@coroutineScope null
+      val imports =
+        surface.root.imports
+          .map {
+            async {
+              val import = fetchCore(
+                config,
+                it.value,
+              )
+              it to import?.root
+            }
+          }
+          .awaitAll()
+      Elaborate(
+        config,
+        imports,
+        surface,
+        position,
+      )
     }
-    return if (surface.dirty || dirtyImports || location !in elaborateResults || position != null) {
-      Trace(
-        Elaborate(
-          config,
-          imports,
-          surface.value,
-          position,
-        ),
-        true,
-      ).also {
-        surface.dirty = false
-        elaborateResults[location] = it
-      }
-    } else {
-      elaborateResults[location]!!.also {
-        it.dirty = false
-      }
-    }
-  }
 
-  fun fetchPacked(
+  suspend fun fetchPacked(
     config: Config,
     location: Location,
-  ): Trace<Packed.Root>? {
+  ): Packed.Root? {
     val core = fetchCore(
       config,
       location,
     )
                ?: return null
-    if (core.value.diagnostics.isNotEmpty()) {
+    if (core.diagnostics.isNotEmpty()) {
       return null
     }
-    return if (core.dirty || location !in packResults) {
-      Trace(
-        Pack(
-          config,
-          core.value.root,
-        ),
-        true,
-      ).also {
-        core.dirty = false
-        packResults[location] = it
-      }
-    } else {
-      packResults[location]!!.also {
-        it.dirty = false
-      }
-    }
+    return Pack(
+      config,
+      core.root,
+    )
   }
 
-  fun fetchGenerated(
+  suspend fun fetchGenerated(
     config: Config,
     generator: Generate.Generator,
     location: Location,
-  ): Trace<Unit>? {
+  ) {
     val packed = fetchPacked(
       config,
       location,
     )
-                 ?: return null
-    return if (packed.dirty || location !in generateResults) {
-      Trace(
-        Generate(
-          config,
-          generator,
-          packed.value,
-        ),
-        true,
-      ).also {
-        packed.dirty = false
-        generateResults[location] = it
-      }
-    } else {
-      generateResults[location]!!.also {
-        it.dirty = false
-      }
-    }
+                 ?: return
+    Generate(
+      config,
+      generator,
+      packed,
+    )
   }
 
   private fun Location.toPath(): Path =
     src.resolve("${parts.joinToString("/")}.mcx")
-
-  data class Trace<V>(
-    val value: V,
-    var dirty: Boolean,
-  )
 }
