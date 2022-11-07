@@ -20,6 +20,8 @@ import org.eclipse.lsp4j.services.WorkspaceService
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -33,6 +35,7 @@ class McxService : TextDocumentService,
   private lateinit var root: Path
   private lateinit var cache: Cache
   private var config: Config? = null
+  private val diagnosticsHashes: ConcurrentMap<String, Int> = ConcurrentHashMap()
 
   override fun connect(client: LanguageClient) {
     this.client = client
@@ -77,11 +80,19 @@ class McxService : TextDocumentService,
     params: DocumentDiagnosticParams,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
+      val uri = params.textDocument.uri
       val core = cache.fetchCore(
         fetchConfig(),
-        params.textDocument.uri.toLocation(),
+        uri.toLocation(),
       )!!
-      DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.diagnostics))
+      val newHash = core.diagnostics.hashCode()
+      val oldHash = diagnosticsHashes[uri]
+      if (oldHash == null || newHash != oldHash) {
+        diagnosticsHashes[uri] = newHash
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.diagnostics))
+      } else {
+        DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
+      }
     }
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
