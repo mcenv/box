@@ -15,11 +15,13 @@ class Cache(
   private val src: Path,
 ) {
   private val texts: ConcurrentMap<Location, String> = ConcurrentHashMap()
+  private val parseResults: ConcurrentMap<Location, Parse.Result> = ConcurrentHashMap()
 
   fun changeText(
     location: Location,
     text: String,
   ) {
+    closeText(location)
     texts[location] = text
   }
 
@@ -27,6 +29,7 @@ class Cache(
     location: Location,
   ) {
     texts -= location
+    parseResults -= location
   }
 
   // TODO: track external modification?
@@ -52,13 +55,18 @@ class Cache(
     config: Config,
     location: Location,
   ): Parse.Result? {
-    val text = fetchText(location)
-               ?: return null
-    return Parse(
-      config,
-      location,
-      text,
-    )
+    return when (val parseResult = parseResults[location]) {
+      null -> {
+        val text = fetchText(location)
+                   ?: return null
+        Parse(
+          config,
+          location,
+          text,
+        ).also { parseResults[location] = it }
+      }
+      else -> parseResult
+    }
   }
 
   suspend fun fetchCore(
