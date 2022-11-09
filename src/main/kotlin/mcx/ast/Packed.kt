@@ -11,9 +11,9 @@ object Packed {
     val name: String
 
     data class JsonResource(
+      val registry: Registry,
       override val module: Location,
       override val name: String,
-      val registry: Registry,
       val body: Json,
     ) : Resource
 
@@ -59,13 +59,5 @@ object Packed {
     data class IntOf(val value: Int) : Tag
 
     data class StringOf(val value: String) : Tag
-  }
-
-  enum class Registry {
-    PREDICATES,
-    RECIPES,
-    LOOT_TABLES,
-    ITEM_MODIFIERS,
-    ADVANCEMENTS,
   }
 }

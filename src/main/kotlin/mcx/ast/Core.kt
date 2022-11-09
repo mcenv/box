@@ -10,31 +10,8 @@ object Core {
     val module: Location
     val name: String
 
-    data class Predicate(
-      override val module: Location,
-      override val name: String,
-      val body: Json,
-    ) : Resource0
-
-    data class Recipe(
-      override val module: Location,
-      override val name: String,
-      val body: Json,
-    ) : Resource0
-
-    data class LootTable(
-      override val module: Location,
-      override val name: String,
-      val body: Json,
-    ) : Resource0
-
-    data class ItemModifier(
-      override val module: Location,
-      override val name: String,
-      val body: Json,
-    ) : Resource0
-
-    data class Advancement(
+    data class JsonResource(
+      val registry: Registry,
       override val module: Location,
       override val name: String,
       val body: Json,

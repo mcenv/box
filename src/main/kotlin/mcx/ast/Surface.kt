@@ -13,31 +13,8 @@ object Surface {
     val name: String
     val range: Range
 
-    data class Predicate(
-      override val name: String,
-      val body: Json,
-      override val range: Range,
-    ) : Resource0
-
-    data class Recipe(
-      override val name: String,
-      val body: Json,
-      override val range: Range,
-    ) : Resource0
-
-    data class LootTable(
-      override val name: String,
-      val body: Json,
-      override val range: Range,
-    ) : Resource0
-
-    data class ItemModifier(
-      override val name: String,
-      val body: Json,
-      override val range: Range,
-    ) : Resource0
-
-    data class Advancement(
+    data class JsonResource(
+      val registry: Registry,
       override val name: String,
       val body: Json,
       override val range: Range,

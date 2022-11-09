@@ -57,27 +57,8 @@ class Elaborate private constructor(
     resource: S.Resource0,
   ): C.Resource0 {
     return when (resource) {
-      is S.Resource0.Predicate    -> C.Resource0.Predicate(
-        module,
-        resource.name,
-        elaborateJson(resource.body),
-      )
-      is S.Resource0.Recipe       -> C.Resource0.Recipe(
-        module,
-        resource.name,
-        elaborateJson(resource.body),
-      )
-      is S.Resource0.LootTable    -> C.Resource0.LootTable(
-        module,
-        resource.name,
-        elaborateJson(resource.body),
-      )
-      is S.Resource0.ItemModifier -> C.Resource0.ItemModifier(
-        module,
-        resource.name,
-        elaborateJson(resource.body),
-      )
-      is S.Resource0.Advancement  -> C.Resource0.Advancement(
+      is S.Resource0.JsonResource -> C.Resource0.JsonResource(
+        resource.registry,
         module,
         resource.name,
         elaborateJson(resource.body),

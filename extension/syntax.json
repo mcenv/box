@@ -13,7 +13,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|predicate|recipe|loot_table|item_modifier|advancement|function|let)\\b"
+      "match": "\\b(?:import|predicate|recipe|loot_table|item_modifier|advancement|dimension_type|worldgen/biome|dimension|function|let)\\b"
     },
     {
       "name": "constant.language.mcx",
@@ -21,7 +21,7 @@
     },
     {
       "name": "constant.numeric.mcx",
-      "match": "\\b(?:[-+]?[0-9]+)\\b"
+      "match": "\\b(?:[-+]?[0-9_.e]+)\\b"
     },
     {
       "include": "#string"

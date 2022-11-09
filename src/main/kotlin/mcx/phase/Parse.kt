@@ -1,6 +1,7 @@
 package mcx.phase
 
 import mcx.ast.Location
+import mcx.ast.Registry
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -75,72 +76,21 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "predicate"     -> {
-            skipWhitespaces()
-            val name = readWord()
-            skipWhitespaces()
-            expect('=')
-            skipWhitespaces()
-            val body = parseJson()
-            S.Resource0.Predicate(
-              name,
-              body,
-              until(),
-            )
+          "predicate"      -> parseJsonResource(Registry.PREDICATES)
+          "recipe"         -> parseJsonResource(Registry.RECIPES)
+          "loot_table"     -> parseJsonResource(Registry.LOOT_TABLES)
+          "item_modifier"  -> parseJsonResource(Registry.ITEM_MODIFIERS)
+          "advancement"    -> parseJsonResource(Registry.ADVANCEMENTS)
+          "dimension_type" -> parseJsonResource(Registry.DIMENSION_TYPE)
+          "worldgen"       -> {
+            expect('/')
+            when (readWord()) {
+              "biome" -> parseJsonResource(Registry.WORLDGEN_BIOME)
+              else    -> null
+            }
           }
-          "recipe"        -> {
-            skipWhitespaces()
-            val name = readWord()
-            skipWhitespaces()
-            expect('=')
-            skipWhitespaces()
-            val body = parseJson()
-            S.Resource0.Recipe(
-              name,
-              body,
-              until(),
-            )
-          }
-          "loot_table"    -> {
-            skipWhitespaces()
-            val name = readWord()
-            skipWhitespaces()
-            expect('=')
-            skipWhitespaces()
-            val body = parseJson()
-            S.Resource0.LootTable(
-              name,
-              body,
-              until(),
-            )
-          }
-          "item_modifier" -> {
-            skipWhitespaces()
-            val name = readWord()
-            skipWhitespaces()
-            expect('=')
-            skipWhitespaces()
-            val body = parseJson()
-            S.Resource0.ItemModifier(
-              name,
-              body,
-              until(),
-            )
-          }
-          "advancement"   -> {
-            skipWhitespaces()
-            val name = readWord()
-            skipWhitespaces()
-            expect('=')
-            skipWhitespaces()
-            val body = parseJson()
-            S.Resource0.Advancement(
-              name,
-              body,
-              until(),
-            )
-          }
-          "function"      -> {
+          "dimension"      -> parseJsonResource(Registry.DIMENSION)
+          "function"       -> {
             skipWhitespaces()
             val name = readWord()
             skipWhitespaces()
@@ -173,7 +123,7 @@ class Parse private constructor(
               until(),
             )
           }
-          else       -> null
+          else             -> null
         }
       } else {
         null
@@ -183,6 +133,24 @@ class Parse private constructor(
         diagnostics += Diagnostic.ExpectedResource0(range)
         S.Resource0.Hole(range)
       }
+    }
+
+  private fun parseJsonResource(
+    registry: Registry,
+  ): S.Resource0.JsonResource =
+    ranging {
+      skipWhitespaces()
+      val name = readWord()
+      skipWhitespaces()
+      expect('=')
+      skipWhitespaces()
+      val body = parseJson()
+      S.Resource0.JsonResource(
+        registry,
+        name,
+        body,
+        until(),
+      )
     }
 
   private fun parseType0(): S.Type0 =
@@ -311,7 +279,7 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (peek()) {
-          '{'  -> {
+          '{'              -> {
             val elements = parseList(
               ',',
               '{',
@@ -329,7 +297,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '['  -> {
+          '['              -> {
             val elements = parseList(
               ',',
               '[',
@@ -342,22 +310,19 @@ class Parse private constructor(
               until(),
             )
           }
-          '"'  -> S.Json.StringOf(
+          '"'              -> S.Json.StringOf(
             readString(),
             until(),
           )
-          else -> when (val word = readWord()) {
+          in '0'..'9', '-' -> S.Json.NumberOf(
+            readNumeric().toDouble(),
+            until(),
+          )
+          else             -> when (readWord()) {
             "true"  -> S.Json.True(until())
             "false" -> S.Json.False(until())
             "null"  -> S.Json.Null(until())
-            else    -> word
-              .toDoubleOrNull()
-              ?.let {
-                S.Json.NumberOf(
-                  it,
-                  until(),
-                )
-              }
+            else    -> null
           }
         }
       } else {
@@ -459,6 +424,27 @@ class Parse private constructor(
     expect('"')
     return builder.toString()
   }
+
+  private fun readNumeric(): String {
+    val start = cursor
+    while (canRead() && peek().isNumericPart()) {
+      skip()
+    }
+    return text.substring(
+      start,
+      cursor,
+    )
+  }
+
+  private inline fun Char.isNumericPart(): Boolean =
+    when (this) {
+      in '0'..'9',
+      '_', '-', '+', '.', 'e',
+      -> true
+
+      else
+      -> false
+    }
 
   private fun readWord(): String {
     val start = cursor
