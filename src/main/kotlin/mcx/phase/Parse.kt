@@ -207,7 +207,7 @@ class Parse private constructor(
           }
           '"'  ->
             S.Term0.StringOf(
-              readString(),
+              readQuotedString(),
               until(),
             )
           '&'  -> {
@@ -311,7 +311,7 @@ class Parse private constructor(
             )
           }
           '"'              -> S.Json.StringOf(
-            readString(),
+            readQuotedString(),
             until(),
           )
           in '0'..'9', '-' -> S.Json.NumberOf(
@@ -386,6 +386,16 @@ class Parse private constructor(
   }
 
   private fun readString(): String {
+    if (!canRead()) {
+      return ""
+    }
+    return when (peek()) {
+      '"'  -> readQuotedString()
+      else -> readWord()
+    }
+  }
+
+  private fun readQuotedString(): String {
     if (!canRead()) {
       return ""
     }
