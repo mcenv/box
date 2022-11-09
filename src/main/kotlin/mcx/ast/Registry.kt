@@ -1,6 +1,7 @@
 package mcx.ast
 
 enum class Registry(val string: String) {
+  FUNCTIONS("functions"),
   PREDICATES("predicates"),
   RECIPES("recipes"),
   LOOT_TABLES("loot_tables"),
@@ -10,5 +11,8 @@ enum class Registry(val string: String) {
   WORLDGEN_BIOME("worldgen/biome"),
 
   // TODO: more worldgen registries
-  DIMENSION("dimension"),
+  DIMENSION("dimension");
+
+  override fun toString(): String =
+    string
 }

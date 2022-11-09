@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Json
 import mcx.ast.Location
+import mcx.ast.Registry
 import mcx.util.quoted
 import mcx.ast.Packed as P
 
@@ -24,7 +25,7 @@ class Generate private constructor(
       is P.Resource.JsonResource -> {
         generator.entry(
           generatePath(
-            resource.registry.name.lowercase(),
+            resource.registry,
             resource.module,
             resource.name,
             "json",
@@ -35,7 +36,7 @@ class Generate private constructor(
       is P.Resource.Function     -> {
         generator.entry(
           generatePath(
-            "functions",
+            Registry.FUNCTIONS,
             resource.module,
             resource.name,
             "mcfunction",
@@ -128,7 +129,7 @@ class Generate private constructor(
   }
 
   private fun generatePath(
-    registry: String,
+    registry: Registry,
     module: Location,
     name: String,
     extension: String,
