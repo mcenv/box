@@ -27,6 +27,7 @@ object Packed {
   enum class Type {
     INT,
     STRING,
+    COMPOUND,
   }
 
   sealed interface Instruction {

@@ -81,8 +81,9 @@ class Generate private constructor(
     type: P.Type,
   ): String =
     when (type) {
-      P.Type.INT    -> "int"
-      P.Type.STRING -> "string"
+      P.Type.INT      -> "int"
+      P.Type.STRING   -> "string"
+      P.Type.COMPOUND -> "compound"
     }
 
   private fun generateTag(

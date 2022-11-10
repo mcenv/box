@@ -36,6 +36,10 @@ object Core {
 
     object String : Type0
 
+    data class Compound(
+      val elements: Map<kotlin.String, Type0>,
+    ) : Type0
+
     data class Ref(
       val element: Type0,
     ) : Type0
@@ -58,11 +62,15 @@ object Core {
       override val type: Type0 get() = Type0.String
     }
 
+    data class CompoundOf(
+      val values: Map<String, Term0>,
+      override val type: Type0,
+    ) : Term0
+
     data class RefOf(
       val value: Term0,
-    ) : Term0 {
-      override val type: Type0 by lazy { Type0.Ref(value.type) }
-    }
+      override val type: Type0,
+    ) : Term0
 
     data class Let(
       val name: String,

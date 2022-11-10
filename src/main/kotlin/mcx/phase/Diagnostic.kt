@@ -84,6 +84,15 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class KeyNotFound(
+    key: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "key not found: '$key'",
+    DiagnosticSeverity.Error,
+  )
+
   class VarNotFound(
     name: String,
     range: Range,

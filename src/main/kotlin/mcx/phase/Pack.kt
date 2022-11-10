@@ -61,16 +61,17 @@ class Pack private constructor() {
     term: C.Term0,
   ) {
     when (term) {
-      is C.Term0.IntOf    -> env += P.Instruction.Push(
+      is C.Term0.IntOf      -> env += P.Instruction.Push(
         P.Tag.IntOf(term.value),
         P.Type.INT,
       )
-      is C.Term0.StringOf -> env += P.Instruction.Push(
+      is C.Term0.StringOf   -> env += P.Instruction.Push(
         P.Tag.StringOf(term.value),
         P.Type.STRING,
       )
-      is C.Term0.RefOf    -> env += P.Instruction.Debug("$term")
-      is C.Term0.Let      -> {
+      is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term0.RefOf      -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term0.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
         packTerm(
@@ -164,10 +165,11 @@ class Pack private constructor() {
       type: C.Type0,
     ): P.Type {
       return when (type) {
-        is C.Type0.Int    -> P.Type.INT
-        is C.Type0.String -> P.Type.STRING
-        is C.Type0.Ref    -> P.Type.INT
-        is C.Type0.Hole   -> unexpectedHole()
+        is C.Type0.Int      -> P.Type.INT
+        is C.Type0.String   -> P.Type.STRING
+        is C.Type0.Compound -> P.Type.COMPOUND
+        is C.Type0.Ref      -> P.Type.INT
+        is C.Type0.Hole     -> unexpectedHole()
       }
     }
 

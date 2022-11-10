@@ -165,6 +165,24 @@ class Parse private constructor(
             expect(')')
             type
           }
+          '{'  -> {
+            val elements = parseList(
+              ',',
+              '{',
+              '}',
+            ) {
+              val key = readString()
+              skipWhitespaces()
+              expect(':')
+              skipWhitespaces()
+              val element = parseType0()
+              key to element
+            }.toMap()
+            S.Type0.Compound(
+              elements,
+              until(),
+            )
+          }
           else -> when (readWord()) {
             "int"    -> S.Type0.Int(until())
             "string" -> S.Type0.String(until())
@@ -210,6 +228,24 @@ class Parse private constructor(
               readQuotedString(),
               until(),
             )
+          '{'  -> {
+            val values = parseList(
+              ',',
+              '{',
+              '}',
+            ) {
+              val key = readString()
+              skipWhitespaces()
+              expect(':')
+              skipWhitespaces()
+              val value = parseTerm0()
+              key to value
+            }.toMap()
+            S.Term0.CompoundOf(
+              values,
+              until(),
+            )
+          }
           '&'  -> {
             skip()
             skipWhitespaces()

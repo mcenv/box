@@ -46,6 +46,11 @@ object Surface {
       override val range: Range,
     ) : Type0
 
+    data class Compound(
+      val elements: Map<kotlin.String, Type0>,
+      override val range: Range,
+    ) : Type0
+
     data class Ref(
       val element: Type0,
       override val range: Range,
@@ -66,6 +71,11 @@ object Surface {
 
     data class StringOf(
       val value: String,
+      override val range: Range,
+    ) : Term0
+
+    data class CompoundOf(
+      val values: Map<String, Term0>,
       override val range: Range,
     ) : Term0
 
