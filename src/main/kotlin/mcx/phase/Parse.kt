@@ -96,8 +96,8 @@ class Parse private constructor(
             skipWhitespaces()
             val params = parseList(
               ',',
-              '[',
-              ']',
+              '(',
+              ')',
             ) {
               skipWhitespaces()
               val key = readWord()
@@ -188,13 +188,13 @@ class Parse private constructor(
             "string" -> S.Type0.String(until())
             "ref"    -> {
               skipWhitespaces()
-              expect('[')
+              expect('(')
               val type = S.Type0.Ref(
                 parseType0(),
                 until(),
               )
               skipWhitespaces()
-              expect(']')
+              expect(')')
               type
             }
             else     -> null
@@ -272,11 +272,11 @@ class Parse private constructor(
                 until(),
               )
             }
-            else  -> if (canRead() && peek() == '[') {
+            else  -> if (canRead() && peek() == '(') {
               val args = parseList(
                 ',',
-                '[',
-                ']',
+                '(',
+                ')',
               ) {
                 parseTerm0()
               }

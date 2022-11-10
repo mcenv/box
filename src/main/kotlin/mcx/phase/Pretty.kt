@@ -11,7 +11,7 @@ fun prettyType0(type: C.Type0): String {
       "{",
       "}"
     ) { (key, element) -> "$key: ${prettyType0(element)}" }
-    is C.Type0.Ref      -> "ref[${prettyType0(type.element)}]"
+    is C.Type0.Ref      -> "ref(${prettyType0(type.element)})"
     is C.Type0.Hole     -> "?"
   }
 }
