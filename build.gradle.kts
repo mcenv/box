@@ -34,7 +34,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.17.0")
+  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.18.0")
   testImplementation(kotlin("test"))
 }
 
