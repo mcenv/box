@@ -95,8 +95,10 @@ class Elaborate private constructor(
     type: S.Type0,
   ): C.Type0 {
     return when (type) {
+      is S.Type0.End      -> C.Type0.End
       is S.Type0.Int      -> C.Type0.Int
       is S.Type0.String   -> C.Type0.String
+      is S.Type0.List     -> C.Type0.List(elaborateType0(type.element))
       is S.Type0.Compound -> C.Type0.Compound(type.elements.mapValues { elaborateType0(it.value) })
       is S.Type0.Ref      -> C.Type0.Ref(elaborateType0(type.element))
       is S.Type0.Hole     -> C.Type0.Hole
@@ -114,6 +116,38 @@ class Elaborate private constructor(
 
       term is S.Term0.StringOf &&
       expected is C.Type0.String?  -> C.Term0.StringOf(term.value)
+
+      term is S.Term0.ListOf &&
+      term.values.isEmpty()        -> C.Term0.ListOf(
+        emptyList(),
+        C.Type0.List(C.Type0.End),
+      )
+
+      term is S.Term0.ListOf &&
+      expected is C.Type0.List?    -> {
+        val head = elaborateTerm0(
+          env,
+          term.values.first(),
+          expected?.element,
+        )
+        val element =
+          expected?.element
+          ?: head.type
+        val tail =
+          term.values
+            .drop(1)
+            .map { value ->
+              elaborateTerm0(
+                env,
+                value,
+                element
+              )
+            }
+        C.Term0.ListOf(
+          listOf(head) + tail,
+          C.Type0.List(element),
+        )
+      }
 
       term is S.Term0.CompoundOf &&
       expected == null             -> {
@@ -316,11 +350,20 @@ class Elaborate private constructor(
     type2: C.Type0,
   ): Boolean {
     return when {
+      type1 is C.Type0.End &&
+      type2 is C.Type0.End      -> true
+
       type1 is C.Type0.Int &&
       type2 is C.Type0.Int      -> true
 
       type1 is C.Type0.String &&
       type2 is C.Type0.String   -> true
+
+      type1 is C.Type0.List &&
+      type2 is C.Type0.List     -> convType(
+        type1.element,
+        type2.element,
+      )
 
       type1 is C.Type0.Compound &&
       type2 is C.Type0.Compound -> type1.elements.all { (key1, element1) ->

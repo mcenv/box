@@ -165,6 +165,17 @@ class Parse private constructor(
             expect(')')
             type
           }
+          '['  -> {
+            skip()
+            skipWhitespaces()
+            val element = parseType0()
+            skipWhitespaces()
+            expect(']')
+            S.Type0.List(
+              element,
+              until(),
+            )
+          }
           '{'  -> {
             val elements = parseList(
               ',',
@@ -184,6 +195,7 @@ class Parse private constructor(
             )
           }
           else -> when (readWord()) {
+            "end"    -> S.Type0.End(until())
             "int"    -> S.Type0.Int(until())
             "string" -> S.Type0.String(until())
             "ref"    -> {
@@ -215,7 +227,7 @@ class Parse private constructor(
       skipWhitespaces()
       if (canRead()) {
         when (peek()) {
-          '('  -> {
+          '(' -> {
             skip()
             skipWhitespaces()
             val term = parseTerm0()
@@ -223,12 +235,25 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '"'  ->
+          '"' ->
             S.Term0.StringOf(
               readQuotedString(),
               until(),
             )
-          '{'  -> {
+          '[' -> {
+            val values = parseList(
+              ',',
+              '[',
+              ']',
+            ) {
+              parseTerm0()
+            }
+            S.Term0.ListOf(
+              values,
+              until(),
+            )
+          }
+          '{' -> {
             val values = parseList(
               ',',
               '{',
@@ -246,7 +271,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '&'  -> {
+          '&' -> {
             skip()
             skipWhitespaces()
             S.Term0.RefOf(

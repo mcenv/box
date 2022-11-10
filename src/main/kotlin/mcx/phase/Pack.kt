@@ -52,7 +52,7 @@ class Pack private constructor() {
           env.instructions,
         )
       }
-      is C.Resource0.Hole     -> unexpectedHole()
+      is C.Resource0.Hole         -> unexpectedHole()
     }
   }
 
@@ -69,6 +69,7 @@ class Pack private constructor() {
         P.Tag.StringOf(term.value),
         P.Type.STRING,
       )
+      is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.RefOf      -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.Let        -> {
@@ -92,14 +93,14 @@ class Pack private constructor() {
           initType,
         )
       }
-      is C.Term0.Var      -> {
+      is C.Term0.Var        -> {
         val type = eraseType(term.type)
         env += P.Instruction.Copy(
           env[term.name, type],
           type,
         )
       }
-      is C.Term0.Run      -> {
+      is C.Term0.Run        -> {
         term.args.forEach {
           packTerm(
             env,
@@ -111,7 +112,7 @@ class Pack private constructor() {
           term.name,
         )
       }
-      is C.Term0.Hole     -> unexpectedHole()
+      is C.Term0.Hole       -> unexpectedHole()
     }
   }
 
@@ -165,8 +166,10 @@ class Pack private constructor() {
       type: C.Type0,
     ): P.Type {
       return when (type) {
+        is C.Type0.End      -> error("unexpected: end")
         is C.Type0.Int      -> P.Type.INT
         is C.Type0.String   -> P.Type.STRING
+        is C.Type0.List     -> P.Type.LIST
         is C.Type0.Compound -> P.Type.COMPOUND
         is C.Type0.Ref      -> P.Type.INT
         is C.Type0.Hole     -> unexpectedHole()

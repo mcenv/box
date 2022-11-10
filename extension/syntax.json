@@ -9,7 +9,7 @@
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:int|string|ref)\\b"
+      "match": "\\b(?:end|int|string|ref)\\b"
     },
     {
       "name": "keyword.mcx",

@@ -38,11 +38,20 @@ object Surface {
   sealed interface Type0 {
     val range: Range
 
+    data class End(
+      override val range: Range,
+    ) : Type0
+
     data class Int(
       override val range: Range,
     ) : Type0
 
     data class String(
+      override val range: Range,
+    ) : Type0
+
+    data class List(
+      val element: Type0,
       override val range: Range,
     ) : Type0
 
@@ -71,6 +80,11 @@ object Surface {
 
     data class StringOf(
       val value: String,
+      override val range: Range,
+    ) : Term0
+
+    data class ListOf(
+      val values: List<Term0>,
       override val range: Range,
     ) : Term0
 

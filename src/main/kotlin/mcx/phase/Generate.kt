@@ -83,6 +83,7 @@ class Generate private constructor(
     when (type) {
       P.Type.INT      -> "int"
       P.Type.STRING   -> "string"
+      P.Type.LIST     -> "list"
       P.Type.COMPOUND -> "compound"
     }
 

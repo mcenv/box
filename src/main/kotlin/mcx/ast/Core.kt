@@ -32,9 +32,15 @@ object Core {
   }
 
   sealed interface Type0 {
+    object End : Type0
+
     object Int : Type0
 
     object String : Type0
+
+    data class List(
+      val element: Type0,
+    ) : Type0
 
     data class Compound(
       val elements: Map<kotlin.String, Type0>,
@@ -61,6 +67,11 @@ object Core {
     ) : Term0 {
       override val type: Type0 get() = Type0.String
     }
+
+    data class ListOf(
+      val values: List<Term0>,
+      override val type: Type0,
+    ) : Term0
 
     data class CompoundOf(
       val values: Map<String, Term0>,
