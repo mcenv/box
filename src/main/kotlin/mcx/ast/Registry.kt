@@ -1,18 +1,55 @@
 package mcx.ast
 
-enum class Registry(val string: String) {
-  FUNCTIONS("functions"),
-  PREDICATES("predicates"),
-  RECIPES("recipes"),
-  LOOT_TABLES("loot_tables"),
-  ITEM_MODIFIERS("item_modifiers"),
-  ADVANCEMENTS("advancements"),
-  DIMENSION_TYPE("dimension_type"),
-  WORLDGEN_BIOME("worldgen/biome"),
-
+enum class Registry(
+  val singular: String,
+  val plural: String,
+  val extension: String,
+) {
+  FUNCTIONS(
+    "function",
+    "functions",
+    "mcfunction",
+  ),
+  PREDICATES(
+    "predicate",
+    "predicates",
+    "json",
+  ),
+  RECIPES(
+    "recipe",
+    "recipes",
+    "json",
+  ),
+  LOOT_TABLES(
+    "loot_table",
+    "loot_tables",
+    "json",
+  ),
+  ITEM_MODIFIERS(
+    "item_modifier",
+    "item_modifiers",
+    "json",
+  ),
+  ADVANCEMENTS(
+    "advancement",
+    "advancements",
+    "json",
+  ),
+  DIMENSION_TYPE(
+    "dimension_type",
+    "dimension_type",
+    "json",
+  ),
+  WORLDGEN_BIOME(
+    "worldgen/biome",
+    "worldgen/biome",
+    "json",
+  ),
   // TODO: more worldgen registries
-  DIMENSION("dimension");
 
-  override fun toString(): String =
-    string
+  DIMENSION(
+    "dimension",
+    "dimension",
+    "json",
+  );
 }

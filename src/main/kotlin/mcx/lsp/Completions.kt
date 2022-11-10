@@ -8,7 +8,7 @@ val resourceCompletionItems: List<CompletionItem> by lazy {
   Registry
     .values()
     .map {
-      CompletionItem(it.string).apply {
+      CompletionItem(it.singular).apply {
         kind = CompletionItemKind.Keyword
       }
     }

@@ -28,7 +28,6 @@ class Generate private constructor(
             resource.registry,
             resource.module,
             resource.name,
-            "json",
           )
         )
         generateJson(resource.body)
@@ -39,7 +38,6 @@ class Generate private constructor(
             Registry.FUNCTIONS,
             resource.module,
             resource.name,
-            "mcfunction",
           )
         )
         resource.instructions.forEachIndexed { index, instruction ->
@@ -134,9 +132,8 @@ class Generate private constructor(
     registry: Registry,
     module: Location,
     name: String,
-    extension: String,
   ): String =
-    "data/${config.name}/$registry/$module/$name.$extension"
+    "data/${config.name}/${registry.plural}/$module/$name.${registry.extension}"
 
   private fun generateResourceLocation(
     module: Location,
