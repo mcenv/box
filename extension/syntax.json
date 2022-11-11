@@ -5,7 +5,7 @@
   "patterns": [
     {
       "name": "keyword.operator.mcx",
-      "match": "[:=,;&]"
+      "match": "[:=,;&/]"
     },
     {
       "name": "support.type.mcx",

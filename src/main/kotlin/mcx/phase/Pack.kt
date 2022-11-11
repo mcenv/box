@@ -45,9 +45,10 @@ class Pack private constructor() {
         val resultType = eraseType(resource.result)
         resource.params.forEach {
           val paramType = eraseType(it.second)
-          env += P.Instruction.Drop(
-            if (resultType == paramType) -2 else -1,
+          drop(
+            env,
             paramType,
+            resultType,
           )
         }
         P.Resource.Function(
@@ -92,9 +93,10 @@ class Pack private constructor() {
             term.body,
           )
         }
-        env += P.Instruction.Drop(
-          if (initType == bodyType) -2 else -1,
+        drop(
+          env,
           initType,
+          bodyType,
         )
       }
       is C.Term0.Var        -> {
@@ -116,7 +118,26 @@ class Pack private constructor() {
           term.name,
         )
       }
+      is C.Term0.Command    -> env += P.Instruction.Command(term.value)
       is C.Term0.Hole       -> unexpectedHole()
+    }
+  }
+
+  private fun drop(
+    env: Env,
+    drop: P.Type,
+    keep: P.Type,
+  ) {
+    when (drop) {
+      P.Type.END -> Unit
+      keep       -> env += P.Instruction.Drop(
+        -2,
+        drop,
+      )
+      else       -> env += P.Instruction.Drop(
+        -2,
+        drop,
+      )
     }
   }
 
@@ -188,7 +209,7 @@ class Pack private constructor() {
       type: C.Type0,
     ): P.Type {
       return when (type) {
-        is C.Type0.End      -> error("unexpected: end")
+        is C.Type0.End      -> P.Type.END
         is C.Type0.Bool     -> P.Type.BYTE
         is C.Type0.Byte     -> P.Type.BYTE
         is C.Type0.Short    -> P.Type.SHORT

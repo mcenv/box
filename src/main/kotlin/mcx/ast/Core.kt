@@ -151,6 +151,12 @@ object Core {
       override val type: Type0,
     ) : Term0
 
+    data class Command(
+      val value: String,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.End
+    }
+
     data class Hole(
       override val type: Type0,
     ) : Term0

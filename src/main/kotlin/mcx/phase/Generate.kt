@@ -54,13 +54,13 @@ class Generate private constructor(
     instruction: P.Instruction,
   ) {
     when (instruction) {
-      is P.Instruction.Push  -> generator.write("data modify storage mcx: ${generateStack(instruction.tag.type)} append value ${generateTag(instruction.tag)}")
-      is P.Instruction.Copy  -> {
+      is P.Instruction.Push    -> generator.write("data modify storage mcx: ${generateStack(instruction.tag.type)} append value ${generateTag(instruction.tag)}")
+      is P.Instruction.Copy    -> {
         val stack = generateStack(instruction.type)
         generator.write("data modify storage mcx: $stack append from storage mcx: $stack[${instruction.index}]")
       }
-      is P.Instruction.Drop  -> generator.write("data remove storage mcx: ${generateStack(instruction.type)}[${instruction.index}]")
-      is P.Instruction.Run   -> generator.write(
+      is P.Instruction.Drop    -> generator.write("data remove storage mcx: ${generateStack(instruction.type)}[${instruction.index}]")
+      is P.Instruction.Run     -> generator.write(
         "function ${
           generateResourceLocation(
             instruction.module,
@@ -68,7 +68,8 @@ class Generate private constructor(
           )
         }"
       )
-      is P.Instruction.Debug -> if (config.debug) {
+      is P.Instruction.Command -> generator.write(instruction.value)
+      is P.Instruction.Debug   -> if (config.debug) {
         generator.write("# ")
         generator.write(instruction.message)
       }
@@ -79,6 +80,7 @@ class Generate private constructor(
     type: P.Type,
   ): String =
     when (type) {
+      P.Type.END      -> error("unexpected: end")
       P.Type.BYTE     -> "byte"
       P.Type.SHORT    -> "short"
       P.Type.INT      -> "int"

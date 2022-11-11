@@ -25,6 +25,7 @@ object Packed {
   }
 
   enum class Type {
+    END,
     BYTE,
     SHORT,
     INT,
@@ -54,6 +55,10 @@ object Packed {
     data class Run(
       val module: Location,
       val name: String,
+    ) : Instruction
+
+    data class Command(
+      val value: String,
     ) : Instruction
 
     data class Debug(

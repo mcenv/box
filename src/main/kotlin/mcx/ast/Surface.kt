@@ -170,6 +170,11 @@ object Surface {
       override val range: Range,
     ) : Term0
 
+    data class Command(
+      val value: String,
+      override val range: Range,
+    ) : Term0
+
     data class Hole(
       override val range: Range,
     ) : Term0

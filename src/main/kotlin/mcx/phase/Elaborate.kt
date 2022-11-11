@@ -276,7 +276,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term0.Run &&
-      expected == null             -> when (val resource = env.resources[term.name]) {
+      expected == null      -> when (val resource = env.resources[term.name]) {
         null                        -> {
           diagnostics += Diagnostic.ResourceNotFound(
             term.name,
@@ -312,14 +312,17 @@ class Elaborate private constructor(
         }
       }
 
-      term is S.Term0.Hole         -> C.Term0.Hole(
+      term is S.Term0.Command &&
+      expected is C.Type0.Int?    -> C.Term0.Command(term.value)
+
+      term is S.Term0.Hole        -> C.Term0.Hole(
         expected
         ?: C.Type0.Hole
       )
 
-      expected == null             -> throw IllegalArgumentException()
+      expected == null            -> throw IllegalArgumentException()
 
-      else                         -> {
+      else                        -> {
         val actual = elaborateTerm0(
           env,
           term,
