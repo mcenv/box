@@ -12,7 +12,8 @@ import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
 class Elaborate private constructor(
-  private val imports: List<Pair<S.Ranged<Location>, C.Root?>>,
+  private val dependencies: List<Dependency>,
+  private val signature: Boolean,
   private val position: Position?,
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
@@ -22,15 +23,17 @@ class Elaborate private constructor(
   private fun elaborateRoot(
     root: S.Root,
   ): C.Root {
-    val resources = hashMapOf<String, C.Resource0>().also {
-      imports.forEach { (location, import) ->
-        when (import) {
+    val resources = hashMapOf<String, C.Resource0>().also { resources ->
+      dependencies.forEach { dependency ->
+        when (dependency.root) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
-            location.value,
-            location.range,
+            dependency.location,
+            dependency.range!!,
           )
-          else -> import.resources.forEach { resource ->
-            it[resource.name] = resource // TODO: handle name duplication
+          else -> dependency.root.resources.forEach { resource ->
+            if (resource !is C.Resource0.Hole) {
+              resources[resource.name] = resource // TODO: handle name duplication
+            }
           }
         }
       }
@@ -59,19 +62,24 @@ class Elaborate private constructor(
             it,
           )
         }
-        val env = emptyEnv(resources)
-        val body = elaborateTerm0(
-          env,
-          resource.body,
-          /* TODO */
-        )
-        C.Resource0.JsonResource(
-          annotations,
-          resource.registry,
-          module,
-          resource.name,
-          body,
-        )
+        C.Resource0
+          .JsonResource(
+            annotations,
+            resource.registry,
+            module,
+            resource.name,
+          )
+          .also {
+            if (!signature) {
+              val env = emptyEnv(resources)
+              val body = elaborateTerm0(
+                env,
+                resource.body,
+                /* TODO */
+              )
+              it.body = body
+            }
+          }
       }
       is S.Resource0.Functions    -> {
         val annotations = resource.annotations.map {
@@ -89,19 +97,24 @@ class Elaborate private constructor(
           it.first to type
         }
         val result = elaborateType0(resource.result)
-        val body = elaborateTerm0(
-          env,
-          resource.body,
-          result,
-        )
-        C.Resource0.Functions(
-          annotations,
-          module,
-          resource.name,
-          params,
-          result,
-          body,
-        )
+        C.Resource0
+          .Functions(
+            annotations,
+            module,
+            resource.name,
+            params,
+            result,
+          )
+          .also {
+            if (!signature) {
+              val body = elaborateTerm0(
+                env,
+                resource.body,
+                result,
+              )
+              it.body = body
+            }
+          }
       }
       is S.Resource0.Hole         -> C.Resource0.Hole
     }
@@ -145,37 +158,37 @@ class Elaborate private constructor(
   ): C.Term0 {
     return when {
       term is S.Term0.BoolOf &&
-      expected is C.Type0.Bool?          -> C.Term0.BoolOf(term.value)
+      expected is C.Type0.Bool?   -> C.Term0.BoolOf(term.value)
 
       term is S.Term0.ByteOf &&
-      expected is C.Type0.Byte?          -> C.Term0.ByteOf(term.value)
+      expected is C.Type0.Byte?   -> C.Term0.ByteOf(term.value)
 
       term is S.Term0.ShortOf &&
-      expected is C.Type0.Short?         -> C.Term0.ShortOf(term.value)
+      expected is C.Type0.Short?  -> C.Term0.ShortOf(term.value)
 
       term is S.Term0.IntOf &&
-      expected is C.Type0.Int?           -> C.Term0.IntOf(term.value)
+      expected is C.Type0.Int?    -> C.Term0.IntOf(term.value)
 
       term is S.Term0.LongOf &&
-      expected is C.Type0.Long?          -> C.Term0.LongOf(term.value)
+      expected is C.Type0.Long?   -> C.Term0.LongOf(term.value)
 
       term is S.Term0.FloatOf &&
-      expected is C.Type0.Float?         -> C.Term0.FloatOf(term.value)
+      expected is C.Type0.Float?  -> C.Term0.FloatOf(term.value)
 
       term is S.Term0.DoubleOf &&
-      expected is C.Type0.Double?        -> C.Term0.DoubleOf(term.value)
+      expected is C.Type0.Double? -> C.Term0.DoubleOf(term.value)
 
       term is S.Term0.StringOf &&
-      expected is C.Type0.String?        -> C.Term0.StringOf(term.value)
+      expected is C.Type0.String? -> C.Term0.StringOf(term.value)
 
       term is S.Term0.ListOf &&
-      term.values.isEmpty()              -> C.Term0.ListOf(
+      term.values.isEmpty()       -> C.Term0.ListOf(
         emptyList(),
         C.Type0.List(C.Type0.End),
       )
 
       term is S.Term0.ListOf &&
-      expected is C.Type0.List?          -> {
+      expected is C.Type0.List?   -> {
         val head = elaborateTerm0(
           env,
           term.values.first(),
@@ -281,7 +294,7 @@ class Elaborate private constructor(
         )
       }
 
-      term is S.Term0.Let                -> {
+      term is S.Term0.Let         -> {
         val init = elaborateTerm0(
           env,
           term.init,
@@ -332,7 +345,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term0.Run &&
-      expected == null                   -> when (val resource = env.resources[term.name]) {
+      expected == null            -> when (val resource = env.resources[term.name]) {
         null                         -> {
           diagnostics += Diagnostic.ResourceNotFound(
             term.name,
@@ -369,16 +382,16 @@ class Elaborate private constructor(
       }
 
       term is S.Term0.Command &&
-      expected is C.Type0.Int?           -> C.Term0.Command(term.value)
+      expected is C.Type0.Int?    -> C.Term0.Command(term.value)
 
-      term is S.Term0.Hole               -> C.Term0.Hole(
+      term is S.Term0.Hole        -> C.Term0.Hole(
         expected
         ?: C.Type0.Hole
       )
 
-      expected == null                   -> throw IllegalArgumentException()
+      expected == null            -> throw IllegalArgumentException()
 
-      else                               -> {
+      else                        -> {
         val actual = elaborateTerm0(
           env,
           term,
@@ -529,6 +542,12 @@ class Elaborate private constructor(
     }
   }
 
+  data class Dependency(
+    val location: Location,
+    val root: C.Root?,
+    val range: Range?,
+  )
+
   data class Result(
     val root: C.Root,
     val diagnostics: List<Diagnostic>,
@@ -539,12 +558,14 @@ class Elaborate private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      imports: List<Pair<S.Ranged<Location>, C.Root?>>,
+      dependencies: List<Dependency>,
       input: Parse.Result,
+      signature: Boolean,
       position: Position? = null,
     ): Result =
       Elaborate(
-        imports,
+        dependencies,
+        signature,
         position,
       ).run {
         Result(

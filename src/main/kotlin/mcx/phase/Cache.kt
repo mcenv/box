@@ -72,6 +72,7 @@ class Cache(
   suspend fun fetchCore(
     config: Config,
     location: Location,
+    signature: Boolean,
     position: Position? = null,
   ): Elaborate.Result? =
     coroutineScope {
@@ -80,22 +81,46 @@ class Cache(
         location,
       )
                     ?: return@coroutineScope null
-      val imports =
-        surface.root.imports
-          .map {
-            async {
-              val import = fetchCore(
-                config,
-                it.value,
-              )
-              it to import?.root
+      val dependencies =
+        if (signature) {
+          emptyList()
+        } else {
+          surface.root.imports
+            .map {
+              async {
+                val dependency = fetchCore(
+                  config,
+                  it.value,
+                  true,
+                )
+                Elaborate.Dependency(
+                  it.value,
+                  dependency?.root,
+                  it.range,
+                )
+              }
             }
-          }
-          .awaitAll()
+            .plus(
+              async {
+                val self = fetchCore(
+                  config,
+                  location,
+                  true,
+                )!!
+                Elaborate.Dependency(
+                  location,
+                  self.root,
+                  null,
+                )
+              }
+            )
+            .awaitAll()
+        }
       Elaborate(
         config,
-        imports,
+        dependencies,
         surface,
+        signature,
         position,
       )
     }
@@ -107,6 +132,7 @@ class Cache(
     val core = fetchCore(
       config,
       location,
+      false,
     )
                ?: return null
     if (core.diagnostics.isNotEmpty()) {

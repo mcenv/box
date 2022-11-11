@@ -16,8 +16,9 @@ object Core {
       val registry: Registry,
       override val module: Location,
       override val name: String,
-      val body: Term0,
-    ) : Resource0
+    ) : Resource0 {
+      lateinit var body: Term0
+    }
 
     data class Functions(
       override val annotations: List<Annotation>,
@@ -25,8 +26,9 @@ object Core {
       override val name: String,
       val params: List<Pair<String, Type0>>,
       val result: Type0,
-      val body: Term0,
-    ) : Resource0
+    ) : Resource0 {
+      lateinit var body: Term0
+    }
 
     object Hole : Resource0 {
       override val annotations: List<Annotation> get() = throw IllegalStateException()

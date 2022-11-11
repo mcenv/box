@@ -83,6 +83,7 @@ object Build : Subcommand(
             val core = cache.fetchCore(
               config,
               path.toLocation(),
+              false,
             )!!
             if (core.diagnostics.isNotEmpty()) {
               valid.set(false)
