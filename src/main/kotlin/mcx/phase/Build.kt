@@ -11,7 +11,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 // TODO
-class Cache(
+class Build(
   private val src: Path,
 ) {
   private val texts: ConcurrentMap<Location, String> = ConcurrentHashMap()

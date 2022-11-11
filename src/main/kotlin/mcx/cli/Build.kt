@@ -9,7 +9,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
-import mcx.phase.Cache
+import mcx.phase.Build
 import mcx.phase.Config
 import mcx.phase.Generate
 import java.io.Closeable
@@ -50,7 +50,7 @@ object Build : Subcommand(
 
     val root = Paths.get("")
     val src = root.resolve("src")
-    val cache = Cache(src)
+    val build = Build(src)
     val config =
       Paths
         .get("pack.json")
@@ -80,7 +80,7 @@ object Build : Subcommand(
       inputs
         .map { path ->
           async {
-            val core = cache.fetchCore(
+            val core = build.fetchCore(
               config,
               path.toLocation(),
               false,
@@ -122,7 +122,7 @@ object Build : Subcommand(
           inputs
             .map { path ->
               async {
-                cache.fetchGenerated(
+                build.fetchGenerated(
                   config,
                   generator,
                   path.toLocation(),

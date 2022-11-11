@@ -7,7 +7,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
-import mcx.phase.Cache
+import mcx.phase.Build
 import mcx.phase.Config
 import mcx.phase.prettyType
 import org.eclipse.lsp4j.*
@@ -33,7 +33,7 @@ class McxService : TextDocumentService,
                    LanguageClientAware {
   private lateinit var client: LanguageClient
   private lateinit var root: Path
-  private lateinit var cache: Cache
+  private lateinit var build: Build
   private var config: Config? = null
   private val diagnosticsHashes: ConcurrentMap<String, Int> = ConcurrentHashMap()
 
@@ -43,14 +43,14 @@ class McxService : TextDocumentService,
 
   fun setup(folder: WorkspaceFolder) {
     root = URI(folder.uri).toPath()
-    cache = Cache(root.resolve("src"))
+    build = Build(root.resolve("src"))
     updateConfig()
   }
 
   override fun didOpen(
     params: DidOpenTextDocumentParams,
   ) {
-    cache.changeText(
+    build.changeText(
       params.textDocument.uri.toLocation(),
       params.textDocument.text,
     )
@@ -59,7 +59,7 @@ class McxService : TextDocumentService,
   override fun didChange(
     params: DidChangeTextDocumentParams,
   ) {
-    cache.changeText(
+    build.changeText(
       params.textDocument.uri.toLocation(),
       params.contentChanges.last().text,
     )
@@ -68,7 +68,7 @@ class McxService : TextDocumentService,
   override fun didClose(
     params: DidCloseTextDocumentParams,
   ) {
-    cache.closeText(params.textDocument.uri.toLocation())
+    build.closeText(params.textDocument.uri.toLocation())
   }
 
   override fun didSave(
@@ -81,7 +81,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val core = cache.fetchCore(
+      val core = build.fetchCore(
         fetchConfig(),
         uri.toLocation(),
         false,
@@ -98,7 +98,7 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = cache.fetchCore(
+      val core = build.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
         false,
@@ -112,7 +112,7 @@ class McxService : TextDocumentService,
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = cache.fetchCore(
+      val core = build.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
         false,
