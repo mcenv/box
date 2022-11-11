@@ -163,7 +163,7 @@ object Surface {
     ) : Term0
 
     data class CompoundOf(
-      val values: Map<String, Term0>,
+      val values: List<Pair<Ranged<String>, Term0>>,
       override val range: Range,
     ) : Term0
 

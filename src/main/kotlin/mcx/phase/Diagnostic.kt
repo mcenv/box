@@ -102,6 +102,15 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class ExtraKey(
+    key: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "extra key: '$key'",
+    DiagnosticSeverity.Error,
+  )
+
   class VarNotFound(
     name: String,
     range: Range,

@@ -412,13 +412,13 @@ class Parse private constructor(
               '{',
               '}',
             ) {
-              val key = readString()
+              val key = parseRanged { readString() }
               skipWhitespaces()
               expect(':')
               skipWhitespaces()
               val value = parseTerm0()
               key to value
-            }.toMap()
+            }
             S.Term0.CompoundOf(
               values,
               until(),
