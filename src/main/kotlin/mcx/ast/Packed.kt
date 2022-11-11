@@ -25,6 +25,7 @@ object Packed {
   }
 
   enum class Type {
+    BYTE,
     INT,
     STRING,
     LIST,
@@ -58,6 +59,8 @@ object Packed {
   }
 
   sealed interface Tag {
+    data class ByteOf(val value: Byte) : Tag
+
     data class IntOf(val value: Int) : Tag
 
     data class StringOf(val value: String) : Tag

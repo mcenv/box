@@ -196,6 +196,7 @@ class Parse private constructor(
           }
           else -> when (readWord()) {
             "end"    -> S.Type0.End(until())
+            "bool"   -> S.Type0.Bool(until())
             "int"    -> S.Type0.Int(until())
             "string" -> S.Type0.String(until())
             "box"    -> {
@@ -227,7 +228,7 @@ class Parse private constructor(
       skipWhitespaces()
       if (canRead()) {
         when (peek()) {
-          '(' -> {
+          '('  -> {
             skip()
             skipWhitespaces()
             val term = parseTerm0()
@@ -235,12 +236,12 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '"' ->
+          '"'  ->
             S.Term0.StringOf(
               readQuotedString(),
               until(),
             )
-          '[' -> {
+          '['  -> {
             val values = parseList(
               ',',
               '[',
@@ -253,7 +254,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '{' -> {
+          '{'  -> {
             val values = parseList(
               ',',
               '{',
@@ -271,7 +272,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '&' -> {
+          '&'  -> {
             skip()
             skipWhitespaces()
             S.Term0.BoxOf(
@@ -280,7 +281,15 @@ class Parse private constructor(
             )
           }
           else -> when (val word = readWord()) {
-            "let" -> {
+            "false" -> S.Term0.BoolOf(
+              false,
+              until(),
+            )
+            "true"  -> S.Term0.BoolOf(
+              true,
+              until(),
+            )
+            "let"   -> {
               skipWhitespaces()
               val name = readWord()
               skipWhitespaces()
@@ -297,7 +306,7 @@ class Parse private constructor(
                 until(),
               )
             }
-            else  -> if (canRead() && peek() == '(') {
+            else    -> if (canRead() && peek() == '(') {
               val args = parseList(
                 ',',
                 '(',

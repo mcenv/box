@@ -61,6 +61,10 @@ class Pack private constructor() {
     term: C.Term0,
   ) {
     when (term) {
+      is C.Term0.BoolOf     -> env += P.Instruction.Push(
+        P.Tag.ByteOf(if (term.value) 1 else 0),
+        P.Type.BYTE,
+      )
       is C.Term0.IntOf      -> env += P.Instruction.Push(
         P.Tag.IntOf(term.value),
         P.Type.INT,
@@ -167,6 +171,7 @@ class Pack private constructor() {
     ): P.Type {
       return when (type) {
         is C.Type0.End      -> error("unexpected: end")
+        is C.Type0.Bool     -> P.Type.BYTE
         is C.Type0.Int      -> P.Type.INT
         is C.Type0.String   -> P.Type.STRING
         is C.Type0.List     -> P.Type.LIST

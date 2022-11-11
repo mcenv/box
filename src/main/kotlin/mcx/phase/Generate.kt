@@ -79,6 +79,7 @@ class Generate private constructor(
     type: P.Type,
   ): String =
     when (type) {
+      P.Type.BYTE     -> "byte"
       P.Type.INT      -> "int"
       P.Type.STRING   -> "string"
       P.Type.LIST     -> "list"
@@ -89,6 +90,7 @@ class Generate private constructor(
     tag: P.Tag,
   ): String =
     when (tag) {
+      is P.Tag.ByteOf   -> "${tag.value}b"
       is P.Tag.IntOf    -> "${tag.value}"
       is P.Tag.StringOf -> tag.value.quoted('"')
     }

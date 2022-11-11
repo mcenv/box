@@ -34,6 +34,8 @@ object Core {
   sealed interface Type0 {
     object End : Type0
 
+    object Bool : Type0
+
     object Int : Type0
 
     object String : Type0
@@ -55,6 +57,12 @@ object Core {
 
   sealed interface Term0 {
     val type: Type0
+
+    data class BoolOf(
+      val value: Boolean,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.Bool
+    }
 
     data class IntOf(
       val value: Int,

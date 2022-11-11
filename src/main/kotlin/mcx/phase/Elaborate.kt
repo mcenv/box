@@ -96,6 +96,7 @@ class Elaborate private constructor(
   ): C.Type0 {
     return when (type) {
       is S.Type0.End      -> C.Type0.End
+      is S.Type0.Bool     -> C.Type0.Bool
       is S.Type0.Int      -> C.Type0.Int
       is S.Type0.String   -> C.Type0.String
       is S.Type0.List     -> C.Type0.List(elaborateType0(type.element))
@@ -111,20 +112,23 @@ class Elaborate private constructor(
     expected: C.Type0? = null,
   ): C.Term0 {
     return when {
+      term is S.Term0.BoolOf &&
+      expected is C.Type0.Bool?   -> C.Term0.BoolOf(term.value)
+
       term is S.Term0.IntOf &&
-      expected is C.Type0.Int?     -> C.Term0.IntOf(term.value)
+      expected is C.Type0.Int?    -> C.Term0.IntOf(term.value)
 
       term is S.Term0.StringOf &&
-      expected is C.Type0.String?  -> C.Term0.StringOf(term.value)
+      expected is C.Type0.String? -> C.Term0.StringOf(term.value)
 
       term is S.Term0.ListOf &&
-      term.values.isEmpty()        -> C.Term0.ListOf(
+      term.values.isEmpty()       -> C.Term0.ListOf(
         emptyList(),
         C.Type0.List(C.Type0.End),
       )
 
       term is S.Term0.ListOf &&
-      expected is C.Type0.List?    -> {
+      expected is C.Type0.List?   -> {
         val head = elaborateTerm0(
           env,
           term.values.first(),
@@ -352,6 +356,9 @@ class Elaborate private constructor(
     return when {
       type1 is C.Type0.End &&
       type2 is C.Type0.End      -> true
+
+      type1 is C.Type0.Bool &&
+      type2 is C.Type0.Bool     -> true
 
       type1 is C.Type0.Int &&
       type2 is C.Type0.Int      -> true

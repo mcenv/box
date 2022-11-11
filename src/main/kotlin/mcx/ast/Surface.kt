@@ -42,6 +42,10 @@ object Surface {
       override val range: Range,
     ) : Type0
 
+    data class Bool(
+      override val range: Range,
+    ) : Type0
+
     data class Int(
       override val range: Range,
     ) : Type0
@@ -72,6 +76,11 @@ object Surface {
 
   sealed interface Term0 {
     val range: Range
+
+    data class BoolOf(
+      val value: Boolean,
+      override val range: Range,
+    ) : Term0
 
     data class IntOf(
       val value: Int,
