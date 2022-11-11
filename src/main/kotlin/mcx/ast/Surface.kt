@@ -60,7 +60,7 @@ object Surface {
       override val range: Range,
     ) : Type0
 
-    data class Ref(
+    data class Box(
       val element: Type0,
       override val range: Range,
     ) : Type0
@@ -93,7 +93,7 @@ object Surface {
       override val range: Range,
     ) : Term0
 
-    data class RefOf(
+    data class BoxOf(
       val value: Term0,
       override val range: Range,
     ) : Term0

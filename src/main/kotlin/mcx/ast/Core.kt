@@ -46,7 +46,7 @@ object Core {
       val elements: Map<kotlin.String, Type0>,
     ) : Type0
 
-    data class Ref(
+    data class Box(
       val element: Type0,
     ) : Type0
 
@@ -78,7 +78,7 @@ object Core {
       override val type: Type0,
     ) : Term0
 
-    data class RefOf(
+    data class BoxOf(
       val value: Term0,
       override val type: Type0,
     ) : Term0

@@ -198,10 +198,10 @@ class Parse private constructor(
             "end"    -> S.Type0.End(until())
             "int"    -> S.Type0.Int(until())
             "string" -> S.Type0.String(until())
-            "ref"    -> {
+            "box"    -> {
               skipWhitespaces()
               expect('(')
-              val type = S.Type0.Ref(
+              val type = S.Type0.Box(
                 parseType0(),
                 until(),
               )
@@ -274,7 +274,7 @@ class Parse private constructor(
           '&' -> {
             skip()
             skipWhitespaces()
-            S.Term0.RefOf(
+            S.Term0.BoxOf(
               parseTerm0(),
               until(),
             )

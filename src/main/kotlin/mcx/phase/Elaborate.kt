@@ -100,7 +100,7 @@ class Elaborate private constructor(
       is S.Type0.String   -> C.Type0.String
       is S.Type0.List     -> C.Type0.List(elaborateType0(type.element))
       is S.Type0.Compound -> C.Type0.Compound(type.elements.mapValues { elaborateType0(it.value) })
-      is S.Type0.Ref      -> C.Type0.Ref(elaborateType0(type.element))
+      is S.Type0.Box      -> C.Type0.Box(elaborateType0(type.element))
       is S.Type0.Hole     -> C.Type0.Hole
     }
   }
@@ -185,16 +185,16 @@ class Elaborate private constructor(
         )
       }
 
-      term is S.Term0.RefOf &&
-      expected is C.Type0.Ref?     -> {
+      term is S.Term0.BoxOf &&
+      expected is C.Type0.Box?     -> {
         val value = elaborateTerm0(
           env,
           term.value,
           expected?.element,
         )
-        C.Term0.RefOf(
+        C.Term0.BoxOf(
           value,
-          C.Type0.Ref(value.type),
+          C.Type0.Box(value.type),
         )
       }
 
@@ -376,8 +376,8 @@ class Elaborate private constructor(
         }
       }
 
-      type1 is C.Type0.Ref &&
-      type2 is C.Type0.Ref      -> convType(
+      type1 is C.Type0.Box &&
+      type2 is C.Type0.Box      -> convType(
         type1.element,
         type2.element,
       )

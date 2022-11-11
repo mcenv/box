@@ -71,7 +71,7 @@ class Pack private constructor() {
       )
       is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term0.RefOf      -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term0.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
@@ -171,7 +171,7 @@ class Pack private constructor() {
         is C.Type0.String   -> P.Type.STRING
         is C.Type0.List     -> P.Type.LIST
         is C.Type0.Compound -> P.Type.COMPOUND
-        is C.Type0.Ref      -> P.Type.INT
+        is C.Type0.Box      -> P.Type.INT
         is C.Type0.Hole     -> unexpectedHole()
       }
     }
