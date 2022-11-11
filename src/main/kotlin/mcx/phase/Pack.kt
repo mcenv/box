@@ -67,6 +67,7 @@ class Pack private constructor() {
     when (term) {
       is C.Term0.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
       is C.Term0.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
+      is C.Term0.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
       is C.Term0.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
       is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
@@ -121,6 +122,7 @@ class Pack private constructor() {
     return when (term) {
       is C.Term0.BoolOf     -> Json.BoolOf(term.value)
       is C.Term0.IntOf      -> Json.IntOf(term.value)
+      is C.Term0.FloatOf    -> Json.FloatOf(term.value)
       is C.Term0.StringOf   -> Json.StringOf(term.value)
       is C.Term0.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
       is C.Term0.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
@@ -181,6 +183,7 @@ class Pack private constructor() {
         is C.Type0.End      -> error("unexpected: end")
         is C.Type0.Bool     -> P.Type.BYTE
         is C.Type0.Int      -> P.Type.INT
+        is C.Type0.Float    -> P.Type.FLOAT
         is C.Type0.String   -> P.Type.STRING
         is C.Type0.List     -> P.Type.LIST
         is C.Type0.Compound -> P.Type.COMPOUND

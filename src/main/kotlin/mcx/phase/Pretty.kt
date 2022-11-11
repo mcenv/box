@@ -7,6 +7,7 @@ fun prettyType0(type: C.Type0): String {
     is C.Type0.End      -> "end"
     is C.Type0.Bool     -> "bool"
     is C.Type0.Int      -> "int"
+    is C.Type0.Float    -> "float"
     is C.Type0.String   -> "string"
     is C.Type0.List     -> "[${prettyType0(type.element)}]"
     is C.Type0.Compound -> type.elements.entries.joinToString(

@@ -17,6 +17,10 @@ sealed interface Json {
     val value: Int,
   ) : Json
 
+  data class FloatOf(
+    val value: Float,
+  ) : Json
+
   data class BoolOf(
     val value: Boolean,
   ) : Json

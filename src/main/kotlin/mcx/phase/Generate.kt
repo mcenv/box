@@ -81,6 +81,7 @@ class Generate private constructor(
     when (type) {
       P.Type.BYTE     -> "byte"
       P.Type.INT      -> "int"
+      P.Type.FLOAT    -> "float"
       P.Type.STRING   -> "string"
       P.Type.LIST     -> "list"
       P.Type.COMPOUND -> "compound"
@@ -92,6 +93,7 @@ class Generate private constructor(
     when (tag) {
       is P.Tag.ByteOf   -> "${tag.value}b"
       is P.Tag.IntOf    -> "${tag.value}"
+      is P.Tag.FloatOf  -> "${tag.value}f"
       is P.Tag.StringOf -> tag.value.quoted('"')
     }
 
@@ -123,6 +125,7 @@ class Generate private constructor(
       }
       is Json.StringOf -> generator.write(json.value.quoted('"'))
       is Json.IntOf    -> generator.write(json.value.toString())
+      is Json.FloatOf  -> generator.write(json.value.toString())
       is Json.BoolOf   -> generator.write(json.value.toString())
     }
   }

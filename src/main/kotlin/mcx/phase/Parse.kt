@@ -198,6 +198,7 @@ class Parse private constructor(
             "end"    -> S.Type0.End(until())
             "bool"   -> S.Type0.Bool(until())
             "int"    -> S.Type0.Int(until())
+            "float"  -> S.Type0.Float(until())
             "string" -> S.Type0.String(until())
             "box"    -> {
               skipWhitespaces()
@@ -228,7 +229,7 @@ class Parse private constructor(
       skipWhitespaces()
       if (canRead()) {
         when (peek()) {
-          '('  -> {
+          '('                   -> {
             skip()
             skipWhitespaces()
             val term = parseTerm0()
@@ -236,12 +237,64 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '"'  ->
+          '-', '+', in '0'..'9' -> {
+            val numeric = readNumeric()
+            if (canRead()) {
+              when (peek()) {
+                'b'  -> {
+                  skip()
+                  TODO()
+                }
+                's'  -> {
+                  skip()
+                  TODO()
+                }
+                'l'  -> {
+                  skip()
+                  TODO()
+                }
+                'f'  -> {
+                  skip()
+                  numeric
+                    .toFloatOrNull()
+                    ?.let {
+                      S.Term0.FloatOf(
+                        it,
+                        until(),
+                      )
+                    }
+                }
+                'd'  -> {
+                  skip()
+                  TODO()
+                }
+                else ->
+                  numeric
+                    .toIntOrNull()
+                    ?.let {
+                      S.Term0.IntOf(
+                        it,
+                        until(),
+                      )
+                    }
+              }
+            } else {
+              numeric
+                .toIntOrNull()
+                ?.let {
+                  S.Term0.IntOf(
+                    it,
+                    until(),
+                  )
+                }
+            }
+          }
+          '"'                   ->
             S.Term0.StringOf(
               readQuotedString(),
               until(),
             )
-          '['  -> {
+          '['                   -> {
             val values = parseList(
               ',',
               '[',
@@ -254,7 +307,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '{'  -> {
+          '{'                   -> {
             val values = parseList(
               ',',
               '{',
@@ -272,7 +325,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '&'  -> {
+          '&'                   -> {
             skip()
             skipWhitespaces()
             S.Term0.BoxOf(
@@ -280,7 +333,7 @@ class Parse private constructor(
               until(),
             )
           }
-          else -> when (val word = readWord()) {
+          else                  -> when (val word = readWord()) {
             "false" -> S.Term0.BoolOf(
               false,
               until(),
@@ -320,15 +373,7 @@ class Parse private constructor(
                 until(),
               )
             } else {
-              word
-                .toIntOrNull()
-                ?.let {
-                  S.Term0.IntOf(
-                    it,
-                    until(),
-                  )
-                }
-              ?: S.Term0.Var(
+              S.Term0.Var(
                 word,
                 until(),
               )
@@ -459,7 +504,7 @@ class Parse private constructor(
   private inline fun Char.isNumericPart(): Boolean =
     when (this) {
       in '0'..'9',
-      '_', '-', '+', '.', 'e',
+      '-', '+', '.', 'e',
       -> true
 
       else
@@ -481,7 +526,7 @@ class Parse private constructor(
     when (this) {
       in 'a'..'z',
       in '0'..'9',
-      '_', '-', '+',
+      '_', '-',
       -> true
 
       else
