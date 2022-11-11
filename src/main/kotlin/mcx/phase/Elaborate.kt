@@ -181,34 +181,67 @@ class Elaborate private constructor(
   ): C.Term {
     return when {
       term is S.Term.BoolOf &&
-      expected is C.Type.Bool?    -> C.Term.BoolOf(term.value)
+      expected is C.Type.Bool?    ->
+        C.Term.BoolOf(
+          term.value,
+          C.Type.Bool,
+        )
 
       term is S.Term.ByteOf &&
-      expected is C.Type.Byte?    -> C.Term.ByteOf(term.value)
+      expected is C.Type.Byte?    ->
+        C.Term.ByteOf(
+          term.value,
+          C.Type.Byte,
+        )
 
       term is S.Term.ShortOf &&
-      expected is C.Type.Short?   -> C.Term.ShortOf(term.value)
+      expected is C.Type.Short?   ->
+        C.Term.ShortOf(
+          term.value,
+          C.Type.Short,
+        )
 
       term is S.Term.IntOf &&
-      expected is C.Type.Int?     -> C.Term.IntOf(term.value)
+      expected is C.Type.Int?     ->
+        C.Term.IntOf(
+          term.value,
+          C.Type.Int,
+        )
 
       term is S.Term.LongOf &&
-      expected is C.Type.Long?    -> C.Term.LongOf(term.value)
+      expected is C.Type.Long?    ->
+        C.Term.LongOf(
+          term.value,
+          C.Type.Long,
+        )
 
       term is S.Term.FloatOf &&
-      expected is C.Type.Float?   -> C.Term.FloatOf(term.value)
+      expected is C.Type.Float?   ->
+        C.Term.FloatOf(
+          term.value,
+          C.Type.Float,
+        )
 
       term is S.Term.DoubleOf &&
-      expected is C.Type.Double?  -> C.Term.DoubleOf(term.value)
+      expected is C.Type.Double?  ->
+        C.Term.DoubleOf(
+          term.value,
+          C.Type.Double,
+        )
 
       term is S.Term.StringOf &&
-      expected is C.Type.String?  -> C.Term.StringOf(term.value)
+      expected is C.Type.String?  ->
+        C.Term.StringOf(
+          term.value,
+          C.Type.String,
+        )
 
       term is S.Term.ListOf &&
-      term.values.isEmpty()       -> C.Term.ListOf(
-        emptyList(),
-        C.Type.List(C.Type.End),
-      )
+      term.values.isEmpty()       ->
+        C.Term.ListOf(
+          emptyList(),
+          C.Type.List(C.Type.End),
+        )
 
       term is S.Term.ListOf &&
       expected is C.Type.List?    -> {
@@ -339,6 +372,7 @@ class Elaborate private constructor(
           condition,
           thenClause,
           elseClause,
+          thenClause.type,
         )
       }
 
@@ -365,77 +399,85 @@ class Elaborate private constructor(
           term.name.value,
           init,
           body,
+          body.type,
         )
       }
 
       term is S.Term.Var &&
-      expected == null            -> when (val entry = env[term.name]) {
-        null -> {
-          diagnostics += Diagnostic.VarNotFound(
-            term.name,
-            term.range,
-          )
-          C.Term.Hole(C.Type.Hole)
+      expected == null            ->
+        when (val entry = env[term.name]) {
+          null -> {
+            diagnostics += Diagnostic.VarNotFound(
+              term.name,
+              term.range,
+            )
+            C.Term.Hole(C.Type.Hole)
+          }
+          else -> if (entry.used) {
+            diagnostics += Diagnostic.VarAlreadyUsed(
+              term.name,
+              term.range,
+            )
+            C.Term.Hole(entry.type)
+          } else {
+            entry.used = true
+            C.Term.Var(
+              term.name,
+              entry.type,
+            )
+          }
         }
-        else -> if (entry.used) {
-          diagnostics += Diagnostic.VarAlreadyUsed(
-            term.name,
-            term.range,
-          )
-          C.Term.Hole(entry.type)
-        } else {
-          entry.used = true
-          C.Term.Var(
-            term.name,
-            entry.type,
-          )
-        }
-      }
 
       term is S.Term.Run &&
-      expected == null            -> when (val resource = env.resources[term.name]) {
-        null                        -> {
-          diagnostics += Diagnostic.ResourceNotFound(
-            term.name,
-            term.range,
-          )
-          C.Term.Hole(C.Type.Hole)
-        }
-        !is Core.Resource.Functions -> {
-          diagnostics += Diagnostic.ExpectedFunction(term.range)
-          C.Term.Hole(C.Type.Hole)
-        }
-        else                        -> {
-          if (resource.params.size != term.args.size) {
-            diagnostics += Diagnostic.MismatchedArity(
-              resource.params.size,
-              term.args.size,
-              term.range.end..term.range.end,
+      expected == null            ->
+        when (val resource = env.resources[term.name]) {
+          null                        -> {
+            diagnostics += Diagnostic.ResourceNotFound(
+              term.name,
+              term.range,
+            )
+            C.Term.Hole(C.Type.Hole)
+          }
+          !is Core.Resource.Functions -> {
+            diagnostics += Diagnostic.ExpectedFunction(term.range)
+            C.Term.Hole(C.Type.Hole)
+          }
+          else                        -> {
+            if (resource.params.size != term.args.size) {
+              diagnostics += Diagnostic.MismatchedArity(
+                resource.params.size,
+                term.args.size,
+                term.range.end..term.range.end,
+              )
+            }
+            val args = term.args.mapIndexed { index, arg ->
+              elaborateTerm(
+                env,
+                arg,
+                resource.params.getOrNull(index)?.second,
+              )
+            }
+            C.Term.Run(
+              resource.module,
+              term.name,
+              args,
+              resource.result,
             )
           }
-          val args = term.args.mapIndexed { index, arg ->
-            elaborateTerm(
-              env,
-              arg,
-              resource.params.getOrNull(index)?.second,
-            )
-          }
-          C.Term.Run(
-            resource.module,
-            term.name,
-            args,
-            resource.result,
-          )
         }
-      }
 
       term is S.Term.Command &&
-      expected is C.Type.Int?     -> C.Term.Command(term.value)
+      expected is C.Type.Int?     ->
+        C.Term.Command(
+          term.value,
+          C.Type.End,
+        )
 
-      term is S.Term.Hole         -> C.Term.Hole(
-        expected
-        ?: C.Type.Hole
-      )
+      term is S.Term.Hole         ->
+        C.Term.Hole(
+          expected
+          ?: C.Type.Hole
+        )
 
       expected == null            -> throw IllegalArgumentException()
 

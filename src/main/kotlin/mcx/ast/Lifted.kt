@@ -77,51 +77,43 @@ object Lifted {
 
     data class BoolOf(
       val value: Boolean,
-    ) : Term {
-      override val type: Type get() = Type.Bool
-    }
+      override val type: Type,
+    ) : Term
 
     data class ByteOf(
       val value: Byte,
-    ) : Term {
-      override val type: Type get() = Type.Byte
-    }
+      override val type: Type,
+    ) : Term
 
     data class ShortOf(
       val value: Short,
-    ) : Term {
-      override val type: Type get() = Type.Short
-    }
+      override val type: Type,
+    ) : Term
 
     data class IntOf(
       val value: Int,
-    ) : Term {
-      override val type: Type get() = Type.Int
-    }
+      override val type: Type,
+    ) : Term
 
     data class LongOf(
       val value: Long,
-    ) : Term {
-      override val type: Type get() = Type.Long
-    }
+      override val type: Type,
+    ) : Term
 
     data class FloatOf(
       val value: Float,
-    ) : Term {
-      override val type: Type get() = Type.Float
-    }
+      override val type: Type,
+    ) : Term
 
     data class DoubleOf(
       val value: Double,
-    ) : Term {
-      override val type: Type get() = Type.Double
-    }
+      override val type: Type,
+    ) : Term
 
     data class StringOf(
       val value: String,
-    ) : Term {
-      override val type: Type get() = Type.String
-    }
+      override val type: Type,
+    ) : Term
 
     data class ListOf(
       val values: List<Term>,
@@ -149,9 +141,8 @@ object Lifted {
       val name: String,
       val init: Term,
       val body: Term,
-    ) : Term {
-      override val type: Type get() = body.type
-    }
+      override val type: Type,
+    ) : Term
 
     data class Var(
       val name: String,
@@ -167,8 +158,7 @@ object Lifted {
 
     data class Command(
       val value: String,
-    ) : Term {
-      override val type: Type get() = Type.End
-    }
+      override val type: Type,
+    ) : Term
   }
 }
