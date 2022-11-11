@@ -145,6 +145,14 @@ object Core {
       override val type: Type0,
     ) : Term0
 
+    data class If(
+      val condition: Term0,
+      val thenClause: Term0,
+      val elseClause: Term0,
+    ) : Term0 {
+      override val type: Type0 get() = thenClause.type
+    }
+
     data class Let(
       val name: String,
       val init: Term0,

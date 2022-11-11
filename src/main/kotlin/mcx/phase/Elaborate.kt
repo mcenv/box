@@ -317,7 +317,32 @@ class Elaborate private constructor(
         )
       }
 
-      term is S.Term0.Let         -> {
+      term is S.Term0.If           -> {
+        val condition = elaborateTerm0(
+          env,
+          term.condition,
+          C.Type0.Bool,
+        )
+        val elseEnv = env.copy()
+        val thenClause = elaborateTerm0(
+          env,
+          term.thenClause,
+          expected,
+        )
+        val elseClause = elaborateTerm0(
+          elseEnv,
+          term.elseClause,
+          expected
+          ?: thenClause.type,
+        )
+        C.Term0.If(
+          condition,
+          thenClause,
+          elseClause,
+        )
+      }
+
+      term is S.Term0.Let          -> {
         val init = elaborateTerm0(
           env,
           term.init,
@@ -549,6 +574,14 @@ class Elaborate private constructor(
       _entries.removeLast()
       return result
     }
+
+    fun copy(): Env =
+      Env(
+        resources,
+        _entries
+          .map { it.copy() }
+          .toMutableList(),
+      )
 
     data class Entry(
       val name: String,

@@ -449,6 +449,24 @@ class Parse private constructor(
               true,
               until(),
             )
+            "if"    -> {
+              skipWhitespaces()
+              val condition = parseTerm0()
+              skipWhitespaces()
+              expect("then")
+              skipWhitespaces()
+              val thenClause = parseTerm0()
+              skipWhitespaces()
+              expect("else")
+              skipWhitespaces()
+              val elseClause = parseTerm0()
+              S.Term0.If(
+                condition,
+                thenClause,
+                elseClause,
+                until(),
+              )
+            }
             "let"   -> {
               skipWhitespaces()
               val name = parseRanged { readWord() }
@@ -645,6 +663,24 @@ class Parse private constructor(
   ): Boolean =
     if (canRead() && peek() == expected) {
       skip()
+      true
+    } else {
+      diagnostics += Diagnostic.ExpectedToken(
+        expected.toString(),
+        here(),
+      )
+      false
+    }
+
+  private fun expect(
+    expected: String,
+  ): Boolean =
+    if (canRead(expected.length) && text.startsWith(
+        expected,
+        cursor,
+      )
+    ) {
+      skip(expected.length)
       true
     } else {
       diagnostics += Diagnostic.ExpectedToken(

@@ -27,7 +27,7 @@ sealed class Diagnostic(
   )
 
   class ExpectedToken(
-    token: Char,
+    token: String,
     position: Position,
   ) : Diagnostic(
     position..position,

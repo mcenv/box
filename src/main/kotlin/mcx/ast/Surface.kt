@@ -172,6 +172,13 @@ object Surface {
       override val range: Range,
     ) : Term0
 
+    data class If(
+      val condition: Term0,
+      val thenClause: Term0,
+      val elseClause: Term0,
+      override val range: Range,
+    ) : Term0
+
     data class Let(
       val name: Ranged<String>,
       val init: Term0,

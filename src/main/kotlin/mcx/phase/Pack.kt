@@ -78,6 +78,7 @@ class Pack private constructor() {
       is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term0.If         -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
