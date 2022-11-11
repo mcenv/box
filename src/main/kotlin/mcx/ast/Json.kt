@@ -13,8 +13,20 @@ sealed interface Json {
     val value: String,
   ) : Json
 
+  data class ByteOf(
+    val value: Byte,
+  ) : Json
+
+  data class ShortOf(
+    val value: Short,
+  ) : Json
+
   data class IntOf(
     val value: Int,
+  ) : Json
+
+  data class LongOf(
+    val value: Long,
   ) : Json
 
   data class FloatOf(

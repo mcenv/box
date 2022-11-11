@@ -104,7 +104,10 @@ class Elaborate private constructor(
     return when (type) {
       is S.Type0.End      -> C.Type0.End
       is S.Type0.Bool     -> C.Type0.Bool
+      is S.Type0.Byte     -> C.Type0.Byte
+      is S.Type0.Short    -> C.Type0.Short
       is S.Type0.Int      -> C.Type0.Int
+      is S.Type0.Long     -> C.Type0.Long
       is S.Type0.Float    -> C.Type0.Float
       is S.Type0.Double   -> C.Type0.Double
       is S.Type0.String   -> C.Type0.String
@@ -124,8 +127,17 @@ class Elaborate private constructor(
       term is S.Term0.BoolOf &&
       expected is C.Type0.Bool?   -> C.Term0.BoolOf(term.value)
 
+      term is S.Term0.ByteOf &&
+      expected is C.Type0.Byte?   -> C.Term0.ByteOf(term.value)
+
+      term is S.Term0.ShortOf &&
+      expected is C.Type0.Short?  -> C.Term0.ShortOf(term.value)
+
       term is S.Term0.IntOf &&
       expected is C.Type0.Int?    -> C.Term0.IntOf(term.value)
+
+      term is S.Term0.LongOf &&
+      expected is C.Type0.Long?   -> C.Term0.LongOf(term.value)
 
       term is S.Term0.FloatOf &&
       expected is C.Type0.Float?  -> C.Term0.FloatOf(term.value)
@@ -360,8 +372,17 @@ class Elaborate private constructor(
       type1 is C.Type0.Bool &&
       type2 is C.Type0.Bool     -> true
 
+      type1 is C.Type0.Byte &&
+      type2 is C.Type0.Byte     -> true
+
+      type1 is C.Type0.Short &&
+      type2 is C.Type0.Short    -> true
+
       type1 is C.Type0.Int &&
       type2 is C.Type0.Int      -> true
+
+      type1 is C.Type0.Long &&
+      type2 is C.Type0.Long     -> true
 
       type1 is C.Type0.Float &&
       type2 is C.Type0.Float    -> true

@@ -197,7 +197,10 @@ class Parse private constructor(
           else -> when (readWord()) {
             "end"    -> S.Type0.End(until())
             "bool"   -> S.Type0.Bool(until())
+            "byte"   -> S.Type0.Byte(until())
+            "short"  -> S.Type0.Short(until())
             "int"    -> S.Type0.Int(until())
+            "long"   -> S.Type0.Long(until())
             "float"  -> S.Type0.Float(until())
             "double" -> S.Type0.Double(until())
             "string" -> S.Type0.String(until())
@@ -244,15 +247,36 @@ class Parse private constructor(
               when (peek()) {
                 'b'  -> {
                   skip()
-                  TODO()
+                  numeric
+                    .toByteOrNull()
+                    ?.let {
+                      S.Term0.ByteOf(
+                        it,
+                        until(),
+                      )
+                    }
                 }
                 's'  -> {
                   skip()
-                  TODO()
+                  numeric
+                    .toShortOrNull()
+                    ?.let {
+                      S.Term0.ShortOf(
+                        it,
+                        until(),
+                      )
+                    }
                 }
                 'l'  -> {
                   skip()
-                  TODO()
+                  numeric
+                    .toLongOrNull()
+                    ?.let {
+                      S.Term0.LongOf(
+                        it,
+                        until(),
+                      )
+                    }
                 }
                 'f'  -> {
                   skip()

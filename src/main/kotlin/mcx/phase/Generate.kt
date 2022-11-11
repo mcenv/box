@@ -80,7 +80,9 @@ class Generate private constructor(
   ): String =
     when (type) {
       P.Type.BYTE     -> "byte"
+      P.Type.SHORT    -> "short"
       P.Type.INT      -> "int"
+      P.Type.LONG     -> "long"
       P.Type.FLOAT    -> "float"
       P.Type.DOUBLE   -> "double"
       P.Type.STRING   -> "string"
@@ -93,7 +95,9 @@ class Generate private constructor(
   ): String =
     when (tag) {
       is P.Tag.ByteOf   -> "${tag.value}b"
+      is P.Tag.ShortOf  -> "${tag.value}s"
       is P.Tag.IntOf    -> "${tag.value}"
+      is P.Tag.LongOf   -> "${tag.value}l"
       is P.Tag.FloatOf  -> "${tag.value}f"
       is P.Tag.DoubleOf -> "${tag.value}"
       is P.Tag.StringOf -> tag.value.quoted('"')
@@ -126,7 +130,10 @@ class Generate private constructor(
         generator.write("]")
       }
       is Json.StringOf -> generator.write(json.value.quoted('"'))
+      is Json.ByteOf   -> generator.write(json.value.toString())
+      is Json.ShortOf  -> generator.write(json.value.toString())
       is Json.IntOf    -> generator.write(json.value.toString())
+      is Json.LongOf   -> generator.write(json.value.toString())
       is Json.FloatOf  -> generator.write(json.value.toString())
       is Json.DoubleOf -> generator.write(json.value.toString())
       is Json.BoolOf   -> generator.write(json.value.toString())

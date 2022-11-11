@@ -36,7 +36,13 @@ object Core {
 
     object Bool : Type0
 
+    object Byte : Type0
+
+    object Short : Type0
+
     object Int : Type0
+
+    object Long : Type0
 
     object Float : Type0
 
@@ -68,10 +74,28 @@ object Core {
       override val type: Type0 get() = Type0.Bool
     }
 
+    data class ByteOf(
+      val value: Byte,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.Byte
+    }
+
+    data class ShortOf(
+      val value: Short,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.Short
+    }
+
     data class IntOf(
       val value: Int,
     ) : Term0 {
       override val type: Type0 get() = Type0.Int
+    }
+
+    data class LongOf(
+      val value: Long,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.Long
     }
 
     data class FloatOf(

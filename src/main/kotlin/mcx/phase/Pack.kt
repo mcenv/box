@@ -66,7 +66,10 @@ class Pack private constructor() {
   ) {
     when (term) {
       is C.Term0.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
+      is C.Term0.ByteOf     -> env += P.Instruction.Push(P.Tag.ByteOf(term.value))
+      is C.Term0.ShortOf    -> env += P.Instruction.Push(P.Tag.ShortOf(term.value))
       is C.Term0.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
+      is C.Term0.LongOf     -> env += P.Instruction.Push(P.Tag.LongOf(term.value))
       is C.Term0.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
       is C.Term0.DoubleOf   -> env += P.Instruction.Push(P.Tag.DoubleOf(term.value))
       is C.Term0.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
@@ -122,7 +125,10 @@ class Pack private constructor() {
   ): Json {
     return when (term) {
       is C.Term0.BoolOf     -> Json.BoolOf(term.value)
+      is C.Term0.ByteOf     -> Json.ByteOf(term.value)
+      is C.Term0.ShortOf    -> Json.ShortOf(term.value)
       is C.Term0.IntOf      -> Json.IntOf(term.value)
+      is C.Term0.LongOf     -> Json.LongOf(term.value)
       is C.Term0.FloatOf    -> Json.FloatOf(term.value)
       is C.Term0.DoubleOf   -> Json.DoubleOf(term.value)
       is C.Term0.StringOf   -> Json.StringOf(term.value)
@@ -184,7 +190,10 @@ class Pack private constructor() {
       return when (type) {
         is C.Type0.End      -> error("unexpected: end")
         is C.Type0.Bool     -> P.Type.BYTE
+        is C.Type0.Byte     -> P.Type.BYTE
+        is C.Type0.Short    -> P.Type.SHORT
         is C.Type0.Int      -> P.Type.INT
+        is C.Type0.Long     -> P.Type.LONG
         is C.Type0.Float    -> P.Type.FLOAT
         is C.Type0.Double   -> P.Type.DOUBLE
         is C.Type0.String   -> P.Type.STRING

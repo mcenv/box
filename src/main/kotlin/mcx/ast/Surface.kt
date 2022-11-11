@@ -46,7 +46,19 @@ object Surface {
       override val range: Range,
     ) : Type0
 
+    data class Byte(
+      override val range: Range,
+    ) : Type0
+
+    data class Short(
+      override val range: Range,
+    ) : Type0
+
     data class Int(
+      override val range: Range,
+    ) : Type0
+
+    data class Long(
       override val range: Range,
     ) : Type0
 
@@ -90,8 +102,23 @@ object Surface {
       override val range: Range,
     ) : Term0
 
+    data class ByteOf(
+      val value: Byte,
+      override val range: Range,
+    ) : Term0
+
+    data class ShortOf(
+      val value: Short,
+      override val range: Range,
+    ) : Term0
+
     data class IntOf(
       val value: Int,
+      override val range: Range,
+    ) : Term0
+
+    data class LongOf(
+      val value: Long,
       override val range: Range,
     ) : Term0
 

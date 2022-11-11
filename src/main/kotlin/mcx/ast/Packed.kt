@@ -26,7 +26,9 @@ object Packed {
 
   enum class Type {
     BYTE,
+    SHORT,
     INT,
+    LONG,
     FLOAT,
     DOUBLE,
     STRING,
@@ -66,8 +68,16 @@ object Packed {
       override val type: Type get() = Type.BYTE
     }
 
+    data class ShortOf(val value: Short) : Tag {
+      override val type: Type get() = Type.SHORT
+    }
+
     data class IntOf(val value: Int) : Tag {
       override val type: Type get() = Type.INT
+    }
+
+    data class LongOf(val value: Long) : Tag {
+      override val type: Type get() = Type.LONG
     }
 
     data class FloatOf(val value: Float) : Tag {
