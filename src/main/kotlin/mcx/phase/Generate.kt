@@ -32,7 +32,7 @@ class Generate private constructor(
         )
         generateJson(resource.body)
       }
-      is P.Resource.Function     -> {
+      is P.Resource.Functions    -> {
         generator.entry(
           generatePath(
             Registry.FUNCTIONS,
@@ -147,7 +147,7 @@ class Generate private constructor(
     module: Location,
     name: String,
   ): String =
-    "data/${config.name}/${registry.plural}/$module/$name.${registry.extension}"
+    "data/${config.name}/${registry.string}/$module/$name.${registry.extension}"
 
   private fun generateResourceLocation(
     module: Location,

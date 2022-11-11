@@ -30,7 +30,7 @@ class Pack private constructor() {
           body,
         )
       }
-      is C.Resource0.Function     -> {
+      is C.Resource0.Functions    -> {
         val env = emptyEnv()
         resource.params.forEach { (name, type) ->
           env.bind(
@@ -51,7 +51,7 @@ class Pack private constructor() {
             resultType,
           )
         }
-        P.Resource.Function(
+        P.Resource.Functions(
           resource.module,
           resource.name,
           env.instructions,

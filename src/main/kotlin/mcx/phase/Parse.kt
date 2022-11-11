@@ -90,23 +90,23 @@ class Parse private constructor(
 
       if (canRead()) {
         when (readWord()) {
-          "predicate"      -> parseJsonResource(
+          "predicates"     -> parseJsonResource(
             annotations,
             Registry.PREDICATES,
           )
-          "recipe"         -> parseJsonResource(
+          "recipes"        -> parseJsonResource(
             annotations,
             Registry.RECIPES,
           )
-          "loot_table"     -> parseJsonResource(
+          "loot_tables"    -> parseJsonResource(
             annotations,
             Registry.LOOT_TABLES,
           )
-          "item_modifier"  -> parseJsonResource(
+          "item_modifiers" -> parseJsonResource(
             annotations,
             Registry.ITEM_MODIFIERS,
           )
-          "advancement"    -> parseJsonResource(
+          "advancements"   -> parseJsonResource(
             annotations,
             Registry.ADVANCEMENTS,
           )
@@ -128,7 +128,7 @@ class Parse private constructor(
             annotations,
             Registry.DIMENSION,
           )
-          "function"       -> {
+          "functions"      -> {
             skipWhitespaces()
             val name = readWord()
             skipWhitespaces()
@@ -153,7 +153,7 @@ class Parse private constructor(
             expect('=')
             skipWhitespaces()
             val body = parseTerm0()
-            S.Resource0.Function(
+            S.Resource0.Functions(
               annotations,
               name,
               params,

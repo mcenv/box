@@ -19,7 +19,7 @@ object Core {
       val body: Term0,
     ) : Resource0
 
-    data class Function(
+    data class Functions(
       override val annotations: List<Annotation>,
       override val module: Location,
       override val name: String,

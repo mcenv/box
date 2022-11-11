@@ -73,7 +73,7 @@ class Elaborate private constructor(
           body,
         )
       }
-      is S.Resource0.Function     -> {
+      is S.Resource0.Functions    -> {
         val annotations = resource.annotations.map {
           elaborateAnnotation(
             it,
@@ -94,7 +94,7 @@ class Elaborate private constructor(
           resource.body,
           result,
         )
-        C.Resource0.Function(
+        C.Resource0.Functions(
           annotations,
           module,
           resource.name,
@@ -301,18 +301,18 @@ class Elaborate private constructor(
 
       term is S.Term0.Run &&
       expected == null            -> when (val resource = env.resources[term.name]) {
-        null                        -> {
+        null                         -> {
           diagnostics += Diagnostic.ResourceNotFound(
             term.name,
             term.range,
           )
           C.Term0.Hole(C.Type0.Hole)
         }
-        !is Core.Resource0.Function -> {
+        !is Core.Resource0.Functions -> {
           diagnostics += Diagnostic.ExpectedFunction(term.range)
           C.Term0.Hole(C.Type0.Hole)
         }
-        else                        -> {
+        else                         -> {
           if (resource.params.size != term.args.size) {
             diagnostics += Diagnostic.MismatchedArity(
               resource.params.size,

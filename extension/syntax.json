@@ -8,12 +8,16 @@
       "match": "[@:=,;&/]"
     },
     {
+      "name": "keyword.mcx",
+      "match": "\\b(?:import|predicates|recipes|loot_tables|item_modifiers|advancements|dimension_type|worldgen/biome|dimension|functions)\\b"
+    },
+    {
       "name": "support.type.mcx",
       "match": "\\b(?:end|bool|byte|short|int|long|float|double|string|box)\\b"
     },
     {
-      "name": "keyword.mcx",
-      "match": "\\b(?:import|predicate|recipe|loot_table|item_modifier|advancement|dimension_type|worldgen/biome|dimension|function|let)\\b"
+      "name": "keyword.control.mcx",
+      "match": "\\b(?:let)\\b"
     },
     {
       "name": "constant.language.mcx",

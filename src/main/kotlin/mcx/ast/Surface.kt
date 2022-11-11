@@ -22,7 +22,7 @@ object Surface {
       override val range: Range,
     ) : Resource0
 
-    data class Function(
+    data class Functions(
       override val annotations: List<Annotation>,
       override val name: String,
       val params: List<Pair<String, Type0>>,
