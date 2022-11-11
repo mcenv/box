@@ -21,6 +21,10 @@ sealed interface Json {
     val value: Float,
   ) : Json
 
+  data class DoubleOf(
+    val value: Double,
+  ) : Json
+
   data class BoolOf(
     val value: Boolean,
   ) : Json

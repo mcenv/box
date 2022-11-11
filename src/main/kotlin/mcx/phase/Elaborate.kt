@@ -106,6 +106,7 @@ class Elaborate private constructor(
       is S.Type0.Bool     -> C.Type0.Bool
       is S.Type0.Int      -> C.Type0.Int
       is S.Type0.Float    -> C.Type0.Float
+      is S.Type0.Double   -> C.Type0.Double
       is S.Type0.String   -> C.Type0.String
       is S.Type0.List     -> C.Type0.List(elaborateType0(type.element))
       is S.Type0.Compound -> C.Type0.Compound(type.elements.mapValues { elaborateType0(it.value) })
@@ -128,6 +129,9 @@ class Elaborate private constructor(
 
       term is S.Term0.FloatOf &&
       expected is C.Type0.Float?  -> C.Term0.FloatOf(term.value)
+
+      term is S.Term0.DoubleOf &&
+      expected is C.Type0.Double? -> C.Term0.DoubleOf(term.value)
 
       term is S.Term0.StringOf &&
       expected is C.Type0.String? -> C.Term0.StringOf(term.value)
@@ -361,6 +365,9 @@ class Elaborate private constructor(
 
       type1 is C.Type0.Float &&
       type2 is C.Type0.Float    -> true
+
+      type1 is C.Type0.Double &&
+      type2 is C.Type0.Double   -> true
 
       type1 is C.Type0.String &&
       type2 is C.Type0.String   -> true

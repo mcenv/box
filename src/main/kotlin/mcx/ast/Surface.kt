@@ -54,6 +54,10 @@ object Surface {
       override val range: Range,
     ) : Type0
 
+    data class Double(
+      override val range: Range,
+    ) : Type0
+
     data class String(
       override val range: Range,
     ) : Type0
@@ -93,6 +97,11 @@ object Surface {
 
     data class FloatOf(
       val value: Float,
+      override val range: Range,
+    ) : Term0
+
+    data class DoubleOf(
+      val value: Double,
       override val range: Range,
     ) : Term0
 

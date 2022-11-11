@@ -28,6 +28,7 @@ object Packed {
     BYTE,
     INT,
     FLOAT,
+    DOUBLE,
     STRING,
     LIST,
     COMPOUND,
@@ -71,6 +72,10 @@ object Packed {
 
     data class FloatOf(val value: Float) : Tag {
       override val type: Type get() = Type.FLOAT
+    }
+
+    data class DoubleOf(val value: Double) : Tag {
+      override val type: Type get() = Type.DOUBLE
     }
 
     data class StringOf(val value: String) : Tag {

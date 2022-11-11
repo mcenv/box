@@ -40,6 +40,8 @@ object Core {
 
     object Float : Type0
 
+    object Double : Type0
+
     object String : Type0
 
     data class List(
@@ -76,6 +78,12 @@ object Core {
       val value: Float,
     ) : Term0 {
       override val type: Type0 get() = Type0.Float
+    }
+
+    data class DoubleOf(
+      val value: Double,
+    ) : Term0 {
+      override val type: Type0 get() = Type0.Double
     }
 
     data class StringOf(

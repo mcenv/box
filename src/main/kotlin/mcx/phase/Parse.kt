@@ -199,6 +199,7 @@ class Parse private constructor(
             "bool"   -> S.Type0.Bool(until())
             "int"    -> S.Type0.Int(until())
             "float"  -> S.Type0.Float(until())
+            "double" -> S.Type0.Double(until())
             "string" -> S.Type0.String(until())
             "box"    -> {
               skipWhitespaces()
@@ -266,13 +267,28 @@ class Parse private constructor(
                 }
                 'd'  -> {
                   skip()
-                  TODO()
+                  numeric
+                    .toDoubleOrNull()
+                    ?.let {
+                      S.Term0.DoubleOf(
+                        it,
+                        until(),
+                      )
+                    }
                 }
                 else ->
                   numeric
                     .toIntOrNull()
                     ?.let {
                       S.Term0.IntOf(
+                        it,
+                        until(),
+                      )
+                    }
+                  ?: numeric
+                    .toDoubleOrNull()
+                    ?.let {
+                      S.Term0.DoubleOf(
                         it,
                         until(),
                       )
