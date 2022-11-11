@@ -29,6 +29,14 @@
     },
     {
       "include": "#string"
+    },
+    {
+      "name": "entity.name.function.mcx",
+      "match": "\\b(?:[a-z0-9_-]+)(?=\\()"
+    },
+    {
+      "name": "variable.mcx",
+      "match": "\\b(?:[a-z0-9_-]+)\\b"
     }
   ],
   "repository": {
