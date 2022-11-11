@@ -1,6 +1,8 @@
 package mcx.ast
 
 data class Location(val parts: List<String>) {
+  constructor(vararg parts: String) : this(parts.toList())
+
   operator fun plus(
     part: String,
   ): Location =

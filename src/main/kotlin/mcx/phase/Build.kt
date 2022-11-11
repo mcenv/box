@@ -4,7 +4,9 @@ import kotlinx.coroutines.*
 import mcx.ast.Location
 import mcx.ast.Packed
 import org.eclipse.lsp4j.Position
+import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.exists
@@ -36,16 +38,25 @@ class Build(
   suspend fun fetchText(location: Location): String? {
     return when (val text = texts[location]) {
       null -> withContext(Dispatchers.IO) {
-        val path = location.toPath()
-        if (path.exists()) {
-          path
-            .readText()
-            .also {
-              texts[location] = it
+        src
+          .resolve("$location.mcx")
+          .let { path ->
+            if (path.exists()) {
+              return@withContext path
+                .readText()
+                .also { texts[location] = it }
             }
-        } else {
-          null
-        }
+          }
+        STD_SRC
+          .resolve("$location.mcx")
+          .let { path ->
+            if (path.exists()) {
+              return@withContext path
+                .readText()
+                .also { texts[location] = it }
+            }
+          }
+        null
       }
       else -> text
     }
@@ -100,6 +111,20 @@ class Build(
                 )
               }
             }
+            .plus(
+              async {
+                val prelude = fetchCore(
+                  config,
+                  PRELUDE,
+                  true,
+                )!!
+                Elaborate.Dependency(
+                  PRELUDE,
+                  prelude.root,
+                  null,
+                )
+              }
+            )
             .plus(
               async {
                 val self = fetchCore(
@@ -161,6 +186,20 @@ class Build(
     )
   }
 
-  private fun Location.toPath(): Path =
-    src.resolve("${parts.joinToString("/")}.mcx")
+  companion object {
+    private val STD_SRC: Path
+    private val PRELUDE: Location = Location("prelude")
+
+    init {
+      val uri =
+        Build::class.java
+          .getResource("/std/src")!!
+          .toURI()
+      FileSystems.newFileSystem(
+        uri,
+        emptyMap<String, Nothing>(),
+      )
+      STD_SRC = Paths.get(uri)
+    }
+  }
 }
