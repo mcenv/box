@@ -61,18 +61,9 @@ class Pack private constructor() {
     term: C.Term0,
   ) {
     when (term) {
-      is C.Term0.BoolOf     -> env += P.Instruction.Push(
-        P.Tag.ByteOf(if (term.value) 1 else 0),
-        P.Type.BYTE,
-      )
-      is C.Term0.IntOf      -> env += P.Instruction.Push(
-        P.Tag.IntOf(term.value),
-        P.Type.INT,
-      )
-      is C.Term0.StringOf   -> env += P.Instruction.Push(
-        P.Tag.StringOf(term.value),
-        P.Type.STRING,
-      )
+      is C.Term0.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
+      is C.Term0.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
+      is C.Term0.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
       is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
       is C.Term0.BoxOf      -> env += P.Instruction.Debug("$term") // TODO

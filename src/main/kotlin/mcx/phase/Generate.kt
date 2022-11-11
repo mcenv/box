@@ -54,7 +54,7 @@ class Generate private constructor(
     instruction: P.Instruction,
   ) {
     when (instruction) {
-      is P.Instruction.Push  -> generator.write("data modify storage mcx: ${generateStack(instruction.type)} append value ${generateTag(instruction.tag)}")
+      is P.Instruction.Push  -> generator.write("data modify storage mcx: ${generateStack(instruction.tag.type)} append value ${generateTag(instruction.tag)}")
       is P.Instruction.Copy  -> {
         val stack = generateStack(instruction.type)
         generator.write("data modify storage mcx: $stack append from storage mcx: $stack[${instruction.index}]")

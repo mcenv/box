@@ -35,7 +35,6 @@ object Packed {
   sealed interface Instruction {
     data class Push(
       val tag: Tag,
-      val type: Type,
     ) : Instruction
 
     data class Copy(
@@ -59,10 +58,18 @@ object Packed {
   }
 
   sealed interface Tag {
-    data class ByteOf(val value: Byte) : Tag
+    val type: Type
 
-    data class IntOf(val value: Int) : Tag
+    data class ByteOf(val value: Byte) : Tag {
+      override val type: Type get() = Type.BYTE
+    }
 
-    data class StringOf(val value: String) : Tag
+    data class IntOf(val value: Int) : Tag {
+      override val type: Type get() = Type.INT
+    }
+
+    data class StringOf(val value: String) : Tag {
+      override val type: Type get() = Type.STRING
+    }
   }
 }
