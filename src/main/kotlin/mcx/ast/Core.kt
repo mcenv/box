@@ -7,10 +7,12 @@ object Core {
   )
 
   sealed interface Resource0 {
+    val annotations: List<Annotation>
     val module: Location
     val name: String
 
     data class JsonResource(
+      override val annotations: List<Annotation>,
       val registry: Registry,
       override val module: Location,
       override val name: String,
@@ -18,6 +20,7 @@ object Core {
     ) : Resource0
 
     data class Function(
+      override val annotations: List<Annotation>,
       override val module: Location,
       override val name: String,
       val params: List<Pair<String, Type0>>,
@@ -26,9 +29,18 @@ object Core {
     ) : Resource0
 
     object Hole : Resource0 {
+      override val annotations: List<Annotation> get() = throw IllegalStateException()
       override val module: Location get() = throw IllegalStateException()
       override val name: String get() = throw IllegalStateException()
     }
+  }
+
+  sealed interface Annotation {
+    object Tick : Annotation
+
+    object Load : Annotation
+
+    object Hole : Annotation
   }
 
   sealed interface Type0 {

@@ -10,10 +10,12 @@ object Surface {
   )
 
   sealed interface Resource0 {
+    val annotations: List<Annotation>
     val name: String
     val range: Range
 
     data class JsonResource(
+      override val annotations: List<Annotation>,
       val registry: Registry,
       override val name: String,
       val body: Term0,
@@ -21,6 +23,7 @@ object Surface {
     ) : Resource0
 
     data class Function(
+      override val annotations: List<Annotation>,
       override val name: String,
       val params: List<Pair<String, Type0>>,
       val result: Type0,
@@ -31,8 +34,25 @@ object Surface {
     data class Hole(
       override val range: Range,
     ) : Resource0 {
+      override val annotations: List<Annotation> get() = throw IllegalStateException()
       override val name: String get() = throw IllegalStateException()
     }
+  }
+
+  sealed interface Annotation {
+    val range: Range
+
+    data class Tick(
+      override val range: Range,
+    ) : Annotation
+
+    data class Load(
+      override val range: Range,
+    ) : Annotation
+
+    data class Hole(
+      override val range: Range,
+    ) : Annotation
   }
 
   sealed interface Type0 {

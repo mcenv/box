@@ -51,6 +51,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class ExpectedAnnotation(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: annotation",
+    DiagnosticSeverity.Error,
+  )
+
   class ExpectedType0(
     range: Range,
   ) : Diagnostic(
@@ -67,20 +75,21 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedJson(
-    range: Range,
-  ) : Diagnostic(
-    range,
-    "expected: json",
-    DiagnosticSeverity.Error,
-  )
-
   class ModuleNotFound(
     location: Location,
     range: Range,
   ) : Diagnostic(
     range,
     "module not found: '$location'",
+    DiagnosticSeverity.Error,
+  )
+
+  class InappropriateAnnotation(
+    name: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "inappropriate annotation: '$name'",
     DiagnosticSeverity.Error,
   )
 

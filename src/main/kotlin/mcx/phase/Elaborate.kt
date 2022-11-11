@@ -54,6 +54,11 @@ class Elaborate private constructor(
   ): C.Resource0 {
     return when (resource) {
       is S.Resource0.JsonResource -> {
+        val annotations = resource.annotations.map {
+          elaborateAnnotation(
+            it,
+          )
+        }
         val env = emptyEnv(resources)
         val body = elaborateTerm0(
           env,
@@ -61,6 +66,7 @@ class Elaborate private constructor(
           /* TODO */
         )
         C.Resource0.JsonResource(
+          annotations,
           resource.registry,
           module,
           resource.name,
@@ -68,6 +74,11 @@ class Elaborate private constructor(
         )
       }
       is S.Resource0.Function     -> {
+        val annotations = resource.annotations.map {
+          elaborateAnnotation(
+            it,
+          )
+        }
         val env = emptyEnv(resources)
         val params = resource.params.map {
           val type = elaborateType0(it.second)
@@ -84,6 +95,7 @@ class Elaborate private constructor(
           result,
         )
         C.Resource0.Function(
+          annotations,
           module,
           resource.name,
           params,
@@ -92,6 +104,17 @@ class Elaborate private constructor(
         )
       }
       is S.Resource0.Hole         -> C.Resource0.Hole
+    }
+  }
+
+  private fun elaborateAnnotation(
+    annotation: S.Annotation,
+  ): C.Annotation {
+    // TODO: validate
+    return when (annotation) {
+      is S.Annotation.Tick -> C.Annotation.Tick
+      is S.Annotation.Load -> C.Annotation.Load
+      is S.Annotation.Hole -> C.Annotation.Hole
     }
   }
 

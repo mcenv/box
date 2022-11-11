@@ -74,22 +74,60 @@ class Parse private constructor(
 
   private fun parseResource0(): S.Resource0 =
     ranging {
+      val annotations = mutableListOf<S.Annotation>()
+      while (true) {
+        skipWhitespaces()
+        if (!canRead() || peek() != '@') {
+          break
+        }
+        skip()
+        val start = cursor
+        annotations += parseAnnotation()
+        if (start == cursor) {
+          break
+        }
+      }
+
       if (canRead()) {
         when (readWord()) {
-          "predicate"      -> parseJsonResource(Registry.PREDICATES)
-          "recipe"         -> parseJsonResource(Registry.RECIPES)
-          "loot_table"     -> parseJsonResource(Registry.LOOT_TABLES)
-          "item_modifier"  -> parseJsonResource(Registry.ITEM_MODIFIERS)
-          "advancement"    -> parseJsonResource(Registry.ADVANCEMENTS)
-          "dimension_type" -> parseJsonResource(Registry.DIMENSION_TYPE)
+          "predicate"      -> parseJsonResource(
+            annotations,
+            Registry.PREDICATES,
+          )
+          "recipe"         -> parseJsonResource(
+            annotations,
+            Registry.RECIPES,
+          )
+          "loot_table"     -> parseJsonResource(
+            annotations,
+            Registry.LOOT_TABLES,
+          )
+          "item_modifier"  -> parseJsonResource(
+            annotations,
+            Registry.ITEM_MODIFIERS,
+          )
+          "advancement"    -> parseJsonResource(
+            annotations,
+            Registry.ADVANCEMENTS,
+          )
+          "dimension_type" -> parseJsonResource(
+            annotations,
+            Registry.DIMENSION_TYPE,
+          )
           "worldgen"       -> {
             expect('/')
             when (readWord()) {
-              "biome" -> parseJsonResource(Registry.WORLDGEN_BIOME)
+              "biome" -> parseJsonResource(
+                annotations,
+                Registry.WORLDGEN_BIOME,
+              )
               else    -> null
             }
           }
-          "dimension"      -> parseJsonResource(Registry.DIMENSION)
+          "dimension"      -> parseJsonResource(
+            annotations,
+            Registry.DIMENSION,
+          )
           "function"       -> {
             skipWhitespaces()
             val name = readWord()
@@ -116,6 +154,7 @@ class Parse private constructor(
             skipWhitespaces()
             val body = parseTerm0()
             S.Resource0.Function(
+              annotations,
               name,
               params,
               result,
@@ -136,6 +175,7 @@ class Parse private constructor(
     }
 
   private fun parseJsonResource(
+    annotations: List<S.Annotation>,
     registry: Registry,
   ): S.Resource0.JsonResource =
     ranging {
@@ -146,11 +186,30 @@ class Parse private constructor(
       skipWhitespaces()
       val body = parseTerm0()
       S.Resource0.JsonResource(
+        annotations,
         registry,
         name,
         body,
         until(),
       )
+    }
+
+  private fun parseAnnotation(): S.Annotation =
+    ranging {
+      if (canRead()) {
+        when (readWord()) {
+          "tick" -> S.Annotation.Tick(until())
+          "load" -> S.Annotation.Load(until())
+          else   -> null
+        }
+      } else {
+        null
+      }
+      ?: run {
+        val range = until()
+        diagnostics += Diagnostic.ExpectedAnnotation(range)
+        S.Annotation.Hole(range)
+      }
     }
 
   private fun parseType0(): S.Type0 =
