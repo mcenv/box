@@ -6,10 +6,7 @@ import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
 import mcx.util.rangeTo
-import org.eclipse.lsp4j.CompletionItem
-import org.eclipse.lsp4j.CompletionItemKind
-import org.eclipse.lsp4j.CompletionItemLabelDetails
-import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
@@ -229,13 +226,17 @@ class Elaborate private constructor(
         )
       }
 
-      term is S.Term0.Let          -> {
+      term is S.Term0.Let         -> {
         val init = elaborateTerm0(
           env,
           term.init,
         )
+        hover(
+          init.type,
+          term.name.range,
+        )
         val body = env.binding(
-          term.name,
+          term.name.value,
           init.type,
         ) {
           elaborateTerm0(
@@ -245,7 +246,7 @@ class Elaborate private constructor(
           )
         }
         C.Term0.Let(
-          term.name,
+          term.name.value,
           init,
           body,
         )
@@ -276,7 +277,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term0.Run &&
-      expected == null      -> when (val resource = env.resources[term.name]) {
+      expected == null            -> when (val resource = env.resources[term.name]) {
         null                        -> {
           diagnostics += Diagnostic.ResourceNotFound(
             term.name,
@@ -357,10 +358,20 @@ class Elaborate private constructor(
               }
             }
         }
-        if (hover == null) {
-          hover = it.type
-        }
       }
+      hover(
+        it.type,
+        term.range,
+      )
+    }
+  }
+
+  private fun hover(
+    type: C.Type0,
+    range: Range,
+  ) {
+    if (hover == null && position != null && position in range) {
+      hover = type
     }
   }
 

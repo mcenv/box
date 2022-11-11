@@ -347,7 +347,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '{'  -> {
+          '{'                   -> {
             val values = parseList(
               ',',
               '{',
@@ -365,7 +365,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '&'  -> {
+          '&'                   -> {
             skip()
             skipWhitespaces()
             S.Term0.BoxOf(
@@ -373,7 +373,7 @@ class Parse private constructor(
               until(),
             )
           }
-          '/'  -> {
+          '/'                   -> {
             skip()
             val value = readQuotedString()
             S.Term0.Command(
@@ -381,7 +381,7 @@ class Parse private constructor(
               until(),
             )
           }
-          else -> when (val word = readWord()) {
+          else                  -> when (val word = readWord()) {
             "false" -> S.Term0.BoolOf(
               false,
               until(),
@@ -392,7 +392,7 @@ class Parse private constructor(
             )
             "let"   -> {
               skipWhitespaces()
-              val name = readWord()
+              val name = parseRanged { readWord() }
               skipWhitespaces()
               expect('=')
               skipWhitespaces()

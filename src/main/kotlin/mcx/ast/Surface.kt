@@ -153,7 +153,7 @@ object Surface {
     ) : Term0
 
     data class Let(
-      val name: String,
+      val name: Ranged<String>,
       val init: Term0,
       val body: Term0,
       override val range: Range,
