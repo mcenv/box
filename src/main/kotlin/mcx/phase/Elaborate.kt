@@ -17,8 +17,20 @@ class Elaborate private constructor(
   private val position: Position?,
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
-  private var completionItems: List<CompletionItem>? = null
+  private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
+  private var resourceCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: C.Type0? = null
+
+  private fun elaborateResult(
+    input: Parse.Result,
+  ): Result {
+    return Result(
+      elaborateRoot(input.root),
+      input.diagnostics + diagnostics,
+      varCompletionItems + resourceCompletionItems,
+      hover,
+    )
+  }
 
   private fun elaborateRoot(
     root: S.Root,
@@ -34,6 +46,17 @@ class Elaborate private constructor(
             if (resource !is C.Resource0.Hole) {
               resources[resource.name] = resource // TODO: handle name duplication
             }
+          }
+        }
+      }
+    }
+    if (position != null) {
+      resourceCompletionItems += resources.map {
+        CompletionItem(it.key).apply {
+          kind = when (it.value) {
+            is C.Resource0.JsonResource -> CompletionItemKind.Struct
+            is C.Resource0.Functions    -> CompletionItemKind.Function
+            else                        -> error("unexpected: hole")
           }
         }
       }
@@ -407,8 +430,8 @@ class Elaborate private constructor(
       }
     }.also {
       if (position != null && position in term.range) {
-        if (completionItems == null) {
-          completionItems = env.entries
+        if (varCompletionItems.isEmpty()) {
+          varCompletionItems += env.entries
             .filter { entry -> !entry.used }
             .map { entry ->
               CompletionItem(entry.name).apply {
@@ -567,13 +590,6 @@ class Elaborate private constructor(
         dependencies,
         signature,
         position,
-      ).run {
-        Result(
-          elaborateRoot(input.root),
-          input.diagnostics + diagnostics,
-          completionItems,
-          hover,
-        )
-      }
+      ).elaborateResult(input)
   }
 }
