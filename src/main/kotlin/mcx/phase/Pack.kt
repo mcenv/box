@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.ast.Json
 import mcx.phase.Pack.Env.Companion.emptyEnv
 import mcx.ast.Core as C
 import mcx.ast.Packed as P
@@ -20,12 +21,15 @@ class Pack private constructor() {
     resource: C.Resource0,
   ): P.Resource {
     return when (resource) {
-      is C.Resource0.JsonResource -> P.Resource.JsonResource(
-        resource.registry,
-        resource.module,
-        resource.name,
-        resource.body,
-      )
+      is C.Resource0.JsonResource -> {
+        val body = packJson(resource.body)
+        P.Resource.JsonResource(
+          resource.registry,
+          resource.module,
+          resource.name,
+          body,
+        )
+      }
       is C.Resource0.Function     -> {
         val env = emptyEnv()
         resource.params.forEach { (name, type) ->
@@ -108,6 +112,19 @@ class Pack private constructor() {
         )
       }
       is C.Term0.Hole       -> unexpectedHole()
+    }
+  }
+
+  private fun packJson(
+    term: C.Term0,
+  ): Json {
+    return when (term) {
+      is C.Term0.BoolOf     -> Json.BoolOf(term.value)
+      is C.Term0.IntOf      -> Json.IntOf(term.value)
+      is C.Term0.StringOf   -> Json.StringOf(term.value)
+      is C.Term0.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
+      is C.Term0.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
+      else                  -> TODO()
     }
   }
 

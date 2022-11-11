@@ -144,7 +144,7 @@ class Parse private constructor(
       skipWhitespaces()
       expect('=')
       skipWhitespaces()
-      val body = parseJson()
+      val body = parseTerm0()
       S.Resource0.JsonResource(
         registry,
         name,
@@ -342,66 +342,6 @@ class Parse private constructor(
         val range = until()
         diagnostics += Diagnostic.ExpectedTerm0(range)
         S.Term0.Hole(range)
-      }
-    }
-
-  private fun parseJson(): S.Json =
-    ranging {
-      if (canRead()) {
-        when (peek()) {
-          '{'              -> {
-            val elements = parseList(
-              ',',
-              '{',
-              '}',
-            ) {
-              val key = readString()
-              skipWhitespaces()
-              expect(':')
-              skipWhitespaces()
-              val value = parseJson()
-              key to value
-            }
-            S.Json.ObjectOf(
-              elements,
-              until(),
-            )
-          }
-          '['              -> {
-            val elements = parseList(
-              ',',
-              '[',
-              ']',
-            ) {
-              parseJson()
-            }
-            S.Json.ArrayOf(
-              elements,
-              until(),
-            )
-          }
-          '"'              -> S.Json.StringOf(
-            readQuotedString(),
-            until(),
-          )
-          in '0'..'9', '-' -> S.Json.NumberOf(
-            readNumeric().toDouble(),
-            until(),
-          )
-          else             -> when (readWord()) {
-            "true"  -> S.Json.True(until())
-            "false" -> S.Json.False(until())
-            "null"  -> S.Json.Null(until())
-            else    -> null
-          }
-        }
-      } else {
-        null
-      }
-      ?: run {
-        val range = until()
-        diagnostics += Diagnostic.ExpectedJson(range)
-        S.Json.Hole(range)
       }
     }
 

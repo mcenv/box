@@ -14,7 +14,7 @@ object Core {
       val registry: Registry,
       override val module: Location,
       override val name: String,
-      val body: Json,
+      val body: Term0,
     ) : Resource0
 
     data class Function(

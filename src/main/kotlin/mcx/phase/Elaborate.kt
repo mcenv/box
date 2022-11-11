@@ -1,7 +1,6 @@
 package mcx.phase
 
 import mcx.ast.Core
-import mcx.ast.Json
 import mcx.ast.Location
 import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
@@ -57,12 +56,20 @@ class Elaborate private constructor(
     resource: S.Resource0,
   ): C.Resource0 {
     return when (resource) {
-      is S.Resource0.JsonResource -> C.Resource0.JsonResource(
-        resource.registry,
-        module,
-        resource.name,
-        elaborateJson(resource.body),
-      )
+      is S.Resource0.JsonResource -> {
+        val env = emptyEnv(resources)
+        val body = elaborateTerm0(
+          env,
+          resource.body,
+          /* TODO */
+        )
+        C.Resource0.JsonResource(
+          resource.registry,
+          module,
+          resource.name,
+          body,
+        )
+      }
       is S.Resource0.Function     -> {
         val env = emptyEnv(resources)
         val params = resource.params.map {
@@ -331,21 +338,6 @@ class Elaborate private constructor(
           hover = it.type
         }
       }
-    }
-  }
-
-  private fun elaborateJson(
-    json: S.Json,
-  ): Json {
-    return when (json) {
-      is S.Json.ObjectOf -> Json.ObjectOf(json.members.map { it.first to elaborateJson(it.second) })
-      is S.Json.ArrayOf  -> Json.ArrayOf(json.elements.map { elaborateJson(it) })
-      is S.Json.StringOf -> Json.StringOf(json.value)
-      is S.Json.NumberOf -> Json.NumberOf(json.value)
-      is S.Json.True     -> Json.True
-      is S.Json.False    -> Json.False
-      is S.Json.Null     -> Json.Null
-      is S.Json.Hole     -> Json.Hole
     }
   }
 

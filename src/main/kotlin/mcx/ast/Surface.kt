@@ -16,7 +16,7 @@ object Surface {
     data class JsonResource(
       val registry: Registry,
       override val name: String,
-      val body: Json,
+      val body: Term0,
       override val range: Range,
     ) : Resource0
 
@@ -128,46 +128,6 @@ object Surface {
     data class Hole(
       override val range: Range,
     ) : Term0
-  }
-
-  sealed interface Json {
-    val range: Range
-
-    data class ObjectOf(
-      val members: List<Pair<String, Json>>,
-      override val range: Range,
-    ) : Json
-
-    data class ArrayOf(
-      val elements: List<Json>,
-      override val range: Range,
-    ) : Json
-
-    data class StringOf(
-      val value: String,
-      override val range: Range,
-    ) : Json
-
-    data class NumberOf(
-      val value: Double, // TODO
-      override val range: Range,
-    ) : Json
-
-    data class True(
-      override val range: Range,
-    ) : Json
-
-    data class False(
-      override val range: Range,
-    ) : Json
-
-    data class Null(
-      override val range: Range,
-    ) : Json
-
-    data class Hole(
-      override val range: Range,
-    ) : Json
   }
 
   data class Ranged<T>(

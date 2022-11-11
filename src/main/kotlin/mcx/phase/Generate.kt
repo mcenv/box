@@ -101,7 +101,7 @@ class Generate private constructor(
     when (json) {
       is Json.ObjectOf -> {
         generator.write("{")
-        json.members.forEachIndexed { index, (key, value) ->
+        json.members.entries.forEachIndexed { index, (key, value) ->
           if (index != 0) {
             generator.write(",")
           }
@@ -122,11 +122,8 @@ class Generate private constructor(
         generator.write("]")
       }
       is Json.StringOf -> generator.write(json.value.quoted('"'))
-      is Json.NumberOf -> generator.write(json.value.toString())
-      is Json.True     -> generator.write("true")
-      is Json.False    -> generator.write("false")
-      is Json.Null     -> generator.write("null")
-      is Json.Hole     -> error("unexpected: hole")
+      is Json.IntOf    -> generator.write(json.value.toString())
+      is Json.BoolOf   -> generator.write(json.value.toString())
     }
   }
 

@@ -2,7 +2,7 @@ package mcx.ast
 
 sealed interface Json {
   data class ObjectOf(
-    val members: List<Pair<String, Json>>,
+    val members: Map<String, Json>,
   ) : Json
 
   data class ArrayOf(
@@ -13,15 +13,11 @@ sealed interface Json {
     val value: String,
   ) : Json
 
-  data class NumberOf(
-    val value: Double, // TODO
+  data class IntOf(
+    val value: Int,
   ) : Json
 
-  object True : Json
-
-  object False : Json
-
-  object Null : Json
-
-  object Hole : Json
+  data class BoolOf(
+    val value: Boolean,
+  ) : Json
 }
