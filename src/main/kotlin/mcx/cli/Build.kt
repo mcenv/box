@@ -48,17 +48,6 @@ object Build : Subcommand(
         )
         .also { it.createDirectories() }
 
-    Build::class.java
-      .getResourceAsStream("/mcx.zip")!!
-      .buffered()
-      .use { input ->
-        datapacks
-          .resolve("mcx.zip")
-          .outputStream()
-          .buffered()
-          .use { output -> input.transferTo(output) }
-      }
-
     val root = Paths.get("")
     val src = root.resolve("src")
     val cache = Cache(src)

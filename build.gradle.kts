@@ -65,32 +65,3 @@ class McfunctionMinifier(input: Reader) : FilterReader(
     output.joinToString("\n")
   })
 )
-
-tasks.register<ProcessResources>("minifyDatapack") {
-  from(layout.projectDirectory.dir("datapack"))
-  into(layout.buildDirectory.dir("tmp/datapack"))
-  filesMatching(
-    listOf(
-      "**/*.json",
-      "**/*.mcmeta",
-    )
-  ) {
-    filter(JsonMinifier::class)
-  }
-  filesMatching("**/*.mcfunction") {
-    filter(McfunctionMinifier::class)
-  }
-}
-
-tasks.register<Zip>("zipDatapack") {
-  dependsOn(tasks.getByName("minifyDatapack"))
-  from(layout.buildDirectory.dir("tmp/datapack"))
-  archiveFileName.set("mcx.zip")
-  isPreserveFileTimestamps = false
-  isReproducibleFileOrder = true
-}
-
-tasks.getByName<ProcessResources>("processResources") {
-  dependsOn(tasks.getByName("zipDatapack"))
-  from(layout.buildDirectory.file("distributions/mcx.zip"))
-}
