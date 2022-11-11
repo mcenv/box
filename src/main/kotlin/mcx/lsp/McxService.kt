@@ -137,12 +137,9 @@ class McxService : TextDocumentService,
     updateConfig()
   }
 
-  private fun fetchConfig(): Config {
-    if (config == null) {
-      throw CancellationException()
-    }
-    return config!!
-  }
+  private fun fetchConfig(): Config =
+    config
+    ?: throw CancellationException()
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun updateConfig() {
