@@ -11,21 +11,18 @@ object Lifted {
 
   sealed interface Resource {
     val annotations: List<Annotation>
-    val module: Location
-    val name: String
+    val name: Location
 
     data class JsonResource(
       override val annotations: List<Annotation>,
       val registry: Registry,
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
       val body: Term,
     ) : Resource
 
     data class Functions(
       override val annotations: List<Annotation>,
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
       val params: List<Pair<String, Type>>,
       val result: Type,
       val body: Term,

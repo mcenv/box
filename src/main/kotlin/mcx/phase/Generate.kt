@@ -29,7 +29,6 @@ class Generate private constructor(
         generator.entry(
           generatePath(
             resource.registry,
-            resource.module,
             resource.name,
           )
         )
@@ -39,7 +38,6 @@ class Generate private constructor(
         generator.entry(
           generatePath(
             Registry.FUNCTIONS,
-            resource.module,
             resource.name,
           )
         )
@@ -63,14 +61,7 @@ class Generate private constructor(
         generator.write("data modify storage mcx: $stack append from storage mcx: $stack[${instruction.index}]")
       }
       is P.Instruction.Drop    -> generator.write("data remove storage mcx: ${generateStack(instruction.type)}[${instruction.index}]")
-      is P.Instruction.Run     -> generator.write(
-        "function ${
-          generateResourceLocation(
-            instruction.module,
-            instruction.name,
-          )
-        }"
-      )
+      is P.Instruction.Run     -> generator.write("function ${generateResourceLocation(instruction.name)}")
       is P.Instruction.Command -> generator.write(instruction.value)
       is P.Instruction.Debug   -> if (config.debug) {
         generator.write("# ")
@@ -147,16 +138,14 @@ class Generate private constructor(
 
   private fun generatePath(
     registry: Registry,
-    module: Location,
-    name: String,
+    name: Location,
   ): String =
-    "data/minecraft/${registry.string}/${hash("$module/$name")}.${registry.extension}"
+    "data/minecraft/${registry.string}/${generateResourceLocation(name)}.${registry.extension}"
 
   private fun generateResourceLocation(
-    module: Location,
-    name: String,
+    name: Location,
   ): String =
-    hash("$module/$name")
+    hash(name.toString())
 
   private fun hash(
     string: String,

@@ -8,22 +8,19 @@ object Core {
 
   sealed interface Resource {
     val annotations: List<Annotation>
-    val module: Location
-    val name: String
+    val name: Location
 
     data class JsonResource(
       override val annotations: List<Annotation>,
       val registry: Registry,
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
     ) : Resource {
       lateinit var body: Term
     }
 
     data class Functions(
       override val annotations: List<Annotation>,
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
       val params: List<Pair<String, Type>>,
       val result: Type,
     ) : Resource {
@@ -32,8 +29,7 @@ object Core {
 
     object Hole : Resource {
       override val annotations: List<Annotation> get() = throw IllegalStateException()
-      override val module: Location get() = throw IllegalStateException()
-      override val name: String get() = throw IllegalStateException()
+      override val name: Location get() = throw IllegalStateException()
     }
   }
 
@@ -157,8 +153,7 @@ object Core {
     ) : Term
 
     data class Run(
-      val module: Location,
-      val name: String,
+      val name: Location,
       val args: List<Term>,
       override val type: Type,
     ) : Term

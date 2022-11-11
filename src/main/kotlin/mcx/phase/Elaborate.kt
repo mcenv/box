@@ -35,7 +35,7 @@ class Elaborate private constructor(
   private fun elaborateRoot(
     root: S.Root,
   ): C.Root {
-    val resources = hashMapOf<String, C.Resource>().also { resources ->
+    val resources = hashMapOf<Location, C.Resource>().also { resources ->
       dependencies.forEach { dependency ->
         when (dependency.root) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
@@ -52,7 +52,7 @@ class Elaborate private constructor(
     }
     if (position != null) {
       resourceCompletionItems += resources.map {
-        CompletionItem(it.key).apply {
+        CompletionItem(it.key.toString()).apply {
           kind = when (it.value) {
             is C.Resource.JsonResource -> CompletionItemKind.Struct
             is C.Resource.Functions    -> CompletionItemKind.Function
@@ -74,7 +74,7 @@ class Elaborate private constructor(
   }
 
   private fun elaborateResource(
-    resources: Map<String, C.Resource>,
+    resources: Map<Location, C.Resource>,
     module: Location,
     resource: S.Resource,
   ): C.Resource {
@@ -89,8 +89,7 @@ class Elaborate private constructor(
           .JsonResource(
             annotations,
             resource.registry,
-            module,
-            resource.name,
+            module + resource.name,
           )
           .also {
             if (!signature) {
@@ -123,8 +122,7 @@ class Elaborate private constructor(
         C.Resource
           .Functions(
             annotations,
-            module,
-            resource.name,
+            module + resource.name,
             params,
             result,
           )
@@ -430,7 +428,7 @@ class Elaborate private constructor(
 
       term is S.Term.Run &&
       expected == null            ->
-        when (val resource = env.resources[term.name]) {
+        when (val resource = env.findResource(term.name)) {
           null                        -> {
             diagnostics += Diagnostic.ResourceNotFound(
               term.name,
@@ -458,8 +456,7 @@ class Elaborate private constructor(
               )
             }
             C.Term.Run(
-              resource.module,
-              term.name,
+              resource.name,
               args,
               resource.result,
             )
@@ -583,13 +580,20 @@ class Elaborate private constructor(
   }
 
   private class Env private constructor(
-    val resources: Map<String, C.Resource>,
+    private val resources: Map<Location, C.Resource>,
     private val _entries: MutableList<Entry>,
   ) {
     val entries: List<Entry> get() = _entries
 
     operator fun get(name: String): Entry? =
       _entries.lastOrNull { it.name == name }
+
+    fun findResource(
+      name: String,
+    ): C.Resource? =
+      resources.entries.find { (location, _) ->
+        name == location.parts.last()
+      }?.value
 
     fun bind(
       name: String,
@@ -632,7 +636,9 @@ class Elaborate private constructor(
     )
 
     companion object {
-      fun emptyEnv(resources: Map<String, Core.Resource>): Env =
+      fun emptyEnv(
+        resources: Map<Location, Core.Resource>,
+      ): Env =
         Env(
           resources,
           mutableListOf(),

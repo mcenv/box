@@ -25,14 +25,13 @@ class Pack private constructor() {
         val body = packJson(resource.body)
         P.Resource.JsonResource(
           resource.registry,
-          resource.module,
           resource.name,
           body,
         )
       }
       is C.Resource.Functions    -> {
         val env = emptyEnv()
-        env += P.Instruction.Debug("${resource.module}/${resource.name}")
+        env += P.Instruction.Debug(resource.name.toString())
         resource.params.forEach { (name, type) ->
           env.bind(
             name,
@@ -53,7 +52,6 @@ class Pack private constructor() {
           )
         }
         P.Resource.Functions(
-          resource.module,
           resource.name,
           env.instructions,
         )
@@ -115,10 +113,7 @@ class Pack private constructor() {
             it,
           )
         }
-        env += P.Instruction.Run(
-          term.module,
-          term.name,
-        )
+        env += P.Instruction.Run(term.name)
       }
       is C.Term.Command    -> env += P.Instruction.Command(term.value)
       is C.Term.Hole       -> unexpectedHole()

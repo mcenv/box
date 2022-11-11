@@ -7,19 +7,16 @@ object Packed {
   )
 
   sealed interface Resource {
-    val module: Location
-    val name: String
+    val name: Location
 
     data class JsonResource(
       val registry: Registry,
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
       val body: Json,
     ) : Resource
 
     data class Functions(
-      override val module: Location,
-      override val name: String,
+      override val name: Location,
       val instructions: List<Instruction>,
     ) : Resource
   }
@@ -53,8 +50,7 @@ object Packed {
     ) : Instruction
 
     data class Run(
-      val module: Location,
-      val name: String,
+      val name: Location,
     ) : Instruction
 
     data class Command(
