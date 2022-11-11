@@ -51,13 +51,34 @@ class Elaborate private constructor(
       }
     }
     if (position != null) {
-      resourceCompletionItems += resources.map {
-        CompletionItem(it.key.toString()).apply {
-          kind = when (it.value) {
-            is C.Resource.JsonResource -> CompletionItemKind.Struct
-            is C.Resource.Functions    -> CompletionItemKind.Function
+      resourceCompletionItems += resources.map { (location, resource) ->
+        val name = location.parts.last()
+        CompletionItem(name).apply {
+          val labelDetails = CompletionItemLabelDetails()
+          kind = when (resource) {
+            is C.Resource.JsonResource -> {
+              labelDetails.detail = ": ${resource.registry.string}"
+              CompletionItemKind.Struct
+            }
+            is C.Resource.Functions    -> {
+              val detail = "${
+                resource.params.joinToString(
+                  ", ",
+                  "(",
+                  ")",
+                ) { (param, type) -> "$param: ${prettyType(type)}" }
+              }: ${prettyType(resource.result)}"
+              documentation = forRight(highlight("functions $name$detail"))
+              labelDetails.detail = detail
+              CompletionItemKind.Function
+            }
             else                       -> error("unexpected: hole")
           }
+          labelDetails.description =
+            location.parts
+              .dropLast(1)
+              .joinToString("/")
+          this.labelDetails = labelDetails
         }
       }
     }
@@ -502,7 +523,7 @@ class Elaborate private constructor(
                 val type = prettyType(entry.type)
                 documentation = forRight(highlight(type))
                 labelDetails = CompletionItemLabelDetails().apply {
-                  detail = " : $type"
+                  detail = ": $type"
                 }
                 kind = CompletionItemKind.Variable
               }
@@ -589,10 +610,11 @@ class Elaborate private constructor(
       _entries.lastOrNull { it.name == name }
 
     fun findResource(
-      name: String,
+      expected: Location,
     ): C.Resource? =
-      resources.entries.find { (location, _) ->
-        name == location.parts.last()
+      resources.entries.find { (actual, _) ->
+        expected.parts.size <= actual.parts.size &&
+        (expected.parts.asReversed() zip actual.parts.asReversed()).all { it.first == it.second }
       }?.value
 
     fun bind(

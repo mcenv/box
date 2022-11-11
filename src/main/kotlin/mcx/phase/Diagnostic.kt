@@ -130,7 +130,7 @@ sealed class Diagnostic(
   )
 
   class ResourceNotFound(
-    name: String,
+    name: Location,
     range: Range,
   ) : Diagnostic(
     range,

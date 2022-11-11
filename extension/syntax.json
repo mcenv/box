@@ -8,6 +8,21 @@
       "match": "[@:=,;&/]"
     },
     {
+      "begin": "\\b(import)\\b\\s*{",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.mcx"
+        }
+      },
+      "end": "}",
+      "patterns": [
+        {
+          "name": "entity.name.function.mcx",
+          "match": "\\b(?:[a-z0-9_-]+(?:/[a-z0-9_-]+)*)\\b"
+        }
+      ]
+    },
+    {
       "name": "keyword.mcx",
       "match": "\\b(?:import|predicates|recipes|loot_tables|item_modifiers|advancements|dimension_type|worldgen/biome|dimension|functions)\\b"
     },
@@ -36,7 +51,7 @@
     },
     {
       "name": "entity.name.function.mcx",
-      "match": "\\b(?:[a-z0-9_-]+)(?=\\()"
+      "match": "\\b(?:[a-z0-9_-]+(?:/[a-z0-9_-]+)*)(?=\\()"
     },
     {
       "name": "variable.mcx",

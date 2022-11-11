@@ -440,68 +440,87 @@ class Parse private constructor(
               until(),
             )
           }
-          else                  -> when (val word = readWord()) {
-            "false" -> S.Term.BoolOf(
-              false,
-              until(),
-            )
-            "true"  -> S.Term.BoolOf(
-              true,
-              until(),
-            )
-            "if"    -> {
-              skipWhitespaces()
-              val condition = parseTerm()
-              skipWhitespaces()
-              expect("then")
-              skipWhitespaces()
-              val thenClause = parseTerm()
-              skipWhitespaces()
-              expect("else")
-              skipWhitespaces()
-              val elseClause = parseTerm()
-              S.Term.If(
-                condition,
-                thenClause,
-                elseClause,
-                until(),
-              )
-            }
-            "let"   -> {
-              skipWhitespaces()
-              val name = parseRanged { readWord() }
-              skipWhitespaces()
-              expect('=')
-              skipWhitespaces()
-              val init = parseTerm()
-              skipWhitespaces()
-              expect(';')
-              val body = parseTerm()
-              S.Term.Let(
-                name,
-                init,
-                body,
-                until(),
-              )
-            }
-            else    -> if (canRead() && peek() == '(') {
-              val args = parseList(
-                ',',
-                '(',
-                ')',
-              ) {
-                parseTerm()
+          else                  -> {
+            val location = parseLocation()
+            when (location.parts.size) {
+              1    -> when (val word = location.parts.first()) {
+                "false" -> S.Term.BoolOf(
+                  false,
+                  until(),
+                )
+                "true"  -> S.Term.BoolOf(
+                  true,
+                  until(),
+                )
+                "if"    -> {
+                  skipWhitespaces()
+                  val condition = parseTerm()
+                  skipWhitespaces()
+                  expect("then")
+                  skipWhitespaces()
+                  val thenClause = parseTerm()
+                  skipWhitespaces()
+                  expect("else")
+                  skipWhitespaces()
+                  val elseClause = parseTerm()
+                  S.Term.If(
+                    condition,
+                    thenClause,
+                    elseClause,
+                    until(),
+                  )
+                }
+                "let"   -> {
+                  skipWhitespaces()
+                  val name = parseRanged { readWord() }
+                  skipWhitespaces()
+                  expect('=')
+                  skipWhitespaces()
+                  val init = parseTerm()
+                  skipWhitespaces()
+                  expect(';')
+                  val body = parseTerm()
+                  S.Term.Let(
+                    name,
+                    init,
+                    body,
+                    until(),
+                  )
+                }
+                else    -> if (canRead() && peek() == '(') {
+                  val args = parseList(
+                    ',',
+                    '(',
+                    ')',
+                  ) {
+                    parseTerm()
+                  }
+                  S.Term.Run(
+                    location,
+                    args,
+                    until(),
+                  )
+                } else {
+                  S.Term.Var(
+                    word,
+                    until(),
+                  )
+                }
               }
-              S.Term.Run(
-                word,
-                args,
-                until(),
-              )
-            } else {
-              S.Term.Var(
-                word,
-                until(),
-              )
+              else -> {
+                val args = parseList(
+                  ',',
+                  '(',
+                  ')',
+                ) {
+                  parseTerm()
+                }
+                S.Term.Run(
+                  location,
+                  args,
+                  until(),
+                )
+              }
             }
           }
         }
@@ -514,6 +533,15 @@ class Parse private constructor(
         S.Term.Hole(range)
       }
     }
+
+  private fun parseLocation(): Location {
+    val parts = mutableListOf(readWord())
+    while (canRead() && peek() == '/') {
+      skip()
+      parts += readWord()
+    }
+    return Location(parts)
+  }
 
   private fun <R> parseRanged(
     parse: () -> R,

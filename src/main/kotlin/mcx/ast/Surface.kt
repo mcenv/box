@@ -192,7 +192,7 @@ object Surface {
     ) : Term
 
     data class Run(
-      val name: String,
+      val name: Location,
       val args: List<Term>,
       override val range: Range,
     ) : Term
