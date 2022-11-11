@@ -19,7 +19,7 @@ class Elaborate private constructor(
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var resourceCompletionItems: MutableList<CompletionItem> = mutableListOf()
-  private var hover: C.Type0? = null
+  private var hover: C.Type? = null
 
   private fun elaborateResult(
     input: Parse.Result,
@@ -35,7 +35,7 @@ class Elaborate private constructor(
   private fun elaborateRoot(
     root: S.Root,
   ): C.Root {
-    val resources = hashMapOf<String, C.Resource0>().also { resources ->
+    val resources = hashMapOf<String, C.Resource>().also { resources ->
       dependencies.forEach { dependency ->
         when (dependency.root) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
@@ -43,7 +43,7 @@ class Elaborate private constructor(
             dependency.range!!,
           )
           else -> dependency.root.resources.forEach { resource ->
-            if (resource !is C.Resource0.Hole) {
+            if (resource !is C.Resource.Hole) {
               resources[resource.name] = resource // TODO: handle name duplication
             }
           }
@@ -54,9 +54,9 @@ class Elaborate private constructor(
       resourceCompletionItems += resources.map {
         CompletionItem(it.key).apply {
           kind = when (it.value) {
-            is C.Resource0.JsonResource -> CompletionItemKind.Struct
-            is C.Resource0.Functions    -> CompletionItemKind.Function
-            else                        -> error("unexpected: hole")
+            is C.Resource.JsonResource -> CompletionItemKind.Struct
+            is C.Resource.Functions    -> CompletionItemKind.Function
+            else                       -> error("unexpected: hole")
           }
         }
       }
@@ -64,7 +64,7 @@ class Elaborate private constructor(
     return C.Root(
       root.module,
       root.resources.map {
-        elaborateResource0(
+        elaborateResource(
           resources,
           root.module,
           it,
@@ -73,19 +73,19 @@ class Elaborate private constructor(
     )
   }
 
-  private fun elaborateResource0(
-    resources: Map<String, C.Resource0>,
+  private fun elaborateResource(
+    resources: Map<String, C.Resource>,
     module: Location,
-    resource: S.Resource0,
-  ): C.Resource0 {
+    resource: S.Resource,
+  ): C.Resource {
     return when (resource) {
-      is S.Resource0.JsonResource -> {
+      is S.Resource.JsonResource -> {
         val annotations = resource.annotations.map {
           elaborateAnnotation(
             it,
           )
         }
-        C.Resource0
+        C.Resource
           .JsonResource(
             annotations,
             resource.registry,
@@ -95,7 +95,7 @@ class Elaborate private constructor(
           .also {
             if (!signature) {
               val env = emptyEnv(resources)
-              val body = elaborateTerm0(
+              val body = elaborateTerm(
                 env,
                 resource.body,
                 /* TODO */
@@ -104,7 +104,7 @@ class Elaborate private constructor(
             }
           }
       }
-      is S.Resource0.Functions    -> {
+      is S.Resource.Functions    -> {
         val annotations = resource.annotations.map {
           elaborateAnnotation(
             it,
@@ -112,15 +112,15 @@ class Elaborate private constructor(
         }
         val env = emptyEnv(resources)
         val params = resource.params.map {
-          val type = elaborateType0(it.second)
+          val type = elaborateType(it.second)
           env.bind(
             it.first,
             type,
           )
           it.first to type
         }
-        val result = elaborateType0(resource.result)
-        C.Resource0
+        val result = elaborateType(resource.result)
+        C.Resource
           .Functions(
             annotations,
             module,
@@ -130,7 +130,7 @@ class Elaborate private constructor(
           )
           .also {
             if (!signature) {
-              val body = elaborateTerm0(
+              val body = elaborateTerm(
                 env,
                 resource.body,
                 result,
@@ -139,7 +139,7 @@ class Elaborate private constructor(
             }
           }
       }
-      is S.Resource0.Hole         -> C.Resource0.Hole
+      is S.Resource.Hole         -> C.Resource.Hole
     }
   }
 
@@ -154,65 +154,65 @@ class Elaborate private constructor(
     }
   }
 
-  private fun elaborateType0(
-    type: S.Type0,
-  ): C.Type0 {
+  private fun elaborateType(
+    type: S.Type,
+  ): C.Type {
     return when (type) {
-      is S.Type0.End      -> C.Type0.End
-      is S.Type0.Bool     -> C.Type0.Bool
-      is S.Type0.Byte     -> C.Type0.Byte
-      is S.Type0.Short    -> C.Type0.Short
-      is S.Type0.Int      -> C.Type0.Int
-      is S.Type0.Long     -> C.Type0.Long
-      is S.Type0.Float    -> C.Type0.Float
-      is S.Type0.Double   -> C.Type0.Double
-      is S.Type0.String   -> C.Type0.String
-      is S.Type0.List     -> C.Type0.List(elaborateType0(type.element))
-      is S.Type0.Compound -> C.Type0.Compound(type.elements.mapValues { elaborateType0(it.value) })
-      is S.Type0.Box      -> C.Type0.Box(elaborateType0(type.element))
-      is S.Type0.Hole     -> C.Type0.Hole
+      is S.Type.End      -> C.Type.End
+      is S.Type.Bool     -> C.Type.Bool
+      is S.Type.Byte     -> C.Type.Byte
+      is S.Type.Short    -> C.Type.Short
+      is S.Type.Int      -> C.Type.Int
+      is S.Type.Long     -> C.Type.Long
+      is S.Type.Float    -> C.Type.Float
+      is S.Type.Double   -> C.Type.Double
+      is S.Type.String   -> C.Type.String
+      is S.Type.List     -> C.Type.List(elaborateType(type.element))
+      is S.Type.Compound -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value) })
+      is S.Type.Box      -> C.Type.Box(elaborateType(type.element))
+      is S.Type.Hole     -> C.Type.Hole
     }
   }
 
-  private fun elaborateTerm0(
+  private fun elaborateTerm(
     env: Env,
-    term: S.Term0,
-    expected: C.Type0? = null,
-  ): C.Term0 {
+    term: S.Term,
+    expected: C.Type? = null,
+  ): C.Term {
     return when {
-      term is S.Term0.BoolOf &&
-      expected is C.Type0.Bool?   -> C.Term0.BoolOf(term.value)
+      term is S.Term.BoolOf &&
+      expected is C.Type.Bool?    -> C.Term.BoolOf(term.value)
 
-      term is S.Term0.ByteOf &&
-      expected is C.Type0.Byte?   -> C.Term0.ByteOf(term.value)
+      term is S.Term.ByteOf &&
+      expected is C.Type.Byte?    -> C.Term.ByteOf(term.value)
 
-      term is S.Term0.ShortOf &&
-      expected is C.Type0.Short?  -> C.Term0.ShortOf(term.value)
+      term is S.Term.ShortOf &&
+      expected is C.Type.Short?   -> C.Term.ShortOf(term.value)
 
-      term is S.Term0.IntOf &&
-      expected is C.Type0.Int?    -> C.Term0.IntOf(term.value)
+      term is S.Term.IntOf &&
+      expected is C.Type.Int?     -> C.Term.IntOf(term.value)
 
-      term is S.Term0.LongOf &&
-      expected is C.Type0.Long?   -> C.Term0.LongOf(term.value)
+      term is S.Term.LongOf &&
+      expected is C.Type.Long?    -> C.Term.LongOf(term.value)
 
-      term is S.Term0.FloatOf &&
-      expected is C.Type0.Float?  -> C.Term0.FloatOf(term.value)
+      term is S.Term.FloatOf &&
+      expected is C.Type.Float?   -> C.Term.FloatOf(term.value)
 
-      term is S.Term0.DoubleOf &&
-      expected is C.Type0.Double? -> C.Term0.DoubleOf(term.value)
+      term is S.Term.DoubleOf &&
+      expected is C.Type.Double?  -> C.Term.DoubleOf(term.value)
 
-      term is S.Term0.StringOf &&
-      expected is C.Type0.String? -> C.Term0.StringOf(term.value)
+      term is S.Term.StringOf &&
+      expected is C.Type.String?  -> C.Term.StringOf(term.value)
 
-      term is S.Term0.ListOf &&
-      term.values.isEmpty()       -> C.Term0.ListOf(
+      term is S.Term.ListOf &&
+      term.values.isEmpty()       -> C.Term.ListOf(
         emptyList(),
-        C.Type0.List(C.Type0.End),
+        C.Type.List(C.Type.End),
       )
 
-      term is S.Term0.ListOf &&
-      expected is C.Type0.List?   -> {
-        val head = elaborateTerm0(
+      term is S.Term.ListOf &&
+      expected is C.Type.List?    -> {
+        val head = elaborateTerm(
           env,
           term.values.first(),
           expected?.element,
@@ -224,23 +224,23 @@ class Elaborate private constructor(
           term.values
             .drop(1)
             .map { value ->
-              elaborateTerm0(
+              elaborateTerm(
                 env,
                 value,
                 element
               )
             }
-        C.Term0.ListOf(
+        C.Term.ListOf(
           listOf(head) + tail,
-          C.Type0.List(element),
+          C.Type.List(element),
         )
       }
 
-      term is S.Term0.CompoundOf &&
-      expected == null             -> {
+      term is S.Term.CompoundOf &&
+      expected == null            -> {
         val values = term.values.associate { (key, value) ->
           @Suppress("NAME_SHADOWING")
-          val value = elaborateTerm0(
+          val value = elaborateTerm(
             env,
             value,
           )
@@ -250,15 +250,15 @@ class Elaborate private constructor(
           )
           key.value to value
         }
-        C.Term0.CompoundOf(
+        C.Term.CompoundOf(
           values,
-          C.Type0.Compound(values.mapValues { it.value.type }),
+          C.Type.Compound(values.mapValues { it.value.type }),
         )
       }
 
-      term is S.Term0.CompoundOf &&
-      expected is C.Type0.Compound -> {
-        val values = mutableMapOf<String, C.Term0>()
+      term is S.Term.CompoundOf &&
+      expected is C.Type.Compound -> {
+        val values = mutableMapOf<String, C.Term>()
         term.values.forEach { (key, value) ->
           when (val element = expected.elements[key.value]) {
             null -> {
@@ -267,7 +267,7 @@ class Elaborate private constructor(
                 key.range,
               )
               @Suppress("NAME_SHADOWING")
-              val value = elaborateTerm0(
+              val value = elaborateTerm(
                 env,
                 value,
               )
@@ -282,7 +282,7 @@ class Elaborate private constructor(
                 element,
                 key.range,
               )
-              values[key.value] = elaborateTerm0(
+              values[key.value] = elaborateTerm(
                 env,
                 value,
                 element,
@@ -298,52 +298,52 @@ class Elaborate private constructor(
             term.range,
           )
         }
-        C.Term0.CompoundOf(
+        C.Term.CompoundOf(
           values,
-          C.Type0.Compound(values.mapValues { it.value.type }),
+          C.Type.Compound(values.mapValues { it.value.type }),
         )
       }
 
-      term is S.Term0.BoxOf &&
-      expected is C.Type0.Box?     -> {
-        val value = elaborateTerm0(
+      term is S.Term.BoxOf &&
+      expected is C.Type.Box?     -> {
+        val value = elaborateTerm(
           env,
           term.value,
           expected?.element,
         )
-        C.Term0.BoxOf(
+        C.Term.BoxOf(
           value,
-          C.Type0.Box(value.type),
+          C.Type.Box(value.type),
         )
       }
 
-      term is S.Term0.If           -> {
-        val condition = elaborateTerm0(
+      term is S.Term.If           -> {
+        val condition = elaborateTerm(
           env,
           term.condition,
-          C.Type0.Bool,
+          C.Type.Bool,
         )
         val elseEnv = env.copy()
-        val thenClause = elaborateTerm0(
+        val thenClause = elaborateTerm(
           env,
           term.thenClause,
           expected,
         )
-        val elseClause = elaborateTerm0(
+        val elseClause = elaborateTerm(
           elseEnv,
           term.elseClause,
           expected
           ?: thenClause.type,
         )
-        C.Term0.If(
+        C.Term.If(
           condition,
           thenClause,
           elseClause,
         )
       }
 
-      term is S.Term0.Let          -> {
-        val init = elaborateTerm0(
+      term is S.Term.Let          -> {
+        val init = elaborateTerm(
           env,
           term.init,
         )
@@ -355,57 +355,57 @@ class Elaborate private constructor(
           term.name.value,
           init.type,
         ) {
-          elaborateTerm0(
+          elaborateTerm(
             env,
             term.body,
             expected,
           )
         }
-        C.Term0.Let(
+        C.Term.Let(
           term.name.value,
           init,
           body,
         )
       }
 
-      term is S.Term0.Var &&
-      expected == null             -> when (val entry = env[term.name]) {
+      term is S.Term.Var &&
+      expected == null            -> when (val entry = env[term.name]) {
         null -> {
           diagnostics += Diagnostic.VarNotFound(
             term.name,
             term.range,
           )
-          C.Term0.Hole(C.Type0.Hole)
+          C.Term.Hole(C.Type.Hole)
         }
         else -> if (entry.used) {
           diagnostics += Diagnostic.VarAlreadyUsed(
             term.name,
             term.range,
           )
-          C.Term0.Hole(entry.type)
+          C.Term.Hole(entry.type)
         } else {
           entry.used = true
-          C.Term0.Var(
+          C.Term.Var(
             term.name,
             entry.type,
           )
         }
       }
 
-      term is S.Term0.Run &&
+      term is S.Term.Run &&
       expected == null            -> when (val resource = env.resources[term.name]) {
-        null                         -> {
+        null                        -> {
           diagnostics += Diagnostic.ResourceNotFound(
             term.name,
             term.range,
           )
-          C.Term0.Hole(C.Type0.Hole)
+          C.Term.Hole(C.Type.Hole)
         }
-        !is Core.Resource0.Functions -> {
+        !is Core.Resource.Functions -> {
           diagnostics += Diagnostic.ExpectedFunction(term.range)
-          C.Term0.Hole(C.Type0.Hole)
+          C.Term.Hole(C.Type.Hole)
         }
-        else                         -> {
+        else                        -> {
           if (resource.params.size != term.args.size) {
             diagnostics += Diagnostic.MismatchedArity(
               resource.params.size,
@@ -414,13 +414,13 @@ class Elaborate private constructor(
             )
           }
           val args = term.args.mapIndexed { index, arg ->
-            elaborateTerm0(
+            elaborateTerm(
               env,
               arg,
               resource.params.getOrNull(index)?.second,
             )
           }
-          C.Term0.Run(
+          C.Term.Run(
             resource.module,
             term.name,
             args,
@@ -429,18 +429,18 @@ class Elaborate private constructor(
         }
       }
 
-      term is S.Term0.Command &&
-      expected is C.Type0.Int?    -> C.Term0.Command(term.value)
+      term is S.Term.Command &&
+      expected is C.Type.Int?     -> C.Term.Command(term.value)
 
-      term is S.Term0.Hole        -> C.Term0.Hole(
+      term is S.Term.Hole         -> C.Term.Hole(
         expected
-        ?: C.Type0.Hole
+        ?: C.Type.Hole
       )
 
       expected == null            -> throw IllegalArgumentException()
 
       else                        -> {
-        val actual = elaborateTerm0(
+        val actual = elaborateTerm(
           env,
           term,
         )
@@ -460,7 +460,7 @@ class Elaborate private constructor(
             .filter { entry -> !entry.used }
             .map { entry ->
               CompletionItem(entry.name).apply {
-                val type = prettyType0(entry.type)
+                val type = prettyType(entry.type)
                 documentation = forRight(highlight(type))
                 labelDetails = CompletionItemLabelDetails().apply {
                   detail = " : $type"
@@ -478,7 +478,7 @@ class Elaborate private constructor(
   }
 
   private fun hover(
-    type: C.Type0,
+    type: C.Type,
     range: Range,
   ) {
     if (hover == null && position != null && position in range) {
@@ -486,62 +486,62 @@ class Elaborate private constructor(
     }
   }
 
-  private infix fun C.Type0.isSubtypeOf(
-    type2: C.Type0,
+  private infix fun C.Type.isSubtypeOf(
+    type2: C.Type,
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type0.End &&
-      type2 is C.Type0.End      -> true
+      type1 is C.Type.End &&
+      type2 is C.Type.End      -> true
 
-      type1 is C.Type0.Bool &&
-      type2 is C.Type0.Bool     -> true
+      type1 is C.Type.Bool &&
+      type2 is C.Type.Bool     -> true
 
-      type1 is C.Type0.Byte &&
-      type2 is C.Type0.Byte     -> true
+      type1 is C.Type.Byte &&
+      type2 is C.Type.Byte     -> true
 
-      type1 is C.Type0.Short &&
-      type2 is C.Type0.Short    -> true
+      type1 is C.Type.Short &&
+      type2 is C.Type.Short    -> true
 
-      type1 is C.Type0.Int &&
-      type2 is C.Type0.Int      -> true
+      type1 is C.Type.Int &&
+      type2 is C.Type.Int      -> true
 
-      type1 is C.Type0.Long &&
-      type2 is C.Type0.Long     -> true
+      type1 is C.Type.Long &&
+      type2 is C.Type.Long     -> true
 
-      type1 is C.Type0.Float &&
-      type2 is C.Type0.Float    -> true
+      type1 is C.Type.Float &&
+      type2 is C.Type.Float    -> true
 
-      type1 is C.Type0.Double &&
-      type2 is C.Type0.Double   -> true
+      type1 is C.Type.Double &&
+      type2 is C.Type.Double   -> true
 
-      type1 is C.Type0.String &&
-      type2 is C.Type0.String   -> true
+      type1 is C.Type.String &&
+      type2 is C.Type.String   -> true
 
-      type1 is C.Type0.List &&
-      type2 is C.Type0.List     -> type1.element isSubtypeOf type2.element
+      type1 is C.Type.List &&
+      type2 is C.Type.List     -> type1.element isSubtypeOf type2.element
 
-      type1 is C.Type0.Compound &&
-      type2 is C.Type0.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+      type1 is C.Type.Compound &&
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
+                                  type1.elements.all { (key1, element1) ->
+                                    when (val element2 = type2.elements[key1]) {
+                                      null -> false
+                                      else -> element1 isSubtypeOf element2
+                                    }
+                                  }
 
-      type1 is C.Type0.Box &&
-      type2 is C.Type0.Box      -> type1.element isSubtypeOf type2.element
+      type1 is C.Type.Box &&
+      type2 is C.Type.Box      -> type1.element isSubtypeOf type2.element
 
-      type1 is C.Type0.Hole     -> true
-      type2 is C.Type0.Hole     -> true
+      type1 is C.Type.Hole     -> true
+      type2 is C.Type.Hole     -> true
 
-      else                      -> false
+      else                     -> false
     }
   }
 
   private class Env private constructor(
-    val resources: Map<String, C.Resource0>,
+    val resources: Map<String, C.Resource>,
     private val _entries: MutableList<Entry>,
   ) {
     val entries: List<Entry> get() = _entries
@@ -551,7 +551,7 @@ class Elaborate private constructor(
 
     fun bind(
       name: String,
-      type: C.Type0,
+      type: C.Type,
     ) {
       _entries += Entry(
         name,
@@ -562,7 +562,7 @@ class Elaborate private constructor(
 
     inline fun <R> binding(
       name: String,
-      type: C.Type0,
+      type: C.Type,
       action: () -> R,
     ): R {
       _entries += Entry(
@@ -586,11 +586,11 @@ class Elaborate private constructor(
     data class Entry(
       val name: String,
       var used: Boolean,
-      val type: C.Type0,
+      val type: C.Type,
     )
 
     companion object {
-      fun emptyEnv(resources: Map<String, Core.Resource0>): Env =
+      fun emptyEnv(resources: Map<String, Core.Resource>): Env =
         Env(
           resources,
           mutableListOf(),
@@ -608,7 +608,7 @@ class Elaborate private constructor(
     val root: C.Root,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>?,
-    val hover: C.Type0?,
+    val hover: C.Type?,
   )
 
   companion object {

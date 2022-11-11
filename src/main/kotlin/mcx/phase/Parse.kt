@@ -47,14 +47,14 @@ class Parse private constructor(
       emptyList()
     }
 
-    val resources = mutableListOf<S.Resource0>()
+    val resources = mutableListOf<S.Resource>()
     while (true) {
       skipWhitespaces()
       if (!canRead()) {
         break
       }
       val start = cursor
-      resources += parseResource0()
+      resources += parseResource()
       if (start == cursor) {
         break
       }
@@ -72,7 +72,7 @@ class Parse private constructor(
     )
   }
 
-  private fun parseResource0(): S.Resource0 =
+  private fun parseResource(): S.Resource =
     ranging {
       val annotations = mutableListOf<S.Annotation>()
       while (true) {
@@ -142,18 +142,18 @@ class Parse private constructor(
               skipWhitespaces()
               expect(':')
               skipWhitespaces()
-              val value = parseType0()
+              val value = parseType()
               key to value
             }
             skipWhitespaces()
             expect(':')
             skipWhitespaces()
-            val result = parseType0()
+            val result = parseType()
             skipWhitespaces()
             expect('=')
             skipWhitespaces()
-            val body = parseTerm0()
-            S.Resource0.Functions(
+            val body = parseTerm()
+            S.Resource.Functions(
               annotations,
               name,
               params,
@@ -169,23 +169,23 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedResource0(range)
-        S.Resource0.Hole(range)
+        diagnostics += Diagnostic.ExpectedResource(range)
+        S.Resource.Hole(range)
       }
     }
 
   private fun parseJsonResource(
     annotations: List<S.Annotation>,
     registry: Registry,
-  ): S.Resource0.JsonResource =
+  ): S.Resource.JsonResource =
     ranging {
       skipWhitespaces()
       val name = readWord()
       skipWhitespaces()
       expect('=')
       skipWhitespaces()
-      val body = parseTerm0()
-      S.Resource0.JsonResource(
+      val body = parseTerm()
+      S.Resource.JsonResource(
         annotations,
         registry,
         name,
@@ -212,14 +212,14 @@ class Parse private constructor(
       }
     }
 
-  private fun parseType0(): S.Type0 =
+  private fun parseType(): S.Type =
     ranging {
       if (canRead()) {
         when (peek()) {
           '('  -> {
             skip()
             skipWhitespaces()
-            val type = parseType0()
+            val type = parseType()
             skipWhitespaces()
             expect(')')
             type
@@ -227,10 +227,10 @@ class Parse private constructor(
           '['  -> {
             skip()
             skipWhitespaces()
-            val element = parseType0()
+            val element = parseType()
             skipWhitespaces()
             expect(']')
-            S.Type0.List(
+            S.Type.List(
               element,
               until(),
             )
@@ -245,29 +245,29 @@ class Parse private constructor(
               skipWhitespaces()
               expect(':')
               skipWhitespaces()
-              val element = parseType0()
+              val element = parseType()
               key to element
             }.toMap()
-            S.Type0.Compound(
+            S.Type.Compound(
               elements,
               until(),
             )
           }
           else -> when (readWord()) {
-            "end"    -> S.Type0.End(until())
-            "bool"   -> S.Type0.Bool(until())
-            "byte"   -> S.Type0.Byte(until())
-            "short"  -> S.Type0.Short(until())
-            "int"    -> S.Type0.Int(until())
-            "long"   -> S.Type0.Long(until())
-            "float"  -> S.Type0.Float(until())
-            "double" -> S.Type0.Double(until())
-            "string" -> S.Type0.String(until())
+            "end"    -> S.Type.End(until())
+            "bool"   -> S.Type.Bool(until())
+            "byte"   -> S.Type.Byte(until())
+            "short"  -> S.Type.Short(until())
+            "int"    -> S.Type.Int(until())
+            "long"   -> S.Type.Long(until())
+            "float"  -> S.Type.Float(until())
+            "double" -> S.Type.Double(until())
+            "string" -> S.Type.String(until())
             "box"    -> {
               skipWhitespaces()
               expect('(')
-              val type = S.Type0.Box(
-                parseType0(),
+              val type = S.Type.Box(
+                parseType(),
                 until(),
               )
               skipWhitespaces()
@@ -282,12 +282,12 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedType0(range)
-        S.Type0.Hole(range)
+        diagnostics += Diagnostic.ExpectedType(range)
+        S.Type.Hole(range)
       }
     }
 
-  private fun parseTerm0(): S.Term0 =
+  private fun parseTerm(): S.Term =
     ranging {
       skipWhitespaces()
       if (canRead()) {
@@ -295,7 +295,7 @@ class Parse private constructor(
           '('                   -> {
             skip()
             skipWhitespaces()
-            val term = parseTerm0()
+            val term = parseTerm()
             skipWhitespaces()
             expect(')')
             term
@@ -309,7 +309,7 @@ class Parse private constructor(
                   numeric
                     .toByteOrNull()
                     ?.let {
-                      S.Term0.ByteOf(
+                      S.Term.ByteOf(
                         it,
                         until(),
                       )
@@ -320,7 +320,7 @@ class Parse private constructor(
                   numeric
                     .toShortOrNull()
                     ?.let {
-                      S.Term0.ShortOf(
+                      S.Term.ShortOf(
                         it,
                         until(),
                       )
@@ -331,7 +331,7 @@ class Parse private constructor(
                   numeric
                     .toLongOrNull()
                     ?.let {
-                      S.Term0.LongOf(
+                      S.Term.LongOf(
                         it,
                         until(),
                       )
@@ -342,7 +342,7 @@ class Parse private constructor(
                   numeric
                     .toFloatOrNull()
                     ?.let {
-                      S.Term0.FloatOf(
+                      S.Term.FloatOf(
                         it,
                         until(),
                       )
@@ -353,7 +353,7 @@ class Parse private constructor(
                   numeric
                     .toDoubleOrNull()
                     ?.let {
-                      S.Term0.DoubleOf(
+                      S.Term.DoubleOf(
                         it,
                         until(),
                       )
@@ -363,7 +363,7 @@ class Parse private constructor(
                   numeric
                     .toIntOrNull()
                     ?.let {
-                      S.Term0.IntOf(
+                      S.Term.IntOf(
                         it,
                         until(),
                       )
@@ -371,7 +371,7 @@ class Parse private constructor(
                   ?: numeric
                     .toDoubleOrNull()
                     ?.let {
-                      S.Term0.DoubleOf(
+                      S.Term.DoubleOf(
                         it,
                         until(),
                       )
@@ -381,7 +381,7 @@ class Parse private constructor(
               numeric
                 .toIntOrNull()
                 ?.let {
-                  S.Term0.IntOf(
+                  S.Term.IntOf(
                     it,
                     until(),
                   )
@@ -389,7 +389,7 @@ class Parse private constructor(
             }
           }
           '"'                   ->
-            S.Term0.StringOf(
+            S.Term.StringOf(
               readQuotedString(),
               until(),
             )
@@ -399,9 +399,9 @@ class Parse private constructor(
               '[',
               ']',
             ) {
-              parseTerm0()
+              parseTerm()
             }
-            S.Term0.ListOf(
+            S.Term.ListOf(
               values,
               until(),
             )
@@ -416,10 +416,10 @@ class Parse private constructor(
               skipWhitespaces()
               expect(':')
               skipWhitespaces()
-              val value = parseTerm0()
+              val value = parseTerm()
               key to value
             }
-            S.Term0.CompoundOf(
+            S.Term.CompoundOf(
               values,
               until(),
             )
@@ -427,40 +427,40 @@ class Parse private constructor(
           '&'                   -> {
             skip()
             skipWhitespaces()
-            S.Term0.BoxOf(
-              parseTerm0(),
+            S.Term.BoxOf(
+              parseTerm(),
               until(),
             )
           }
           '/'                   -> {
             skip()
             val value = readQuotedString()
-            S.Term0.Command(
+            S.Term.Command(
               value,
               until(),
             )
           }
           else                  -> when (val word = readWord()) {
-            "false" -> S.Term0.BoolOf(
+            "false" -> S.Term.BoolOf(
               false,
               until(),
             )
-            "true"  -> S.Term0.BoolOf(
+            "true"  -> S.Term.BoolOf(
               true,
               until(),
             )
             "if"    -> {
               skipWhitespaces()
-              val condition = parseTerm0()
+              val condition = parseTerm()
               skipWhitespaces()
               expect("then")
               skipWhitespaces()
-              val thenClause = parseTerm0()
+              val thenClause = parseTerm()
               skipWhitespaces()
               expect("else")
               skipWhitespaces()
-              val elseClause = parseTerm0()
-              S.Term0.If(
+              val elseClause = parseTerm()
+              S.Term.If(
                 condition,
                 thenClause,
                 elseClause,
@@ -473,11 +473,11 @@ class Parse private constructor(
               skipWhitespaces()
               expect('=')
               skipWhitespaces()
-              val init = parseTerm0()
+              val init = parseTerm()
               skipWhitespaces()
               expect(';')
-              val body = parseTerm0()
-              S.Term0.Let(
+              val body = parseTerm()
+              S.Term.Let(
                 name,
                 init,
                 body,
@@ -490,15 +490,15 @@ class Parse private constructor(
                 '(',
                 ')',
               ) {
-                parseTerm0()
+                parseTerm()
               }
-              S.Term0.Run(
+              S.Term.Run(
                 word,
                 args,
                 until(),
               )
             } else {
-              S.Term0.Var(
+              S.Term.Var(
                 word,
                 until(),
               )
@@ -510,8 +510,8 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedTerm0(range)
-        S.Term0.Hole(range)
+        diagnostics += Diagnostic.ExpectedTerm(range)
+        S.Term.Hole(range)
       }
     }
 

@@ -18,10 +18,10 @@ class Pack private constructor() {
   }
 
   private fun packResource(
-    resource: C.Resource0,
+    resource: C.Resource,
   ): P.Resource {
     return when (resource) {
-      is C.Resource0.JsonResource -> {
+      is C.Resource.JsonResource -> {
         val body = packJson(resource.body)
         P.Resource.JsonResource(
           resource.registry,
@@ -30,7 +30,7 @@ class Pack private constructor() {
           body,
         )
       }
-      is C.Resource0.Functions    -> {
+      is C.Resource.Functions    -> {
         val env = emptyEnv()
         env += P.Instruction.Debug("${resource.module}/${resource.name}")
         resource.params.forEach { (name, type) ->
@@ -58,28 +58,28 @@ class Pack private constructor() {
           env.instructions,
         )
       }
-      is C.Resource0.Hole         -> unexpectedHole()
+      is C.Resource.Hole         -> unexpectedHole()
     }
   }
 
   private fun packTerm(
     env: Env,
-    term: C.Term0,
+    term: C.Term,
   ) {
     when (term) {
-      is C.Term0.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
-      is C.Term0.ByteOf     -> env += P.Instruction.Push(P.Tag.ByteOf(term.value))
-      is C.Term0.ShortOf    -> env += P.Instruction.Push(P.Tag.ShortOf(term.value))
-      is C.Term0.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
-      is C.Term0.LongOf     -> env += P.Instruction.Push(P.Tag.LongOf(term.value))
-      is C.Term0.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
-      is C.Term0.DoubleOf   -> env += P.Instruction.Push(P.Tag.DoubleOf(term.value))
-      is C.Term0.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
-      is C.Term0.ListOf     -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term0.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term0.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term0.If         -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term0.Let        -> {
+      is C.Term.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
+      is C.Term.ByteOf     -> env += P.Instruction.Push(P.Tag.ByteOf(term.value))
+      is C.Term.ShortOf    -> env += P.Instruction.Push(P.Tag.ShortOf(term.value))
+      is C.Term.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
+      is C.Term.LongOf     -> env += P.Instruction.Push(P.Tag.LongOf(term.value))
+      is C.Term.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
+      is C.Term.DoubleOf   -> env += P.Instruction.Push(P.Tag.DoubleOf(term.value))
+      is C.Term.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
+      is C.Term.ListOf     -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term.If         -> env += P.Instruction.Debug("$term") // TODO
+      is C.Term.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
         packTerm(
@@ -101,14 +101,14 @@ class Pack private constructor() {
           bodyType,
         )
       }
-      is C.Term0.Var        -> {
+      is C.Term.Var        -> {
         val type = eraseType(term.type)
         env += P.Instruction.Copy(
           env[term.name, type],
           type,
         )
       }
-      is C.Term0.Run        -> {
+      is C.Term.Run        -> {
         term.args.forEach {
           packTerm(
             env,
@@ -120,8 +120,8 @@ class Pack private constructor() {
           term.name,
         )
       }
-      is C.Term0.Command    -> env += P.Instruction.Command(term.value)
-      is C.Term0.Hole       -> unexpectedHole()
+      is C.Term.Command    -> env += P.Instruction.Command(term.value)
+      is C.Term.Hole       -> unexpectedHole()
     }
   }
 
@@ -144,20 +144,20 @@ class Pack private constructor() {
   }
 
   private fun packJson(
-    term: C.Term0,
+    term: C.Term,
   ): Json {
     return when (term) {
-      is C.Term0.BoolOf     -> Json.BoolOf(term.value)
-      is C.Term0.ByteOf     -> Json.ByteOf(term.value)
-      is C.Term0.ShortOf    -> Json.ShortOf(term.value)
-      is C.Term0.IntOf      -> Json.IntOf(term.value)
-      is C.Term0.LongOf     -> Json.LongOf(term.value)
-      is C.Term0.FloatOf    -> Json.FloatOf(term.value)
-      is C.Term0.DoubleOf   -> Json.DoubleOf(term.value)
-      is C.Term0.StringOf   -> Json.StringOf(term.value)
-      is C.Term0.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
-      is C.Term0.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
-      else                  -> TODO()
+      is C.Term.BoolOf     -> Json.BoolOf(term.value)
+      is C.Term.ByteOf     -> Json.ByteOf(term.value)
+      is C.Term.ShortOf    -> Json.ShortOf(term.value)
+      is C.Term.IntOf      -> Json.IntOf(term.value)
+      is C.Term.LongOf     -> Json.LongOf(term.value)
+      is C.Term.FloatOf    -> Json.FloatOf(term.value)
+      is C.Term.DoubleOf   -> Json.DoubleOf(term.value)
+      is C.Term.StringOf   -> Json.StringOf(term.value)
+      is C.Term.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
+      is C.Term.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
+      else                 -> TODO()
     }
   }
 
@@ -208,22 +208,22 @@ class Pack private constructor() {
 
   companion object {
     private fun eraseType(
-      type: C.Type0,
+      type: C.Type,
     ): P.Type {
       return when (type) {
-        is C.Type0.End      -> P.Type.END
-        is C.Type0.Bool     -> P.Type.BYTE
-        is C.Type0.Byte     -> P.Type.BYTE
-        is C.Type0.Short    -> P.Type.SHORT
-        is C.Type0.Int      -> P.Type.INT
-        is C.Type0.Long     -> P.Type.LONG
-        is C.Type0.Float    -> P.Type.FLOAT
-        is C.Type0.Double   -> P.Type.DOUBLE
-        is C.Type0.String   -> P.Type.STRING
-        is C.Type0.List     -> P.Type.LIST
-        is C.Type0.Compound -> P.Type.COMPOUND
-        is C.Type0.Box      -> P.Type.INT
-        is C.Type0.Hole     -> unexpectedHole()
+        is C.Type.End      -> P.Type.END
+        is C.Type.Bool     -> P.Type.BYTE
+        is C.Type.Byte     -> P.Type.BYTE
+        is C.Type.Short    -> P.Type.SHORT
+        is C.Type.Int      -> P.Type.INT
+        is C.Type.Long     -> P.Type.LONG
+        is C.Type.Float    -> P.Type.FLOAT
+        is C.Type.Double   -> P.Type.DOUBLE
+        is C.Type.String   -> P.Type.STRING
+        is C.Type.List     -> P.Type.LIST
+        is C.Type.Compound -> P.Type.COMPOUND
+        is C.Type.Box      -> P.Type.INT
+        is C.Type.Hole     -> unexpectedHole()
       }
     }
 

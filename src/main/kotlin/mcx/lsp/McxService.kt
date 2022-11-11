@@ -9,7 +9,7 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
 import mcx.phase.Cache
 import mcx.phase.Config
-import mcx.phase.prettyType0
+import mcx.phase.prettyType
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
@@ -121,7 +121,7 @@ class McxService : TextDocumentService,
       Hover(
         when (val hover = core.hover) {
           null -> throw CancellationException()
-          else -> highlight(prettyType0(hover))
+          else -> highlight(prettyType(hover))
         }
       )
     }

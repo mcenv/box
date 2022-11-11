@@ -43,7 +43,7 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedResource0(
+  class ExpectedResource(
     range: Range,
   ) : Diagnostic(
     range,
@@ -59,7 +59,7 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedType0(
+  class ExpectedType(
     range: Range,
   ) : Diagnostic(
     range,
@@ -67,7 +67,7 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedTerm0(
+  class ExpectedTerm(
     range: Range,
   ) : Diagnostic(
     range,
@@ -160,14 +160,14 @@ sealed class Diagnostic(
   )
 
   class NotConvertible(
-    expected: C.Type0,
-    actual: C.Type0,
+    expected: C.Type,
+    actual: C.Type,
     range: Range,
   ) : Diagnostic(
     range,
     """not convertible:
-      |  expected: ${prettyType0(expected)}
-      |  actual  : ${prettyType0(actual)}
+      |  expected: ${prettyType(expected)}
+      |  actual  : ${prettyType(actual)}
     """.trimMargin(),
     DiagnosticSeverity.Error,
   )
