@@ -32,6 +32,7 @@ class Pack private constructor() {
       }
       is C.Resource0.Functions    -> {
         val env = emptyEnv()
+        env += P.Instruction.Debug("${resource.module}/${resource.name}")
         resource.params.forEach { (name, type) ->
           env.bind(
             name,

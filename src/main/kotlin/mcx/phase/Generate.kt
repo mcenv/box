@@ -4,12 +4,15 @@ import mcx.ast.Json
 import mcx.ast.Location
 import mcx.ast.Registry
 import mcx.util.quoted
+import java.security.MessageDigest
 import mcx.ast.Packed as P
 
 class Generate private constructor(
   private val config: Config,
   private val generator: Generator,
 ) {
+  private val digest = MessageDigest.getInstance("SHA3-256")
+
   private fun generateRoot(
     root: P.Root,
   ) {
@@ -147,13 +150,28 @@ class Generate private constructor(
     module: Location,
     name: String,
   ): String =
-    "data/${config.name}/${registry.string}/$module/$name.${registry.extension}"
+    "data/minecraft/${registry.string}/${hash("$module/$name")}.${registry.extension}"
 
   private fun generateResourceLocation(
     module: Location,
     name: String,
   ): String =
-    "${config.name}:$module/$name"
+    hash("$module/$name")
+
+  private fun hash(
+    string: String,
+  ): String =
+    digest
+      .digest(string.encodeToByteArray())
+      .joinToString("") {
+        it
+          .toUByte()
+          .toString(16)
+          .padStart(
+            2,
+            '0'
+          )
+      }
 
   interface Generator {
     fun entry(name: String)
