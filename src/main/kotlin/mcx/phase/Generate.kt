@@ -1,19 +1,15 @@
 package mcx.phase
 
 import mcx.ast.Json
-import mcx.ast.Location
 import mcx.ast.Packed
 import mcx.ast.Registry
 import mcx.util.quoted
-import java.security.MessageDigest
 import mcx.ast.Packed as P
 
 class Generate private constructor(
   private val config: Config,
   private val generator: Generator,
 ) {
-  private val digest = MessageDigest.getInstance("SHA3-256")
-
   private fun generateModule(
     module: Packed.Module,
   ) {
@@ -27,68 +23,20 @@ class Generate private constructor(
   ) {
     when (resource) {
       is P.Resource.JsonResource -> {
-        generator.entry(generatePath(resource.registry, resource.name))
+        generator.entry(generatePath(resource.registry, resource.path))
         generateJson(resource.body)
       }
       is P.Resource.Functions    -> {
-        generator.entry(generatePath(Registry.FUNCTIONS, resource.name))
-        resource.instructions.forEachIndexed { index, instruction ->
+        generator.entry(generatePath(Registry.FUNCTIONS, resource.path))
+        resource.commands.forEachIndexed { index, command ->
           if (index != 0) {
             generator.write("\n")
           }
-          generateInstruction(instruction)
+          generator.write(command)
         }
       }
     }
   }
-
-  private fun generateInstruction(
-    instruction: P.Instruction,
-  ) {
-    when (instruction) {
-      is P.Instruction.Push    -> generator.write("data modify storage mcx: ${generateStack(instruction.tag.type)} append value ${generateTag(instruction.tag)}")
-      is P.Instruction.Copy    -> {
-        val stack = generateStack(instruction.type)
-        generator.write("data modify storage mcx: $stack append from storage mcx: $stack[${instruction.index}]")
-      }
-      is P.Instruction.Drop    -> generator.write("data remove storage mcx: ${generateStack(instruction.type)}[${instruction.index}]")
-      is P.Instruction.Run     -> generator.write("function ${generateResourceLocation(instruction.name)}")
-      is P.Instruction.Command -> generator.write(instruction.value)
-      is P.Instruction.Debug   -> if (config.debug) {
-        generator.write("# ")
-        generator.write(instruction.message)
-      }
-    }
-  }
-
-  private fun generateStack(
-    type: P.Type,
-  ): String =
-    when (type) {
-      P.Type.END      -> error("unexpected: end")
-      P.Type.BYTE     -> "byte"
-      P.Type.SHORT    -> "short"
-      P.Type.INT      -> "int"
-      P.Type.LONG     -> "long"
-      P.Type.FLOAT    -> "float"
-      P.Type.DOUBLE   -> "double"
-      P.Type.STRING   -> "string"
-      P.Type.LIST     -> "list"
-      P.Type.COMPOUND -> "compound"
-    }
-
-  private fun generateTag(
-    tag: P.Tag,
-  ): String =
-    when (tag) {
-      is P.Tag.ByteOf   -> "${tag.value}b"
-      is P.Tag.ShortOf  -> "${tag.value}s"
-      is P.Tag.IntOf    -> "${tag.value}"
-      is P.Tag.LongOf   -> "${tag.value}l"
-      is P.Tag.FloatOf  -> "${tag.value}f"
-      is P.Tag.DoubleOf -> "${tag.value}"
-      is P.Tag.StringOf -> tag.value.quoted('"')
-    }
 
   private fun generateJson(
     json: Json,
@@ -129,26 +77,9 @@ class Generate private constructor(
 
   private fun generatePath(
     registry: Registry,
-    name: Location,
+    path: String,
   ): String =
-    "data/minecraft/${registry.string}/${generateResourceLocation(name)}.${registry.extension}"
-
-  private fun generateResourceLocation(
-    name: Location,
-  ): String =
-    hash(name.toString())
-
-  private fun hash(
-    string: String,
-  ): String =
-    digest
-      .digest(string.encodeToByteArray())
-      .joinToString("") {
-        it
-          .toUByte()
-          .toString(16)
-          .padStart(2, '0')
-      }
+    "data/minecraft/${registry.string}/$path.${registry.extension}"
 
   interface Generator {
     fun entry(name: String)
