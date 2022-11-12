@@ -83,7 +83,6 @@ object Build : Subcommand(
             val core = build.fetchCore(
               config,
               path.toLocation(),
-              false,
             )!!
             if (core.diagnostics.isNotEmpty()) {
               valid.set(false)

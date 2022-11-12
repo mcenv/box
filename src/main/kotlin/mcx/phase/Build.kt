@@ -7,17 +7,19 @@ import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 
-// TODO
 class Build(
   private val src: Path,
 ) {
   private val texts: ConcurrentMap<Location, String> = ConcurrentHashMap()
-  private val parseResults: ConcurrentMap<Location, Parse.Result> = ConcurrentHashMap()
+  private val parseResults: ConcurrentMap<Location, Trace<Parse.Result>> = ConcurrentHashMap()
+  private val elaborateResults: ConcurrentMap<Location, Trace<Elaborate.Result>> = ConcurrentHashMap()
+  private val signatures: ConcurrentMap<Location, Trace<Elaborate.Result>> = ConcurrentHashMap()
 
   fun changeText(
     location: Location,
@@ -32,6 +34,8 @@ class Build(
   ) {
     texts -= location
     parseResults -= location
+    elaborateResults -= location
+    signatures -= location
   }
 
   // TODO: track external modification?
@@ -65,25 +69,60 @@ class Build(
   suspend fun fetchSurface(
     config: Config,
     location: Location,
-  ): Parse.Result? {
-    return when (val parseResult = parseResults[location]) {
-      null -> {
-        val text = fetchText(location)
-                   ?: return null
+  ): Parse.Result? =
+    coroutineScope {
+      val text = fetchText(location)
+                 ?: return@coroutineScope null
+      val newHash = text.hashCode()
+      val parseResult = parseResults[location]
+      if (parseResult == null || parseResult.hash != newHash) {
         Parse(
           config,
           location,
           text,
-        ).also { parseResults[location] = it }
+        ).also {
+          parseResults[location] = Trace(
+            it,
+            newHash,
+          )
+        }
+      } else {
+        parseResult.value
       }
-      else -> parseResult
     }
-  }
+
+  suspend fun fetchSignature(
+    config: Config,
+    location: Location,
+  ): Elaborate.Result? =
+    coroutineScope {
+      val surface = fetchSurface(
+        config,
+        location,
+      )
+                    ?: return@coroutineScope null
+      val newHash = surface.hashCode()
+      val signature = signatures[location]
+      if (signature == null || signature.hash != newHash) {
+        Elaborate(
+          config,
+          emptyList(),
+          surface,
+          true,
+        ).also {
+          signatures[location] = Trace(
+            it,
+            newHash,
+          )
+        }
+      } else {
+        signature.value
+      }
+    }
 
   suspend fun fetchCore(
     config: Config,
     location: Location,
-    signature: Boolean,
     position: Position? = null,
   ): Elaborate.Result? =
     coroutineScope {
@@ -93,16 +132,12 @@ class Build(
       )
                     ?: return@coroutineScope null
       val dependencies =
-        if (signature) {
-          emptyList()
-        } else {
           surface.root.imports
             .map {
               async {
-                val dependency = fetchCore(
+                val dependency = fetchSignature(
                   config,
                   it.value,
-                  true,
                 )
                 Elaborate.Dependency(
                   it.value,
@@ -113,10 +148,9 @@ class Build(
             }
             .plus(
               async {
-                val prelude = fetchCore(
+                val prelude = fetchSignature(
                   config,
                   PRELUDE,
-                  true,
                 )!!
                 Elaborate.Dependency(
                   PRELUDE,
@@ -127,10 +161,9 @@ class Build(
             )
             .plus(
               async {
-                val self = fetchCore(
+                val self = fetchSignature(
                   config,
                   location,
-                  true,
                 )!!
                 Elaborate.Dependency(
                   location,
@@ -140,14 +173,27 @@ class Build(
               }
             )
             .awaitAll()
-        }
-      Elaborate(
-        config,
-        dependencies,
+      val newHash = Objects.hash(
         surface,
-        signature,
-        position,
+        dependencies
       )
+      val elaborateResult = elaborateResults[location]
+      if (elaborateResult == null || elaborateResult.hash != newHash || position != null) {
+        Elaborate(
+          config,
+          dependencies,
+          surface,
+          false,
+          position,
+        ).also {
+          elaborateResults[location] = Trace(
+            it,
+            newHash,
+          )
+        }
+      } else {
+        elaborateResult.value
+      }
     }
 
   suspend fun fetchPacked(
@@ -157,7 +203,6 @@ class Build(
     val core = fetchCore(
       config,
       location,
-      false,
     )
                ?: return null
     if (core.diagnostics.isNotEmpty()) {
@@ -185,6 +230,11 @@ class Build(
       packed,
     )
   }
+
+  private data class Trace<V>(
+    val value: V,
+    val hash: Int,
+  )
 
   companion object {
     private val STD_SRC: Path

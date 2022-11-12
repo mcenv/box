@@ -84,7 +84,6 @@ class McxService : TextDocumentService,
       val core = build.fetchCore(
         fetchConfig(),
         uri.toLocation(),
-        false,
       )!!
       val newHash = core.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
@@ -101,7 +100,6 @@ class McxService : TextDocumentService,
       val core = build.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
-        false,
         params.position,
       )!!
       forLeft(
@@ -115,7 +113,6 @@ class McxService : TextDocumentService,
       val core = build.fetchCore(
         fetchConfig(),
         params.textDocument.uri.toLocation(),
-        false,
         params.position,
       )!!
       Hover(
