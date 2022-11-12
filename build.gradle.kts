@@ -1,11 +1,4 @@
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.FilterReader
-import java.io.Reader
-import java.io.StringReader
 
 buildscript {
   repositories {
@@ -49,19 +42,3 @@ tasks.withType<KotlinCompile> {
 application {
   mainClass.set("mcx.cli.MainKt")
 }
-
-class JsonMinifier(input: Reader) : FilterReader(StringReader(Json.encodeToString(Json.decodeFromString<JsonElement>(input.readText()))))
-
-class McfunctionMinifier(input: Reader) : FilterReader(
-  StringReader(mutableListOf<String>().let { output ->
-    input
-      .readLines()
-      .forEach {
-        val trimmed = it.trim()
-        if (trimmed.isNotEmpty() && !trimmed.startsWith('#')) {
-          output += trimmed
-        }
-      }
-    output.joinToString("\n")
-  })
-)
