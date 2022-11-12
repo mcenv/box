@@ -21,19 +21,10 @@ class Parse private constructor(
     module: Location,
   ): S.Root {
     skipWhitespaces()
-    val imports = if (
-      text.startsWith(
-        "import",
-        cursor,
-      )
-    ) {
+    val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
       skipWhitespaces()
-      parseList(
-        ',',
-        '{',
-        '}',
-      ) {
+      parseList(',', '{', '}') {
         parseRanged {
           val parts = mutableListOf(readWord())
           while (canRead() && peek() == '/') {
@@ -65,11 +56,7 @@ class Parse private constructor(
       diagnostics += Diagnostic.ExpectedEndOfFile(here())
     }
 
-    return S.Root(
-      module,
-      imports,
-      resources,
-    )
+    return S.Root(module, imports, resources)
   }
 
   private fun parseResource(): S.Resource =
@@ -90,53 +77,25 @@ class Parse private constructor(
 
       if (canRead()) {
         when (readWord()) {
-          "predicates"     -> parseJsonResource(
-            annotations,
-            Registry.PREDICATES,
-          )
-          "recipes"        -> parseJsonResource(
-            annotations,
-            Registry.RECIPES,
-          )
-          "loot_tables"    -> parseJsonResource(
-            annotations,
-            Registry.LOOT_TABLES,
-          )
-          "item_modifiers" -> parseJsonResource(
-            annotations,
-            Registry.ITEM_MODIFIERS,
-          )
-          "advancements"   -> parseJsonResource(
-            annotations,
-            Registry.ADVANCEMENTS,
-          )
-          "dimension_type" -> parseJsonResource(
-            annotations,
-            Registry.DIMENSION_TYPE,
-          )
+          "predicates"     -> parseJsonResource(annotations, Registry.PREDICATES)
+          "recipes"        -> parseJsonResource(annotations, Registry.RECIPES)
+          "loot_tables"    -> parseJsonResource(annotations, Registry.LOOT_TABLES)
+          "item_modifiers" -> parseJsonResource(annotations, Registry.ITEM_MODIFIERS)
+          "advancements"   -> parseJsonResource(annotations, Registry.ADVANCEMENTS)
+          "dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
           "worldgen"       -> {
             expect('/')
             when (readWord()) {
-              "biome" -> parseJsonResource(
-                annotations,
-                Registry.WORLDGEN_BIOME,
-              )
+              "biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
               else    -> null
             }
           }
-          "dimension"      -> parseJsonResource(
-            annotations,
-            Registry.DIMENSION,
-          )
+          "dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
           "functions"      -> {
             skipWhitespaces()
             val name = readWord()
             skipWhitespaces()
-            val params = parseList(
-              ',',
-              '(',
-              ')',
-            ) {
+            val params = parseList(',', '(', ')') {
               skipWhitespaces()
               val key = readWord()
               skipWhitespaces()
@@ -153,14 +112,7 @@ class Parse private constructor(
             expect('=')
             skipWhitespaces()
             val body = parseTerm()
-            S.Resource.Functions(
-              annotations,
-              name,
-              params,
-              result,
-              body,
-              until(),
-            )
+            S.Resource.Functions(annotations, name, params, result, body, until())
           }
           else             -> null
         }
@@ -185,13 +137,7 @@ class Parse private constructor(
       expect('=')
       skipWhitespaces()
       val body = parseTerm()
-      S.Resource.JsonResource(
-        annotations,
-        registry,
-        name,
-        body,
-        until(),
-      )
+      S.Resource.JsonResource(annotations, registry, name, body, until())
     }
 
   private fun parseAnnotation(): S.Annotation =
@@ -230,17 +176,10 @@ class Parse private constructor(
             val element = parseType()
             skipWhitespaces()
             expect(']')
-            S.Type.List(
-              element,
-              until(),
-            )
+            S.Type.List(element, until())
           }
           '{'  -> {
-            val elements = parseList(
-              ',',
-              '{',
-              '}',
-            ) {
+            val elements = parseList(',', '{', '}') {
               val key = readString()
               skipWhitespaces()
               expect(':')
@@ -248,10 +187,7 @@ class Parse private constructor(
               val element = parseType()
               key to element
             }.toMap()
-            S.Type.Compound(
-              elements,
-              until(),
-            )
+            S.Type.Compound(elements, until())
           }
           else -> when (readWord()) {
             "end"    -> S.Type.End(until())
@@ -266,10 +202,7 @@ class Parse private constructor(
             "box"    -> {
               skipWhitespaces()
               expect('(')
-              val type = S.Type.Box(
-                parseType(),
-                until(),
-              )
+              val type = S.Type.Box(parseType(), until())
               skipWhitespaces()
               expect(')')
               type
@@ -309,10 +242,7 @@ class Parse private constructor(
                   numeric
                     .toByteOrNull()
                     ?.let {
-                      S.Term.ByteOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.ByteOf(it, until())
                     }
                 }
                 's'  -> {
@@ -320,10 +250,7 @@ class Parse private constructor(
                   numeric
                     .toShortOrNull()
                     ?.let {
-                      S.Term.ShortOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.ShortOf(it, until())
                     }
                 }
                 'l'  -> {
@@ -331,10 +258,7 @@ class Parse private constructor(
                   numeric
                     .toLongOrNull()
                     ?.let {
-                      S.Term.LongOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.LongOf(it, until())
                     }
                 }
                 'f'  -> {
@@ -342,10 +266,7 @@ class Parse private constructor(
                   numeric
                     .toFloatOrNull()
                     ?.let {
-                      S.Term.FloatOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.FloatOf(it, until())
                     }
                 }
                 'd'  -> {
@@ -353,65 +274,38 @@ class Parse private constructor(
                   numeric
                     .toDoubleOrNull()
                     ?.let {
-                      S.Term.DoubleOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.DoubleOf(it, until())
                     }
                 }
                 else ->
                   numeric
                     .toIntOrNull()
                     ?.let {
-                      S.Term.IntOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.IntOf(it, until())
                     }
                   ?: numeric
                     .toDoubleOrNull()
                     ?.let {
-                      S.Term.DoubleOf(
-                        it,
-                        until(),
-                      )
+                      S.Term.DoubleOf(it, until())
                     }
               }
             } else {
               numeric
                 .toIntOrNull()
                 ?.let {
-                  S.Term.IntOf(
-                    it,
-                    until(),
-                  )
+                  S.Term.IntOf(it, until())
                 }
             }
           }
-          '"'                   ->
-            S.Term.StringOf(
-              readQuotedString(),
-              until(),
-            )
+          '"'                   -> S.Term.StringOf(readQuotedString(), until())
           '['                   -> {
-            val values = parseList(
-              ',',
-              '[',
-              ']',
-            ) {
+            val values = parseList(',', '[', ']') {
               parseTerm()
             }
-            S.Term.ListOf(
-              values,
-              until(),
-            )
+            S.Term.ListOf(values, until())
           }
           '{'                   -> {
-            val values = parseList(
-              ',',
-              '{',
-              '}',
-            ) {
+            val values = parseList(',', '{', '}') {
               val key = parseRanged { readString() }
               skipWhitespaces()
               expect(':')
@@ -419,39 +313,24 @@ class Parse private constructor(
               val value = parseTerm()
               key to value
             }
-            S.Term.CompoundOf(
-              values,
-              until(),
-            )
+            S.Term.CompoundOf(values, until())
           }
           '&'                   -> {
             skip()
             skipWhitespaces()
-            S.Term.BoxOf(
-              parseTerm(),
-              until(),
-            )
+            S.Term.BoxOf(parseTerm(), until())
           }
           '/'                   -> {
             skip()
             val value = readQuotedString()
-            S.Term.Command(
-              value,
-              until(),
-            )
+            S.Term.Command(value, until())
           }
           else                  -> {
             val location = parseLocation()
             when (location.parts.size) {
               1    -> when (val word = location.parts.first()) {
-                "false" -> S.Term.BoolOf(
-                  false,
-                  until(),
-                )
-                "true"  -> S.Term.BoolOf(
-                  true,
-                  until(),
-                )
+                "false" -> S.Term.BoolOf(false, until())
+                "true"  -> S.Term.BoolOf(true, until())
                 "if"    -> {
                   skipWhitespaces()
                   val condition = parseTerm()
@@ -463,12 +342,7 @@ class Parse private constructor(
                   expect("else")
                   skipWhitespaces()
                   val elseClause = parseTerm()
-                  S.Term.If(
-                    condition,
-                    thenClause,
-                    elseClause,
-                    until(),
-                  )
+                  S.Term.If(condition, thenClause, elseClause, until())
                 }
                 "let"   -> {
                   skipWhitespaces()
@@ -480,46 +354,22 @@ class Parse private constructor(
                   skipWhitespaces()
                   expect(';')
                   val body = parseTerm()
-                  S.Term.Let(
-                    name,
-                    init,
-                    body,
-                    until(),
-                  )
+                  S.Term.Let(name, init, body, until())
                 }
                 else    -> if (canRead() && peek() == '(') {
-                  val args = parseList(
-                    ',',
-                    '(',
-                    ')',
-                  ) {
+                  val args = parseList(',', '(', ')') {
                     parseTerm()
                   }
-                  S.Term.Run(
-                    location,
-                    args,
-                    until(),
-                  )
+                  S.Term.Run(location, args, until())
                 } else {
-                  S.Term.Var(
-                    word,
-                    until(),
-                  )
+                  S.Term.Var(word, until())
                 }
               }
               else -> {
-                val args = parseList(
-                  ',',
-                  '(',
-                  ')',
-                ) {
+                val args = parseList(',', '(', ')') {
                   parseTerm()
                 }
-                S.Term.Run(
-                  location,
-                  args,
-                  until(),
-                )
+                S.Term.Run(location, args, until())
               }
             }
           }
@@ -547,10 +397,7 @@ class Parse private constructor(
     parse: () -> R,
   ): S.Ranged<R> =
     ranging {
-      S.Ranged(
-        parse(),
-        until(),
-      )
+      S.Ranged(parse(), until())
     }
 
   private inline fun <R> parseList(
@@ -617,16 +464,7 @@ class Parse private constructor(
           '"', '\\' -> {
             builder.append(char)
           }
-          else      -> diagnostics += Diagnostic.InvalidEscape(
-            char,
-            Position(
-              line,
-              character - 1,
-            )..Position(
-              line,
-              character + 1,
-            ),
-          )
+          else      -> diagnostics += Diagnostic.InvalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
         }
         escaped = false
       } else {
@@ -648,10 +486,7 @@ class Parse private constructor(
     while (canRead() && peek().isNumericPart()) {
       skip()
     }
-    return text.substring(
-      start,
-      cursor,
-    )
+    return text.substring(start, cursor)
   }
 
   private inline fun Char.isNumericPart(): Boolean =
@@ -669,10 +504,7 @@ class Parse private constructor(
     while (canRead() && peek().isWordPart()) {
       skip()
     }
-    return text.substring(
-      start,
-      cursor,
-    )
+    return text.substring(start, cursor)
   }
 
   private inline fun Char.isWordPart(): Boolean =
@@ -693,28 +525,18 @@ class Parse private constructor(
       skip()
       true
     } else {
-      diagnostics += Diagnostic.ExpectedToken(
-        expected.toString(),
-        here(),
-      )
+      diagnostics += Diagnostic.ExpectedToken(expected.toString(), here())
       false
     }
 
   private fun expect(
     expected: String,
   ): Boolean =
-    if (canRead(expected.length) && text.startsWith(
-        expected,
-        cursor,
-      )
-    ) {
+    if (canRead(expected.length) && text.startsWith(expected, cursor)) {
       skip(expected.length)
       true
     } else {
-      diagnostics += Diagnostic.ExpectedToken(
-        expected,
-        here(),
-      )
+      diagnostics += Diagnostic.ExpectedToken(expected, here())
       false
     }
 

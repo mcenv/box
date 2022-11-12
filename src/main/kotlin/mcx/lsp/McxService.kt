@@ -50,19 +50,13 @@ class McxService : TextDocumentService,
   override fun didOpen(
     params: DidOpenTextDocumentParams,
   ) {
-    build.changeText(
-      params.textDocument.uri.toLocation(),
-      params.textDocument.text,
-    )
+    build.changeText(params.textDocument.uri.toLocation(), params.textDocument.text)
   }
 
   override fun didChange(
     params: DidChangeTextDocumentParams,
   ) {
-    build.changeText(
-      params.textDocument.uri.toLocation(),
-      params.contentChanges.last().text,
-    )
+    build.changeText(params.textDocument.uri.toLocation(), params.contentChanges.last().text)
   }
 
   override fun didClose(
@@ -81,10 +75,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val core = build.fetchCore(
-        fetchConfig(),
-        uri.toLocation(),
-      )!!
+      val core = build.fetchCore(fetchConfig(), uri.toLocation())!!
       val newHash = core.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -97,24 +88,13 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(
-        fetchConfig(),
-        params.textDocument.uri.toLocation(),
-        params.position,
-      )!!
-      forLeft(
-        core.completionItems
-        ?: resourceCompletionItems
-      )
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)!!
+      forLeft(core.completionItems ?: resourceCompletionItems)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(
-        fetchConfig(),
-        params.textDocument.uri.toLocation(),
-        params.position,
-      )!!
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)!!
       Hover(
         when (val hover = core.hover) {
           null -> throw CancellationException()
@@ -135,8 +115,7 @@ class McxService : TextDocumentService,
   }
 
   private fun fetchConfig(): Config =
-    config
-    ?: throw CancellationException()
+    config ?: throw CancellationException()
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun updateConfig() {

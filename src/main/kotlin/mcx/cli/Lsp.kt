@@ -12,11 +12,7 @@ object Lsp : Subcommand(
 ) {
   override fun execute() {
     val server = McxLanguageServer()
-    val launcher = LSPLauncher.createServerLauncher(
-      server,
-      System.`in`,
-      System.out,
-    )
+    val launcher = LSPLauncher.createServerLauncher(server, System.`in`, System.out)
     server.connect(launcher.remoteProxy)
     launcher.startListening()
   }

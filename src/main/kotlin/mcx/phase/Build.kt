@@ -48,7 +48,9 @@ class Build(
             if (path.exists()) {
               return@withContext path
                 .readText()
-                .also { texts[location] = it }
+                .also {
+                  texts[location] = it
+                }
             }
           }
         STD_SRC
@@ -57,7 +59,9 @@ class Build(
             if (path.exists()) {
               return@withContext path
                 .readText()
-                .also { texts[location] = it }
+                .also {
+                  texts[location] = it
+                }
             }
           }
         null
@@ -71,20 +75,12 @@ class Build(
     location: Location,
   ): Parse.Result? =
     coroutineScope {
-      val text = fetchText(location)
-                 ?: return@coroutineScope null
+      val text = fetchText(location) ?: return@coroutineScope null
       val newHash = text.hashCode()
       val parseResult = parseResults[location]
       if (parseResult == null || parseResult.hash != newHash) {
-        Parse(
-          config,
-          location,
-          text,
-        ).also {
-          parseResults[location] = Trace(
-            it,
-            newHash,
-          )
+        Parse(config, location, text).also {
+          parseResults[location] = Trace(it, newHash)
         }
       } else {
         parseResult.value
@@ -96,24 +92,12 @@ class Build(
     location: Location,
   ): Elaborate.Result? =
     coroutineScope {
-      val surface = fetchSurface(
-        config,
-        location,
-      )
-                    ?: return@coroutineScope null
+      val surface = fetchSurface(config, location) ?: return@coroutineScope null
       val newHash = surface.hashCode()
       val signature = signatures[location]
       if (signature == null || signature.hash != newHash) {
-        Elaborate(
-          config,
-          emptyList(),
-          surface,
-          true,
-        ).also {
-          signatures[location] = Trace(
-            it,
-            newHash,
-          )
+        Elaborate(config, emptyList(), surface, true).also {
+          signatures[location] = Trace(it, newHash)
         }
       } else {
         signature.value
@@ -126,70 +110,33 @@ class Build(
     position: Position? = null,
   ): Elaborate.Result? =
     coroutineScope {
-      val surface = fetchSurface(
-        config,
-        location,
-      )
-                    ?: return@coroutineScope null
+      val surface = fetchSurface(config, location) ?: return@coroutineScope null
       val dependencies =
-          surface.root.imports
-            .map {
-              async {
-                val dependency = fetchSignature(
-                  config,
-                  it.value,
-                )
-                Elaborate.Dependency(
-                  it.value,
-                  dependency?.root,
-                  it.range,
-                )
-              }
+        surface.root.imports
+          .map {
+            async {
+              val dependency = fetchSignature(config, it.value)
+              Elaborate.Dependency(it.value, dependency?.root, it.range)
             }
-            .plus(
-              async {
-                val prelude = fetchSignature(
-                  config,
-                  PRELUDE,
-                )!!
-                Elaborate.Dependency(
-                  PRELUDE,
-                  prelude.root,
-                  null,
-                )
-              }
-            )
-            .plus(
-              async {
-                val self = fetchSignature(
-                  config,
-                  location,
-                )!!
-                Elaborate.Dependency(
-                  location,
-                  self.root,
-                  null,
-                )
-              }
-            )
-            .awaitAll()
-      val newHash = Objects.hash(
-        surface,
-        dependencies
-      )
+          }
+          .plus(
+            async {
+              val prelude = fetchSignature(config, PRELUDE)!!
+              Elaborate.Dependency(PRELUDE, prelude.root, null)
+            }
+          )
+          .plus(
+            async {
+              val self = fetchSignature(config, location)!!
+              Elaborate.Dependency(location, self.root, null)
+            }
+          )
+          .awaitAll()
+      val newHash = Objects.hash(surface, dependencies)
       val elaborateResult = elaborateResults[location]
       if (elaborateResult == null || elaborateResult.hash != newHash || position != null) {
-        Elaborate(
-          config,
-          dependencies,
-          surface,
-          false,
-          position,
-        ).also {
-          elaborateResults[location] = Trace(
-            it,
-            newHash,
-          )
+        Elaborate(config, dependencies, surface, false, position).also {
+          elaborateResults[location] = Trace(it, newHash)
         }
       } else {
         elaborateResult.value
@@ -200,18 +147,11 @@ class Build(
     config: Config,
     location: Location,
   ): Packed.Root? {
-    val core = fetchCore(
-      config,
-      location,
-    )
-               ?: return null
+    val core = fetchCore(config, location) ?: return null
     if (core.diagnostics.isNotEmpty()) {
       return null
     }
-    return Pack(
-      config,
-      core.root,
-    )
+    return Pack(config, core.root)
   }
 
   suspend fun fetchGenerated(
@@ -219,16 +159,8 @@ class Build(
     generator: Generate.Generator,
     location: Location,
   ) {
-    val packed = fetchPacked(
-      config,
-      location,
-    )
-                 ?: return
-    Generate(
-      config,
-      generator,
-      packed,
-    )
+    val packed = fetchPacked(config, location) ?: return
+    Generate(config, generator, packed)
   }
 
   private data class Trace<V>(
@@ -245,10 +177,7 @@ class Build(
         Build::class.java
           .getResource("/std/src")!!
           .toURI()
-      FileSystems.newFileSystem(
-        uri,
-        emptyMap<String, Nothing>(),
-      )
+      FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
       STD_SRC = Paths.get(uri)
     }
   }

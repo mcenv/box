@@ -26,21 +26,11 @@ class Generate private constructor(
   ) {
     when (resource) {
       is P.Resource.JsonResource -> {
-        generator.entry(
-          generatePath(
-            resource.registry,
-            resource.name,
-          )
-        )
+        generator.entry(generatePath(resource.registry, resource.name))
         generateJson(resource.body)
       }
       is P.Resource.Functions    -> {
-        generator.entry(
-          generatePath(
-            Registry.FUNCTIONS,
-            resource.name,
-          )
-        )
+        generator.entry(generatePath(Registry.FUNCTIONS, resource.name))
         resource.instructions.forEachIndexed { index, instruction ->
           if (index != 0) {
             generator.write("\n")
@@ -174,10 +164,7 @@ class Generate private constructor(
       generator: Generator,
       root: P.Root,
     ) {
-      Generate(
-        config,
-        generator,
-      ).generateRoot(root)
+      Generate(config, generator).generateRoot(root)
     }
   }
 }

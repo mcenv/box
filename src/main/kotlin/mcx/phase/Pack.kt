@@ -33,23 +33,13 @@ class Pack private constructor() {
         val env = emptyEnv()
         env += P.Instruction.Debug(resource.name.toString())
         resource.params.forEach { (name, type) ->
-          env.bind(
-            name,
-            eraseType(type),
-          )
+          env.bind(name, eraseType(type))
         }
-        packTerm(
-          env,
-          resource.body,
-        )
+        packTerm(env, resource.body)
         val resultType = eraseType(resource.result)
         resource.params.forEach {
           val paramType = eraseType(it.second)
-          drop(
-            env,
-            paramType,
-            resultType,
-          )
+          drop(env, paramType, resultType)
         }
         P.Resource.Functions(
           resource.name,
@@ -80,38 +70,19 @@ class Pack private constructor() {
       is C.Term.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
-        packTerm(
-          env,
-          term.init,
-        )
-        env.binding(
-          term.name,
-          initType,
-        ) {
-          packTerm(
-            env,
-            term.body,
-          )
+        packTerm(env, term.init)
+        env.binding(term.name, initType) {
+          packTerm(env, term.body)
         }
-        drop(
-          env,
-          initType,
-          bodyType,
-        )
+        drop(env, initType, bodyType)
       }
       is C.Term.Var        -> {
         val type = eraseType(term.type)
-        env += P.Instruction.Copy(
-          env[term.name, type],
-          type,
-        )
+        env += P.Instruction.Copy(env[term.name, type], type)
       }
       is C.Term.Run        -> {
         term.args.forEach {
-          packTerm(
-            env,
-            it,
-          )
+          packTerm(env, it)
         }
         env += P.Instruction.Run(term.name)
       }
@@ -127,14 +98,8 @@ class Pack private constructor() {
   ) {
     when (drop) {
       P.Type.END -> Unit
-      keep       -> env += P.Instruction.Drop(
-        -2,
-        drop,
-      )
-      else       -> env += P.Instruction.Drop(
-        -2,
-        drop,
-      )
+      keep       -> env += P.Instruction.Drop(-2, drop)
+      else       -> env += P.Instruction.Drop(-2, drop)
     }
   }
 

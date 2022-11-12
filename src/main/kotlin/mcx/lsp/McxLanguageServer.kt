@@ -21,10 +21,7 @@ class McxLanguageServer : LanguageServer,
       InitializeResult().apply {
         capabilities = ServerCapabilities().apply {
           setTextDocumentSync(TextDocumentSyncKind.Full)
-          diagnosticProvider = DiagnosticRegistrationOptions(
-            true,
-            false,
-          )
+          diagnosticProvider = DiagnosticRegistrationOptions(true, false)
           completionProvider = CompletionOptions()
           setHoverProvider(true)
         }

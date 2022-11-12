@@ -42,10 +42,7 @@ object Build : Subcommand(
     val levelName = serverProperties.getProperty("level-name")
     val datapacks =
       Paths
-        .get(
-          levelName,
-          "datapacks",
-        )
+        .get(levelName, "datapacks")
         .also { it.createDirectories() }
 
     val root = Paths.get("")
@@ -80,10 +77,7 @@ object Build : Subcommand(
       inputs
         .map { path ->
           async {
-            val core = build.fetchCore(
-              config,
-              path.toLocation(),
-            )!!
+            val core = build.fetchCore(config, path.toLocation())!!
             if (core.diagnostics.isNotEmpty()) {
               valid.set(false)
             }
@@ -121,11 +115,7 @@ object Build : Subcommand(
           inputs
             .map { path ->
               async {
-                build.fetchGenerated(
-                  config,
-                  generator,
-                  path.toLocation(),
-                )
+                build.fetchGenerated(config, generator, path.toLocation())
               }
             }
             .awaitAll()
