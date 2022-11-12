@@ -75,7 +75,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val core = build.fetchCore(fetchConfig(), uri.toLocation())!!
+      val core = build.fetchCore(fetchConfig(), uri.toLocation())
       val newHash = core.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -88,13 +88,13 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)!!
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)
       forLeft(core.completionItems ?: resourceCompletionItems)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)!!
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)
       Hover(
         when (val hover = core.hover) {
           null -> throw CancellationException()

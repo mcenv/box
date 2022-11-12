@@ -108,9 +108,9 @@ class Build(
     config: Config,
     location: Location,
     position: Position? = null,
-  ): Elaborate.Result? =
+  ): Elaborate.Result =
     coroutineScope {
-      val surface = fetchSurface(config, location) ?: return@coroutineScope null
+      val surface = fetchSurface(config, location)!!
       val dependencies =
         surface.root.imports
           .map {
@@ -147,7 +147,7 @@ class Build(
     config: Config,
     location: Location,
   ): Packed.Root? {
-    val core = fetchCore(config, location) ?: return null
+    val core = fetchCore(config, location)
     if (core.diagnostics.isNotEmpty()) {
       return null
     }

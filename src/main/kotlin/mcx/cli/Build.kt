@@ -77,7 +77,7 @@ object Build : Subcommand(
       inputs
         .map { path ->
           async {
-            val core = build.fetchCore(config, path.toLocation())!!
+            val core = build.fetchCore(config, path.toLocation())
             if (core.diagnostics.isNotEmpty()) {
               valid.set(false)
             }
