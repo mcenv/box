@@ -113,24 +113,9 @@ class Build(
       val surface = fetchSurface(config, location)!!
       val dependencies =
         surface.root.imports
-          .map {
-            async {
-              val dependency = fetchSignature(config, it.value)
-              Elaborate.Dependency(it.value, dependency?.root, it.range)
-            }
-          }
-          .plus(
-            async {
-              val prelude = fetchSignature(config, PRELUDE)!!
-              Elaborate.Dependency(PRELUDE, prelude.root, null)
-            }
-          )
-          .plus(
-            async {
-              val self = fetchSignature(config, location)!!
-              Elaborate.Dependency(location, self.root, null)
-            }
-          )
+          .map { async { Elaborate.Dependency(it.value, fetchSignature(config, it.value)?.root, it.range) } }
+          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(config, PRELUDE)!!.root, null) })
+          .plus(async { Elaborate.Dependency(location, fetchSignature(config, location)!!.root, null) })
           .awaitAll()
       val newHash = Objects.hash(surface, dependencies)
       val elaborateResult = elaborateResults[location]
