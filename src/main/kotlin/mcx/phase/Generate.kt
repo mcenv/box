@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Json
 import mcx.ast.Location
+import mcx.ast.Packed
 import mcx.ast.Registry
 import mcx.util.quoted
 import java.security.MessageDigest
@@ -13,10 +14,10 @@ class Generate private constructor(
 ) {
   private val digest = MessageDigest.getInstance("SHA3-256")
 
-  private fun generateRoot(
-    root: P.Root,
+  private fun generateModule(
+    module: Packed.Module,
   ) {
-    root.resources.forEach {
+    module.resources.forEach {
       generateResource(it)
     }
   }
@@ -162,9 +163,9 @@ class Generate private constructor(
     operator fun invoke(
       config: Config,
       generator: Generator,
-      root: P.Root,
+      module: Packed.Module,
     ) {
-      Generate(config, generator).generateRoot(root)
+      Generate(config, generator).generateModule(module)
     }
   }
 }

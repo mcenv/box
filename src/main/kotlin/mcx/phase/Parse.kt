@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Location
 import mcx.ast.Registry
+import mcx.ast.Surface
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -17,9 +18,9 @@ class Parse private constructor(
   private var line: Int = 0
   private var character: Int = 0
 
-  private fun parseRoot(
+  private fun parseModule(
     module: Location,
-  ): S.Root {
+  ): Surface.Module {
     skipWhitespaces()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
@@ -56,7 +57,7 @@ class Parse private constructor(
       diagnostics += Diagnostic.ExpectedEndOfFile(here())
     }
 
-    return S.Root(module, imports, resources)
+    return S.Module(module, imports, resources)
   }
 
   private fun parseResource(): S.Resource =
@@ -598,7 +599,7 @@ class Parse private constructor(
   }
 
   data class Result(
-    val root: S.Root,
+    val module: Surface.Module,
     val diagnostics: List<Diagnostic>,
   )
 
@@ -610,7 +611,7 @@ class Parse private constructor(
     ): Result =
       Parse(text).run {
         Result(
-          parseRoot(module),
+          parseModule(module),
           diagnostics,
         )
       }

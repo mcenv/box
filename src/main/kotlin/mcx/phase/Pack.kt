@@ -1,17 +1,19 @@
 package mcx.phase
 
+import mcx.ast.Core
 import mcx.ast.Json
+import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
 import mcx.ast.Core as C
 import mcx.ast.Packed as P
 
 class Pack private constructor() {
-  private fun packRoot(
-    root: C.Root,
-  ): P.Root {
-    return P.Root(
-      root.module,
-      root.resources.map {
+  private fun packModule(
+    module: Core.Module,
+  ): Packed.Module {
+    return P.Module(
+      module.name,
+      module.resources.map {
         packResource(it)
       }
     )
@@ -192,9 +194,9 @@ class Pack private constructor() {
 
     operator fun invoke(
       config: Config,
-      root: C.Root,
-    ): P.Root {
-      return Pack().packRoot(root)
+      module: Core.Module,
+    ): Packed.Module {
+      return Pack().packModule(module)
     }
   }
 }

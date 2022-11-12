@@ -112,10 +112,10 @@ class Build(
     coroutineScope {
       val surface = fetchSurface(config, location)!!
       val dependencies =
-        surface.root.imports
-          .map { async { Elaborate.Dependency(it.value, fetchSignature(config, it.value)?.root, it.range) } }
-          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(config, PRELUDE)!!.root, null) })
-          .plus(async { Elaborate.Dependency(location, fetchSignature(config, location)!!.root, null) })
+        surface.module.imports
+          .map { async { Elaborate.Dependency(it.value, fetchSignature(config, it.value)?.module, it.range) } }
+          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(config, PRELUDE)!!.module, null) })
+          .plus(async { Elaborate.Dependency(location, fetchSignature(config, location)!!.module, null) })
           .awaitAll()
       val newHash = Objects.hash(surface, dependencies)
       val elaborateResult = elaborateResults[location]
@@ -131,12 +131,12 @@ class Build(
   suspend fun fetchPacked(
     config: Config,
     location: Location,
-  ): Packed.Root? {
+  ): Packed.Module? {
     val core = fetchCore(config, location)
     if (core.diagnostics.isNotEmpty()) {
       return null
     }
-    return Pack(config, core.root)
+    return Pack(config, core.module)
   }
 
   suspend fun fetchGenerated(

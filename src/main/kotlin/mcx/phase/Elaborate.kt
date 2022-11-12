@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Core
 import mcx.ast.Location
+import mcx.ast.Surface
 import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
@@ -25,24 +26,24 @@ class Elaborate private constructor(
     input: Parse.Result,
   ): Result {
     return Result(
-      elaborateRoot(input.root),
+      elaborateModule(input.module),
       input.diagnostics + diagnostics,
       varCompletionItems + resourceCompletionItems,
       hover,
     )
   }
 
-  private fun elaborateRoot(
-    root: S.Root,
-  ): C.Root {
+  private fun elaborateModule(
+    module: Surface.Module,
+  ): Core.Module {
     val resources = hashMapOf<Location, C.Resource>().also { resources ->
       dependencies.forEach { dependency ->
-        when (dependency.root) {
+        when (dependency.module) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
             dependency.location,
             dependency.range!!,
           )
-          else -> dependency.root.resources.forEach { resource ->
+          else -> dependency.module.resources.forEach { resource ->
             if (resource !is C.Resource.Hole) {
               resources[resource.name] = resource // TODO: handle name duplication
             }
@@ -80,12 +81,12 @@ class Elaborate private constructor(
         }
       }
     }
-    return C.Root(
-      root.module,
-      root.resources.map {
+    return C.Module(
+      module.name,
+      module.resources.map {
         elaborateResource(
           resources,
-          root.module,
+          module.name,
           it,
         )
       },
@@ -475,12 +476,12 @@ class Elaborate private constructor(
 
   data class Dependency(
     val location: Location,
-    val root: C.Root?,
+    val module: Core.Module?,
     val range: Range?,
   )
 
   data class Result(
-    val root: C.Root,
+    val module: Core.Module,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>?,
     val hover: C.Type?,

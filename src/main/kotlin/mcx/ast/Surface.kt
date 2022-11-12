@@ -3,8 +3,8 @@ package mcx.ast
 import org.eclipse.lsp4j.Range
 
 object Surface {
-  data class Root(
-    val module: Location,
+  data class Module(
+    val name: Location,
     val imports: List<Ranged<Location>>,
     val resources: List<Resource>,
   )

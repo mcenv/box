@@ -4,8 +4,8 @@ package mcx.ast
  * A lifted AST, where all code blocks are lifted to top-level.
  */
 object Lifted {
-  data class Root(
-    val module: Location,
+  data class Module(
+    val name: Location,
     val resources: List<Resource>,
   )
 

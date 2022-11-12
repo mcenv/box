@@ -1,8 +1,8 @@
 package mcx.ast
 
 object Core {
-  data class Root(
-    val module: Location,
+  data class Module(
+    val name: Location,
     val resources: List<Resource>,
   )
 
