@@ -1,6 +1,7 @@
 package mcx.phase
 
 import kotlinx.coroutines.*
+import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.ast.Packed
 import org.eclipse.lsp4j.Position
@@ -128,15 +129,24 @@ class Build(
       }
     }
 
+  suspend fun fetchLifted(
+    config: Config,
+    location: Location,
+  ): Lifted.Module =
+    coroutineScope {
+      val core = fetchCore(config, location)
+      if (core.diagnostics.isNotEmpty()) {
+        cancel()
+      }
+      Lift(config, core.module)
+    }
+
   suspend fun fetchPacked(
     config: Config,
     location: Location,
-  ): Packed.Module? {
-    val core = fetchCore(config, location)
-    if (core.diagnostics.isNotEmpty()) {
-      return null
-    }
-    return Pack(config, core.module)
+  ): Packed.Module {
+    val lifted = fetchLifted(config, location)
+    return Pack(config, lifted)
   }
 
   suspend fun fetchGenerated(
@@ -144,7 +154,7 @@ class Build(
     generator: Generate.Generator,
     location: Location,
   ) {
-    val packed = fetchPacked(config, location) ?: return
+    val packed = fetchPacked(config, location)
     Generate(config, generator, packed)
   }
 

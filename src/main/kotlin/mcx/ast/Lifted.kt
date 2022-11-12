@@ -33,8 +33,6 @@ object Lifted {
     object Tick : Annotation
 
     object Load : Annotation
-
-    object Hole : Annotation
   }
 
   sealed interface Type {
@@ -129,8 +127,8 @@ object Lifted {
 
     data class If(
       val condition: Term,
-      val thenClause: String,
-      val elseClause: String,
+      val thenName: Location,
+      val elseName: Location,
       override val type: Type,
     ) : Term
 
@@ -147,8 +145,7 @@ object Lifted {
     ) : Term
 
     data class Run(
-      val module: Location,
-      val name: String,
+      val name: Location,
       val args: List<Term>,
       override val type: Type,
     ) : Term

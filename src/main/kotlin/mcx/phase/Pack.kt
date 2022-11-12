@@ -1,37 +1,30 @@
 package mcx.phase
 
-import mcx.ast.Core
 import mcx.ast.Json
 import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
-import mcx.ast.Core as C
+import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
 class Pack private constructor() {
   private fun packModule(
-    module: Core.Module,
+    module: L.Module,
   ): Packed.Module {
-    return P.Module(
-      module.name,
-      module.resources.map {
-        packResource(it)
-      }
-    )
+    val resources = module.resources.map {
+      packResource(it)
+    }
+    return P.Module(module.name, resources)
   }
 
   private fun packResource(
-    resource: C.Resource,
+    resource: L.Resource,
   ): P.Resource {
     return when (resource) {
-      is C.Resource.JsonResource -> {
+      is L.Resource.JsonResource -> {
         val body = packJson(resource.body)
-        P.Resource.JsonResource(
-          resource.registry,
-          resource.name,
-          body,
-        )
+        P.Resource.JsonResource(resource.registry, resource.name, body)
       }
-      is C.Resource.Functions    -> {
+      is L.Resource.Functions    -> {
         val env = emptyEnv()
         env += P.Instruction.Debug(resource.name.toString())
         resource.params.forEach { (name, type) ->
@@ -43,33 +36,33 @@ class Pack private constructor() {
           val paramType = eraseType(it.second)
           drop(env, paramType, resultType)
         }
-        P.Resource.Functions(
-          resource.name,
-          env.instructions,
-        )
+        P.Resource.Functions(resource.name, env.instructions)
       }
-      is C.Resource.Hole         -> unexpectedHole()
     }
   }
 
   private fun packTerm(
     env: Env,
-    term: C.Term,
+    term: L.Term,
   ) {
     when (term) {
-      is C.Term.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
-      is C.Term.ByteOf     -> env += P.Instruction.Push(P.Tag.ByteOf(term.value))
-      is C.Term.ShortOf    -> env += P.Instruction.Push(P.Tag.ShortOf(term.value))
-      is C.Term.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
-      is C.Term.LongOf     -> env += P.Instruction.Push(P.Tag.LongOf(term.value))
-      is C.Term.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
-      is C.Term.DoubleOf   -> env += P.Instruction.Push(P.Tag.DoubleOf(term.value))
-      is C.Term.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
-      is C.Term.ListOf     -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term.If         -> env += P.Instruction.Debug("$term") // TODO
-      is C.Term.Let        -> {
+      is L.Term.BoolOf     -> env += P.Instruction.Push(P.Tag.ByteOf(if (term.value) 1 else 0))
+      is L.Term.ByteOf     -> env += P.Instruction.Push(P.Tag.ByteOf(term.value))
+      is L.Term.ShortOf    -> env += P.Instruction.Push(P.Tag.ShortOf(term.value))
+      is L.Term.IntOf      -> env += P.Instruction.Push(P.Tag.IntOf(term.value))
+      is L.Term.LongOf     -> env += P.Instruction.Push(P.Tag.LongOf(term.value))
+      is L.Term.FloatOf    -> env += P.Instruction.Push(P.Tag.FloatOf(term.value))
+      is L.Term.DoubleOf   -> env += P.Instruction.Push(P.Tag.DoubleOf(term.value))
+      is L.Term.StringOf   -> env += P.Instruction.Push(P.Tag.StringOf(term.value))
+      is L.Term.ListOf     -> env += P.Instruction.Debug("$term") // TODO
+      is L.Term.CompoundOf -> env += P.Instruction.Debug("$term") // TODO
+      is L.Term.BoxOf      -> env += P.Instruction.Debug("$term") // TODO
+      is L.Term.If         -> {
+        packTerm(env, term.condition)
+        env += P.Instruction.Debug("then: ${term.thenName}") // TODO
+        env += P.Instruction.Debug("else: ${term.elseName}") // TODO
+      }
+      is L.Term.Let        -> {
         val initType = eraseType(term.init.type)
         val bodyType = eraseType(term.body.type)
         packTerm(env, term.init)
@@ -78,18 +71,17 @@ class Pack private constructor() {
         }
         drop(env, initType, bodyType)
       }
-      is C.Term.Var        -> {
+      is L.Term.Var        -> {
         val type = eraseType(term.type)
         env += P.Instruction.Copy(env[term.name, type], type)
       }
-      is C.Term.Run        -> {
+      is L.Term.Run        -> {
         term.args.forEach {
           packTerm(env, it)
         }
         env += P.Instruction.Run(term.name)
       }
-      is C.Term.Command    -> env += P.Instruction.Command(term.value)
-      is C.Term.Hole       -> unexpectedHole()
+      is L.Term.Command    -> env += P.Instruction.Command(term.value)
     }
   }
 
@@ -106,19 +98,19 @@ class Pack private constructor() {
   }
 
   private fun packJson(
-    term: C.Term,
+    term: L.Term,
   ): Json {
     return when (term) {
-      is C.Term.BoolOf     -> Json.BoolOf(term.value)
-      is C.Term.ByteOf     -> Json.ByteOf(term.value)
-      is C.Term.ShortOf    -> Json.ShortOf(term.value)
-      is C.Term.IntOf      -> Json.IntOf(term.value)
-      is C.Term.LongOf     -> Json.LongOf(term.value)
-      is C.Term.FloatOf    -> Json.FloatOf(term.value)
-      is C.Term.DoubleOf   -> Json.DoubleOf(term.value)
-      is C.Term.StringOf   -> Json.StringOf(term.value)
-      is C.Term.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
-      is C.Term.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
+      is L.Term.BoolOf     -> Json.BoolOf(term.value)
+      is L.Term.ByteOf     -> Json.ByteOf(term.value)
+      is L.Term.ShortOf    -> Json.ShortOf(term.value)
+      is L.Term.IntOf      -> Json.IntOf(term.value)
+      is L.Term.LongOf     -> Json.LongOf(term.value)
+      is L.Term.FloatOf    -> Json.FloatOf(term.value)
+      is L.Term.DoubleOf   -> Json.DoubleOf(term.value)
+      is L.Term.StringOf   -> Json.StringOf(term.value)
+      is L.Term.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
+      is L.Term.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
       else                 -> TODO()
     }
   }
@@ -170,31 +162,27 @@ class Pack private constructor() {
 
   companion object {
     private fun eraseType(
-      type: C.Type,
+      type: L.Type,
     ): P.Type {
       return when (type) {
-        is C.Type.End      -> P.Type.END
-        is C.Type.Bool     -> P.Type.BYTE
-        is C.Type.Byte     -> P.Type.BYTE
-        is C.Type.Short    -> P.Type.SHORT
-        is C.Type.Int      -> P.Type.INT
-        is C.Type.Long     -> P.Type.LONG
-        is C.Type.Float    -> P.Type.FLOAT
-        is C.Type.Double   -> P.Type.DOUBLE
-        is C.Type.String   -> P.Type.STRING
-        is C.Type.List     -> P.Type.LIST
-        is C.Type.Compound -> P.Type.COMPOUND
-        is C.Type.Box      -> P.Type.INT
-        is C.Type.Hole     -> unexpectedHole()
+        is L.Type.End      -> P.Type.END
+        is L.Type.Bool     -> P.Type.BYTE
+        is L.Type.Byte     -> P.Type.BYTE
+        is L.Type.Short    -> P.Type.SHORT
+        is L.Type.Int      -> P.Type.INT
+        is L.Type.Long     -> P.Type.LONG
+        is L.Type.Float    -> P.Type.FLOAT
+        is L.Type.Double   -> P.Type.DOUBLE
+        is L.Type.String   -> P.Type.STRING
+        is L.Type.List     -> P.Type.LIST
+        is L.Type.Compound -> P.Type.COMPOUND
+        is L.Type.Box      -> P.Type.INT
       }
     }
 
-    private fun unexpectedHole(): Nothing =
-      error("unexpected: hole")
-
     operator fun invoke(
       config: Config,
-      module: Core.Module,
+      module: L.Module,
     ): Packed.Module {
       return Pack().packModule(module)
     }
