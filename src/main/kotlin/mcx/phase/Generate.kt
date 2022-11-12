@@ -147,10 +147,7 @@ class Generate private constructor(
         it
           .toUByte()
           .toString(16)
-          .padStart(
-            2,
-            '0'
-          )
+          .padStart(2, '0')
       }
 
   interface Generator {
