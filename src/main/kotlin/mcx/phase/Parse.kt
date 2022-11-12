@@ -510,13 +510,8 @@ class Parse private constructor(
 
   private inline fun Char.isWordPart(): Boolean =
     when (this) {
-      in 'a'..'z',
-      in '0'..'9',
-      '_', '-',
-      -> true
-
-      else
-      -> false
+      ' ', '\n', '\r', '/', ':', ';', ',', '(', ')' -> false
+      else                                          -> true
     }
 
   private fun expect(

@@ -18,7 +18,7 @@
       "patterns": [
         {
           "name": "entity.name.function.mcx",
-          "match": "\\b(?:[a-z0-9_-]+(?:/[a-z0-9_-]+)*)\\b"
+          "match": "(?:[^ \n\r/:;,()]+(?:/[^ \n\r/:;,()]+)*)"
         }
       ]
     },
@@ -51,11 +51,11 @@
     },
     {
       "name": "entity.name.function.mcx",
-      "match": "\\b(?:[a-z0-9_-]+(?:/[a-z0-9_-]+)*)(?=\\()"
+      "match": "[^ \n\r/:;,()]+(?:/[^ \n\r/:;,()]+)*(?=\\()"
     },
     {
       "name": "variable.mcx",
-      "match": "\\b(?:[a-z0-9_-]+)\\b"
+      "match": "[^ \n\r/:;,()]+"
     }
   ],
   "repository": {
