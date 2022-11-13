@@ -26,14 +26,7 @@ class Parse private constructor(
       skip("import".length)
       skipWhitespaces()
       parseList(',', '{', '}') {
-        parseRanged {
-          val parts = mutableListOf(readWord())
-          while (canRead() && peek() == '/') {
-            skip()
-            parts += readWord()
-          }
-          Location(parts)
-        }
+        parseRanged { parseLocation() }
       }
     } else {
       emptyList()
