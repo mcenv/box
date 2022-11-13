@@ -8,70 +8,76 @@ import mcx.ast.Packed as P
 
 class Generate private constructor(
   private val config: Config,
-  private val generator: Generator,
 ) {
+  private val modules: MutableMap<String, String> = hashMapOf()
+
   private fun generateModule(
     module: Packed.Module,
-  ) {
+  ): Map<String, String> {
     module.resources.forEach {
       generateResource(it)
     }
+    return modules
   }
 
   private fun generateResource(
     resource: P.Resource,
   ) {
     when (resource) {
-      is P.Resource.JsonResource -> {
-        generator.entry(generatePath(resource.registry, resource.path))
-        generateJson(resource.body)
-      }
-      is P.Resource.Functions    -> {
-        generator.entry(generatePath(Registry.FUNCTIONS, resource.path))
-        resource.commands.forEachIndexed { index, command ->
-          if (index != 0) {
-            generator.write("\n")
-          }
-          generator.write(command)
-        }
-      }
+      is P.Resource.JsonResource ->
+        modules[generatePath(resource.registry, resource.path)] =
+          StringBuilder()
+            .apply { generateJson(resource.body) }
+            .toString()
+      is P.Resource.Functions    ->
+        modules[generatePath(Registry.FUNCTIONS, resource.path)] =
+          StringBuilder()
+            .apply {
+              resource.commands.forEachIndexed { index, command ->
+                if (index != 0) {
+                  append('\n')
+                }
+                append(command)
+              }
+            }
+            .toString()
     }
   }
 
-  private fun generateJson(
+  private fun StringBuilder.generateJson(
     json: Json,
   ) {
     when (json) {
       is Json.ObjectOf -> {
-        generator.write("{")
+        append('{')
         json.members.entries.forEachIndexed { index, (key, value) ->
           if (index != 0) {
-            generator.write(",")
+            append(',')
           }
-          generator.write(key.quoted('"'))
-          generator.write(":")
+          append(key.quoted('"'))
+          append(':')
           generateJson(value)
         }
-        generator.write("}")
+        append('}')
       }
       is Json.ArrayOf  -> {
-        generator.write("[")
+        append('[')
         json.elements.forEachIndexed { index, element ->
           if (index != 0) {
-            generator.write(",")
+            append(',')
           }
           generateJson(element)
         }
-        generator.write("]")
+        append(']')
       }
-      is Json.StringOf -> generator.write(json.value.quoted('"'))
-      is Json.ByteOf   -> generator.write(json.value.toString())
-      is Json.ShortOf  -> generator.write(json.value.toString())
-      is Json.IntOf    -> generator.write(json.value.toString())
-      is Json.LongOf   -> generator.write(json.value.toString())
-      is Json.FloatOf  -> generator.write(json.value.toString())
-      is Json.DoubleOf -> generator.write(json.value.toString())
-      is Json.BoolOf   -> generator.write(json.value.toString())
+      is Json.StringOf -> append(json.value.quoted('"'))
+      is Json.ByteOf   -> append(json.value.toString())
+      is Json.ShortOf  -> append(json.value.toString())
+      is Json.IntOf    -> append(json.value.toString())
+      is Json.LongOf   -> append(json.value.toString())
+      is Json.FloatOf  -> append(json.value.toString())
+      is Json.DoubleOf -> append(json.value.toString())
+      is Json.BoolOf   -> append(json.value.toString())
     }
   }
 
@@ -81,19 +87,12 @@ class Generate private constructor(
   ): String =
     "data/minecraft/${registry.string}/$path.${registry.extension}"
 
-  interface Generator {
-    fun entry(name: String)
-
-    fun write(string: String)
-  }
-
   companion object {
     operator fun invoke(
       config: Config,
-      generator: Generator,
       module: Packed.Module,
-    ) {
-      Generate(config, generator).generateModule(module)
+    ): Map<String, String> {
+      return Generate(config).generateModule(module)
     }
   }
 }

@@ -151,11 +151,10 @@ class Build(
 
   suspend fun fetchGenerated(
     config: Config,
-    generator: Generate.Generator,
     location: Location,
-  ) {
+  ): Map<String, String> {
     val packed = fetchPacked(config, location)
-    Generate(config, generator, packed)
+    return Generate(config, packed)
   }
 
   private data class Trace<V>(

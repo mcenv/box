@@ -11,9 +11,6 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
 import mcx.phase.Build
 import mcx.phase.Config
-import mcx.phase.Generate
-import java.io.Closeable
-import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -88,38 +85,34 @@ object Build : Subcommand(
     }
 
     if (valid.get()) {
-      object : Generate.Generator,
-               Closeable {
-        private var output: OutputStream? = null
+      val datapackRoot = datapacks.resolve(config.name)
 
-        override fun entry(name: String) {
-          output?.close()
-          output =
-            datapacks
-              .resolve(config.name)
-              .resolve(name)
-              .also { it.parent.createDirectories() }
-              .outputStream()
-              .buffered()
-        }
-
-        override fun write(string: String) {
-          output!!.write(string.toByteArray())
-        }
-
-        override fun close() {
-          output?.close()
-        }
-      }.use { generator ->
-        runBlocking {
-          inputs
-            .map { path ->
-              async {
-                build.fetchGenerated(config, generator, path.toLocation())
-              }
+      val outputModules = runBlocking {
+        inputs
+          .map { path ->
+            async {
+              build.fetchGenerated(config, path.toLocation())
             }
-            .awaitAll()
+          }
+          .awaitAll()
+          .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
+          .reduce { acc, map -> acc + map }
+      }
+
+      Files
+        .walk(datapackRoot)
+        .filter { it.isRegularFile() }
+        .forEach {
+          if (it !in outputModules) {
+            it.deleteExisting()
+          }
         }
+
+      outputModules.forEach { (name, module) ->
+        name
+          .also { it.parent.createDirectories() }
+          .bufferedWriter()
+          .use { it.write(module) }
       }
     } else {
       diagnostics.forEach { (path, diagnostics) ->
