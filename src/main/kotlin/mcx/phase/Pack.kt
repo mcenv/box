@@ -50,16 +50,38 @@ class Pack private constructor() {
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf     -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${if (term.value) 1 else 0}b"
-      is L.Term.ByteOf     -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}b"
-      is L.Term.ShortOf    -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}s"
-      is L.Term.IntOf      -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}"
-      is L.Term.LongOf     -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}l"
-      is L.Term.FloatOf    -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}f"
-      is L.Term.DoubleOf   -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}"
-      is L.Term.StringOf   -> +"data modify storage $MCX_STORAGE ${eraseType(term.type).toStack()} append value ${term.value}" // TODO: quote if necessary
-      is L.Term.ListOf     -> +"# $term" // TODO
-      is L.Term.CompoundOf -> +"# $term" // TODO
+      is L.Term.BoolOf     -> +"data modify storage $MCX_STORAGE ${P.Type.BYTE.toStack()} append value ${if (term.value) 1 else 0}b"
+      is L.Term.ByteOf     -> +"data modify storage $MCX_STORAGE ${P.Type.BYTE.toStack()} append value ${term.value}b"
+      is L.Term.ShortOf    -> +"data modify storage $MCX_STORAGE ${P.Type.SHORT.toStack()} append value ${term.value}s"
+      is L.Term.IntOf      -> +"data modify storage $MCX_STORAGE ${P.Type.INT.toStack()} append value ${term.value}"
+      is L.Term.LongOf     -> +"data modify storage $MCX_STORAGE ${P.Type.LONG.toStack()} append value ${term.value}l"
+      is L.Term.FloatOf    -> +"data modify storage $MCX_STORAGE ${P.Type.FLOAT.toStack()} append value ${term.value}f"
+      is L.Term.DoubleOf   -> +"data modify storage $MCX_STORAGE ${P.Type.DOUBLE.toStack()} append value ${term.value}"
+      is L.Term.StringOf   -> +"data modify storage $MCX_STORAGE ${P.Type.STRING.toStack()} append value ${term.value}" // TODO: quote if necessary
+      is L.Term.ListOf     -> {
+        +"data modify storage $MCX_STORAGE ${P.Type.LIST.toStack()} append value []"
+        if (term.values.isNotEmpty()) {
+          val valueType = eraseType(term.values.first().type)
+          val valueStack = valueType.toStack()
+          term.values.forEach { value ->
+            packTerm(value)
+            val index = if (valueType == P.Type.LIST) -2 else -1
+            +"data modify storage $MCX_STORAGE ${P.Type.LIST.toStack()}[$index] append from storage $MCX_STORAGE $valueStack[-1]"
+            +"data remove storage $MCX_STORAGE $valueStack[-1]"
+          }
+        }
+      }
+      is L.Term.CompoundOf -> {
+        +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.toStack()} append value {}"
+        term.values.forEach { (key, value) ->
+          packTerm(value)
+          val valueType = eraseType(value.type)
+          val valueStack = valueType.toStack()
+          val index = if (valueType == P.Type.COMPOUND) -2 else -1
+          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.toStack()}[$index] append from storage $MCX_STORAGE $valueStack[-1]"
+          +"data remove storage $MCX_STORAGE $valueStack[-1]"
+        }
+      }
       is L.Term.BoxOf      -> +"# $term" // TODO
       is L.Term.If         -> {
         packTerm(term.condition)
