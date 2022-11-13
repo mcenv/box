@@ -63,8 +63,10 @@ class Pack private constructor() {
       is L.Term.BoxOf      -> +"# $term" // TODO
       is L.Term.If         -> {
         packTerm(term.condition)
-        +"# then: ${term.thenName}" // TODO
-        +"# else: ${term.elseName}" // TODO
+        +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
+        +"data remove storage mcx: byte[-1]"
+        +"execute if score #0 mcx matches 1.. run function ${packLocation(term.thenName)}"
+        +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
       }
       is L.Term.Let        -> {
         val initType = eraseType(term.init.type)

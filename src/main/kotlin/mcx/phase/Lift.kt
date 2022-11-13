@@ -88,7 +88,9 @@ class Lift private constructor() {
       is C.Term.If         -> {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
-        val thenFunctions = createFreshFunctions(type, liftTerm(term.thenClause))
+        val thenFunctions = liftTerm(term.thenClause).let { thenClause ->
+          createFreshFunctions(type, L.Term.Let("", thenClause, L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End), thenClause.type))
+        }
         val elseFunctions = createFreshFunctions(type, liftTerm(term.elseClause))
         L.Term.If(condition, thenFunctions.name, elseFunctions.name, type)
       }
