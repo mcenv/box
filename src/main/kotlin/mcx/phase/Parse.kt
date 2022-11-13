@@ -226,7 +226,7 @@ class Parse private constructor(
       skipWhitespaces()
       if (canRead()) {
         when (peek()) {
-          '('                   -> {
+          '('  -> {
             skip()
             skipWhitespaces()
             val term = parseTerm()
@@ -234,78 +234,14 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '-', '+', in '0'..'9' -> {
-            val numeric = readNumeric()
-            if (canRead()) {
-              when (peek()) {
-                'b'  -> {
-                  skip()
-                  numeric
-                    .toByteOrNull()
-                    ?.let {
-                      S.Term.ByteOf(it, until())
-                    }
-                }
-                's'  -> {
-                  skip()
-                  numeric
-                    .toShortOrNull()
-                    ?.let {
-                      S.Term.ShortOf(it, until())
-                    }
-                }
-                'l'  -> {
-                  skip()
-                  numeric
-                    .toLongOrNull()
-                    ?.let {
-                      S.Term.LongOf(it, until())
-                    }
-                }
-                'f'  -> {
-                  skip()
-                  numeric
-                    .toFloatOrNull()
-                    ?.let {
-                      S.Term.FloatOf(it, until())
-                    }
-                }
-                'd'  -> {
-                  skip()
-                  numeric
-                    .toDoubleOrNull()
-                    ?.let {
-                      S.Term.DoubleOf(it, until())
-                    }
-                }
-                else ->
-                  numeric
-                    .toIntOrNull()
-                    ?.let {
-                      S.Term.IntOf(it, until())
-                    }
-                  ?: numeric
-                    .toDoubleOrNull()
-                    ?.let {
-                      S.Term.DoubleOf(it, until())
-                    }
-              }
-            } else {
-              numeric
-                .toIntOrNull()
-                ?.let {
-                  S.Term.IntOf(it, until())
-                }
-            }
-          }
-          '"'                   -> S.Term.StringOf(readQuotedString(), until())
-          '['                   -> {
+          '"'  -> S.Term.StringOf(readQuotedString(), until())
+          '['  -> {
             val values = parseList(',', '[', ']') {
               parseTerm()
             }
             S.Term.ListOf(values, until())
           }
-          '{'                   -> {
+          '{'  -> {
             val values = parseList(',', '{', '}') {
               val key = parseRanged { readString() }
               skipWhitespaces()
@@ -316,20 +252,20 @@ class Parse private constructor(
             }
             S.Term.CompoundOf(values, until())
           }
-          '&'                   -> {
+          '&'  -> {
             skip()
             skipWhitespaces()
             S.Term.BoxOf(parseTerm(), until())
           }
-          '/'                   -> {
+          '/'  -> {
             skip()
             val value = readQuotedString()
             S.Term.Command(value, until())
           }
-          else                  -> {
+          else -> {
             val location = parseLocation()
             when (location.parts.size) {
-              1    -> when (val word = location.parts.first()) {
+              1 -> when (val word = location.parts.first()) {
                 "false" -> S.Term.BoolOf(false, until())
                 "true"  -> S.Term.BoolOf(true, until())
                 "if"    -> {
@@ -363,7 +299,45 @@ class Parse private constructor(
                   }
                   S.Term.Run(location, args, until())
                 } else {
-                  S.Term.Var(word, until())
+                  word
+                    .lastOrNull()
+                    ?.let { suffix ->
+                      when (suffix) {
+                        'b'  ->
+                          word
+                            .dropLast(1)
+                            .toByteOrNull()
+                            ?.let { S.Term.ByteOf(it, until()) }
+                        's'  ->
+                          word
+                            .dropLast(1)
+                            .toShortOrNull()
+                            ?.let { S.Term.ShortOf(it, until()) }
+                        'l'  ->
+                          word
+                            .dropLast(1)
+                            .toLongOrNull()
+                            ?.let { S.Term.LongOf(it, until()) }
+                        'f'  ->
+                          word
+                            .dropLast(1)
+                            .toFloatOrNull()
+                            ?.let { S.Term.FloatOf(it, until()) }
+                        'd'  ->
+                          word
+                            .dropLast(1)
+                            .toDoubleOrNull()
+                            ?.let { S.Term.DoubleOf(it, until()) }
+                        else ->
+                          word
+                            .toIntOrNull()
+                            ?.let { S.Term.IntOf(it, until()) }
+                          ?: word
+                            .toDoubleOrNull()
+                            ?.let { S.Term.DoubleOf(it, until()) }
+                      }
+                    }
+                  ?: S.Term.Var(word, until())
                 }
               }
               else -> {
@@ -481,24 +455,6 @@ class Parse private constructor(
     expect('"')
     return builder.toString()
   }
-
-  private fun readNumeric(): String {
-    val start = cursor
-    while (canRead() && peek().isNumericPart()) {
-      skip()
-    }
-    return text.substring(start, cursor)
-  }
-
-  private inline fun Char.isNumericPart(): Boolean =
-    when (this) {
-      in '0'..'9',
-      '-', '+', '.', 'e',
-      -> true
-
-      else
-      -> false
-    }
 
   private fun readWord(): String {
     val start = cursor

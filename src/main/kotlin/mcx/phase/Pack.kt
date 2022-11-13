@@ -4,14 +4,10 @@ import mcx.ast.Json
 import mcx.ast.Location
 import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
-import mcx.util.hash
-import java.security.MessageDigest
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
 class Pack private constructor() {
-  private val digest = MessageDigest.getInstance("SHA3-256")
-
   private fun packModule(
     module: L.Module,
   ): Packed.Module {
@@ -145,7 +141,32 @@ class Pack private constructor() {
   private fun packLocation(
     name: Location,
   ): String =
-    hash(digest, name.toString())
+    "${
+      name.parts
+        .dropLast(1)
+        .joinToString("/")
+    }/${escape(name.parts.last())}"
+
+  private fun escape(
+    string: String,
+  ): String =
+    string
+      .encodeToByteArray()
+      .joinToString("") {
+        when (
+          val char =
+            it
+              .toInt()
+              .toChar()
+        ) {
+          in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
+          else                               -> ".${
+            it
+              .toUByte()
+              .toString(Character.MAX_RADIX)
+          }"
+        }
+      }
 
   private fun packJson(
     term: L.Term,
