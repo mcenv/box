@@ -15,7 +15,7 @@ fun prettyType(type: C.Type): String {
     is C.Type.String   -> "string"
     is C.Type.List     -> "[${prettyType(type.element)}]"
     is C.Type.Compound -> type.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key: ${prettyType(element)}" }
-    is C.Type.Box      -> "box(${prettyType(type.element)})"
+    is C.Type.Box      -> "&${prettyType(type.element)}"
     is C.Type.Hole     -> "?"
   }
 }

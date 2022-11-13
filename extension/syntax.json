@@ -32,7 +32,7 @@
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:end|bool|byte|short|int|long|float|double|string|box)\\b"
+      "match": "\\b(?:end|bool|byte|short|int|long|float|double|string)\\b"
     },
     {
       "name": "keyword.control.mcx",

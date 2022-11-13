@@ -183,6 +183,10 @@ class Parse private constructor(
             }.toMap()
             S.Type.Compound(elements, until())
           }
+          '&'  -> {
+            skip()
+            S.Type.Box(parseType(), until())
+          }
           else -> when (readWord()) {
             "end"    -> S.Type.End(until())
             "bool"   -> S.Type.Bool(until())
@@ -193,14 +197,6 @@ class Parse private constructor(
             "float"  -> S.Type.Float(until())
             "double" -> S.Type.Double(until())
             "string" -> S.Type.String(until())
-            "box"    -> {
-              skipWhitespaces()
-              expect('(')
-              val type = S.Type.Box(parseType(), until())
-              skipWhitespaces()
-              expect(')')
-              type
-            }
             else     -> null
           }
         }
