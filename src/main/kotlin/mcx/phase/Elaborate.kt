@@ -472,6 +472,12 @@ class Elaborate private constructor(
       type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
+      type1 is C.Type.Tuple &&
+      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+
+      type2 is C.Type.Tuple &&
+      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+
       type1 is C.Type.Hole     -> true
       type2 is C.Type.Hole     -> true
 
