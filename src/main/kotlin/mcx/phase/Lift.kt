@@ -1,7 +1,6 @@
 package mcx.phase
 
 import mcx.ast.Location
-import java.util.*
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
@@ -20,12 +19,13 @@ class Lift private constructor() {
   private fun liftResource(
     resource: C.Resource,
   ): L.Resource {
+    val env = Env(resource.name)
     val annotations = resource.annotations.map {
       liftAnnotation(it)
     }
     return when (resource) {
       is C.Resource.JsonResource -> {
-        val body = liftTerm(resource.body)
+        val body = env.liftTerm(resource.body)
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
       }
       is C.Resource.Functions    -> {
@@ -33,7 +33,7 @@ class Lift private constructor() {
           name to liftType(type)
         }
         val result = liftType(resource.result)
-        val body = liftTerm(resource.body)
+        val body = env.liftTerm(resource.body)
         L.Resource.Functions(annotations, resource.name, params, result, body)
       }
       is C.Resource.Hole         -> unexpectedHole()
@@ -70,7 +70,7 @@ class Lift private constructor() {
     }
   }
 
-  private fun liftTerm(
+  private fun Env.liftTerm(
     term: C.Term,
   ): L.Term {
     return when (term) {
@@ -102,18 +102,22 @@ class Lift private constructor() {
     }
   }
 
-  private fun createFreshFunctions(
-    result: L.Type,
-    body: L.Term,
-  ): L.Resource.Functions =
-    L.Resource
-      .Functions(emptyList(), Location("${UUID.randomUUID()}"), emptyList(), result, body)
-      .also {
-        liftedResources += it
-      }
-
   private fun unexpectedHole(): Nothing =
     error("unexpected: hole")
+
+  private inner class Env(
+    private val name: Location,
+  ) {
+    private var id: Int = 0
+
+    fun createFreshFunctions(
+      result: L.Type,
+      body: L.Term,
+    ): L.Resource.Functions =
+      L.Resource
+        .Functions(emptyList(), name + id++.toString(), emptyList(), result, body)
+        .also { liftedResources += it }
+  }
 
   companion object {
     operator fun invoke(
