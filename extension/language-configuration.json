@@ -2,6 +2,7 @@
   "comments": {
     "lineComment": "#"
   },
+  "wordPattern": "[^ \n\r/:;,()\\[\\]{}]+",
   "autoClosingPairs": [
     [
       "(",
