@@ -91,16 +91,25 @@ class Lift private constructor() {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
         val thenFunctions = liftTerm(term.thenClause).let { thenClause ->
-          createFreshFunctions(type, L.Term.Let("", thenClause, L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End), thenClause.type))
+          createFreshFunctions(type, L.Term.Let(L.Pattern.Var("", L.Type.End), thenClause, L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End), thenClause.type))
         }
         val elseFunctions = createFreshFunctions(type, liftTerm(term.elseClause))
         L.Term.If(condition, thenFunctions.name, elseFunctions.name, type)
       }
-      is C.Term.Let        -> L.Term.Let(term.name, liftTerm(term.init), liftTerm(term.body), liftType(term.type))
+      is C.Term.Let        -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
       is C.Term.Var        -> L.Term.Var(term.name, liftType(term.type))
       is C.Term.Run        -> L.Term.Run(term.name, term.args.map { liftTerm(it) }, liftType(term.type))
       is C.Term.Command    -> L.Term.Command(term.value, liftType(term.type))
       is C.Term.Hole       -> unexpectedHole()
+    }
+  }
+
+  private fun liftPattern(
+    pattern: C.Pattern,
+  ): L.Pattern {
+    return when (pattern) {
+      is C.Pattern.Var  -> L.Pattern.Var(pattern.name, liftType(pattern.type))
+      is C.Pattern.Hole -> unexpectedHole()
     }
   }
 

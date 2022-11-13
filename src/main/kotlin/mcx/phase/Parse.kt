@@ -268,7 +268,7 @@ class Parse private constructor(
                 }
                 "let"   -> {
                   skipTrivia()
-                  val name = parseRanged { readWord() }
+                  val name = parsePattern()
                   skipTrivia()
                   expect('=')
                   skipTrivia()
@@ -341,6 +341,20 @@ class Parse private constructor(
         val range = until()
         diagnostics += Diagnostic.ExpectedTerm(range)
         S.Term.Hole(range)
+      }
+    }
+
+  private fun parsePattern(): S.Pattern =
+    ranging {
+      if (canRead()) {
+        S.Pattern.Var(readWord(), until())
+      } else {
+        null
+      }
+      ?: run {
+        val range = until()
+        diagnostics += Diagnostic.ExpectedPattern(range)
+        S.Pattern.Hole(range)
       }
     }
 

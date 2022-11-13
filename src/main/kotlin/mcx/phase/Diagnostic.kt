@@ -75,6 +75,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class ExpectedPattern(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: pattern",
+    DiagnosticSeverity.Error,
+  )
+
   class ModuleNotFound(
     location: Location,
     range: Range,

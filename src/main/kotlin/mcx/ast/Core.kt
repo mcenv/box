@@ -187,7 +187,7 @@ object Core {
     ) : Term
 
     data class Let(
-      val name: String,
+      val binder: Pattern,
       val init: Term,
       val body: Term,
       override val type: Type,
@@ -212,5 +212,18 @@ object Core {
     data class Hole(
       override val type: Type,
     ) : Term
+  }
+
+  sealed interface Pattern {
+    val type: Type
+
+    data class Var(
+      val name: String,
+      override val type: Type,
+    ) : Pattern
+
+    data class Hole(
+      override val type: Type,
+    ) : Pattern
   }
 }

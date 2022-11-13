@@ -190,7 +190,7 @@ object Surface {
     ) : Term
 
     data class Let(
-      val name: Ranged<String>,
+      val binder: Pattern,
       val init: Term,
       val body: Term,
       override val range: Range,
@@ -215,6 +215,19 @@ object Surface {
     data class Hole(
       override val range: Range,
     ) : Term
+  }
+
+  sealed interface Pattern {
+    val range: Range
+
+    data class Var(
+      val name: String,
+      override val range: Range,
+    ) : Pattern
+
+    data class Hole(
+      override val range: Range,
+    ) : Pattern
   }
 
   data class Ranged<T>(

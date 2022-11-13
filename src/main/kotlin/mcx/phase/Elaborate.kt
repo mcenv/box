@@ -311,11 +311,10 @@ class Elaborate private constructor(
 
       term is S.Term.Let          -> {
         val init = elaborateTerm(env, term.init)
-        hover(init.type, term.name.range)
-        val body = env.binding(term.name.value, init.type) {
+        val (binder, body) = elaboratePattern(env, term.binder, init.type) {
           elaborateTerm(env, term.body, expected)
         }
-        C.Term.Let(term.name.value, init, body, body.type)
+        C.Term.Let(binder, init, body, body.type)
       }
 
       term is S.Term.Var &&
@@ -409,6 +408,20 @@ class Elaborate private constructor(
         }
       }
       hover(it.type, term.range)
+    }
+  }
+
+  private fun <R> elaboratePattern(
+    env: Env,
+    pattern: S.Pattern,
+    expected: C.Type,
+    action: () -> R,
+  ): Pair<C.Pattern, R> {
+    return when (pattern) {
+      is S.Pattern.Var  -> C.Pattern.Var(pattern.name, expected) to env.binding(pattern.name, expected, action)
+      is S.Pattern.Hole -> C.Pattern.Hole(expected) to action()
+    }.also {
+      hover(it.first.type, pattern.range)
     }
   }
 

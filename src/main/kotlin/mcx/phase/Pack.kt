@@ -97,7 +97,7 @@ class Pack private constructor() {
         val initType = eraseType(term.init.type).first() // TODO
         val bodyType = eraseType(term.body.type).first() // TODO
         packTerm(term.init)
-        binding(term.name, initType) {
+        packPattern(term.binder) {
           packTerm(term.body)
         }
         drop(initType, listOf(bodyType))
@@ -114,6 +114,15 @@ class Pack private constructor() {
         +"function ${packLocation(term.name)}"
       }
       is L.Term.Command    -> +term.value
+    }
+  }
+
+  private fun Env.packPattern(
+    pattern: L.Pattern,
+    action: () -> Unit,
+  ) {
+    when (pattern) {
+      is L.Pattern.Var -> binding(pattern.name, eraseType(pattern.type).first(), action)
     }
   }
 
