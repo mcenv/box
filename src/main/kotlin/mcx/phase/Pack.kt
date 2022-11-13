@@ -4,6 +4,7 @@ import mcx.ast.Json
 import mcx.ast.Location
 import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
+import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
@@ -53,7 +54,7 @@ class Pack private constructor() {
       is L.Term.LongOf     -> +"data modify storage $MCX_STORAGE ${P.Type.LONG.stack} append value ${term.value}l"
       is L.Term.FloatOf    -> +"data modify storage $MCX_STORAGE ${P.Type.FLOAT.stack} append value ${term.value}f"
       is L.Term.DoubleOf   -> +"data modify storage $MCX_STORAGE ${P.Type.DOUBLE.stack} append value ${term.value}"
-      is L.Term.StringOf   -> +"data modify storage $MCX_STORAGE ${P.Type.STRING.stack} append value ${term.value}" // TODO: quote if necessary
+      is L.Term.StringOf   -> +"data modify storage $MCX_STORAGE ${P.Type.STRING.stack} append value ${term.value.quoted('"')}" // TODO: quote if necessary
       is L.Term.ListOf     -> {
         +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack} append value []"
         if (term.values.isNotEmpty()) {
