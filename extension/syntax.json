@@ -4,6 +4,10 @@
   "scopeName": "source.mcx",
   "patterns": [
     {
+      "name": "comment.line.mcx",
+      "match": "#.*"
+    },
+    {
       "name": "keyword.operator.mcx",
       "match": "[@:=,;&/]"
     },

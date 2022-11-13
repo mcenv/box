@@ -21,10 +21,10 @@ class Parse private constructor(
   private fun parseModule(
     module: Location,
   ): Surface.Module {
-    skipWhitespaces()
+    skipTrivia()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
-      skipWhitespaces()
+      skipTrivia()
       parseList(',', '{', '}') {
         parseRanged { parseLocation() }
       }
@@ -34,7 +34,7 @@ class Parse private constructor(
 
     val resources = mutableListOf<S.Resource>()
     while (true) {
-      skipWhitespaces()
+      skipTrivia()
       if (!canRead()) {
         break
       }
@@ -45,7 +45,7 @@ class Parse private constructor(
       }
     }
 
-    skipWhitespaces()
+    skipTrivia()
     if (canRead()) {
       diagnostics += Diagnostic.ExpectedEndOfFile(here())
     }
@@ -57,7 +57,7 @@ class Parse private constructor(
     ranging {
       val annotations = mutableListOf<S.Annotation>()
       while (true) {
-        skipWhitespaces()
+        skipTrivia()
         if (!canRead() || peek() != '@') {
           break
         }
@@ -86,25 +86,25 @@ class Parse private constructor(
           }
           "dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
           "functions"      -> {
-            skipWhitespaces()
+            skipTrivia()
             val name = readWord()
-            skipWhitespaces()
+            skipTrivia()
             val params = parseList(',', '(', ')') {
-              skipWhitespaces()
+              skipTrivia()
               val key = readWord()
-              skipWhitespaces()
+              skipTrivia()
               expect(':')
-              skipWhitespaces()
+              skipTrivia()
               val value = parseType()
               key to value
             }
-            skipWhitespaces()
+            skipTrivia()
             expect(':')
-            skipWhitespaces()
+            skipTrivia()
             val result = parseType()
-            skipWhitespaces()
+            skipTrivia()
             expect('=')
-            skipWhitespaces()
+            skipTrivia()
             val body = parseTerm()
             S.Resource.Functions(annotations, name, params, result, body, until())
           }
@@ -125,11 +125,11 @@ class Parse private constructor(
     registry: Registry,
   ): S.Resource.JsonResource =
     ranging {
-      skipWhitespaces()
+      skipTrivia()
       val name = readWord()
-      skipWhitespaces()
+      skipTrivia()
       expect('=')
-      skipWhitespaces()
+      skipTrivia()
       val body = parseTerm()
       S.Resource.JsonResource(annotations, registry, name, body, until())
     }
@@ -158,26 +158,26 @@ class Parse private constructor(
         when (peek()) {
           '('  -> {
             skip()
-            skipWhitespaces()
+            skipTrivia()
             val type = parseType()
-            skipWhitespaces()
+            skipTrivia()
             expect(')')
             type
           }
           '['  -> {
             skip()
-            skipWhitespaces()
+            skipTrivia()
             val element = parseType()
-            skipWhitespaces()
+            skipTrivia()
             expect(']')
             S.Type.List(element, until())
           }
           '{'  -> {
             val elements = parseList(',', '{', '}') {
               val key = readString()
-              skipWhitespaces()
+              skipTrivia()
               expect(':')
-              skipWhitespaces()
+              skipTrivia()
               val element = parseType()
               key to element
             }.toMap()
@@ -212,14 +212,14 @@ class Parse private constructor(
 
   private fun parseTerm(): S.Term =
     ranging {
-      skipWhitespaces()
+      skipTrivia()
       if (canRead()) {
         when (peek()) {
           '('  -> {
             skip()
-            skipWhitespaces()
+            skipTrivia()
             val term = parseTerm()
-            skipWhitespaces()
+            skipTrivia()
             expect(')')
             term
           }
@@ -233,9 +233,9 @@ class Parse private constructor(
           '{'  -> {
             val values = parseList(',', '{', '}') {
               val key = parseRanged { readString() }
-              skipWhitespaces()
+              skipTrivia()
               expect(':')
-              skipWhitespaces()
+              skipTrivia()
               val value = parseTerm()
               key to value
             }
@@ -243,7 +243,7 @@ class Parse private constructor(
           }
           '&'  -> {
             skip()
-            skipWhitespaces()
+            skipTrivia()
             S.Term.BoxOf(parseTerm(), until())
           }
           '/'  -> {
@@ -258,26 +258,26 @@ class Parse private constructor(
                 "false" -> S.Term.BoolOf(false, until())
                 "true"  -> S.Term.BoolOf(true, until())
                 "if"    -> {
-                  skipWhitespaces()
+                  skipTrivia()
                   val condition = parseTerm()
-                  skipWhitespaces()
+                  skipTrivia()
                   expect("then")
-                  skipWhitespaces()
+                  skipTrivia()
                   val thenClause = parseTerm()
-                  skipWhitespaces()
+                  skipTrivia()
                   expect("else")
-                  skipWhitespaces()
+                  skipTrivia()
                   val elseClause = parseTerm()
                   S.Term.If(condition, thenClause, elseClause, until())
                 }
                 "let"   -> {
-                  skipWhitespaces()
+                  skipTrivia()
                   val name = parseRanged { readWord() }
-                  skipWhitespaces()
+                  skipTrivia()
                   expect('=')
-                  skipWhitespaces()
+                  skipTrivia()
                   val init = parseTerm()
-                  skipWhitespaces()
+                  skipTrivia()
                   expect(';')
                   val body = parseTerm()
                   S.Term.Let(name, init, body, until())
@@ -376,7 +376,7 @@ class Parse private constructor(
 
     val elements = mutableListOf<R>()
     while (true) {
-      skipWhitespaces()
+      skipTrivia()
       if (!canRead() || peek() == postfix) {
         break
       }
@@ -385,7 +385,7 @@ class Parse private constructor(
       if (start == cursor) {
         break
       }
-      skipWhitespaces()
+      skipTrivia()
       if (!canRead()) {
         break
       }
@@ -484,7 +484,7 @@ class Parse private constructor(
   private inline fun <R> ranging(action: RangingContext.() -> R): R =
     RangingContext(here()).action()
 
-  private fun skipWhitespaces() {
+  private fun skipTrivia() {
     while (canRead()) {
       when (peek()) {
         ' '  -> skip()
@@ -492,6 +492,16 @@ class Parse private constructor(
         '\r' -> {
           skipNewline()
           if (canRead() && peek() == '\n') {
+            skip()
+          }
+        }
+        '#'  -> {
+          skip()
+          while (
+            canRead() && when (peek()) {
+              '\n', '\r' -> false; else -> true
+            }
+          ) {
             skip()
           }
         }
