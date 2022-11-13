@@ -115,7 +115,7 @@ class Lift private constructor() {
       body: L.Term,
     ): L.Resource.Functions =
       L.Resource
-        .Functions(emptyList(), name + id++.toString(), emptyList(), result, body)
+        .Functions(emptyList(), Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"), emptyList(), result, body)
         .also { liftedResources += it }
   }
 
