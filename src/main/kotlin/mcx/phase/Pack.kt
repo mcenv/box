@@ -38,7 +38,7 @@ class Pack private constructor() {
         val resultTypes = eraseType(resource.result)
         resource.params.forEach { (_, type) ->
           eraseType(type).forEach { paramType ->
-            drop(paramType, resultTypes)
+            dropType(paramType, resultTypes)
           }
         }
         P.Resource.Functions(path, commands)
@@ -94,13 +94,15 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
       }
       is L.Term.Let        -> {
-        val initType = eraseType(term.init.type).first() // TODO
-        val bodyType = eraseType(term.body.type).first() // TODO
         packTerm(term.init)
-        packPattern(term.binder) {
-          packTerm(term.body)
+        packPattern(term.binder)
+        packTerm(term.body)
+
+        val binderTypes = eraseType(term.binder.type)
+        val bodyTypes = eraseType(term.body.type)
+        binderTypes.forEach { binderType ->
+          dropType(binderType, bodyTypes)
         }
-        drop(initType, listOf(bodyType))
       }
       is L.Term.Var        -> {
         val type = eraseType(term.type).first() // TODO
@@ -119,17 +121,18 @@ class Pack private constructor() {
 
   private fun Env.packPattern(
     pattern: L.Pattern,
-    action: () -> Unit,
   ) {
     when (pattern) {
-      is L.Pattern.Var -> binding(pattern.name, eraseType(pattern.type).first(), action)
+      is L.Pattern.TupleOf -> pattern.elements.forEach { packPattern(it) }
+      is L.Pattern.Var     -> bind(pattern.name, eraseType(pattern.type).first())
     }
   }
 
-  private fun Env.drop(
+  private fun Env.dropType(
     drop: P.Type,
     keeps: List<P.Type>,
   ) {
+    drop(drop)
     when (drop) {
       P.Type.END -> Unit
       else       -> +"data remove storage $MCX_STORAGE ${drop.stack}[${-1 - keeps.count { it == drop }}]"
@@ -224,15 +227,10 @@ class Pack private constructor() {
       entries[type]!! += name
     }
 
-    inline fun binding(
-      name: String,
+    fun drop(
       type: P.Type,
-      action: () -> Unit,
     ) {
-      val entry = entries[type]!!
-      entry += name
-      action()
-      entry.removeLast()
+      entries[type]!!.removeLast()
     }
 
     operator fun get(

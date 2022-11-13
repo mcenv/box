@@ -309,10 +309,12 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is S.Term.Let          -> {
+      term is S.Term.Let         -> {
         val init = elaborateTerm(env, term.init)
-        val (binder, body) = elaboratePattern(env, term.binder, init.type) {
-          elaborateTerm(env, term.body, expected)
+        val (binder, body) = env.restoring {
+          val binder = elaboratePattern(env, term.binder, init.type)
+          val body = elaborateTerm(env, term.body, expected)
+          binder to body
         }
         C.Term.Let(binder, init, body, body.type)
       }
@@ -334,7 +336,7 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Run &&
-      expected == null     ->
+      expected == null           ->
         when (val resource = env.findResource(term.name)) {
           null                        -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
@@ -411,17 +413,56 @@ class Elaborate private constructor(
     }
   }
 
-  private fun <R> elaboratePattern(
+  private fun elaboratePattern(
     env: Env,
     pattern: S.Pattern,
-    expected: C.Type,
-    action: () -> R,
-  ): Pair<C.Pattern, R> {
-    return when (pattern) {
-      is S.Pattern.Var  -> C.Pattern.Var(pattern.name, expected) to env.binding(pattern.name, expected, action)
-      is S.Pattern.Hole -> C.Pattern.Hole(expected) to action()
+    expected: C.Type? = null,
+  ): C.Pattern {
+    return when {
+      pattern is S.Pattern.TupleOf &&
+      expected is C.Type.Tuple  -> {
+        if (expected.elements.size != pattern.elements.size) {
+          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range)
+        }
+        val elements = pattern.elements.mapIndexed { index, element ->
+          elaboratePattern(env, element, expected.elements.getOrNull(index))
+        }
+        C.Pattern.TupleOf(elements, expected)
+      }
+
+      pattern is S.Pattern.TupleOf &&
+      expected == null          -> {
+        val elements = pattern.elements.mapIndexed { index, element ->
+          elaboratePattern(env, element)
+        }
+        C.Pattern.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
+      }
+
+      pattern is S.Pattern.Var &&
+      expected != null          -> {
+        env.bind(pattern.name, expected)
+        C.Pattern.Var(pattern.name, expected)
+      }
+
+      pattern is S.Pattern.Var &&
+      expected == null          -> {
+        diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
+        C.Pattern.Var(pattern.name, C.Type.End)
+      }
+
+      pattern is S.Pattern.Hole -> C.Pattern.Hole(expected ?: C.Type.Hole)
+
+      expected == null          -> error("type must be non-null")
+
+      else                      -> {
+        val actual = elaboratePattern(env, pattern)
+        if (!(actual.type isSubtypeOf expected)) {
+          diagnostics += Diagnostic.TypeMismatch(expected, actual.type, pattern.range)
+        }
+        actual
+      }
     }.also {
-      hover(it.first.type, pattern.range)
+      hover(it.type, pattern.range)
     }
   }
 
@@ -509,6 +550,7 @@ class Elaborate private constructor(
     private val _entries: MutableList<Entry>,
   ) {
     val entries: List<Entry> get() = _entries
+    private var savedSize: Int = 0
 
     operator fun get(name: String): Entry? =
       _entries.lastOrNull { it.name == name }
@@ -528,14 +570,14 @@ class Elaborate private constructor(
       _entries += Entry(name, false, type)
     }
 
-    inline fun <R> binding(
-      name: String,
-      type: C.Type,
+    fun <R> restoring(
       action: () -> R,
     ): R {
-      _entries += Entry(name, false, type)
+      savedSize = _entries.size
       val result = action()
-      _entries.removeLast()
+      repeat(_entries.size - savedSize) {
+        _entries.removeLast()
+      }
       return result
     }
 

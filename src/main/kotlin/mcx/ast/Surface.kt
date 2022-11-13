@@ -220,6 +220,11 @@ object Surface {
   sealed interface Pattern {
     val range: Range
 
+    data class TupleOf(
+      val elements: List<Pattern>,
+      override val range: Range,
+    ) : Pattern
+
     data class Var(
       val name: String,
       override val range: Range,

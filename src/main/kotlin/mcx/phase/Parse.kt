@@ -347,7 +347,15 @@ class Parse private constructor(
   private fun parsePattern(): S.Pattern =
     ranging {
       if (canRead()) {
-        S.Pattern.Var(readWord(), until())
+        when (peek()) {
+          '('  -> {
+            val elements = parseList(',', '(', ')') {
+              parsePattern()
+            }
+            S.Pattern.TupleOf(elements, until())
+          }
+          else -> S.Pattern.Var(readWord(), until())
+        }
       } else {
         null
       }

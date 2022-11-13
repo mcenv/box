@@ -91,7 +91,7 @@ class Lift private constructor() {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
         val thenFunctions = liftTerm(term.thenClause).let { thenClause ->
-          createFreshFunctions(type, L.Term.Let(L.Pattern.Var("", L.Type.End), thenClause, L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End), thenClause.type))
+          createFreshFunctions(type, L.Term.Let(L.Pattern.Var("", L.Type.End), thenClause, L.Term.Command("scoreboard players set #0 mcx 1", thenClause.type), thenClause.type))
         }
         val elseFunctions = createFreshFunctions(type, liftTerm(term.elseClause))
         L.Term.If(condition, thenFunctions.name, elseFunctions.name, type)
@@ -108,8 +108,9 @@ class Lift private constructor() {
     pattern: C.Pattern,
   ): L.Pattern {
     return when (pattern) {
-      is C.Pattern.Var  -> L.Pattern.Var(pattern.name, liftType(pattern.type))
-      is C.Pattern.Hole -> unexpectedHole()
+      is C.Pattern.TupleOf -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, liftType(pattern.type))
+      is C.Pattern.Var     -> L.Pattern.Var(pattern.name, liftType(pattern.type))
+      is C.Pattern.Hole    -> unexpectedHole()
     }
   }
 

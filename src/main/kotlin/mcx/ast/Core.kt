@@ -217,6 +217,11 @@ object Core {
   sealed interface Pattern {
     val type: Type
 
+    data class TupleOf(
+      val elements: List<Pattern>,
+      override val type: Type,
+    ) : Pattern
+
     data class Var(
       val name: String,
       override val type: Type,
