@@ -41,38 +41,79 @@ object Core {
     object Hole : Annotation
   }
 
+  data class Kind(val arity: Int) {
+    companion object {
+      val ZERO: Kind = Kind(0)
+      val ONE: Kind = Kind(1)
+    }
+  }
+
   sealed interface Type {
-    object End : Type
+    val kind: Kind
 
-    object Bool : Type
+    object End : Type {
+      override val kind: Kind get() = Kind.ZERO
+    }
 
-    object Byte : Type
+    object Bool : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Short : Type
+    object Byte : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Int : Type
+    object Short : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Long : Type
+    object Int : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Float : Type
+    object Long : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Double : Type
+    object Float : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object String : Type
+    object Double : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
+
+    object String : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
     data class List(
       val element: Type,
-    ) : Type
+    ) : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
     data class Compound(
       val elements: Map<kotlin.String, Type>,
-    ) : Type
+    ) : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
     data class Box(
       val element: Type,
-    ) : Type
+    ) : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
 
-    object Hole : Type
+    data class Tuple(
+      val elements: kotlin.collections.List<Type>,
+    ) : Type {
+      override val kind: Kind get() = Kind(elements.size)
+    }
+
+    object Hole : Type {
+      override val kind: Kind get() = Kind.ZERO
+    }
   }
 
   sealed interface Term {
@@ -130,6 +171,11 @@ object Core {
 
     data class BoxOf(
       val value: Term,
+      override val type: Type,
+    ) : Term
+
+    data class TupleOf(
+      val values: List<Term>,
       override val type: Type,
     ) : Term
 

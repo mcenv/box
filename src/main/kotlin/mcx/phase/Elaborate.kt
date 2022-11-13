@@ -155,21 +155,60 @@ class Elaborate private constructor(
 
   private fun elaborateType(
     type: S.Type,
+    expected: C.Kind? = null,
   ): C.Type {
-    return when (type) {
-      is S.Type.End      -> C.Type.End
-      is S.Type.Bool     -> C.Type.Bool
-      is S.Type.Byte     -> C.Type.Byte
-      is S.Type.Short    -> C.Type.Short
-      is S.Type.Int      -> C.Type.Int
-      is S.Type.Long     -> C.Type.Long
-      is S.Type.Float    -> C.Type.Float
-      is S.Type.Double   -> C.Type.Double
-      is S.Type.String   -> C.Type.String
-      is S.Type.List     -> C.Type.List(elaborateType(type.element))
-      is S.Type.Compound -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value) })
-      is S.Type.Box      -> C.Type.Box(elaborateType(type.element))
-      is S.Type.Hole     -> C.Type.Hole
+    val arity = expected?.arity
+    return when {
+      type is S.Type.End &&
+      arity?.let { it == 1 } ?: true -> C.Type.End
+
+      type is S.Type.Bool &&
+      arity?.let { it == 1 } ?: true -> C.Type.Bool
+
+      type is S.Type.Byte &&
+      arity?.let { it == 1 } ?: true -> C.Type.Byte
+
+      type is S.Type.Short &&
+      arity?.let { it == 1 } ?: true -> C.Type.Short
+
+      type is S.Type.Int &&
+      arity?.let { it == 1 } ?: true -> C.Type.Int
+
+      type is S.Type.Long &&
+      arity?.let { it == 1 } ?: true -> C.Type.Long
+
+      type is S.Type.Float &&
+      arity?.let { it == 1 } ?: true -> C.Type.Float
+
+      type is S.Type.Double &&
+      arity?.let { it == 1 } ?: true -> C.Type.Double
+
+      type is S.Type.String &&
+      arity?.let { it == 1 } ?: true -> C.Type.String
+
+      type is S.Type.List &&
+      arity?.let { it == 1 } ?: true -> C.Type.List(elaborateType(type.element, C.Kind.ONE))
+
+      type is S.Type.Compound &&
+      arity?.let { it == 1 } ?: true -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.ONE) })
+
+      type is S.Type.Box &&
+      arity?.let { it == 1 } ?: true -> C.Type.Box(elaborateType(type.element, C.Kind.ONE))
+
+      type is S.Type.Tuple &&
+      expected == null               -> C.Type.Tuple(type.elements.map { elaborateType(it) })
+
+      type is S.Type.Hole            -> C.Type.Hole
+
+      expected == null               -> error("kind must be non-null")
+
+      else                           -> {
+        val actual = elaborateType(type)
+        if (!(actual.kind isSubkindOf expected)) {
+          diagnostics += Diagnostic.KindMismatch(expected, actual.kind, type.range)
+        }
+        actual
+      }
     }
   }
 
@@ -180,31 +219,31 @@ class Elaborate private constructor(
   ): C.Term {
     return when {
       term is S.Term.BoolOf &&
-      expected is C.Type.Bool?          -> C.Term.BoolOf(term.value, C.Type.Bool)
+      expected is C.Type.Bool?   -> C.Term.BoolOf(term.value, C.Type.Bool)
 
       term is S.Term.ByteOf &&
-      expected is C.Type.Byte?          -> C.Term.ByteOf(term.value, C.Type.Byte)
+      expected is C.Type.Byte?   -> C.Term.ByteOf(term.value, C.Type.Byte)
 
       term is S.Term.ShortOf &&
-      expected is C.Type.Short?         -> C.Term.ShortOf(term.value, C.Type.Short)
+      expected is C.Type.Short?  -> C.Term.ShortOf(term.value, C.Type.Short)
 
       term is S.Term.IntOf &&
-      expected is C.Type.Int?           -> C.Term.IntOf(term.value, C.Type.Int)
+      expected is C.Type.Int?    -> C.Term.IntOf(term.value, C.Type.Int)
 
       term is S.Term.LongOf &&
-      expected is C.Type.Long?          -> C.Term.LongOf(term.value, C.Type.Long)
+      expected is C.Type.Long?   -> C.Term.LongOf(term.value, C.Type.Long)
 
       term is S.Term.FloatOf &&
-      expected is C.Type.Float?         -> C.Term.FloatOf(term.value, C.Type.Float)
+      expected is C.Type.Float?  -> C.Term.FloatOf(term.value, C.Type.Float)
 
       term is S.Term.DoubleOf &&
-      expected is C.Type.Double?        -> C.Term.DoubleOf(term.value, C.Type.Double)
+      expected is C.Type.Double? -> C.Term.DoubleOf(term.value, C.Type.Double)
 
       term is S.Term.StringOf &&
-      expected is C.Type.String?        -> C.Term.StringOf(term.value, C.Type.String)
+      expected is C.Type.String? -> C.Term.StringOf(term.value, C.Type.String)
 
       term is S.Term.ListOf &&
-      term.values.isEmpty()             -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
+      term.values.isEmpty()      -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
 
       term is S.Term.ListOf &&
       expected is C.Type.List?    -> {
@@ -296,7 +335,7 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Run &&
-      expected == null            ->
+      expected == null     ->
         when (val resource = env.findResource(term.name)) {
           null                        -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
@@ -308,7 +347,7 @@ class Elaborate private constructor(
           }
           else                        -> {
             if (resource.params.size != term.args.size) {
-              diagnostics += Diagnostic.MismatchedArity(resource.params.size, term.args.size, term.range.end..term.range.end)
+              diagnostics += Diagnostic.ArityMismatch(resource.params.size, term.args.size, term.range.end..term.range.end)
             }
             val args = term.args.mapIndexed { index, arg ->
               elaborateTerm(env, arg, resource.params.getOrNull(index)?.second)
@@ -318,18 +357,37 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Command &&
-      expected is C.Type.Int?     ->
+      expected is C.Type.Int?    ->
         C.Term.Command(term.value, C.Type.End)
 
-      term is S.Term.Hole         ->
+      term is S.Term.TupleOf &&
+      expected == null           -> {
+        val values = term.values.map {
+          elaborateTerm(env, it)
+        }
+        C.Term.TupleOf(values, C.Type.Tuple(values.map { it.type }))
+      }
+
+      term is S.Term.TupleOf &&
+      expected is C.Type.Tuple   -> {
+        if (expected.elements.size != term.values.size) {
+          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.values.size, term.range)
+        }
+        val values = term.values.mapIndexed { index, value ->
+          elaborateTerm(env, value, expected.elements.getOrNull(index))
+        }
+        C.Term.TupleOf(values, C.Type.Tuple(values.map { it.type }))
+      }
+
+      term is S.Term.Hole        ->
         C.Term.Hole(expected ?: C.Type.Hole)
 
-      expected == null            -> throw IllegalArgumentException()
+      expected == null           -> error("type must be non-null")
 
-      else                        -> {
+      else                       -> {
         val actual = elaborateTerm(env, term)
         if (!(actual.type isSubtypeOf expected)) {
-          diagnostics += Diagnostic.NotConvertible(expected, actual.type, term.range)
+          diagnostics += Diagnostic.TypeMismatch(expected, actual.type, term.range)
         }
         actual
       }
@@ -410,11 +468,21 @@ class Elaborate private constructor(
       type1 is C.Type.Box &&
       type2 is C.Type.Box      -> type1.element isSubtypeOf type2.element
 
+      type1 is C.Type.Tuple &&
+      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+
       type1 is C.Type.Hole     -> true
       type2 is C.Type.Hole     -> true
 
       else                     -> false
     }
+  }
+
+  private infix fun C.Kind.isSubkindOf(
+    other: C.Kind,
+  ): Boolean {
+    return this.arity == other.arity
   }
 
   private class Env private constructor(

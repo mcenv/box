@@ -65,6 +65,10 @@ object Lifted {
     data class Box(
       val element: Type,
     ) : Type
+
+    data class Tuple(
+      val elements: kotlin.collections.List<Type>,
+    ) : Type
   }
 
   sealed interface Term {
@@ -122,6 +126,11 @@ object Lifted {
 
     data class BoxOf(
       val value: Term,
+      override val type: Type,
+    ) : Term
+
+    data class TupleOf(
+      val values: List<Term>,
       override val type: Type,
     ) : Term
 

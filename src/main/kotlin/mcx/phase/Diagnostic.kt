@@ -146,29 +146,43 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class MismatchedArity(
+  class ArityMismatch(
     expected: Int,
     actual: Int,
     range: Range,
   ) : Diagnostic(
     range,
-    """mismatched arity:
+    """arity mismatch:
       |  expected: $expected
       |  actual  : $actual
     """.trimMargin(),
     DiagnosticSeverity.Error,
   )
 
-  class NotConvertible(
+  class TypeMismatch(
     expected: C.Type,
     actual: C.Type,
     range: Range,
   ) : Diagnostic(
     range,
-    """not convertible:
+    """type mismatch:
       |  expected: ${prettyType(expected)}
       |  actual  : ${prettyType(actual)}
     """.trimMargin(),
     DiagnosticSeverity.Error,
   )
+
+  class KindMismatch(
+    expected: C.Kind,
+    actual: C.Kind,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    """kind mismatch:
+      |  expected: ${prettyKind(expected)}
+      |  actual  : ${prettyKind(actual)}
+    """.trimMargin(),
+    DiagnosticSeverity.Error,
+  )
+
 }

@@ -157,12 +157,10 @@ class Parse private constructor(
       if (canRead()) {
         when (peek()) {
           '('  -> {
-            skip()
-            skipTrivia()
-            val type = parseType()
-            skipTrivia()
-            expect(')')
-            type
+            val elements = parseList(',', '(', ')') {
+              parseType()
+            }
+            S.Type.Tuple(elements, until())
           }
           '['  -> {
             skip()
@@ -216,12 +214,10 @@ class Parse private constructor(
       if (canRead()) {
         when (peek()) {
           '('  -> {
-            skip()
-            skipTrivia()
-            val term = parseTerm()
-            skipTrivia()
-            expect(')')
-            term
+            val values = parseList(',', '(', ')') {
+              parseTerm()
+            }
+            S.Term.TupleOf(values, until())
           }
           '"'  -> S.Term.StringOf(readQuotedString(), until())
           '['  -> {

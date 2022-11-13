@@ -30,13 +30,16 @@ class Pack private constructor() {
       is L.Resource.Functions    -> with(emptyEnv()) {
         +"# ${resource.name}"
         resource.params.forEach { (name, type) ->
-          bind(name, eraseType(type))
+          eraseType(type).forEach {
+            bind(name, it)
+          }
         }
         packTerm(resource.body)
-        val resultType = eraseType(resource.result)
-        resource.params.forEach {
-          val paramType = eraseType(it.second)
-          drop(paramType, resultType)
+        val resultTypes = eraseType(resource.result)
+        resource.params.forEach { (_, type) ->
+          eraseType(type).forEach { paramType ->
+            drop(paramType, resultTypes)
+          }
         }
         P.Resource.Functions(path, commands)
       }
@@ -58,7 +61,7 @@ class Pack private constructor() {
       is L.Term.ListOf     -> {
         +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack} append value []"
         if (term.values.isNotEmpty()) {
-          val valueType = eraseType(term.values.first().type)
+          val valueType = eraseType(term.values.first().type).first()
           term.values.forEach { value ->
             packTerm(value)
             val index = if (valueType == P.Type.LIST) -2 else -1
@@ -71,13 +74,18 @@ class Pack private constructor() {
         +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack} append value {}"
         term.values.forEach { (key, value) ->
           packTerm(value)
-          val valueType = eraseType(value.type)
+          val valueType = eraseType(value.type).first()
           val index = if (valueType == P.Type.COMPOUND) -2 else -1
           +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
           +"data remove storage $MCX_STORAGE ${valueType.stack}[-1]"
         }
       }
       is L.Term.BoxOf      -> +"# $term" // TODO
+      is L.Term.TupleOf    -> {
+        term.values.forEach {
+          packTerm(it)
+        }
+      }
       is L.Term.If         -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
@@ -86,16 +94,16 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
       }
       is L.Term.Let        -> {
-        val initType = eraseType(term.init.type)
-        val bodyType = eraseType(term.body.type)
+        val initType = eraseType(term.init.type).first() // TODO
+        val bodyType = eraseType(term.body.type).first() // TODO
         packTerm(term.init)
         binding(term.name, initType) {
           packTerm(term.body)
         }
-        drop(initType, bodyType)
+        drop(initType, listOf(bodyType))
       }
       is L.Term.Var        -> {
-        val type = eraseType(term.type)
+        val type = eraseType(term.type).first() // TODO
         val index = this[term.name, type]
         +"data modify storage $MCX_STORAGE ${type.stack} append from storage $MCX_STORAGE ${type.stack}[$index]"
       }
@@ -111,31 +119,31 @@ class Pack private constructor() {
 
   private fun Env.drop(
     drop: P.Type,
-    keep: P.Type,
+    keeps: List<P.Type>,
   ) {
     when (drop) {
       P.Type.END -> Unit
-      keep       -> +"data remove storage $MCX_STORAGE ${drop.stack}[-2]"
-      else       -> +"data remove storage $MCX_STORAGE ${drop.stack}[-1]"
+      else       -> +"data remove storage $MCX_STORAGE ${drop.stack}[${-1 - keeps.count { it == drop }}]"
     }
   }
 
   private fun eraseType(
     type: L.Type,
-  ): P.Type {
+  ): List<P.Type> {
     return when (type) {
-      is L.Type.End      -> P.Type.END
-      is L.Type.Bool     -> P.Type.BYTE
-      is L.Type.Byte     -> P.Type.BYTE
-      is L.Type.Short    -> P.Type.SHORT
-      is L.Type.Int      -> P.Type.INT
-      is L.Type.Long     -> P.Type.LONG
-      is L.Type.Float    -> P.Type.FLOAT
-      is L.Type.Double   -> P.Type.DOUBLE
-      is L.Type.String   -> P.Type.STRING
-      is L.Type.List     -> P.Type.LIST
-      is L.Type.Compound -> P.Type.COMPOUND
-      is L.Type.Box      -> P.Type.INT
+      is L.Type.End      -> listOf(P.Type.END)
+      is L.Type.Bool     -> listOf(P.Type.BYTE)
+      is L.Type.Byte     -> listOf(P.Type.BYTE)
+      is L.Type.Short    -> listOf(P.Type.SHORT)
+      is L.Type.Int      -> listOf(P.Type.INT)
+      is L.Type.Long     -> listOf(P.Type.LONG)
+      is L.Type.Float    -> listOf(P.Type.FLOAT)
+      is L.Type.Double   -> listOf(P.Type.DOUBLE)
+      is L.Type.String   -> listOf(P.Type.STRING)
+      is L.Type.List     -> listOf(P.Type.LIST)
+      is L.Type.Compound -> listOf(P.Type.COMPOUND)
+      is L.Type.Box      -> listOf(P.Type.INT)
+      is L.Type.Tuple    -> type.elements.flatMap { eraseType(it) }
     }
   }
 

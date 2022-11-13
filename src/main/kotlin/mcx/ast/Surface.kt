@@ -109,6 +109,11 @@ object Surface {
       override val range: Range,
     ) : Type
 
+    data class Tuple(
+      val elements: kotlin.collections.List<Type>,
+      override val range: Range,
+    ) : Type
+
     data class Hole(
       override val range: Range,
     ) : Type
@@ -169,6 +174,11 @@ object Surface {
 
     data class BoxOf(
       val value: Term,
+      override val range: Range,
+    ) : Term
+
+    data class TupleOf(
+      val values: List<Term>,
       override val range: Range,
     ) : Term
 
