@@ -21,16 +21,18 @@ object Packed {
     ) : Resource
   }
 
-  enum class Type {
-    END,
-    BYTE,
-    SHORT,
-    INT,
-    LONG,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    LIST,
-    COMPOUND,
+  enum class Type(
+    val stack: String,
+  ) {
+    END("end"),
+    BYTE("byte"),
+    SHORT("short"),
+    INT("int"),
+    LONG("long"),
+    FLOAT("float"),
+    DOUBLE("double"),
+    STRING("string"),
+    LIST("list"),
+    COMPOUND("compound"),
   }
 }
