@@ -31,14 +31,14 @@ class Pack private constructor() {
       is Lifted.Resource.Function -> with(emptyEnv()) {
         +"# ${resource.name}"
 
-        val paramTypes = eraseType(resource.param)
-        paramTypes.forEach { bind(null, it) }
+        val binderTypes = eraseType(resource.binder.type)
+        binderTypes.forEach { bind(null, it) }
         packPattern(resource.binder)
         packTerm(resource.body)
 
-        if (L.Annotation.NoDrop !in resource.annotations) {
+        if (L.Annotation.NoDrop !in resource.binder.annotations) {
           val resultTypes = eraseType(resource.result)
-          paramTypes.forEach { dropType(it, resultTypes) }
+          binderTypes.forEach { dropType(it, resultTypes) }
         }
 
         P.Resource.Function(path, commands)

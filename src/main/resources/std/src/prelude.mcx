@@ -1,35 +1,28 @@
-@no_drop
-function + _: (int, int) -> int =
+function + @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx"
 
-@no_drop
-function - _: (int, int) -> int =
+function - @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx"
 
-@no_drop
-function * _: (int, int) -> int =
+function * @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx"
 
-@no_drop
-function / _: (int, int) -> int =
+function / @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx"
 
-@no_drop
-function % _: (int, int) -> int =
+function % @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx"
 
-@no_drop
-function min _: (int, int) -> int =
+function min @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx"
 
-@no_drop
-function max _: (int, int) -> int =
+function max @no_drop _: (int, int) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx"
 
