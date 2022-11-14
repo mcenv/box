@@ -89,24 +89,20 @@ class Parse private constructor(
             skipTrivia()
             val name = readWord()
             skipTrivia()
-            val params = parseList(',', '(', ')') {
-              skipTrivia()
-              val key = readWord()
-              skipTrivia()
-              expect(':')
-              skipTrivia()
-              val value = parseType()
-              key to value
-            }
+            val binder = parsePattern()
             skipTrivia()
             expect(':')
+            skipTrivia()
+            val param = parseType()
+            skipTrivia()
+            expect("->")
             skipTrivia()
             val result = parseType()
             skipTrivia()
             expect('=')
             skipTrivia()
             val body = parseTerm()
-            S.Resource.Functions(annotations, name, params, result, body, until())
+            S.Resource.Functions(annotations, name, binder, param, result, body, until())
           }
           else             -> null
         }
@@ -278,11 +274,13 @@ class Parse private constructor(
                   val body = parseTerm()
                   S.Term.Let(name, init, body, until())
                 }
-                else    -> if (canRead() && peek() == '(') {
-                  val args = parseList(',', '(', ')') {
-                    parseTerm()
-                  }
-                  S.Term.Run(location, args, until())
+                else    -> if (canRead() && peek() == '(') { // TODO: juxtaposition
+                  expect('(')
+                  skipTrivia()
+                  val arg = parseTerm()
+                  skipTrivia()
+                  expect(')')
+                  S.Term.Run(location, arg, until())
                 } else {
                   word
                     .lastOrNull()
@@ -326,10 +324,12 @@ class Parse private constructor(
                 }
               }
               else -> {
-                val args = parseList(',', '(', ')') {
-                  parseTerm()
-                }
-                S.Term.Run(location, args, until())
+                expect('(')
+                skipTrivia()
+                val arg = parseTerm()
+                skipTrivia()
+                expect(')')
+                S.Term.Run(location, arg, until())
               }
             }
           }

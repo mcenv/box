@@ -23,7 +23,8 @@ object Lifted {
     data class Functions(
       override val annotations: List<Annotation>,
       override val name: Location,
-      val params: List<Pair<String, Type>>,
+      val binder: Pattern,
+      val param: Type,
       val result: Type,
       val body: Term,
     ) : Resource
@@ -155,7 +156,7 @@ object Lifted {
 
     data class Run(
       val name: Location,
-      val args: List<Term>,
+      val arg: Term,
       override val type: Type,
     ) : Term
 

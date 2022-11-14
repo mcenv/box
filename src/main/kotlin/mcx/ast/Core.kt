@@ -21,7 +21,8 @@ object Core {
     data class Functions(
       override val annotations: List<Annotation>,
       override val name: Location,
-      val params: List<Pair<String, Type>>,
+      val binder: Pattern,
+      val param: Type,
       val result: Type,
     ) : Resource {
       lateinit var body: Term
@@ -200,7 +201,7 @@ object Core {
 
     data class Run(
       val name: Location,
-      val args: List<Term>,
+      val arg: Term,
       override val type: Type,
     ) : Term
 

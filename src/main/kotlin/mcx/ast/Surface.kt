@@ -25,7 +25,8 @@ object Surface {
     data class Functions(
       override val annotations: List<Annotation>,
       override val name: String,
-      val params: List<Pair<String, Type>>,
+      val binder: Pattern,
+      val param: Type,
       val result: Type,
       val body: Term,
       override val range: Range,
@@ -203,7 +204,7 @@ object Surface {
 
     data class Run(
       val name: Location,
-      val args: List<Term>,
+      val arg: Term,
       override val range: Range,
     ) : Term
 

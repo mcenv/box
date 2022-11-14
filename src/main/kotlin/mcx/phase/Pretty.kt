@@ -2,6 +2,11 @@ package mcx.phase
 
 import mcx.ast.Core as C
 
+fun prettyKind(
+  kind: C.Kind,
+): String =
+  kind.arity.toString()
+
 fun prettyType(
   type: C.Type,
 ): String =
@@ -21,8 +26,3 @@ fun prettyType(
     is C.Type.Tuple    -> type.elements.joinToString(", ", "(", ")") { prettyType(it) }
     is C.Type.Hole     -> "?"
   }
-
-fun prettyKind(
-  kind: C.Kind,
-): String =
-  kind.arity.toString()

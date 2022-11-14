@@ -29,12 +29,11 @@ class Lift private constructor() {
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
       }
       is C.Resource.Functions    -> {
-        val params = resource.params.map { (name, type) ->
-          name to liftType(type)
-        }
+        val binder = liftPattern(resource.binder)
+        val param = liftType(resource.param)
         val result = liftType(resource.result)
         val body = env.liftTerm(resource.body)
-        L.Resource.Functions(annotations, resource.name, params, result, body)
+        L.Resource.Functions(annotations, resource.name, binder, param, result, body)
       }
       is C.Resource.Hole         -> unexpectedHole()
     }
@@ -87,30 +86,32 @@ class Lift private constructor() {
       is C.Term.CompoundOf -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, liftType(term.type))
       is C.Term.BoxOf      -> L.Term.BoxOf(liftTerm(term.element), liftType(term.type))
       is C.Term.TupleOf    -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, liftType(term.type))
-      is C.Term.If         -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
         val thenFunctions = liftTerm(term.thenClause).let { thenClause ->
-          createFreshFunctions(type, L.Term.Let(
-            L.Pattern.Var("x", thenClause.type),
-            thenClause,
+          createFreshFunctions(
             L.Term.Let(
-              L.Pattern.Var("_", L.Type.End),
-              L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End),
-              L.Term.Var("x", thenClause.type),
-              thenClause.type,
-            ),
-            thenClause.type
-          ))
+              L.Pattern.Var("x", thenClause.type),
+              thenClause,
+              L.Term.Let(
+                L.Pattern.Var("_", L.Type.End),
+                L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End),
+                L.Term.Var("x", thenClause.type),
+                thenClause.type,
+              ),
+              thenClause.type
+            )
+          )
         }
-        val elseFunctions = createFreshFunctions(type, liftTerm(term.elseClause))
+        val elseFunctions = createFreshFunctions(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunctions.name, elseFunctions.name, type)
       }
-      is C.Term.Let        -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
-      is C.Term.Var        -> L.Term.Var(term.name, liftType(term.type))
-      is C.Term.Run        -> L.Term.Run(term.name, term.args.map { liftTerm(it) }, liftType(term.type))
-      is C.Term.Command    -> L.Term.Command(term.value, liftType(term.type))
-      is C.Term.Hole       -> unexpectedHole()
+      is C.Term.Let     -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
+      is C.Term.Var     -> L.Term.Var(term.name, liftType(term.type))
+      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), liftType(term.type))
+      is C.Term.Command -> L.Term.Command(term.value, liftType(term.type))
+      is C.Term.Hole    -> unexpectedHole()
     }
   }
 
@@ -133,12 +134,20 @@ class Lift private constructor() {
     private var id: Int = 0
 
     fun createFreshFunctions(
-      result: L.Type,
       body: L.Term,
-    ): L.Resource.Functions =
-      L.Resource
-        .Functions(emptyList(), Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"), emptyList(), result, body)
+    ): L.Resource.Functions {
+      val type = L.Type.Tuple(emptyList())
+      return L.Resource
+        .Functions(
+          emptyList(),
+          Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"),
+          L.Pattern.TupleOf(emptyList(), type),
+          type,
+          type,
+          body,
+        )
         .also { liftedResources += it }
+    }
   }
 
   companion object {

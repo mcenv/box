@@ -29,18 +29,15 @@ class Pack private constructor() {
       }
       is L.Resource.Functions    -> with(emptyEnv()) {
         +"# ${resource.name}"
-        resource.params.forEach { (name, type) ->
-          eraseType(type).forEach {
-            bind(name, it)
-          }
-        }
+
+        val paramTypes = eraseType(resource.param)
+        paramTypes.forEach { bind(null, it) }
+        packPattern(resource.binder)
         packTerm(resource.body)
+
         val resultTypes = eraseType(resource.result)
-        resource.params.forEach { (_, type) ->
-          eraseType(type).forEach { paramType ->
-            dropType(paramType, resultTypes)
-          }
-        }
+        paramTypes.forEach { dropType(it, resultTypes) }
+
         P.Resource.Functions(path, commands)
       }
     }
@@ -111,13 +108,11 @@ class Pack private constructor() {
         pushType(type, "from storage $MCX_STORAGE ${type.stack}[$index]")
       }
       is L.Term.Run        -> {
-        term.args.forEach {
-          packTerm(it)
-        }
+        packTerm(term.arg)
 
         +"function ${packLocation(term.name)}"
-        term.args.forEach {
-          dropType(eraseType(it.type).first(), relevant = false)
+        eraseType(term.arg.type).forEach {
+          dropType(it, relevant = false)
         }
         eraseType(term.type).forEach { bind(null, it) }
       }

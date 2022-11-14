@@ -62,11 +62,7 @@ class Elaborate private constructor(
               CompletionItemKind.Struct
             }
             is C.Resource.Functions    -> {
-              val detail = "${
-                resource.params.joinToString(", ", "(", ")") { (param, type) ->
-                  "$param: ${prettyType(type)}"
-                }
-              }: ${prettyType(resource.result)}"
+              val detail = ": ${prettyType(resource.param)} -> ${prettyType(resource.result)}"
               documentation = forRight(highlight("functions $name$detail"))
               labelDetails.detail = detail
               CompletionItemKind.Function
@@ -118,17 +114,15 @@ class Elaborate private constructor(
       is S.Resource.Functions    -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         val env = emptyEnv(resources)
-        val params = resource.params.map {
-          val type = elaborateType(it.second)
-          env.bind(it.first, type)
-          it.first to type
-        }
+        val param = elaborateType(resource.param)
+        val binder = elaboratePattern(env, resource.binder, param)
         val result = elaborateType(resource.result)
         C.Resource
           .Functions(
             annotations,
             module + resource.name,
-            params,
+            binder,
+            param,
             result,
           )
           .also {
@@ -243,7 +237,7 @@ class Elaborate private constructor(
       expected is C.Type.String? -> C.Term.StringOf(term.value, C.Type.String)
 
       term is S.Term.ListOf &&
-      term.elements.isEmpty()           -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
+      term.elements.isEmpty()    -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
 
       term is S.Term.ListOf &&
       expected is C.Type.List?    -> {
@@ -347,13 +341,8 @@ class Elaborate private constructor(
             C.Term.Hole(C.Type.Hole)
           }
           else                        -> {
-            if (resource.params.size != term.args.size) {
-              diagnostics += Diagnostic.ArityMismatch(resource.params.size, term.args.size, term.range.end..term.range.end)
-            }
-            val args = term.args.mapIndexed { index, arg ->
-              elaborateTerm(env, arg, resource.params.getOrNull(index)?.second)
-            }
-            C.Term.Run(resource.name, args, resource.result)
+            val arg = elaborateTerm(env, term.arg, resource.param)
+            C.Term.Run(resource.name, arg, resource.result)
           }
         }
 
