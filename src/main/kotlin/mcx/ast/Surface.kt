@@ -239,6 +239,12 @@ object Surface {
       override val range: Range,
     ) : Term
 
+    data class Is(
+      val scrutinee: Term,
+      val scrutineer: Pattern,
+      override val range: Range,
+    ) : Term
+
     data class Command(
       val value: String,
       override val range: Range,

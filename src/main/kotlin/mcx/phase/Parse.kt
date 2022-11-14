@@ -246,17 +246,27 @@ class Parse private constructor(
                     skipTrivia()
                     if (canRead() && peek() == ')') {
                       skip()
-                      (first as? S.Term.Var)?.let { name ->
+                      (first as? S.Term.Var)?.let { operator ->
                         val range = until()
-                        S.Term.Run(name.name.toLocation(), second, range)
+                        S.Term.Run(operator.name.toLocation(), second, range)
                       }
                     } else {
-                      (second as? S.Term.Var)?.let { name ->
-                        val third = parseTerm()
-                        skipTrivia()
-                        expect(')')
-                        val range = until()
-                        S.Term.Run(name.name.toLocation(), S.Term.TupleOf(listOf(first, third), range), range)
+                      (second as? S.Term.Var)?.let { operator ->
+                        when (operator.name) {
+                          "is" -> {
+                            val third = parsePattern()
+                            skipTrivia()
+                            expect(')')
+                            S.Term.Is(first, third, until())
+                          }
+                          else -> {
+                            val third = parseTerm()
+                            skipTrivia()
+                            expect(')')
+                            val range = until()
+                            S.Term.Run(operator.name.toLocation(), S.Term.TupleOf(listOf(first, third), range), range)
+                          }
+                        }
                       }
                     }
                   }

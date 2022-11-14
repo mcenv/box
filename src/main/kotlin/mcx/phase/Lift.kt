@@ -96,7 +96,7 @@ class Lift private constructor() {
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.BoxOf       -> L.Term.BoxOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
           createFreshFunction(
@@ -111,11 +111,12 @@ class Lift private constructor() {
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let         -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), type)
-      is C.Term.Var         -> L.Term.Var(term.name, type)
-      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Command     -> L.Term.Command(term.value, type)
-      is C.Term.Hole        -> unexpectedHole()
+      is C.Term.Let     -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), type)
+      is C.Term.Var     -> L.Term.Var(term.name, type)
+      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is      -> L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
+      is C.Term.Command -> L.Term.Command(term.value, type)
+      is C.Term.Hole    -> unexpectedHole()
     }
   }
 

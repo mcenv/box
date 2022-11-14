@@ -315,7 +315,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Var &&
-      expected == null            ->
+      expected == null         ->
         when (val entry = env[term.name]) {
           null -> {
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
@@ -331,7 +331,7 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Run &&
-      expected == null           ->
+      expected == null         ->
         when (val resource = env.findResource(term.name)) {
           null                       -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
@@ -347,10 +347,19 @@ class Elaborate private constructor(
           }
         }
 
-      term is S.Term.Command     -> C.Term.Command(term.value, expected ?: C.Type.End)
+      term is S.Term.Is &&
+      expected is C.Type.Bool? -> {
+        val scrutinee = elaborateTerm(env, term.scrutinee)
+        val scrutineer = env.restoring {
+          elaboratePattern(env, term.scrutineer, scrutinee.type)
+        }
+        C.Term.Is(scrutinee, scrutineer, C.Type.Bool)
+      }
+
+      term is S.Term.Command   -> C.Term.Command(term.value, expected ?: C.Type.End)
 
       term is S.Term.TupleOf &&
-      expected == null           -> {
+      expected == null         -> {
         val elements = term.elements.map { element ->
           elaborateTerm(env, element)
         }
@@ -358,7 +367,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.TupleOf &&
-      expected is C.Type.Tuple   -> {
+      expected is C.Type.Tuple -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range)
         }

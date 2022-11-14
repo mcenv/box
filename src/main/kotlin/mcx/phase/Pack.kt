@@ -122,7 +122,7 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Let         -> {
+      is L.Term.Let     -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -135,12 +135,12 @@ class Pack private constructor() {
           }
         }
       }
-      is L.Term.Var         -> {
+      is L.Term.Var     -> {
         val type = eraseType(term.type).first() // TODO
         val index = this[term.name, type]
         pushType(type, "from storage $MCX_STORAGE ${type.stack}[$index]")
       }
-      is L.Term.Run         -> {
+      is L.Term.Run     -> {
         packTerm(term.arg)
 
         +"function ${packLocation(term.name)}"
@@ -149,7 +149,12 @@ class Pack private constructor() {
         }
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Command     -> {
+      is L.Term.Is      -> {
+        packTerm(term.scrutinee)
+        eraseType(term.scrutinee.type).forEach { dropType(it) }
+        pushType(P.Type.BYTE, "value 1b") // always matches for now
+      }
+      is L.Term.Command -> {
         +term.value
         eraseType(term.type).forEach { bind(null, it) }
       }

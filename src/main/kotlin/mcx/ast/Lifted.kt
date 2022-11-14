@@ -183,6 +183,12 @@ object Lifted {
       override val type: Type,
     ) : Term
 
+    data class Is(
+      val scrutinee: Term,
+      val scrutineer: Pattern,
+      override val type: Type,
+    ) : Term
+
     data class Command(
       val value: String,
       override val type: Type,
