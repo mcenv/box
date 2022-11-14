@@ -122,8 +122,8 @@ class Pack private constructor() {
         eraseType(term.type).forEach { bind(null, it) }
       }
       is L.Term.Command    -> {
-        bind(null, eraseType(term.type).first() /* TODO */)
         +term.value
+        eraseType(term.type).forEach { bind(null, it) }
       }
     }
   }
@@ -145,7 +145,9 @@ class Pack private constructor() {
     type: P.Type,
     source: String,
   ) {
-    +"data modify storage $MCX_STORAGE ${type.stack} append $source"
+    if (type != P.Type.END) {
+      +"data modify storage $MCX_STORAGE ${type.stack} append $source"
+    }
     bind(null, type)
   }
 
