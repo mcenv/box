@@ -76,7 +76,7 @@ class Pack private constructor() {
           packTerm(element)
           val valueType = eraseType(element.type).first()
           val index = if (valueType == P.Type.COMPOUND) -2 else -1
-          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
+          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index].$key set from storage $MCX_STORAGE ${valueType.stack}[-1]"
           dropType(valueType)
         }
       }
