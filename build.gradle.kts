@@ -31,6 +31,14 @@ dependencies {
   testImplementation(kotlin("test"))
 }
 
+sourceSets {
+  main {
+    resources {
+      exclude("std/out", "std/server.properties")
+    }
+  }
+}
+
 tasks.test {
   useJUnitPlatform()
 }
