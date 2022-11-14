@@ -40,11 +40,11 @@ function load_ints _: () -> (end, end, end) = (
 )
 
 function int_to_byte _: int -> byte =
-  let _ = 0b;
+  let @no_drop _ = 0b;
   command "execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]"
 
 function int_to_short _: int -> short =
-  let _ = 0s;
+  let @no_drop _ = 0s;
   command "execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]"
 
 @no_drop
@@ -52,13 +52,13 @@ function int_to_int _: int -> int =
   command ""
 
 function int_to_long _: int -> long =
-  let _ = 0l;
+  let @no_drop _ = 0l;
   command "execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]"
 
 function int_to_float _: int -> float =
-  let _ = 0.0f;
+  let @no_drop _ = 0.0f;
   command "execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]"
 
 function int_to_double _: int -> double =
-  let _ = 0.0;
+  let @no_drop _ = 0.0;
   command "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]"
