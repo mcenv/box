@@ -95,15 +95,10 @@ class Lift private constructor() {
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
           createFreshFunction(
             L.Term.Let(
-              L.Pattern.Var("x", emptyList(), thenClause.type),
+              L.Pattern.Var("", listOf(L.Annotation.NoDrop), thenClause.type),
               thenClause,
-              L.Term.Let(
-                L.Pattern.Var("_", emptyList(), L.Type.End),
-                L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End),
-                L.Term.Var("x", thenClause.type),
-                thenClause.type,
-              ),
-              thenClause.type
+              L.Term.Command("scoreboard players set #0 mcx 1", thenClause.type),
+              thenClause.type,
             )
           )
         }
