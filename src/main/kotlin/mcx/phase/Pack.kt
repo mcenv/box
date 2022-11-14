@@ -118,7 +118,7 @@ class Pack private constructor() {
         eraseType(term.type).forEach { bind(null, it) }
       }
       is L.Term.Command    -> {
-        bind(null, P.Type.END)
+        bind(null, eraseType(term.type).first() /* TODO */)
         +term.value
       }
     }

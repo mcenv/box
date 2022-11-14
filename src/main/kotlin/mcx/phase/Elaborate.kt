@@ -346,9 +346,7 @@ class Elaborate private constructor(
           }
         }
 
-      term is S.Term.Command &&
-      expected is C.Type.Int?    ->
-        C.Term.Command(term.value, C.Type.End)
+      term is S.Term.Command     -> C.Term.Command(term.value, expected ?: C.Type.End)
 
       term is S.Term.TupleOf &&
       expected == null           -> {
