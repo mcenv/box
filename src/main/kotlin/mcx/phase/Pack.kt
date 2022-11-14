@@ -227,6 +227,7 @@ class Pack private constructor() {
       is L.Term.StringOf   -> Json.StringOf(term.value)
       is L.Term.ListOf     -> Json.ArrayOf(term.elements.map { packJson(it) })
       is L.Term.CompoundOf -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
+      is L.Term.BoxOf      -> packJson(term.element)
       else                 -> TODO()
     }
   }
