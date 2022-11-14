@@ -80,7 +80,11 @@ class Pack private constructor() {
           dropType(valueType)
         }
       }
-      is L.Term.BoxOf      -> pushType(P.Type.INT, "TODO")
+      is L.Term.BoxOf      -> {
+        packTerm(term.element)
+        +"function heap/${eraseType(term.element.type).first().stack}_box"
+        bind(null, P.Type.INT)
+      }
       is L.Term.TupleOf    -> {
         term.elements.forEach { element ->
           packTerm(element)

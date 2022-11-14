@@ -1,0 +1,36 @@
+function set_pos addr: int -> () =
+  let (y, z) = (int_dup addr);
+  let (x, z) = (int_dup (z / 4064));
+  let pos = [
+    (int_to_double ((x / 14) + 177)),
+    (int_to_double ((y % 4064) + 2032)),
+    (int_to_double ((z % 14) + 177)),
+  ];
+  command "data modify entity 0-0-0-0-0 Pos set from storage mcx: list[-1]"
+
+function allocate _: () -> int =
+  let addr = 0;
+  let _ = command "execute store result storage mcx: int[-1] int 1 run scoreboard players add #0 free 1";
+  let (addr, addr') = (int_dup addr);
+  let _ = (set_pos addr);
+  let _ = command "execute at 0-0-0-0-0 run setblock ~ ~ ~ dispenser[facing=up]{Items: [{id: \"bow\", Count: 1b, tag: {}}]}";
+  addr'
+
+function deallocate _: () -> () =
+  let addr = 0;
+  let _ = command "execute store result storage mcx: int[-1] int 1 run scoreboard players get #0 free";
+  let _ = command "scoreboard players remove #0 free 1";
+  let _ = (set_pos addr);
+  command "execute at 0-0-0-0-0 run setblock ~ ~ ~ glass"
+
+function int_box value: int -> &int =
+  let @no_drop _ = (allocate ());
+  command "execute at 0-0-0-0-0 run item modify block ~ ~ ~ hotbar.0 heap/int_box"
+
+/item_modifiers int_box = {
+  function: "copy_nbt",
+  source: { type: "storage", source: "mcx:" },
+  ops: [&{ op: "replace", source: "int[-2]", target: "value" }],
+}
+
+# todo: implement *_box
