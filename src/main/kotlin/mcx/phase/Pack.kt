@@ -50,37 +50,37 @@ class Pack private constructor() {
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf     -> +"data modify storage $MCX_STORAGE ${P.Type.BYTE.stack} append value ${if (term.value) 1 else 0}b"
-      is L.Term.ByteOf     -> +"data modify storage $MCX_STORAGE ${P.Type.BYTE.stack} append value ${term.value}b"
-      is L.Term.ShortOf    -> +"data modify storage $MCX_STORAGE ${P.Type.SHORT.stack} append value ${term.value}s"
-      is L.Term.IntOf      -> +"data modify storage $MCX_STORAGE ${P.Type.INT.stack} append value ${term.value}"
-      is L.Term.LongOf     -> +"data modify storage $MCX_STORAGE ${P.Type.LONG.stack} append value ${term.value}l"
-      is L.Term.FloatOf    -> +"data modify storage $MCX_STORAGE ${P.Type.FLOAT.stack} append value ${term.value}f"
-      is L.Term.DoubleOf   -> +"data modify storage $MCX_STORAGE ${P.Type.DOUBLE.stack} append value ${term.value}"
-      is L.Term.StringOf   -> +"data modify storage $MCX_STORAGE ${P.Type.STRING.stack} append value ${term.value.quoted('"')}" // TODO: quote if necessary
+      is L.Term.BoolOf     -> pushType(P.Type.BYTE, "value ${if (term.value) 1 else 0}b")
+      is L.Term.ByteOf     -> pushType(P.Type.BYTE, "value ${term.value}b")
+      is L.Term.ShortOf    -> pushType(P.Type.SHORT, "value ${term.value}s")
+      is L.Term.IntOf      -> pushType(P.Type.INT, "value ${term.value}")
+      is L.Term.LongOf     -> pushType(P.Type.LONG, "value ${term.value}l")
+      is L.Term.FloatOf    -> pushType(P.Type.FLOAT, "value ${term.value}f")
+      is L.Term.DoubleOf   -> pushType(P.Type.DOUBLE, "value ${term.value}")
+      is L.Term.StringOf   -> pushType(P.Type.STRING, "value ${term.value.quoted('"')}") // TODO: quote if necessary
       is L.Term.ListOf     -> {
-        +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack} append value []"
+        pushType(P.Type.LIST, "value []")
         if (term.values.isNotEmpty()) {
           val valueType = eraseType(term.values.first().type).first()
           term.values.forEach { value ->
             packTerm(value)
             val index = if (valueType == P.Type.LIST) -2 else -1
             +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
-            +"data remove storage $MCX_STORAGE ${valueType.stack}[-1]"
+            dropType(valueType)
           }
         }
       }
       is L.Term.CompoundOf -> {
-        +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack} append value {}"
+        pushType(P.Type.COMPOUND, "value {}")
         term.values.forEach { (key, value) ->
           packTerm(value)
           val valueType = eraseType(value.type).first()
           val index = if (valueType == P.Type.COMPOUND) -2 else -1
           +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
-          +"data remove storage $MCX_STORAGE ${valueType.stack}[-1]"
+          dropType(valueType)
         }
       }
-      is L.Term.BoxOf      -> +"# $term" // TODO
+      is L.Term.BoxOf      -> pushType(P.Type.INT, "TODO")
       is L.Term.TupleOf    -> {
         term.values.forEach {
           packTerm(it)
@@ -89,9 +89,10 @@ class Pack private constructor() {
       is L.Term.If         -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
-        +"data remove storage mcx: byte[-1]"
+        dropType(P.Type.BYTE)
         +"execute if score #0 mcx matches 1.. run function ${packLocation(term.thenName)}"
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
+        eraseType(term.type).forEach { bind(null, it) }
       }
       is L.Term.Let        -> {
         packTerm(term.init)
@@ -107,15 +108,23 @@ class Pack private constructor() {
       is L.Term.Var        -> {
         val type = eraseType(term.type).first() // TODO
         val index = this[term.name, type]
-        +"data modify storage $MCX_STORAGE ${type.stack} append from storage $MCX_STORAGE ${type.stack}[$index]"
+        pushType(type, "from storage $MCX_STORAGE ${type.stack}[$index]")
       }
       is L.Term.Run        -> {
         term.args.forEach {
           packTerm(it)
         }
+
         +"function ${packLocation(term.name)}"
+        term.args.forEach {
+          dropType(eraseType(it.type).first(), relevant = false)
+        }
+        eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Command    -> +term.value
+      is L.Term.Command    -> {
+        bind(null, P.Type.END)
+        +term.value
+      }
     }
   }
 
@@ -123,20 +132,32 @@ class Pack private constructor() {
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.TupleOf -> pattern.elements.forEach { packPattern(it) }
-      is L.Pattern.Var     -> bind(pattern.name, eraseType(pattern.type).first())
+      is L.Pattern.TupleOf ->
+        pattern.elements
+          .asReversed()
+          .forEach { packPattern(it) }
+      is L.Pattern.Var     -> name(pattern.name, eraseType(pattern.type).first())
     }
+  }
+
+  private fun Env.pushType(
+    type: P.Type,
+    source: String,
+  ) {
+    +"data modify storage $MCX_STORAGE ${type.stack} append $source"
+    bind(null, type)
   }
 
   private fun Env.dropType(
     drop: P.Type,
-    keeps: List<P.Type>,
+    keeps: List<P.Type> = emptyList(),
+    relevant: Boolean = true,
   ) {
-    drop(drop)
-    when (drop) {
-      P.Type.END -> Unit
-      else       -> +"data remove storage $MCX_STORAGE ${drop.stack}[${-1 - keeps.count { it == drop }}]"
+    val index = -1 - keeps.count { it == drop }
+    if (relevant && drop != P.Type.END) {
+      +"data remove storage $MCX_STORAGE ${drop.stack}[$index]"
     }
+    drop(drop, index)
   }
 
   private fun eraseType(
@@ -211,7 +232,7 @@ class Pack private constructor() {
     private val _commands: MutableList<String>,
   ) {
     val commands: List<String> get() = _commands
-    private val entries: Map<P.Type, MutableList<String>> =
+    private val entries: Map<P.Type, MutableList<String?>> =
       P.Type
         .values()
         .associateWith { mutableListOf() }
@@ -221,25 +242,43 @@ class Pack private constructor() {
     }
 
     fun bind(
+      name: String?,
+      type: P.Type,
+    ) {
+      getEntry(type) += name
+    }
+
+    fun name(
       name: String,
       type: P.Type,
     ) {
-      entries[type]!! += name
+      val entry = getEntry(type)
+      val index = entry.indexOfLast { it == null }
+      entry[index] = name
     }
 
     fun drop(
       type: P.Type,
+      offset: Int,
     ) {
-      entries[type]!!.removeLast()
+      val entry = getEntry(type)
+      entry.removeAt(entry.size + offset)
     }
 
     operator fun get(
       name: String,
       type: P.Type,
     ): Int {
-      val entry = entries[type]!!
-      return entry.indexOfLast { it == name } - entry.size
+      val entry = getEntry(type)
+      return entry
+               .indexOfLast { it == name }
+               .also { require(it != -1) { "not found: '$name'" } } - entry.size
     }
+
+    private fun getEntry(
+      type: P.Type,
+    ): MutableList<String?> =
+      entries[type]!!
 
     companion object {
       fun emptyEnv(): Env =
