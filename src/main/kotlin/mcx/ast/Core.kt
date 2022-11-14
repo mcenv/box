@@ -52,7 +52,7 @@ object Core {
     val kind: Kind
 
     object End : Type {
-      override val kind: Kind get() = Kind.ZERO
+      override val kind: Kind get() = Kind.ONE
     }
 
     object Bool : Type {
