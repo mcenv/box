@@ -246,7 +246,8 @@ class Parse private constructor(
           else -> {
             val location = parseLocation()
             when (location.parts.size) {
-              1 -> when (val word = location.parts.first()) {
+              1    -> when (val word = location.parts.first()) {
+                ""      -> null
                 "false" -> S.Term.BoolOf(false, until())
                 "true"  -> S.Term.BoolOf(true, until())
                 "if"    -> {
@@ -274,14 +275,7 @@ class Parse private constructor(
                   val body = parseTerm()
                   S.Term.Let(name, init, body, until())
                 }
-                else    -> if (canRead() && peek() == '(') { // TODO: juxtaposition
-                  expect('(')
-                  skipTrivia()
-                  val arg = parseTerm()
-                  skipTrivia()
-                  expect(')')
-                  S.Term.Run(location, arg, until())
-                } else {
+                else    ->
                   word
                     .lastOrNull()
                     ?.let { suffix ->
@@ -320,15 +314,24 @@ class Parse private constructor(
                             ?.let { S.Term.DoubleOf(it, until()) }
                       }
                     }
-                  ?: S.Term.Var(word, until())
-                }
+                  ?: run {
+                    val range = until()
+                    skipTrivia()
+                    if (canRead() && peek() == '@') {
+                      skip()
+                      skipTrivia()
+                      val arg = parseTerm()
+                      S.Term.Run(location, arg, until())
+                    } else {
+                      S.Term.Var(word, range)
+                    }
+                  }
               }
               else -> {
-                expect('(')
+                skipTrivia()
+                expect('@')
                 skipTrivia()
                 val arg = parseTerm()
-                skipTrivia()
-                expect(')')
                 S.Term.Run(location, arg, until())
               }
             }
