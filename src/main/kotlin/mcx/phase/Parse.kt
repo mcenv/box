@@ -278,17 +278,12 @@ class Parse private constructor(
             skipTrivia()
             S.Term.BoxOf(parseTerm(), until())
           }
-          '/'  -> {
-            skip()
-            val value = readQuotedString()
-            S.Term.Command(value, until())
-          }
           else -> {
             when (val word = readWord()) {
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
               "true"  -> S.Term.BoolOf(true, until())
-              "if"    -> {
+              "if"      -> {
                 skipTrivia()
                 val condition = parseTerm()
                 skipTrivia()
@@ -301,7 +296,7 @@ class Parse private constructor(
                 val elseClause = parseTerm()
                 S.Term.If(condition, thenClause, elseClause, until())
               }
-              "let"   -> {
+              "let"     -> {
                 skipTrivia()
                 val name = parsePattern()
                 skipTrivia()
@@ -313,7 +308,12 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              else    ->
+              "command" -> {
+                skipTrivia()
+                val value = readQuotedString()
+                S.Term.Command(value, until())
+              }
+              else      ->
                 word
                   .lastOrNull()
                   ?.let { suffix ->

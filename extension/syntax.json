@@ -9,7 +9,7 @@
     },
     {
       "name": "keyword.operator.mcx",
-      "match": "[@:=,;&/]|(?:->)"
+      "match": "[@:=,;&]|(?:->)"
     },
     {
       "begin": "\\b(import)\\b\\s*{",
@@ -22,12 +22,12 @@
       "patterns": [
         {
           "name": "entity.name.function.mcx",
-          "match": "[^ \n\r.:;,()\\[\\]{}]+(?:\\.[^ \n\r.:;,()\\[\\]{}]+)*"
+          "match": "[^ \n\r:;,()\\[\\]{}]+(?:\\.[^ \n\r:;,()\\[\\]{}]+)*"
         }
       ]
     },
     {
-      "match": "\\b(functions) +([^ \n\r/:;,()\\[\\]{}]+)",
+      "match": "\\b(functions) +([^ \n\r:;,()\\[\\]{}]+)",
       "captures": {
         "1": {
           "name": "keyword.mcx"
@@ -47,7 +47,7 @@
     },
     {
       "name": "keyword.control.mcx",
-      "match": "\\b(?:if|then|else|let)\\b"
+      "match": "\\b(?:if|then|else|let|command)\\b"
     },
     {
       "name": "constant.language.mcx",
@@ -66,11 +66,11 @@
     },
     {
       "name": "entity.name.function.mcx",
-      "match": "[^ \n\r.:;,()\\[\\]{}]+(?:\\.[^ \n\r.:;,()\\[\\]{}]+)+"
+      "match": "[^ \n\r:;,()\\[\\]{}]+(?:\\.[^ \n\r:;,()\\[\\]{}]+)+"
     },
     {
       "name": "variable.mcx",
-      "match": "[^ \n\r/:;,()\\[\\]{}]+"
+      "match": "[^ \n\r:;,()\\[\\]{}]+"
     }
   ],
   "repository": {
