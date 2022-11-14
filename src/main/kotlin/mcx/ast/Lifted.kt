@@ -178,5 +178,9 @@ object Lifted {
       val name: String,
       override val type: Type,
     ) : Pattern
+
+    data class Discard(
+      override val type: Type,
+    ) : Pattern
   }
 }

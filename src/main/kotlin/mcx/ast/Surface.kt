@@ -231,6 +231,10 @@ object Surface {
       override val range: Range,
     ) : Pattern
 
+    data class Discard(
+      override val range: Range,
+    ) : Pattern
+
     data class Hole(
       override val range: Range,
     ) : Pattern

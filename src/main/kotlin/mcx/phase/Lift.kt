@@ -88,7 +88,7 @@ class Lift private constructor() {
       is C.Term.CompoundOf -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, liftType(term.type))
       is C.Term.BoxOf      -> L.Term.BoxOf(liftTerm(term.element), liftType(term.type))
       is C.Term.TupleOf    -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, liftType(term.type))
-      is C.Term.If      -> {
+      is C.Term.If         -> {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
@@ -109,11 +109,11 @@ class Lift private constructor() {
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let     -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
-      is C.Term.Var     -> L.Term.Var(term.name, liftType(term.type))
-      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), liftType(term.type))
-      is C.Term.Command -> L.Term.Command(term.value, liftType(term.type))
-      is C.Term.Hole    -> unexpectedHole()
+      is C.Term.Let        -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
+      is C.Term.Var        -> L.Term.Var(term.name, liftType(term.type))
+      is C.Term.Run        -> L.Term.Run(term.name, liftTerm(term.arg), liftType(term.type))
+      is C.Term.Command    -> L.Term.Command(term.value, liftType(term.type))
+      is C.Term.Hole       -> unexpectedHole()
     }
   }
 
@@ -123,6 +123,7 @@ class Lift private constructor() {
     return when (pattern) {
       is C.Pattern.TupleOf -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, liftType(pattern.type))
       is C.Pattern.Var     -> L.Pattern.Var(pattern.name, liftType(pattern.type))
+      is C.Pattern.Discard -> L.Pattern.Discard(liftType(pattern.type))
       is C.Pattern.Hole    -> unexpectedHole()
     }
   }

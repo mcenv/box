@@ -133,6 +133,7 @@ class Pack private constructor() {
           .asReversed()
           .forEach { packPattern(it) }
       is L.Pattern.Var     -> name(pattern.name, eraseType(pattern.type).first())
+      is L.Pattern.Discard -> Unit
     }
   }
 

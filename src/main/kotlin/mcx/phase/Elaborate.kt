@@ -409,7 +409,7 @@ class Elaborate private constructor(
   ): C.Pattern {
     return when {
       pattern is S.Pattern.TupleOf &&
-      expected is C.Type.Tuple  -> {
+      expected is C.Type.Tuple     -> {
         if (expected.elements.size != pattern.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end)
         }
@@ -420,7 +420,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null          -> {
+      expected == null             -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(env, element)
         }
@@ -428,7 +428,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected != null          -> {
+      expected != null             -> {
         if (C.Kind.ONE isSubkindOf expected.kind) {
           env.bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, expected)
@@ -439,16 +439,18 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected == null          -> {
+      expected == null             -> {
         diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
         C.Pattern.Var(pattern.name, C.Type.End)
       }
 
-      pattern is S.Pattern.Hole -> C.Pattern.Hole(expected ?: C.Type.Hole)
+      pattern is S.Pattern.Discard -> C.Pattern.Discard(expected ?: C.Type.End)
 
-      expected == null          -> error("type must be non-null")
+      pattern is S.Pattern.Hole    -> C.Pattern.Hole(expected ?: C.Type.Hole)
 
-      else                      -> {
+      expected == null             -> error("type must be non-null")
+
+      else                         -> {
         val actual = elaboratePattern(env, pattern)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += Diagnostic.TypeMismatch(expected, actual.type, pattern.range)

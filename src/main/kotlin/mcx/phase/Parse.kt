@@ -369,7 +369,10 @@ class Parse private constructor(
             }
             S.Pattern.TupleOf(elements, until())
           }
-          else -> S.Pattern.Var(readWord(), until())
+          else -> when (val word = readWord()) {
+            "_"  -> S.Pattern.Discard(until())
+            else -> S.Pattern.Var(word, until())
+          }
         }
       } else {
         null

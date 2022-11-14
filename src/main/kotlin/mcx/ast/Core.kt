@@ -228,6 +228,10 @@ object Core {
       override val type: Type,
     ) : Pattern
 
+    data class Discard(
+      override val type: Type,
+    ) : Pattern
+
     data class Hole(
       override val type: Type,
     ) : Pattern
