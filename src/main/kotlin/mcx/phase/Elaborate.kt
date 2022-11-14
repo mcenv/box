@@ -61,9 +61,9 @@ class Elaborate private constructor(
               labelDetails.detail = ": ${resource.registry.string}"
               CompletionItemKind.Struct
             }
-            is C.Resource.Functions    -> {
+            is Core.Resource.Function  -> {
               val detail = ": ${prettyType(resource.param)} -> ${prettyType(resource.result)}"
-              documentation = forRight(highlight("functions $name$detail"))
+              documentation = forRight(highlight("function $name$detail"))
               labelDetails.detail = detail
               CompletionItemKind.Function
             }
@@ -95,7 +95,7 @@ class Elaborate private constructor(
     resource: S.Resource,
   ): C.Resource {
     return when (resource) {
-      is S.Resource.JsonResource -> {
+      is S.Resource.JsonResource   -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         C.Resource
           .JsonResource(
@@ -111,14 +111,14 @@ class Elaborate private constructor(
             }
           }
       }
-      is S.Resource.Functions    -> {
+      is Surface.Resource.Function -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         val env = emptyEnv(resources)
         val param = elaborateType(resource.param)
         val binder = elaboratePattern(env, resource.binder, param)
         val result = elaborateType(resource.result)
         C.Resource
-          .Functions(
+          .Function(
             annotations,
             module + resource.name,
             binder,
@@ -132,7 +132,7 @@ class Elaborate private constructor(
             }
           }
       }
-      is S.Resource.Hole         -> C.Resource.Hole
+      is S.Resource.Hole           -> C.Resource.Hole
     }
   }
 
@@ -332,15 +332,15 @@ class Elaborate private constructor(
       term is S.Term.Run &&
       expected == null           ->
         when (val resource = env.findResource(term.name)) {
-          null                        -> {
+          null                       -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
             C.Term.Hole(C.Type.Hole)
           }
-          !is Core.Resource.Functions -> {
+          !is Core.Resource.Function -> {
             diagnostics += Diagnostic.ExpectedFunction(term.range)
             C.Term.Hole(C.Type.Hole)
           }
-          else                        -> {
+          else                       -> {
             val arg = elaborateTerm(env, term.arg, resource.param)
             C.Term.Run(resource.name, arg, resource.result)
           }

@@ -15,7 +15,7 @@ object Packed {
       val body: Json,
     ) : Resource
 
-    data class Functions(
+    data class Function(
       override val path: String,
       val commands: List<String>, // TODO: use data types
     ) : Resource

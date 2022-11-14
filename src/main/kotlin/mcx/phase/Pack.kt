@@ -1,6 +1,7 @@
 package mcx.phase
 
 import mcx.ast.Json
+import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
@@ -23,11 +24,11 @@ class Pack private constructor() {
   ): P.Resource {
     val path = packLocation(resource.name)
     return when (resource) {
-      is L.Resource.JsonResource -> {
+      is L.Resource.JsonResource  -> {
         val body = packJson(resource.body)
         P.Resource.JsonResource(resource.registry, path, body)
       }
-      is L.Resource.Functions    -> with(emptyEnv()) {
+      is Lifted.Resource.Function -> with(emptyEnv()) {
         +"# ${resource.name}"
 
         val paramTypes = eraseType(resource.param)
@@ -38,7 +39,7 @@ class Pack private constructor() {
         val resultTypes = eraseType(resource.result)
         paramTypes.forEach { dropType(it, resultTypes) }
 
-        P.Resource.Functions(path, commands)
+        P.Resource.Function(path, commands)
       }
     }
   }

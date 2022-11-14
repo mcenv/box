@@ -18,7 +18,7 @@ object Core {
       lateinit var body: Term
     }
 
-    data class Functions(
+    data class Function(
       override val annotations: List<Annotation>,
       override val name: Location,
       val binder: Pattern,

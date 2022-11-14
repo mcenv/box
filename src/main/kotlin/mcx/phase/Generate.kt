@@ -24,12 +24,12 @@ class Generate private constructor(
     resource: P.Resource,
   ) {
     when (resource) {
-      is P.Resource.JsonResource ->
+      is P.Resource.JsonResource  ->
         modules[generatePath(resource.registry, resource.path)] =
           StringBuilder()
             .apply { generateJson(resource.body) }
             .toString()
-      is P.Resource.Functions    ->
+      is Packed.Resource.Function ->
         modules[generatePath(Registry.FUNCTIONS, resource.path)] =
           StringBuilder()
             .apply {

@@ -71,21 +71,15 @@ class Parse private constructor(
 
       if (canRead()) {
         when (readWord()) {
-          "predicates"     -> parseJsonResource(annotations, Registry.PREDICATES)
-          "recipes"        -> parseJsonResource(annotations, Registry.RECIPES)
-          "loot_tables"    -> parseJsonResource(annotations, Registry.LOOT_TABLES)
-          "item_modifiers" -> parseJsonResource(annotations, Registry.ITEM_MODIFIERS)
-          "advancements"   -> parseJsonResource(annotations, Registry.ADVANCEMENTS)
-          "dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
-          "worldgen"       -> {
-            expect('/')
-            when (readWord()) {
-              "biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
-              else    -> null
-            }
-          }
-          "dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
-          "functions"      -> {
+          "/predicates"     -> parseJsonResource(annotations, Registry.PREDICATES)
+          "/recipes"        -> parseJsonResource(annotations, Registry.RECIPES)
+          "/loot_tables"    -> parseJsonResource(annotations, Registry.LOOT_TABLES)
+          "/item_modifiers" -> parseJsonResource(annotations, Registry.ITEM_MODIFIERS)
+          "/advancements"   -> parseJsonResource(annotations, Registry.ADVANCEMENTS)
+          "/dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
+          "/worldgen/biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
+          "/dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
+          "function"        -> {
             skipTrivia()
             val name = readWord()
             skipTrivia()
@@ -102,9 +96,9 @@ class Parse private constructor(
             expect('=')
             skipTrivia()
             val body = parseTerm()
-            S.Resource.Functions(annotations, name, binder, param, result, body, until())
+            S.Resource.Function(annotations, name, binder, param, result, body, until())
           }
-          else             -> null
+          else              -> null
         }
       } else {
         null
@@ -280,9 +274,9 @@ class Parse private constructor(
           }
           else -> {
             when (val word = readWord()) {
-              ""      -> null
-              "false" -> S.Term.BoolOf(false, until())
-              "true"  -> S.Term.BoolOf(true, until())
+              ""        -> null
+              "false"   -> S.Term.BoolOf(false, until())
+              "true"    -> S.Term.BoolOf(true, until())
               "if"      -> {
                 skipTrivia()
                 val condition = parseTerm()

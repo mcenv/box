@@ -1,5 +1,7 @@
 package mcx.phase
 
+import mcx.ast.Core
+import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
@@ -28,12 +30,12 @@ class Lift private constructor() {
         val body = env.liftTerm(resource.body)
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
       }
-      is C.Resource.Functions    -> {
+      is Core.Resource.Function  -> {
         val binder = liftPattern(resource.binder)
         val param = liftType(resource.param)
         val result = liftType(resource.result)
         val body = env.liftTerm(resource.body)
-        L.Resource.Functions(annotations, resource.name, binder, param, result, body)
+        L.Resource.Function(annotations, resource.name, binder, param, result, body)
       }
       is C.Resource.Hole         -> unexpectedHole()
     }
@@ -89,8 +91,8 @@ class Lift private constructor() {
       is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val type = liftType(term.type)
-        val thenFunctions = liftTerm(term.thenClause).let { thenClause ->
-          createFreshFunctions(
+        val thenFunction = liftTerm(term.thenClause).let { thenClause ->
+          createFreshFunction(
             L.Term.Let(
               L.Pattern.Var("x", thenClause.type),
               thenClause,
@@ -104,8 +106,8 @@ class Lift private constructor() {
             )
           )
         }
-        val elseFunctions = createFreshFunctions(liftTerm(term.elseClause))
-        L.Term.If(condition, thenFunctions.name, elseFunctions.name, type)
+        val elseFunction = createFreshFunction(liftTerm(term.elseClause))
+        L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
       is C.Term.Let     -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
       is C.Term.Var     -> L.Term.Var(term.name, liftType(term.type))
@@ -133,12 +135,12 @@ class Lift private constructor() {
   ) {
     private var id: Int = 0
 
-    fun createFreshFunctions(
+    fun createFreshFunction(
       body: L.Term,
-    ): L.Resource.Functions {
+    ): Lifted.Resource.Function {
       val type = L.Type.Tuple(emptyList())
       return L.Resource
-        .Functions(
+        .Function(
           emptyList(),
           Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"),
           L.Pattern.TupleOf(emptyList(), type),

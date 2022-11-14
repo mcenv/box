@@ -27,7 +27,7 @@
       ]
     },
     {
-      "match": "\\b(functions) +([^ \n\r:;,()\\[\\]{}]+)",
+      "match": "\\b(function) +([^ \n\r:;,()\\[\\]{}]+)",
       "captures": {
         "1": {
           "name": "keyword.mcx"
@@ -39,7 +39,11 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|predicates|recipes|loot_tables|item_modifiers|advancements|dimension_type|worldgen/biome|dimension|functions)\\b"
+      "match": "\\b(?:import|function)\\b"
+    },
+    {
+      "name": "keyword.mcx",
+      "match": "/(?:predicates|recipes|loot_tables|item_modifiers|advancements|dimension_type|worldgen/biome|dimension)\\b"
     },
     {
       "name": "support.type.mcx",
