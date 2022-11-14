@@ -34,6 +34,8 @@ object Lifted {
     object Tick : Annotation
 
     object Load : Annotation
+
+    object NoDrop : Annotation
   }
 
   sealed interface Type {

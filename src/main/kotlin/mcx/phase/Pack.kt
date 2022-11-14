@@ -36,8 +36,10 @@ class Pack private constructor() {
         packPattern(resource.binder)
         packTerm(resource.body)
 
-        val resultTypes = eraseType(resource.result)
-        paramTypes.forEach { dropType(it, resultTypes) }
+        if (L.Annotation.NoDrop !in resource.annotations) {
+          val resultTypes = eraseType(resource.result)
+          paramTypes.forEach { dropType(it, resultTypes) }
+        }
 
         P.Resource.Function(path, commands)
       }

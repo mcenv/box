@@ -141,9 +141,10 @@ class Elaborate private constructor(
   ): C.Annotation {
     // TODO: validate
     return when (annotation) {
-      is S.Annotation.Tick -> C.Annotation.Tick
-      is S.Annotation.Load -> C.Annotation.Load
-      is S.Annotation.Hole -> C.Annotation.Hole
+      is S.Annotation.Tick   -> C.Annotation.Tick
+      is S.Annotation.Load   -> C.Annotation.Load
+      is S.Annotation.NoDrop -> C.Annotation.NoDrop
+      is S.Annotation.Hole   -> C.Annotation.Hole
     }
   }
 

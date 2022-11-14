@@ -51,6 +51,10 @@ object Surface {
       override val range: Range,
     ) : Annotation
 
+    data class NoDrop(
+      override val range: Range,
+    ) : Annotation
+
     data class Hole(
       override val range: Range,
     ) : Annotation

@@ -128,9 +128,10 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "tick" -> S.Annotation.Tick(until())
-          "load" -> S.Annotation.Load(until())
-          else   -> null
+          "tick"    -> S.Annotation.Tick(until())
+          "load"    -> S.Annotation.Load(until())
+          "no_drop" -> S.Annotation.NoDrop(until())
+          else      -> null
         }
       } else {
         null

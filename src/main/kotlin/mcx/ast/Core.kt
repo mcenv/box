@@ -39,6 +39,8 @@ object Core {
 
     object Load : Annotation
 
+    object NoDrop : Annotation
+
     object Hole : Annotation
   }
 
