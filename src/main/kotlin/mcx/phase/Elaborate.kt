@@ -152,52 +152,28 @@ class Elaborate private constructor(
     type: S.Type,
     expected: C.Kind? = null,
   ): C.Type {
-    val arity = expected?.arity
+    val one = expected?.arity?.let { it == 1 } ?: true
     return when {
-      type is S.Type.End &&
-      arity?.let { it == 1 } ?: true -> C.Type.End
+      type is S.Type.End && one                -> C.Type.End
+      type is S.Type.Bool && one               -> C.Type.Bool
+      type is S.Type.Byte && one               -> C.Type.Byte
+      type is S.Type.Short && one              -> C.Type.Short
+      type is S.Type.Int && one                -> C.Type.Int
+      type is S.Type.Long && one               -> C.Type.Long
+      type is S.Type.Float && one              -> C.Type.Float
+      type is S.Type.Double && one             -> C.Type.Double
+      type is S.Type.String && one             -> C.Type.String
+      type is S.Type.ByteArray && one          -> C.Type.ByteArray
+      type is S.Type.IntArray && one           -> C.Type.IntArray
+      type is S.Type.LongArray && one          -> C.Type.LongArray
+      type is S.Type.List && one               -> C.Type.List(elaborateType(type.element, C.Kind.ONE))
+      type is S.Type.Compound && one           -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.ONE) })
+      type is S.Type.Box && one                -> C.Type.Box(elaborateType(type.element, C.Kind.ONE))
+      type is S.Type.Tuple && expected == null -> C.Type.Tuple(type.elements.map { elaborateType(it) })
+      type is S.Type.Hole                      -> C.Type.Hole
+      expected == null                         -> error("kind must be non-null")
 
-      type is S.Type.Bool &&
-      arity?.let { it == 1 } ?: true -> C.Type.Bool
-
-      type is S.Type.Byte &&
-      arity?.let { it == 1 } ?: true -> C.Type.Byte
-
-      type is S.Type.Short &&
-      arity?.let { it == 1 } ?: true -> C.Type.Short
-
-      type is S.Type.Int &&
-      arity?.let { it == 1 } ?: true -> C.Type.Int
-
-      type is S.Type.Long &&
-      arity?.let { it == 1 } ?: true -> C.Type.Long
-
-      type is S.Type.Float &&
-      arity?.let { it == 1 } ?: true -> C.Type.Float
-
-      type is S.Type.Double &&
-      arity?.let { it == 1 } ?: true -> C.Type.Double
-
-      type is S.Type.String &&
-      arity?.let { it == 1 } ?: true -> C.Type.String
-
-      type is S.Type.List &&
-      arity?.let { it == 1 } ?: true -> C.Type.List(elaborateType(type.element, C.Kind.ONE))
-
-      type is S.Type.Compound &&
-      arity?.let { it == 1 } ?: true -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.ONE) })
-
-      type is S.Type.Box &&
-      arity?.let { it == 1 } ?: true -> C.Type.Box(elaborateType(type.element, C.Kind.ONE))
-
-      type is S.Type.Tuple &&
-      expected == null               -> C.Type.Tuple(type.elements.map { elaborateType(it) })
-
-      type is S.Type.Hole            -> C.Type.Hole
-
-      expected == null               -> error("kind must be non-null")
-
-      else                           -> {
+      else                                     -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
           diagnostics += Diagnostic.KindMismatch(expected, actual.kind, type.range)
@@ -217,31 +193,55 @@ class Elaborate private constructor(
       expected is C.Type.Bool?   -> C.Term.BoolOf(term.value, C.Type.Bool)
 
       term is S.Term.ByteOf &&
-      expected is C.Type.Byte?   -> C.Term.ByteOf(term.value, C.Type.Byte)
+      expected is C.Type.Byte?      -> C.Term.ByteOf(term.value, C.Type.Byte)
 
       term is S.Term.ShortOf &&
-      expected is C.Type.Short?  -> C.Term.ShortOf(term.value, C.Type.Short)
+      expected is C.Type.Short?     -> C.Term.ShortOf(term.value, C.Type.Short)
 
       term is S.Term.IntOf &&
-      expected is C.Type.Int?    -> C.Term.IntOf(term.value, C.Type.Int)
+      expected is C.Type.Int?       -> C.Term.IntOf(term.value, C.Type.Int)
 
       term is S.Term.LongOf &&
-      expected is C.Type.Long?   -> C.Term.LongOf(term.value, C.Type.Long)
+      expected is C.Type.Long?      -> C.Term.LongOf(term.value, C.Type.Long)
 
       term is S.Term.FloatOf &&
-      expected is C.Type.Float?  -> C.Term.FloatOf(term.value, C.Type.Float)
+      expected is C.Type.Float?     -> C.Term.FloatOf(term.value, C.Type.Float)
 
       term is S.Term.DoubleOf &&
-      expected is C.Type.Double? -> C.Term.DoubleOf(term.value, C.Type.Double)
+      expected is C.Type.Double?    -> C.Term.DoubleOf(term.value, C.Type.Double)
 
       term is S.Term.StringOf &&
-      expected is C.Type.String? -> C.Term.StringOf(term.value, C.Type.String)
+      expected is C.Type.String?    -> C.Term.StringOf(term.value, C.Type.String)
+
+      term is S.Term.ByteArrayOf &&
+      expected is C.Type.ByteArray? -> {
+        val elements = term.elements.map { element ->
+          elaborateTerm(env, element, C.Type.Byte)
+        }
+        C.Term.ByteArrayOf(elements, C.Type.ByteArray)
+      }
+
+      term is S.Term.IntArrayOf &&
+      expected is C.Type.IntArray?  -> {
+        val elements = term.elements.map { element ->
+          elaborateTerm(env, element, C.Type.Int)
+        }
+        C.Term.IntArrayOf(elements, C.Type.IntArray)
+      }
+
+      term is S.Term.LongArrayOf &&
+      expected is C.Type.LongArray? -> {
+        val elements = term.elements.map { element ->
+          elaborateTerm(env, element, C.Type.Long)
+        }
+        C.Term.LongArrayOf(elements, C.Type.LongArray)
+      }
 
       term is S.Term.ListOf &&
-      term.elements.isEmpty()    -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
+      term.elements.isEmpty()       -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
 
       term is S.Term.ListOf &&
-      expected is C.Type.List?    -> {
+      expected is C.Type.List?      -> {
         val head = elaborateTerm(env, term.elements.first(), expected?.element)
         val element = expected?.element ?: head.type
         val tail =
@@ -252,7 +252,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.CompoundOf &&
-      expected == null            -> {
+      expected == null              -> {
         val elements = term.elements.associate { (key, element) ->
           @Suppress("NAME_SHADOWING")
           val element = elaborateTerm(env, element)
@@ -482,43 +482,52 @@ class Elaborate private constructor(
       type2 is C.Type.Bool     -> true
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte     -> true
+      type2 is C.Type.Byte      -> true
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short    -> true
+      type2 is C.Type.Short     -> true
 
       type1 is C.Type.Int &&
-      type2 is C.Type.Int      -> true
+      type2 is C.Type.Int       -> true
 
       type1 is C.Type.Long &&
-      type2 is C.Type.Long     -> true
+      type2 is C.Type.Long      -> true
 
       type1 is C.Type.Float &&
-      type2 is C.Type.Float    -> true
+      type2 is C.Type.Float     -> true
 
       type1 is C.Type.Double &&
-      type2 is C.Type.Double   -> true
+      type2 is C.Type.Double    -> true
 
       type1 is C.Type.String &&
-      type2 is C.Type.String   -> true
+      type2 is C.Type.String    -> true
+
+      type1 is C.Type.ByteArray &&
+      type2 is C.Type.ByteArray -> true
+
+      type1 is C.Type.IntArray &&
+      type2 is C.Type.IntArray  -> true
+
+      type1 is C.Type.LongArray &&
+      type2 is C.Type.LongArray -> true
 
       type1 is C.Type.List &&
-      type2 is C.Type.List     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                  type1.elements.all { (key1, element1) ->
-                                    when (val element2 = type2.elements[key1]) {
-                                      null -> false
-                                      else -> element1 isSubtypeOf element2
+      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+                                   type1.elements.all { (key1, element1) ->
+                                     when (val element2 = type2.elements[key1]) {
+                                       null -> false
+                                       else -> element1 isSubtypeOf element2
                                     }
                                   }
 
       type1 is C.Type.Box &&
-      type2 is C.Type.Box      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Box       -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&

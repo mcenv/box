@@ -32,6 +32,9 @@ object Packed {
     FLOAT("float"),
     DOUBLE("double"),
     STRING("string"),
+    BYTE_ARRAY("byte_array"),
+    INT_ARRAY("int_array"),
+    LONG_ARRAY("long_array"),
     LIST("list"),
     COMPOUND("compound"),
   }

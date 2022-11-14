@@ -162,8 +162,20 @@ class Parse private constructor(
             skipTrivia()
             val element = parseType()
             skipTrivia()
-            expect(']')
-            S.Type.List(element, until())
+            if (canRead() && peek() == ';') {
+              skip()
+              skipTrivia()
+              expect(']')
+              when (element) {
+                is S.Type.Byte -> S.Type.ByteArray(until())
+                is S.Type.Int  -> S.Type.IntArray(until())
+                is S.Type.Long -> S.Type.LongArray(until())
+                else           -> null
+              }
+            } else {
+              expect(']')
+              S.Type.List(element, until())
+            }
           }
           '{'  -> {
             val elements = parseList(',', '{', '}') {
@@ -256,10 +268,55 @@ class Parse private constructor(
           }
           '"'  -> S.Term.StringOf(readQuotedString(), until())
           '['  -> {
-            val values = parseList(',', '[', ']') {
-              parseTerm()
+            skip()
+            skipTrivia()
+            if (canRead() && peek() == ']') {
+              skip()
+              S.Term.ListOf(emptyList(), until())
+            } else {
+              val first = parseTerm()
+              skipTrivia()
+              if (canRead()) {
+                when (peek()) {
+                  ']'  -> {
+                    skip()
+                    S.Term.ListOf(listOf(first), until())
+                  }
+                  ';'  -> (first as? S.Term.Var)?.let { header ->
+                    when (header.name) {
+                      "byte" -> {
+                        val elements = parseList(',', ';', ']') {
+                          parseTerm()
+                        }
+                        S.Term.ByteArrayOf(elements, until())
+                      }
+                      "int"  -> {
+                        val elements = parseList(',', ';', ']') {
+                          parseTerm()
+                        }
+                        S.Term.IntArrayOf(elements, until())
+                      }
+                      "long" -> {
+                        val elements = parseList(',', ';', ']') {
+                          parseTerm()
+                        }
+                        S.Term.LongArrayOf(elements, until())
+                      }
+                      else   -> null // TODO: improve error message
+                    }
+                  }
+                  ','  -> {
+                    val tail = parseList(',', ',', ']') {
+                      parseTerm()
+                    }
+                    S.Term.ListOf(listOf(first) + tail, until())
+                  }
+                  else -> null
+                }
+              } else {
+                null
+              }
             }
-            S.Term.ListOf(values, until())
           }
           '{'  -> {
             val values = parseList(',', '{', '}') {

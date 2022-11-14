@@ -50,27 +50,51 @@ class Pack private constructor() {
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf     -> pushType(P.Type.BYTE, "value ${if (term.value) 1 else 0}b")
-      is L.Term.ByteOf     -> pushType(P.Type.BYTE, "value ${term.value}b")
-      is L.Term.ShortOf    -> pushType(P.Type.SHORT, "value ${term.value}s")
-      is L.Term.IntOf      -> pushType(P.Type.INT, "value ${term.value}")
-      is L.Term.LongOf     -> pushType(P.Type.LONG, "value ${term.value}l")
-      is L.Term.FloatOf    -> pushType(P.Type.FLOAT, "value ${term.value}f")
-      is L.Term.DoubleOf   -> pushType(P.Type.DOUBLE, "value ${term.value}")
-      is L.Term.StringOf   -> pushType(P.Type.STRING, "value ${term.value.quoted('"')}") // TODO: quote if necessary
-      is L.Term.ListOf     -> {
+      is L.Term.BoolOf      -> pushType(P.Type.BYTE, "value ${if (term.value) 1 else 0}b")
+      is L.Term.ByteOf      -> pushType(P.Type.BYTE, "value ${term.value}b")
+      is L.Term.ShortOf     -> pushType(P.Type.SHORT, "value ${term.value}s")
+      is L.Term.IntOf       -> pushType(P.Type.INT, "value ${term.value}")
+      is L.Term.LongOf      -> pushType(P.Type.LONG, "value ${term.value}l")
+      is L.Term.FloatOf     -> pushType(P.Type.FLOAT, "value ${term.value}f")
+      is L.Term.DoubleOf    -> pushType(P.Type.DOUBLE, "value ${term.value}")
+      is L.Term.StringOf    -> pushType(P.Type.STRING, "value ${term.value.quoted('"')}") // TODO: quote only if necessary
+      is L.Term.ByteArrayOf -> {
+        pushType(P.Type.BYTE_ARRAY, "value ${term.elements.joinToString(",", "[B;", "]") { "0b" }}")
+        term.elements.forEachIndexed { index, element ->
+          packTerm(element)
+          +"data modify storage $MCX_STORAGE ${P.Type.BYTE_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.BYTE.stack}[-1]"
+          dropType(P.Type.BYTE)
+        }
+      }
+      is L.Term.IntArrayOf  -> {
+        pushType(P.Type.INT_ARRAY, "value ${term.elements.joinToString(",", "[I;", "]") { "0" }}")
+        term.elements.forEachIndexed { index, element ->
+          packTerm(element)
+          +"data modify storage $MCX_STORAGE ${P.Type.INT_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.INT.stack}[-1]"
+          dropType(P.Type.INT)
+        }
+      }
+      is L.Term.LongArrayOf -> {
+        pushType(P.Type.LONG_ARRAY, "value ${term.elements.joinToString(",", "[L;", "]") { "0l" }}")
+        term.elements.forEachIndexed { index, element ->
+          packTerm(element)
+          +"data modify storage $MCX_STORAGE ${P.Type.LONG_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.LONG.stack}[-1]"
+          dropType(P.Type.LONG)
+        }
+      }
+      is L.Term.ListOf      -> {
         pushType(P.Type.LIST, "value []")
         if (term.elements.isNotEmpty()) {
           val elementType = eraseType(term.elements.first().type).first()
-          term.elements.forEach { value ->
-            packTerm(value)
+          term.elements.forEach { element ->
+            packTerm(element)
             val index = if (elementType == P.Type.LIST) -2 else -1
             +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack}[$index] append from storage $MCX_STORAGE ${elementType.stack}[-1]"
             dropType(elementType)
           }
         }
       }
-      is L.Term.CompoundOf -> {
+      is L.Term.CompoundOf  -> {
         pushType(P.Type.COMPOUND, "value {}")
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -80,17 +104,17 @@ class Pack private constructor() {
           dropType(valueType)
         }
       }
-      is L.Term.BoxOf      -> {
+      is L.Term.BoxOf       -> {
         packTerm(term.element)
         +"function heap/${eraseType(term.element.type).first().stack}_box"
         bind(null, P.Type.INT)
       }
-      is L.Term.TupleOf    -> {
+      is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
           packTerm(element)
         }
       }
-      is L.Term.If         -> {
+      is L.Term.If          -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
         dropType(P.Type.BYTE)
@@ -98,7 +122,7 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Let        -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -111,12 +135,12 @@ class Pack private constructor() {
           }
         }
       }
-      is L.Term.Var        -> {
+      is L.Term.Var         -> {
         val type = eraseType(term.type).first() // TODO
         val index = this[term.name, type]
         pushType(type, "from storage $MCX_STORAGE ${type.stack}[$index]")
       }
-      is L.Term.Run        -> {
+      is L.Term.Run         -> {
         packTerm(term.arg)
 
         +"function ${packLocation(term.name)}"
@@ -125,7 +149,7 @@ class Pack private constructor() {
         }
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Command    -> {
+      is L.Term.Command     -> {
         +term.value
         eraseType(term.type).forEach { bind(null, it) }
       }
@@ -171,19 +195,22 @@ class Pack private constructor() {
     type: L.Type,
   ): List<P.Type> {
     return when (type) {
-      is L.Type.End      -> listOf(P.Type.END)
-      is L.Type.Bool     -> listOf(P.Type.BYTE)
-      is L.Type.Byte     -> listOf(P.Type.BYTE)
-      is L.Type.Short    -> listOf(P.Type.SHORT)
-      is L.Type.Int      -> listOf(P.Type.INT)
-      is L.Type.Long     -> listOf(P.Type.LONG)
-      is L.Type.Float    -> listOf(P.Type.FLOAT)
-      is L.Type.Double   -> listOf(P.Type.DOUBLE)
-      is L.Type.String   -> listOf(P.Type.STRING)
-      is L.Type.List     -> listOf(P.Type.LIST)
-      is L.Type.Compound -> listOf(P.Type.COMPOUND)
-      is L.Type.Box      -> listOf(P.Type.INT)
-      is L.Type.Tuple    -> type.elements.flatMap { eraseType(it) }
+      is L.Type.End       -> listOf(P.Type.END)
+      is L.Type.Bool      -> listOf(P.Type.BYTE)
+      is L.Type.Byte      -> listOf(P.Type.BYTE)
+      is L.Type.Short     -> listOf(P.Type.SHORT)
+      is L.Type.Int       -> listOf(P.Type.INT)
+      is L.Type.Long      -> listOf(P.Type.LONG)
+      is L.Type.Float     -> listOf(P.Type.FLOAT)
+      is L.Type.Double    -> listOf(P.Type.DOUBLE)
+      is L.Type.String    -> listOf(P.Type.STRING)
+      is L.Type.ByteArray -> listOf(P.Type.BYTE_ARRAY)
+      is L.Type.IntArray  -> listOf(P.Type.INT_ARRAY)
+      is L.Type.LongArray -> listOf(P.Type.LONG_ARRAY)
+      is L.Type.List      -> listOf(P.Type.LIST)
+      is L.Type.Compound  -> listOf(P.Type.COMPOUND)
+      is L.Type.Box       -> listOf(P.Type.INT)
+      is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
     }
   }
 
@@ -221,18 +248,21 @@ class Pack private constructor() {
     term: L.Term,
   ): Json {
     return when (term) {
-      is L.Term.BoolOf     -> Json.BoolOf(term.value)
-      is L.Term.ByteOf     -> Json.ByteOf(term.value)
-      is L.Term.ShortOf    -> Json.ShortOf(term.value)
-      is L.Term.IntOf      -> Json.IntOf(term.value)
-      is L.Term.LongOf     -> Json.LongOf(term.value)
-      is L.Term.FloatOf    -> Json.FloatOf(term.value)
-      is L.Term.DoubleOf   -> Json.DoubleOf(term.value)
-      is L.Term.StringOf   -> Json.StringOf(term.value)
-      is L.Term.ListOf     -> Json.ArrayOf(term.elements.map { packJson(it) })
-      is L.Term.CompoundOf -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
-      is L.Term.BoxOf      -> packJson(term.element)
-      else                 -> TODO()
+      is L.Term.BoolOf      -> Json.BoolOf(term.value)
+      is L.Term.ByteOf      -> Json.ByteOf(term.value)
+      is L.Term.ShortOf     -> Json.ShortOf(term.value)
+      is L.Term.IntOf       -> Json.IntOf(term.value)
+      is L.Term.LongOf      -> Json.LongOf(term.value)
+      is L.Term.FloatOf     -> Json.FloatOf(term.value)
+      is L.Term.DoubleOf    -> Json.DoubleOf(term.value)
+      is L.Term.StringOf    -> Json.StringOf(term.value)
+      is L.Term.ByteArrayOf -> Json.ArrayOf(term.elements.map { packJson(it) })
+      is L.Term.IntArrayOf  -> Json.ArrayOf(term.elements.map { packJson(it) })
+      is L.Term.LongArrayOf -> Json.ArrayOf(term.elements.map { packJson(it) })
+      is L.Term.ListOf      -> Json.ArrayOf(term.elements.map { packJson(it) })
+      is L.Term.CompoundOf  -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
+      is L.Term.BoxOf       -> packJson(term.element)
+      else                  -> TODO()
     }
   }
 

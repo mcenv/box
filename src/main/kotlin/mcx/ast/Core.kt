@@ -90,6 +90,18 @@ object Core {
       override val kind: Kind get() = Kind.ONE
     }
 
+    object ByteArray : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
+
+    object IntArray : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
+
+    object LongArray : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
+
     data class List(
       val element: Type,
     ) : Type {
@@ -159,6 +171,21 @@ object Core {
 
     data class StringOf(
       val value: String,
+      override val type: Type,
+    ) : Term
+
+    data class ByteArrayOf(
+      val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class IntArrayOf(
+      val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class LongArrayOf(
+      val elements: List<Term>,
       override val type: Type,
     ) : Term
 

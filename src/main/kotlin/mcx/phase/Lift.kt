@@ -56,42 +56,48 @@ class Lift private constructor() {
     type: C.Type,
   ): L.Type {
     return when (type) {
-      is C.Type.End      -> L.Type.End
-      is C.Type.Bool     -> L.Type.Bool
-      is C.Type.Byte     -> L.Type.Byte
-      is C.Type.Short    -> L.Type.Short
-      is C.Type.Int      -> L.Type.Int
-      is C.Type.Long     -> L.Type.Long
-      is C.Type.Float    -> L.Type.Float
-      is C.Type.Double   -> L.Type.Double
-      is C.Type.String   -> L.Type.String
-      is C.Type.List     -> L.Type.List(liftType(type.element))
-      is C.Type.Compound -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
-      is C.Type.Box      -> L.Type.Box(liftType(type.element))
-      is C.Type.Tuple    -> L.Type.Tuple(type.elements.map { liftType(it) })
-      is C.Type.Hole     -> unexpectedHole()
+      is C.Type.End       -> L.Type.End
+      is C.Type.Bool      -> L.Type.Bool
+      is C.Type.Byte      -> L.Type.Byte
+      is C.Type.Short     -> L.Type.Short
+      is C.Type.Int       -> L.Type.Int
+      is C.Type.Long      -> L.Type.Long
+      is C.Type.Float     -> L.Type.Float
+      is C.Type.Double    -> L.Type.Double
+      is C.Type.String    -> L.Type.String
+      is C.Type.ByteArray -> L.Type.ByteArray
+      is C.Type.IntArray  -> L.Type.IntArray
+      is C.Type.LongArray -> L.Type.LongArray
+      is C.Type.List      -> L.Type.List(liftType(type.element))
+      is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
+      is C.Type.Box       -> L.Type.Box(liftType(type.element))
+      is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
+      is C.Type.Hole      -> unexpectedHole()
     }
   }
 
   private fun Env.liftTerm(
     term: C.Term,
   ): L.Term {
+    val type = liftType(term.type)
     return when (term) {
-      is C.Term.BoolOf     -> L.Term.BoolOf(term.value, liftType(term.type))
-      is C.Term.ByteOf     -> L.Term.ByteOf(term.value, liftType(term.type))
-      is C.Term.ShortOf    -> L.Term.ShortOf(term.value, liftType(term.type))
-      is C.Term.IntOf      -> L.Term.IntOf(term.value, liftType(term.type))
-      is C.Term.LongOf     -> L.Term.LongOf(term.value, liftType(term.type))
-      is C.Term.FloatOf    -> L.Term.FloatOf(term.value, liftType(term.type))
-      is C.Term.DoubleOf   -> L.Term.DoubleOf(term.value, liftType(term.type))
-      is C.Term.StringOf   -> L.Term.StringOf(term.value, liftType(term.type))
-      is C.Term.ListOf     -> L.Term.ListOf(term.elements.map { liftTerm(it) }, liftType(term.type))
-      is C.Term.CompoundOf -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, liftType(term.type))
-      is C.Term.BoxOf      -> L.Term.BoxOf(liftTerm(term.element), liftType(term.type))
-      is C.Term.TupleOf    -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, liftType(term.type))
-      is C.Term.If         -> {
+      is C.Term.BoolOf      -> L.Term.BoolOf(term.value, type)
+      is C.Term.ByteOf      -> L.Term.ByteOf(term.value, type)
+      is C.Term.ShortOf     -> L.Term.ShortOf(term.value, type)
+      is C.Term.IntOf       -> L.Term.IntOf(term.value, type)
+      is C.Term.LongOf      -> L.Term.LongOf(term.value, type)
+      is C.Term.FloatOf     -> L.Term.FloatOf(term.value, type)
+      is C.Term.DoubleOf    -> L.Term.DoubleOf(term.value, type)
+      is C.Term.StringOf    -> L.Term.StringOf(term.value, type)
+      is C.Term.ByteArrayOf -> L.Term.ByteArrayOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.IntArrayOf  -> L.Term.IntArrayOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.LongArrayOf -> L.Term.LongArrayOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.ListOf      -> L.Term.ListOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
+      is C.Term.BoxOf       -> L.Term.BoxOf(liftTerm(term.element), type)
+      is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.If          -> {
         val condition = liftTerm(term.condition)
-        val type = liftType(term.type)
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
           createFreshFunction(
             L.Term.Let(
@@ -105,11 +111,11 @@ class Lift private constructor() {
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let        -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), liftType(term.type))
-      is C.Term.Var        -> L.Term.Var(term.name, liftType(term.type))
-      is C.Term.Run        -> L.Term.Run(term.name, liftTerm(term.arg), liftType(term.type))
-      is C.Term.Command    -> L.Term.Command(term.value, liftType(term.type))
-      is C.Term.Hole       -> unexpectedHole()
+      is C.Term.Let         -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), type)
+      is C.Term.Var         -> L.Term.Var(term.name, type)
+      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Command     -> L.Term.Command(term.value, type)
+      is C.Term.Hole        -> unexpectedHole()
     }
   }
 

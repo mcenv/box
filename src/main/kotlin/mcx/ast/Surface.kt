@@ -99,6 +99,18 @@ object Surface {
       override val range: Range,
     ) : Type
 
+    data class ByteArray(
+      override val range: Range,
+    ) : Type
+
+    data class IntArray(
+      override val range: Range,
+    ) : Type
+
+    data class LongArray(
+      override val range: Range,
+    ) : Type
+
     data class List(
       val element: Type,
       override val range: Range,
@@ -164,6 +176,21 @@ object Surface {
 
     data class StringOf(
       val value: String,
+      override val range: Range,
+    ) : Term
+
+    data class ByteArrayOf(
+      val elements: List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class IntArrayOf(
+      val elements: List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class LongArrayOf(
+      val elements: List<Term>,
       override val range: Range,
     ) : Term
 
