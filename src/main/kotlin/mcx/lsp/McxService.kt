@@ -89,7 +89,7 @@ class McxService : TextDocumentService,
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
       val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)
-      forLeft(core.completionItems ?: resourceCompletionItems)
+      forLeft(core.completionItems.ifEmpty { resourceCompletionItems })
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =

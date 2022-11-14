@@ -42,9 +42,4 @@ enum class Registry(
     "dimension",
     "json",
   ),
-
-  TAGS_FUNCTIONS(
-    "tags/functions",
-    "json",
-  ),
 }

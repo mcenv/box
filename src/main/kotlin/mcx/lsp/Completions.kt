@@ -1,14 +1,22 @@
 package mcx.lsp
 
-import mcx.ast.Registry
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 
 val resourceCompletionItems: List<CompletionItem> by lazy {
-  Registry
-    .values()
+  listOf(
+    "function",
+    "/predicates",
+    "/recipes",
+    "/loot_tables",
+    "/item_modifiers",
+    "/advancements",
+    "/dimension_type",
+    "/worldgen/biome",
+    "/dimension",
+  )
     .map {
-      CompletionItem(it.string).apply {
+      CompletionItem(it).apply {
         kind = CompletionItemKind.Keyword
       }
     }

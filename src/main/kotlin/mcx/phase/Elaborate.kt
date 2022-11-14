@@ -606,7 +606,7 @@ class Elaborate private constructor(
   data class Result(
     val module: Core.Module,
     val diagnostics: List<Diagnostic>,
-    val completionItems: List<CompletionItem>?,
+    val completionItems: List<CompletionItem>,
     val hover: C.Type?,
   )
 
