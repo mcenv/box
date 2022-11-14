@@ -243,14 +243,14 @@ class Elaborate private constructor(
       expected is C.Type.String? -> C.Term.StringOf(term.value, C.Type.String)
 
       term is S.Term.ListOf &&
-      term.values.isEmpty()      -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
+      term.elements.isEmpty()           -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
 
       term is S.Term.ListOf &&
       expected is C.Type.List?    -> {
-        val head = elaborateTerm(env, term.values.first(), expected?.element)
+        val head = elaborateTerm(env, term.elements.first(), expected?.element)
         val element = expected?.element ?: head.type
         val tail =
-          term.values
+          term.elements
             .drop(1)
             .map { elaborateTerm(env, it, element) }
         C.Term.ListOf(listOf(head) + tail, C.Type.List(element))
@@ -258,47 +258,47 @@ class Elaborate private constructor(
 
       term is S.Term.CompoundOf &&
       expected == null            -> {
-        val values = term.values.associate { (key, value) ->
+        val elements = term.elements.associate { (key, element) ->
           @Suppress("NAME_SHADOWING")
-          val value = elaborateTerm(env, value)
-          hover(value.type, key.range)
-          key.value to value
+          val element = elaborateTerm(env, element)
+          hover(element.type, key.range)
+          key.value to element
         }
-        C.Term.CompoundOf(values, C.Type.Compound(values.mapValues { it.value.type }))
+        C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
       term is S.Term.CompoundOf &&
       expected is C.Type.Compound -> {
-        val values = mutableMapOf<String, C.Term>()
-        term.values.forEach { (key, value) ->
-          when (val element = expected.elements[key.value]) {
+        val elements = mutableMapOf<String, C.Term>()
+        term.elements.forEach { (key, element) ->
+          when (val type = expected.elements[key.value]) {
             null -> {
               diagnostics += Diagnostic.ExtraKey(key.value, key.range)
               @Suppress("NAME_SHADOWING")
-              val value = elaborateTerm(env, value)
-              hover(value.type, key.range)
-              values[key.value] = value
+              val element = elaborateTerm(env, element)
+              hover(element.type, key.range)
+              elements[key.value] = element
             }
             else -> {
-              hover(element, key.range)
-              values[key.value] = elaborateTerm(env, value, element)
+              hover(type, key.range)
+              elements[key.value] = elaborateTerm(env, element, type)
             }
           }
         }
         expected.elements.keys
           .minus(
-            term.values
+            term.elements
               .map { it.first.value }
               .toSet()
           )
           .forEach { diagnostics += Diagnostic.KeyNotFound(it, term.range) }
-        C.Term.CompoundOf(values, C.Type.Compound(values.mapValues { it.value.type }))
+        C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
       term is S.Term.BoxOf &&
       expected is C.Type.Box?     -> {
-        val value = elaborateTerm(env, term.value, expected?.element)
-        C.Term.BoxOf(value, C.Type.Box(value.type))
+        val element = elaborateTerm(env, term.element, expected?.element)
+        C.Term.BoxOf(element, C.Type.Box(element.type))
       }
 
       term is S.Term.If           -> {
@@ -363,21 +363,21 @@ class Elaborate private constructor(
 
       term is S.Term.TupleOf &&
       expected == null           -> {
-        val values = term.values.map {
-          elaborateTerm(env, it)
+        val elements = term.elements.map { element ->
+          elaborateTerm(env, element)
         }
-        C.Term.TupleOf(values, C.Type.Tuple(values.map { it.type }))
+        C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
       }
 
       term is S.Term.TupleOf &&
       expected is C.Type.Tuple   -> {
-        if (expected.elements.size != term.values.size) {
-          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.values.size, term.range)
+        if (expected.elements.size != term.elements.size) {
+          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range)
         }
-        val values = term.values.mapIndexed { index, value ->
-          elaborateTerm(env, value, expected.elements.getOrNull(index))
+        val elements = term.elements.mapIndexed { index, element ->
+          elaborateTerm(env, element, expected.elements.getOrNull(index))
         }
-        C.Term.TupleOf(values, C.Type.Tuple(values.map { it.type }))
+        C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
       }
 
       term is S.Term.Hole        ->

@@ -60,21 +60,21 @@ class Pack private constructor() {
       is L.Term.StringOf   -> pushType(P.Type.STRING, "value ${term.value.quoted('"')}") // TODO: quote if necessary
       is L.Term.ListOf     -> {
         pushType(P.Type.LIST, "value []")
-        if (term.values.isNotEmpty()) {
-          val valueType = eraseType(term.values.first().type).first()
-          term.values.forEach { value ->
+        if (term.elements.isNotEmpty()) {
+          val elementType = eraseType(term.elements.first().type).first()
+          term.elements.forEach { value ->
             packTerm(value)
-            val index = if (valueType == P.Type.LIST) -2 else -1
-            +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
-            dropType(valueType)
+            val index = if (elementType == P.Type.LIST) -2 else -1
+            +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack}[$index] append from storage $MCX_STORAGE ${elementType.stack}[-1]"
+            dropType(elementType)
           }
         }
       }
       is L.Term.CompoundOf -> {
         pushType(P.Type.COMPOUND, "value {}")
-        term.values.forEach { (key, value) ->
-          packTerm(value)
-          val valueType = eraseType(value.type).first()
+        term.elements.forEach { (key, element) ->
+          packTerm(element)
+          val valueType = eraseType(element.type).first()
           val index = if (valueType == P.Type.COMPOUND) -2 else -1
           +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index] append from storage $MCX_STORAGE ${valueType.stack}[-1]"
           dropType(valueType)
@@ -82,8 +82,8 @@ class Pack private constructor() {
       }
       is L.Term.BoxOf      -> pushType(P.Type.INT, "TODO")
       is L.Term.TupleOf    -> {
-        term.values.forEach {
-          packTerm(it)
+        term.elements.forEach { element ->
+          packTerm(element)
         }
       }
       is L.Term.If         -> {
@@ -222,8 +222,8 @@ class Pack private constructor() {
       is L.Term.FloatOf    -> Json.FloatOf(term.value)
       is L.Term.DoubleOf   -> Json.DoubleOf(term.value)
       is L.Term.StringOf   -> Json.StringOf(term.value)
-      is L.Term.ListOf     -> Json.ArrayOf(term.values.map { packJson(it) })
-      is L.Term.CompoundOf -> Json.ObjectOf(term.values.mapValues { packJson(it.value) })
+      is L.Term.ListOf     -> Json.ArrayOf(term.elements.map { packJson(it) })
+      is L.Term.CompoundOf -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
       else                 -> TODO()
     }
   }

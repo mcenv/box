@@ -163,22 +163,22 @@ object Surface {
     ) : Term
 
     data class ListOf(
-      val values: List<Term>,
+      val elements: List<Term>,
       override val range: Range,
     ) : Term
 
     data class CompoundOf(
-      val values: List<Pair<Ranged<String>, Term>>,
+      val elements: List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term
 
     data class BoxOf(
-      val value: Term,
+      val element: Term,
       override val range: Range,
     ) : Term
 
     data class TupleOf(
-      val values: List<Term>,
+      val elements: List<Term>,
       override val range: Range,
     ) : Term
 

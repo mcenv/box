@@ -115,22 +115,22 @@ object Lifted {
     ) : Term
 
     data class ListOf(
-      val values: List<Term>,
+      val elements: List<Term>,
       override val type: Type,
     ) : Term
 
     data class CompoundOf(
-      val values: Map<String, Term>,
+      val elements: Map<String, Term>,
       override val type: Type,
     ) : Term
 
     data class BoxOf(
-      val value: Term,
+      val element: Term,
       override val type: Type,
     ) : Term
 
     data class TupleOf(
-      val values: List<Term>,
+      val elements: List<Term>,
       override val type: Type,
     ) : Term
 
