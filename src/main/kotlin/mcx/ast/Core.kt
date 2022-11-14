@@ -218,23 +218,28 @@ object Core {
   }
 
   sealed interface Pattern {
+    val annotations: List<Annotation>
     val type: Type
 
     data class TupleOf(
       val elements: List<Pattern>,
+      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Var(
       val name: String,
+      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Discard(
+      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Hole(
+      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
   }

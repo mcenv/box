@@ -55,20 +55,7 @@ class Parse private constructor(
 
   private fun parseResource(): S.Resource =
     ranging {
-      val annotations = mutableListOf<S.Annotation>()
-      while (true) {
-        skipTrivia()
-        if (!canRead() || peek() != '@') {
-          break
-        }
-        skip()
-        val start = cursor
-        annotations += parseAnnotation()
-        if (start == cursor) {
-          break
-        }
-      }
-
+      val annotations = parseAnnotations()
       if (canRead()) {
         when (readWord()) {
           "/predicates"     -> parseJsonResource(annotations, Registry.PREDICATES)
@@ -123,6 +110,23 @@ class Parse private constructor(
       val body = parseTerm()
       S.Resource.JsonResource(annotations, registry, name, body, until())
     }
+
+  private fun parseAnnotations(): List<S.Annotation> {
+    val annotations = mutableListOf<S.Annotation>()
+    while (true) {
+      skipTrivia()
+      if (!canRead() || peek() != '@') {
+        break
+      }
+      skip()
+      val start = cursor
+      annotations += parseAnnotation()
+      if (start == cursor) {
+        break
+      }
+    }
+    return annotations
+  }
 
   private fun parseAnnotation(): S.Annotation =
     ranging {
@@ -362,17 +366,18 @@ class Parse private constructor(
 
   private fun parsePattern(): S.Pattern =
     ranging {
+      val annotations = parseAnnotations()
       if (canRead()) {
         when (peek()) {
           '('  -> {
             val elements = parseList(',', '(', ')') {
               parsePattern()
             }
-            S.Pattern.TupleOf(elements, until())
+            S.Pattern.TupleOf(elements, annotations, until())
           }
           else -> when (val word = readWord()) {
-            "_"  -> S.Pattern.Discard(until())
-            else -> S.Pattern.Var(word, until())
+            "_"  -> S.Pattern.Discard(annotations, until())
+            else -> S.Pattern.Var(word, annotations, until())
           }
         }
       } else {
@@ -381,7 +386,7 @@ class Parse private constructor(
       ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedPattern(range)
-        S.Pattern.Hole(range)
+        S.Pattern.Hole(annotations, range)
       }
     }
 

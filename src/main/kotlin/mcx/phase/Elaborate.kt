@@ -406,6 +406,7 @@ class Elaborate private constructor(
     pattern: S.Pattern,
     expected: C.Type? = null,
   ): C.Pattern {
+    val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.TupleOf &&
       expected is C.Type.Tuple     -> {
@@ -415,37 +416,37 @@ class Elaborate private constructor(
         val elements = pattern.elements.mapIndexed { index, element ->
           elaboratePattern(env, element, expected.elements.getOrNull(index))
         }
-        C.Pattern.TupleOf(elements, expected)
+        C.Pattern.TupleOf(elements, annotations, expected)
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null             -> {
+      expected == null       -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(env, element)
         }
-        C.Pattern.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
+        C.Pattern.TupleOf(elements, annotations, C.Type.Tuple(elements.map { it.type }))
       }
 
       pattern is S.Pattern.Var &&
-      expected != null             -> {
+      expected != null       -> {
         if (C.Kind.ONE isSubkindOf expected.kind) {
           env.bind(pattern.name, expected)
-          C.Pattern.Var(pattern.name, expected)
+          C.Pattern.Var(pattern.name, annotations, expected)
         } else {
           diagnostics += Diagnostic.KindMismatch(C.Kind.ONE, expected.kind, pattern.range)
-          C.Pattern.Var(pattern.name, C.Type.End)
+          C.Pattern.Var(pattern.name, annotations, C.Type.End)
         }
       }
 
       pattern is S.Pattern.Var &&
-      expected == null             -> {
+      expected == null       -> {
         diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
-        C.Pattern.Var(pattern.name, C.Type.End)
+        C.Pattern.Var(pattern.name, annotations, C.Type.End)
       }
 
-      pattern is S.Pattern.Discard -> C.Pattern.Discard(expected ?: C.Type.End)
+      pattern is S.Pattern.Discard -> C.Pattern.Discard(annotations, expected ?: C.Type.End)
 
-      pattern is S.Pattern.Hole    -> C.Pattern.Hole(expected ?: C.Type.Hole)
+      pattern is S.Pattern.Hole    -> C.Pattern.Hole(annotations, expected ?: C.Type.Hole)
 
       expected == null             -> error("type must be non-null")
 

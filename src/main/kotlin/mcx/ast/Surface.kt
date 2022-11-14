@@ -223,23 +223,28 @@ object Surface {
   }
 
   sealed interface Pattern {
+    val annotations: List<Annotation>
     val range: Range
 
     data class TupleOf(
       val elements: List<Pattern>,
+      override val annotations: List<Annotation>,
       override val range: Range,
     ) : Pattern
 
     data class Var(
       val name: String,
+      override val annotations: List<Annotation>,
       override val range: Range,
     ) : Pattern
 
     data class Discard(
+      override val annotations: List<Annotation>,
       override val range: Range,
     ) : Pattern
 
     data class Hole(
+      override val annotations: List<Annotation>,
       override val range: Range,
     ) : Pattern
   }

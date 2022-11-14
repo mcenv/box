@@ -95,10 +95,10 @@ class Lift private constructor() {
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
           createFreshFunction(
             L.Term.Let(
-              L.Pattern.Var("x", thenClause.type),
+              L.Pattern.Var("x", emptyList(), thenClause.type),
               thenClause,
               L.Term.Let(
-                L.Pattern.Var("_", L.Type.End),
+                L.Pattern.Var("_", emptyList(), L.Type.End),
                 L.Term.Command("scoreboard players set #0 mcx 1", L.Type.End),
                 L.Term.Var("x", thenClause.type),
                 thenClause.type,
@@ -121,10 +121,12 @@ class Lift private constructor() {
   private fun liftPattern(
     pattern: C.Pattern,
   ): L.Pattern {
+    val annotations = pattern.annotations.map { liftAnnotation(it) }
+    val type = liftType(pattern.type)
     return when (pattern) {
-      is C.Pattern.TupleOf -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, liftType(pattern.type))
-      is C.Pattern.Var     -> L.Pattern.Var(pattern.name, liftType(pattern.type))
-      is C.Pattern.Discard -> L.Pattern.Discard(liftType(pattern.type))
+      is C.Pattern.TupleOf -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
+      is C.Pattern.Var     -> L.Pattern.Var(pattern.name, annotations, type)
+      is C.Pattern.Discard -> L.Pattern.Discard(annotations, type)
       is C.Pattern.Hole    -> unexpectedHole()
     }
   }
@@ -145,7 +147,7 @@ class Lift private constructor() {
         .Function(
           emptyList(),
           Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"),
-          L.Pattern.TupleOf(emptyList(), type),
+          L.Pattern.TupleOf(emptyList(), emptyList(), type),
           type,
           type,
           body,

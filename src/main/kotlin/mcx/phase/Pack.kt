@@ -99,10 +99,12 @@ class Pack private constructor() {
         packPattern(term.binder)
         packTerm(term.body)
 
-        val binderTypes = eraseType(term.binder.type)
-        val bodyTypes = eraseType(term.body.type)
-        binderTypes.forEach { binderType ->
-          dropType(binderType, bodyTypes)
+        if (L.Annotation.NoDrop !in term.binder.annotations) {
+          val binderTypes = eraseType(term.binder.type)
+          val bodyTypes = eraseType(term.body.type)
+          binderTypes.forEach { binderType ->
+            dropType(binderType, bodyTypes)
+          }
         }
       }
       is L.Term.Var        -> {
