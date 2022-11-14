@@ -26,7 +26,7 @@ class Parse private constructor(
       skip("import".length)
       skipTrivia()
       parseList(',', '{', '}') {
-        parseRanged { parseLocation() }
+        parseRanged { readToken().toLocation() }
       }
     } else {
       emptyList()
@@ -244,96 +244,93 @@ class Parse private constructor(
             S.Term.Command(value, until())
           }
           else -> {
-            val location = parseLocation()
-            when (location.parts.size) {
-              1    -> when (val word = location.parts.first()) {
-                ""      -> null
-                "false" -> S.Term.BoolOf(false, until())
-                "true"  -> S.Term.BoolOf(true, until())
-                "if"    -> {
-                  skipTrivia()
-                  val condition = parseTerm()
-                  skipTrivia()
-                  expect("then")
-                  skipTrivia()
-                  val thenClause = parseTerm()
-                  skipTrivia()
-                  expect("else")
-                  skipTrivia()
-                  val elseClause = parseTerm()
-                  S.Term.If(condition, thenClause, elseClause, until())
-                }
-                "let"   -> {
-                  skipTrivia()
-                  val name = parsePattern()
-                  skipTrivia()
-                  expect('=')
-                  skipTrivia()
-                  val init = parseTerm()
-                  skipTrivia()
-                  expect(';')
-                  val body = parseTerm()
-                  S.Term.Let(name, init, body, until())
-                }
-                else    ->
-                  word
-                    .lastOrNull()
-                    ?.let { suffix ->
-                      when (suffix) {
-                        'b'  ->
-                          word
-                            .dropLast(1)
-                            .toByteOrNull()
-                            ?.let { S.Term.ByteOf(it, until()) }
-                        's'  ->
-                          word
-                            .dropLast(1)
-                            .toShortOrNull()
-                            ?.let { S.Term.ShortOf(it, until()) }
-                        'l'  ->
-                          word
-                            .dropLast(1)
-                            .toLongOrNull()
-                            ?.let { S.Term.LongOf(it, until()) }
-                        'f'  ->
-                          word
-                            .dropLast(1)
-                            .toFloatOrNull()
-                            ?.let { S.Term.FloatOf(it, until()) }
-                        'd'  ->
-                          word
-                            .dropLast(1)
-                            .toDoubleOrNull()
-                            ?.let { S.Term.DoubleOf(it, until()) }
-                        else ->
-                          word
-                            .toIntOrNull()
-                            ?.let { S.Term.IntOf(it, until()) }
-                          ?: word
-                            .toDoubleOrNull()
-                            ?.let { S.Term.DoubleOf(it, until()) }
-                      }
+            when (val token = readToken()) {
+              ""      -> null
+              "false" -> S.Term.BoolOf(false, until())
+              "true"  -> S.Term.BoolOf(true, until())
+              "if"    -> {
+                skipTrivia()
+                val condition = parseTerm()
+                skipTrivia()
+                expect("then")
+                skipTrivia()
+                val thenClause = parseTerm()
+                skipTrivia()
+                expect("else")
+                skipTrivia()
+                val elseClause = parseTerm()
+                S.Term.If(condition, thenClause, elseClause, until())
+              }
+              "let"   -> {
+                skipTrivia()
+                val name = parsePattern()
+                skipTrivia()
+                expect('=')
+                skipTrivia()
+                val init = parseTerm()
+                skipTrivia()
+                expect(';')
+                val body = parseTerm()
+                S.Term.Let(name, init, body, until())
+              }
+              else    ->
+                token
+                  .lastOrNull()
+                  ?.let { suffix ->
+                    when (suffix) {
+                      'b'  ->
+                        token
+                          .dropLast(1)
+                          .toByteOrNull()
+                          ?.let { S.Term.ByteOf(it, until()) }
+                      's'  ->
+                        token
+                          .dropLast(1)
+                          .toShortOrNull()
+                          ?.let { S.Term.ShortOf(it, until()) }
+                      'l'  ->
+                        token
+                          .dropLast(1)
+                          .toLongOrNull()
+                          ?.let { S.Term.LongOf(it, until()) }
+                      'f'  ->
+                        token
+                          .dropLast(1)
+                          .toFloatOrNull()
+                          ?.let { S.Term.FloatOf(it, until()) }
+                      'd'  ->
+                        token
+                          .dropLast(1)
+                          .toDoubleOrNull()
+                          ?.let { S.Term.DoubleOf(it, until()) }
+                      else ->
+                        token
+                          .toIntOrNull()
+                          ?.let { S.Term.IntOf(it, until()) }
+                        ?: token
+                          .toDoubleOrNull()
+                          ?.let { S.Term.DoubleOf(it, until()) }
                     }
-                  ?: run {
+                  } ?: run {
+                  if (token.contains('.')) {
+                    skipTrivia()
+                    expect('@')
+                    skipTrivia()
+                    val arg = parseTerm()
+                    S.Term.Run(token.toLocation(), arg, until())
+                  } else {
                     val range = until()
                     skipTrivia()
                     if (canRead() && peek() == '@') {
                       skip()
                       skipTrivia()
                       val arg = parseTerm()
-                      S.Term.Run(location, arg, until())
+                      S.Term.Run(token.toLocation(), arg, until())
                     } else {
-                      S.Term.Var(word, range)
+                      S.Term.Var(token, range)
                     }
                   }
-              }
-              else -> {
-                skipTrivia()
-                expect('@')
-                skipTrivia()
-                val arg = parseTerm()
-                S.Term.Run(location, arg, until())
-              }
+                }
             }
           }
         }
@@ -369,13 +366,8 @@ class Parse private constructor(
       }
     }
 
-  private fun parseLocation(): Location {
-    val parts = mutableListOf(readWord())
-    while (canRead() && peek() == '/') {
-      skip()
-      parts += readWord()
-    }
-    return Location(parts)
+  private fun String.toLocation(): Location {
+    return Location(this.split('.'))
   }
 
   private fun <R> parseRanged(
@@ -475,9 +467,20 @@ class Parse private constructor(
   }
 
   private inline fun Char.isWordPart(): Boolean =
+    this != '.' && this.isTokenPart()
+
+  private fun readToken(): String {
+    val start = cursor
+    while (canRead() && peek().isTokenPart()) {
+      skip()
+    }
+    return text.substring(start, cursor)
+  }
+
+  private inline fun Char.isTokenPart(): Boolean =
     when (this) {
-      ' ', '\n', '\r', '/', ':', ';', ',', '(', ')', '[', ']', '{', '}' -> false
-      else                                                              -> true
+      ' ', '\n', '\r', ':', ';', ',', '(', ')', '[', ']', '{', '}' -> false
+      else                                                         -> true
     }
 
   private fun expect(
