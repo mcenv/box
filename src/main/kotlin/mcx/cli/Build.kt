@@ -85,7 +85,9 @@ object Build : Subcommand(
     }
 
     if (valid.get()) {
-      val datapackRoot = datapacks.resolve(config.name)
+      val datapackRoot = datapacks
+        .resolve(config.name)
+        .also { it.createDirectories() }
 
       val outputModules = runBlocking {
         inputs
