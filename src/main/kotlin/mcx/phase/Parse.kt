@@ -26,7 +26,7 @@ class Parse private constructor(
       skip("import".length)
       skipTrivia()
       parseList(',', '{', '}') {
-        parseRanged { readToken().toLocation() }
+        parseRanged { parseLocation() }
       }
     } else {
       emptyList()
@@ -238,6 +238,12 @@ class Parse private constructor(
             skipTrivia()
             S.Term.BoxOf(parseTerm(), until())
           }
+          '.'  -> {
+            val name = parseLocation()
+            skipTrivia()
+            val arg = parseTerm()
+            S.Term.Run(name, arg, until())
+          }
           '/'  -> {
             skip()
             val value = readQuotedString()
@@ -311,26 +317,7 @@ class Parse private constructor(
                           .toDoubleOrNull()
                           ?.let { S.Term.DoubleOf(it, until()) }
                     }
-                  } ?: run {
-                  if (token.contains('.')) {
-                    skipTrivia()
-                    expect('@')
-                    skipTrivia()
-                    val arg = parseTerm()
-                    S.Term.Run(token.toLocation(), arg, until())
-                  } else {
-                    val range = until()
-                    skipTrivia()
-                    if (canRead() && peek() == '@') {
-                      skip()
-                      skipTrivia()
-                      val arg = parseTerm()
-                      S.Term.Run(token.toLocation(), arg, until())
-                    } else {
-                      S.Term.Var(token, range)
-                    }
-                  }
-                }
+                  } ?: S.Term.Var(token, until())
             }
           }
         }
@@ -366,8 +353,14 @@ class Parse private constructor(
       }
     }
 
-  private fun String.toLocation(): Location {
-    return Location(this.split('.'))
+  private fun parseLocation(): Location {
+    expect('.')
+    val parts = mutableListOf(readWord())
+    while (canRead() && peek() == '.') {
+      skip()
+      parts += readWord()
+    }
+    return Location(parts)
   }
 
   private fun <R> parseRanged(

@@ -44,7 +44,7 @@ class Build(
     return when (val text = texts[location]) {
       null -> withContext(Dispatchers.IO) {
         src
-          .resolve("$location.mcx")
+          .resolve(location.parts.joinToString("/", postfix = ".mcx"))
           .let { path ->
             if (path.exists()) {
               return@withContext path
@@ -55,7 +55,7 @@ class Build(
             }
           }
         STD_SRC
-          .resolve("$location.mcx")
+          .resolve(location.parts.joinToString("/", postfix = ".mcx"))
           .let { path ->
             if (path.exists()) {
               return@withContext path

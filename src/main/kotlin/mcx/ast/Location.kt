@@ -9,5 +9,5 @@ data class Location(val parts: List<String>) {
     Location(parts + part)
 
   override fun toString(): String =
-    parts.joinToString(".")
+    parts.joinToString(".", prefix = ".")
 }
