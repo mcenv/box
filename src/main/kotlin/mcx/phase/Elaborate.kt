@@ -420,7 +420,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null       -> {
+      expected == null -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(env, element)
         }
@@ -428,7 +428,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected != null       -> {
+      expected != null -> {
         if (C.Kind.ONE isSubkindOf expected.kind) {
           env.bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, annotations, expected)
@@ -439,7 +439,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected == null       -> {
+      expected == null -> {
         diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
         C.Pattern.Var(pattern.name, annotations, C.Type.End)
       }
@@ -476,8 +476,7 @@ class Elaborate private constructor(
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type.End &&
-      type2 is C.Type.End      -> true
+      type1 is C.Type.End -> true
 
       type1 is C.Type.Bool &&
       type2 is C.Type.Bool     -> true
