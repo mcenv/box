@@ -20,7 +20,7 @@ class Elaborate private constructor(
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var resourceCompletionItems: MutableList<CompletionItem> = mutableListOf()
-  private var hover: C.Type? = null
+  private var hover: (() -> String)? = null
 
   private fun elaborateResult(
     input: Parse.Result,
@@ -62,9 +62,8 @@ class Elaborate private constructor(
               CompletionItemKind.Struct
             }
             is Core.Resource.Function  -> {
-              val detail = ": ${prettyType(resource.param)} -> ${prettyType(resource.result)}"
-              documentation = forRight(highlight("function $name$detail"))
-              labelDetails.detail = detail
+              documentation = forRight(highlight(createFunctionDocumentation(resource)))
+              labelDetails.detail = ": ${prettyType(resource.param)} -> ${prettyType(resource.result)}"
               CompletionItemKind.Function
             }
             else                       -> error("unexpected: hole")
@@ -252,11 +251,11 @@ class Elaborate private constructor(
       }
 
       term is S.Term.CompoundOf &&
-      expected == null              -> {
+      expected == null      -> {
         val elements = term.elements.associate { (key, element) ->
           @Suppress("NAME_SHADOWING")
           val element = elaborateTerm(env, element)
-          hover(element.type, key.range)
+          hover(key.range) { prettyType(element.type) }
           key.value to element
         }
         C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
@@ -271,11 +270,11 @@ class Elaborate private constructor(
               diagnostics += Diagnostic.ExtraKey(key.value, key.range)
               @Suppress("NAME_SHADOWING")
               val element = elaborateTerm(env, element)
-              hover(element.type, key.range)
+              hover(key.range) { prettyType(element.type) }
               elements[key.value] = element
             }
             else -> {
-              hover(type, key.range)
+              hover(key.range) { prettyType(type) }
               elements[key.value] = elaborateTerm(env, element, type)
             }
           }
@@ -344,6 +343,7 @@ class Elaborate private constructor(
               C.Term.Hole(C.Type.Hole)
             }
             else                       -> {
+              hover(term.name.range) { createFunctionDocumentation(resource) }
               val arg = elaborateTerm(env, term.arg, resource.param)
               C.Term.Run(resource.name, arg, resource.result)
             }
@@ -414,7 +414,7 @@ class Elaborate private constructor(
             }
         }
       }
-      hover(it.type, term.range)
+      hover(term.range) { prettyType(it.type) }
     }
   }
 
@@ -486,16 +486,7 @@ class Elaborate private constructor(
         actual
       }
     }.also {
-      hover(it.type, pattern.range)
-    }
-  }
-
-  private fun hover(
-    type: C.Type,
-    range: Range,
-  ) {
-    if (hover == null && position != null && position in range) {
-      hover = type
+      hover(pattern.range) { prettyType(it.type) }
     }
   }
 
@@ -504,10 +495,10 @@ class Elaborate private constructor(
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type.End            -> true
+      type1 is C.Type.End      -> true
 
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool           -> true
+      type2 is C.Type.Bool     -> true
 
       type1 is C.Type.Byte &&
       type2 is C.Type.Byte      -> true
@@ -544,30 +535,30 @@ class Elaborate private constructor(
 
       type1 is C.Type.Compound &&
       type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+                                  type1.elements.all { (key1, element1) ->
+                                    when (val element2 = type2.elements[key1]) {
+                                      null -> false
+                                      else -> element1 isSubtypeOf element2
+                                    }
+                                  }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref            -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple          -> type1.elements.size == type2.elements.size &&
-                                        (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1       -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1       -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
 
-      type1 is C.Type.Hole           -> true
-      type2 is C.Type.Hole           -> true
+      type1 is C.Type.Hole     -> true
+      type2 is C.Type.Hole     -> true
 
-      else                           -> false
+      else                     -> false
     }
   }
 
@@ -575,6 +566,24 @@ class Elaborate private constructor(
     other: C.Kind,
   ): Boolean {
     return this.arity == other.arity
+  }
+
+  private fun hover(
+    range: Range,
+    string: () -> String,
+  ) {
+    if (hover == null && position != null && position in range) {
+      hover = string
+    }
+  }
+
+  private fun createFunctionDocumentation(
+    resource: C.Resource.Function,
+  ): String {
+    val name = resource.name.parts.last()
+    val param = prettyType(resource.param)
+    val result = prettyType(resource.result)
+    return "function $name: $param -> $result"
   }
 
   private class Env private constructor(
@@ -647,7 +656,7 @@ class Elaborate private constructor(
     val module: Core.Module,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>,
-    val hover: C.Type?,
+    val hover: (() -> String)?,
   )
 
   companion object {
