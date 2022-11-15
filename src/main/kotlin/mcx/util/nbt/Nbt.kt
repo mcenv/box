@@ -100,7 +100,7 @@ sealed interface Nbt {
 
   @Serializable
   @JvmInline
-  value class Compound(val elements: Map<String, Nbt>) : Nbt
+  value class Compound(val elements: Map<kotlin.String, Nbt>) : Nbt
 
   companion object {
     inline fun <reified T> encode(
