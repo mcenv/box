@@ -2,7 +2,6 @@ package mcx.phase
 
 import mcx.ast.Json
 import mcx.ast.Packed
-import mcx.ast.Registry
 import mcx.util.quoted
 import mcx.ast.Packed as P
 
@@ -64,12 +63,6 @@ class Generate private constructor(
       is Json.BoolOf   -> append(json.value.toString())
     }
   }
-
-  private fun generatePath(
-    registry: Registry,
-    path: String,
-  ): String =
-    "data/minecraft/${registry.string}/$path.${registry.extension}"
 
   companion object {
     operator fun invoke(
