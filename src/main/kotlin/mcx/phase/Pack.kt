@@ -32,7 +32,7 @@ class Pack private constructor() {
         +"# ${resource.name}"
 
         val binderTypes = eraseType(resource.binder.type)
-        binderTypes.forEach { bind(null, it) }
+        binderTypes.forEach { pushType(it, null) }
         packPattern(resource.binder)
         packTerm(resource.body)
 
@@ -107,7 +107,7 @@ class Pack private constructor() {
       is L.Term.BoxOf       -> {
         packTerm(term.element)
         +"function heap/${eraseType(term.element.type).first()}_box"
-        bind(null, P.Type.INT)
+        pushType(P.Type.INT, null)
       }
       is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
@@ -120,7 +120,7 @@ class Pack private constructor() {
         dropType(P.Type.BYTE)
         +"execute if score #0 mcx matches 1.. run function ${packLocation(term.thenName)}"
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
-        eraseType(term.type).forEach { bind(null, it) }
+        eraseType(term.type).forEach { pushType(it, null) }
       }
       is L.Term.Let         -> {
         packTerm(term.init)
@@ -147,7 +147,7 @@ class Pack private constructor() {
         eraseType(term.arg.type).forEach {
           dropType(it, relevant = false)
         }
-        eraseType(term.type).forEach { bind(null, it) }
+        eraseType(term.type).forEach { pushType(it, null) }
       }
       is L.Term.Is          -> {
         packTerm(term.scrutinee)
@@ -155,7 +155,7 @@ class Pack private constructor() {
       }
       is L.Term.Command     -> {
         +term.value
-        eraseType(term.type).forEach { bind(null, it) }
+        eraseType(term.type).forEach { pushType(it, null) }
       }
     }
   }
@@ -202,9 +202,9 @@ class Pack private constructor() {
 
   private fun Env.pushType(
     type: P.Type,
-    source: String,
+    source: String?,
   ) {
-    if (type != P.Type.END) {
+    if (source != null && type != P.Type.END) {
       +"data modify storage $MCX_STORAGE $type append $source"
     }
     bind(null, type)
