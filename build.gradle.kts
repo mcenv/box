@@ -1,15 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-
-  dependencies {
-    classpath("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-  }
-}
-
 plugins {
   kotlin("jvm") version "1.7.21"
   kotlin("plugin.serialization") version "1.7.21"
