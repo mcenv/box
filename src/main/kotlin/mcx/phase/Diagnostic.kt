@@ -146,6 +146,15 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class AmbiguousResource(
+    name: Location,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "ambiguous resource: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
   class ExpectedFunction(
     range: Range,
   ) : Diagnostic(

@@ -331,21 +331,29 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Run &&
-      expected == null            ->
-        when (val resource = env.findResource(term.name)) {
-          null                       -> {
+      expected == null            -> {
+        val resources = env.findResources(term.name)
+        when (resources.size) {
+          0    -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
             C.Term.Hole(C.Type.Hole)
           }
-          !is Core.Resource.Function -> {
-            diagnostics += Diagnostic.ExpectedFunction(term.range)
+          1    -> when (val resource = resources.first()) {
+            !is Core.Resource.Function -> {
+              diagnostics += Diagnostic.ExpectedFunction(term.range)
+              C.Term.Hole(C.Type.Hole)
+            }
+            else                       -> {
+              val arg = elaborateTerm(env, term.arg, resource.param)
+              C.Term.Run(resource.name, arg, resource.result)
+            }
+          }
+          else -> {
+            diagnostics += Diagnostic.AmbiguousResource(term.name, term.range)
             C.Term.Hole(C.Type.Hole)
           }
-          else                       -> {
-            val arg = elaborateTerm(env, term.arg, resource.param)
-            C.Term.Run(resource.name, arg, resource.result)
-          }
         }
+      }
 
       term is S.Term.Is &&
       expected is C.Type.Bool?    -> {
@@ -527,7 +535,7 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
                                    type1.elements.all { (key1, element1) ->
                                      when (val element2 = type2.elements[key1]) {
                                        null -> false
@@ -536,17 +544,17 @@ class Elaborate private constructor(
                                    }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref            -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
-                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple          -> type1.elements.size == type2.elements.size &&
+                                        (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1       -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1       -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Hole           -> true
       type2 is C.Type.Hole           -> true
@@ -571,13 +579,15 @@ class Elaborate private constructor(
     operator fun get(name: String): Entry? =
       _entries.lastOrNull { it.name == name }
 
-    fun findResource(
+    fun findResources(
       expected: Location,
-    ): C.Resource? =
-      resources.entries.find { (actual, _) ->
-        expected.parts.size <= actual.parts.size &&
-        (expected.parts.asReversed() zip actual.parts.asReversed()).all { it.first == it.second }
-      }?.value
+    ): List<C.Resource> =
+      resources.entries
+        .filter { (actual, _) ->
+          expected.parts.size <= actual.parts.size &&
+          (expected.parts.asReversed() zip actual.parts.asReversed()).all { it.first == it.second }
+        }
+        .map { it.value }
 
     fun bind(
       name: String,
