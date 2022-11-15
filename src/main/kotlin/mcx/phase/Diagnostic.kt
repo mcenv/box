@@ -176,6 +176,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class EmptyRange(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "empty range",
+    DiagnosticSeverity.Error,
+  )
+
   class CannotSynthesizeType(
     range: Range,
   ) : Diagnostic(

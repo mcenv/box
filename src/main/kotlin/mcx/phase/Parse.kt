@@ -437,10 +437,49 @@ class Parse private constructor(
       if (canRead()) {
         when (peek()) {
           '('  -> {
-            val elements = parseList(',', '(', ')') {
-              parsePattern()
+            skip()
+            skipTrivia()
+            if (canRead() && peek() == ')') {
+              skip()
+              S.Pattern.TupleOf(emptyList(), annotations, until())
+            } else {
+              val first = parsePattern()
+              skipTrivia()
+              if (canRead()) {
+                when (peek()) {
+                  ')'  -> {
+                    skip()
+                    S.Pattern.TupleOf(listOf(first), annotations, until())
+                  }
+                  ','  -> {
+                    val tail = parseList(',', ',', ')') {
+                      parsePattern()
+                    }
+                    S.Pattern.TupleOf(listOf(first) + tail, annotations, until())
+                  }
+                  else -> {
+                    skipTrivia()
+                    (first as? S.Pattern.IntOf)?.let { min ->
+                      when (readWord()) {
+                        ".." -> {
+                          skipTrivia()
+                          readWord()
+                            .toIntOrNull()
+                            ?.let { max ->
+                              skipTrivia()
+                              expect(')')
+                              S.Pattern.IntRangeOf(min.value, max, annotations, until())
+                            }
+                        }
+                        else -> null
+                      }
+                    }
+                  }
+                }
+              } else {
+                null
+              }
             }
-            S.Pattern.TupleOf(elements, annotations, until())
           }
           else -> when (val word = readWord()) {
             "_"  -> S.Pattern.Discard(annotations, until())

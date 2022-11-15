@@ -200,6 +200,13 @@ object Lifted {
       override val type: Type,
     ) : Pattern
 
+    data class IntRangeOf(
+      val min: Int,
+      val max: Int,
+      override val annotations: List<Annotation>,
+      override val type: Type,
+    ) : Pattern
+
     data class TupleOf(
       val elements: List<Pattern>,
       override val annotations: List<Annotation>,

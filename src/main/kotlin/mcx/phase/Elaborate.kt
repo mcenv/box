@@ -428,6 +428,14 @@ class Elaborate private constructor(
       pattern is S.Pattern.IntOf &&
       expected is C.Type.Int?  -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int)
 
+      pattern is S.Pattern.IntRangeOf &&
+      expected is C.Type.Int?  -> {
+        if (pattern.min > pattern.max) {
+          diagnostics += Diagnostic.EmptyRange(pattern.range)
+        }
+        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int)
+      }
+
       pattern is S.Pattern.TupleOf &&
       expected is C.Type.Tuple -> {
         if (expected.elements.size != pattern.elements.size) {

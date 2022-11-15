@@ -159,13 +159,14 @@ class Pack private constructor() {
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.IntOf   -> Unit
-      is L.Pattern.TupleOf ->
+      is L.Pattern.IntOf      -> Unit
+      is L.Pattern.IntRangeOf -> Unit
+      is L.Pattern.TupleOf    ->
         pattern.elements
           .asReversed()
           .forEach { packPattern(it) }
-      is L.Pattern.Var     -> name(pattern.name, eraseType(pattern.type).first())
-      is L.Pattern.Discard -> Unit
+      is L.Pattern.Var        -> name(pattern.name, eraseType(pattern.type).first())
+      is L.Pattern.Discard    -> Unit
     }
   }
 
@@ -177,17 +178,22 @@ class Pack private constructor() {
       scrutineer: L.Pattern,
     ) {
       when (scrutineer) {
-        is L.Pattern.IntOf   -> {
+        is L.Pattern.IntOf      -> {
           +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Type.INT}[-1]"
           drop(P.Type.INT)
           +"execute unless score $REGISTER_1 matches ${scrutineer.value} run scoreboard players set $REGISTER_0 0"
         }
-        is L.Pattern.TupleOf ->
+        is L.Pattern.IntRangeOf -> {
+          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Type.INT}[-1]"
+          drop(P.Type.INT)
+          +"execute unless score $REGISTER_1 matches ${scrutineer.min}..${scrutineer.max} run scoreboard players set $REGISTER_0 0"
+        }
+        is L.Pattern.TupleOf    ->
           scrutineer.elements
             .asReversed()
             .forEach { visit(it) } // TODO: short-circuit optimization (in lift phase?)
-        is L.Pattern.Var     -> drop(eraseType(scrutineer.type).first())
-        is L.Pattern.Discard -> eraseType(scrutineer.type).forEach { drop(it) }
+        is L.Pattern.Var        -> drop(eraseType(scrutineer.type).first())
+        is L.Pattern.Discard    -> eraseType(scrutineer.type).forEach { drop(it) }
       }
     }
     visit(scrutineer)

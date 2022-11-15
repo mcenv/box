@@ -117,11 +117,12 @@ class Lift private constructor(
     val annotations = pattern.annotations.map { liftAnnotation(it) }
     val type = liftType(pattern.type)
     return when (pattern) {
-      is C.Pattern.IntOf   -> L.Pattern.IntOf(pattern.value, annotations, type)
-      is C.Pattern.TupleOf -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
-      is C.Pattern.Var     -> L.Pattern.Var(pattern.name, annotations, type)
-      is C.Pattern.Discard -> L.Pattern.Discard(annotations, type)
-      is C.Pattern.Hole    -> unexpectedHole()
+      is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, annotations, type)
+      is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
+      is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
+      is C.Pattern.Var        -> L.Pattern.Var(pattern.name, annotations, type)
+      is C.Pattern.Discard    -> L.Pattern.Discard(annotations, type)
+      is C.Pattern.Hole       -> unexpectedHole()
     }
   }
 

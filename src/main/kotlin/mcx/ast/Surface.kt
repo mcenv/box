@@ -265,6 +265,13 @@ object Surface {
       override val range: Range,
     ) : Pattern
 
+    data class IntRangeOf(
+      val min: Int,
+      val max: Int,
+      override val annotations: List<Annotation>,
+      override val range: Range,
+    ) : Pattern
+
     data class TupleOf(
       val elements: List<Pattern>,
       override val annotations: List<Annotation>,
