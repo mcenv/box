@@ -9,39 +9,23 @@ import mcx.ast.Packed as P
 class Generate private constructor(
   private val config: Config,
 ) {
-  private val modules: MutableMap<String, String> = hashMapOf()
-
-  private fun generateModule(
-    module: Packed.Module,
-  ): Map<String, String> {
-    module.resources.forEach {
-      generateResource(it)
-    }
-    return modules
-  }
-
   private fun generateResource(
     resource: P.Resource,
-  ) {
-    when (resource) {
+  ): String {
+    return when (resource) {
       is P.Resource.JsonResource  ->
-        modules[generatePath(resource.registry, resource.path)] =
-          StringBuilder()
-            .apply { generateJson(resource.body) }
-            .toString()
+        StringBuilder().apply { generateJson(resource.body) }
       is Packed.Resource.Function ->
-        modules[generatePath(Registry.FUNCTIONS, resource.path)] =
-          StringBuilder()
-            .apply {
-              resource.commands.forEachIndexed { index, command ->
-                if (index != 0) {
-                  append('\n')
-                }
-                append(command)
+        StringBuilder()
+          .apply {
+            resource.commands.forEachIndexed { index, command ->
+              if (index != 0) {
+                append('\n')
               }
+              append(command)
             }
-            .toString()
-    }
+          }
+    }.toString()
   }
 
   private fun StringBuilder.generateJson(
@@ -90,9 +74,9 @@ class Generate private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      module: Packed.Module,
-    ): Map<String, String> {
-      return Generate(config).generateModule(module)
+      resource: P.Resource,
+    ): String {
+      return Generate(config).generateResource(resource)
     }
   }
 }

@@ -132,30 +132,35 @@ class Build(
   suspend fun fetchLifted(
     config: Config,
     location: Location,
-  ): Lifted.Module =
+  ): List<Lifted.Resource> =
     coroutineScope {
-      val core = fetchCore(config, location)
-      if (core.diagnostics.isNotEmpty()) {
-        cancel()
-      }
-      Lift(config, core.module)
+      val core = fetchCore(config, location.dropLast())
+      val resource = core.module.resources.find { it.name == location }!!
+      Lift(config, resource)
     }
 
   suspend fun fetchPacked(
     config: Config,
     location: Location,
-  ): Packed.Module {
-    val lifted = fetchLifted(config, location)
-    return Pack(config, lifted)
-  }
+  ): List<Packed.Resource> =
+    coroutineScope {
+      val lifted = fetchLifted(config, location)
+      lifted
+        .map { async { Pack(config, it) } }
+        .awaitAll()
+    }
 
   suspend fun fetchGenerated(
     config: Config,
     location: Location,
-  ): Map<String, String> {
-    val packed = fetchPacked(config, location)
-    return Generate(config, packed)
-  }
+  ): Map<String, String> =
+    coroutineScope {
+      val packed = fetchPacked(config, location)
+      packed
+        .map { async { "data/minecraft/${it.registry.string}/${it.path}.${it.registry.extension}" to Generate(config, it) } }
+        .awaitAll()
+        .toMap()
+    }
 
   private data class Trace<V>(
     val value: V,

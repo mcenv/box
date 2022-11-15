@@ -3,22 +3,12 @@ package mcx.phase
 import mcx.ast.Json
 import mcx.ast.Lifted
 import mcx.ast.Location
-import mcx.ast.Packed
 import mcx.phase.Pack.Env.Companion.emptyEnv
 import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
 class Pack private constructor() {
-  private fun packModule(
-    module: L.Module,
-  ): Packed.Module {
-    val resources = module.resources.map {
-      packResource(it)
-    }
-    return P.Module(module.name, resources)
-  }
-
   private fun packResource(
     resource: L.Resource,
   ): P.Resource {
@@ -363,9 +353,9 @@ class Pack private constructor() {
 
     operator fun invoke(
       config: Config,
-      module: L.Module,
-    ): Packed.Module {
-      return Pack().packModule(module)
+      resource: L.Resource,
+    ): P.Resource {
+      return Pack().packResource(resource)
     }
   }
 }

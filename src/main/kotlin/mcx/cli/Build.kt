@@ -11,11 +11,11 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.Location
 import mcx.phase.Build
 import mcx.phase.Config
+import mcx.phase.Diagnostic
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.*
 import kotlin.system.exitProcess
 
@@ -63,63 +63,51 @@ object Build : Subcommand(
           .split('/')
       )
 
-    val inputs: List<Path> =
+    val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
+
+    val datapackRoot = datapacks
+      .resolve(config.name)
+      .also { it.createDirectories() }
+
+    val outputModules = runBlocking {
       Files
         .walk(src)
         .filter { it.extension == "mcx" }
-        .toList()
-
-    val valid = AtomicBoolean(true)
-    val diagnostics = runBlocking {
-      inputs
         .map { path ->
           async {
             val core = build.fetchCore(config, path.toLocation())
-            if (core.diagnostics.isNotEmpty()) {
-              valid.set(false)
-            }
-            path to core.diagnostics
+            diagnosticsByPath += path to core.diagnostics
+            core.module.resources
+              .map { async { build.fetchGenerated(config, it.name) } }
+              .awaitAll()
           }
         }
+        .toList()
         .awaitAll()
+        .flatten()
+        .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
+        .reduce { acc, map -> acc + map }
+        .onEach { (name, module) ->
+          name
+            .also { it.parent.createDirectories() }
+            .bufferedWriter()
+            .use { it.write(module) }
+        }
     }
 
-    if (valid.get()) {
-      val datapackRoot = datapacks
-        .resolve(config.name)
-        .also { it.createDirectories() }
-
-      val outputModules = runBlocking {
-        inputs
-          .map { path ->
-            async {
-              build.fetchGenerated(config, path.toLocation())
-            }
-          }
-          .awaitAll()
-          .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
-          .reduce { acc, map -> acc + map }
-      }
-
-      Files
-        .walk(datapackRoot)
-        .filter { it.isRegularFile() }
-        .forEach {
-          if (it !in outputModules) {
-            it.deleteExisting()
-          }
+    Files
+      .walk(datapackRoot)
+      .filter { it.isRegularFile() }
+      .forEach {
+        if (it !in outputModules) {
+          it.deleteExisting()
         }
-
-      outputModules.forEach { (name, module) ->
-        name
-          .also { it.parent.createDirectories() }
-          .bufferedWriter()
-          .use { it.write(module) }
       }
-    } else {
-      diagnostics.forEach { (path, diagnostics) ->
+
+    if (diagnosticsByPath.isNotEmpty()) {
+      diagnosticsByPath.forEach { (path, diagnostics) ->
         diagnostics.forEach {
-          println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString} ${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
+          println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString}:${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
         }
       }
       exitProcess(1)

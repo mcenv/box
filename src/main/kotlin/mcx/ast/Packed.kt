@@ -1,16 +1,12 @@
 package mcx.ast
 
 object Packed {
-  data class Module(
-    val name: Location,
-    val resources: List<Resource>,
-  )
-
   sealed interface Resource {
+    val registry: Registry
     val path: String
 
     data class JsonResource(
-      val registry: Registry,
+      override val registry: Registry,
       override val path: String,
       val body: Json,
     ) : Resource
@@ -18,7 +14,9 @@ object Packed {
     data class Function(
       override val path: String,
       val commands: List<String>, // TODO: use data types
-    ) : Resource
+    ) : Resource {
+      override val registry: Registry get() = Registry.FUNCTIONS
+    }
   }
 
   enum class Type(

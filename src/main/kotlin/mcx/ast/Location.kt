@@ -1,5 +1,6 @@
 package mcx.ast
 
+// TODO: use different data types for module location and resource location
 data class Location(val parts: List<String>) {
   constructor(vararg parts: String) : this(parts.toList())
 
@@ -7,6 +8,9 @@ data class Location(val parts: List<String>) {
     part: String,
   ): Location =
     Location(parts + part)
+
+  fun dropLast(): Location =
+    Location(parts.dropLast(1))
 
   override fun toString(): String =
     parts.joinToString(".")

@@ -4,11 +4,6 @@ package mcx.ast
  * A lifted AST, where all code blocks are lifted to top-level.
  */
 object Lifted {
-  data class Module(
-    val name: Location,
-    val resources: List<Resource>,
-  )
-
   sealed interface Resource {
     val annotations: List<Annotation>
     val name: Location

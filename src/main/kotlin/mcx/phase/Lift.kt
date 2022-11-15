@@ -9,23 +9,14 @@ import mcx.ast.Lifted as L
 class Lift private constructor() {
   private val liftedResources: MutableList<L.Resource> = mutableListOf()
 
-  private fun liftModule(
-    module: C.Module,
-  ): L.Module {
-    val resources = module.resources.map {
-      liftResource(it)
-    }
-    return L.Module(module.name, resources + liftedResources)
-  }
-
   private fun liftResource(
     resource: C.Resource,
-  ): L.Resource {
+  ): List<L.Resource> {
     val env = Env(resource.name)
     val annotations = resource.annotations.map {
       liftAnnotation(it)
     }
-    return when (resource) {
+    return liftedResources + when (resource) {
       is C.Resource.JsonResource -> {
         val body = env.liftTerm(resource.body)
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
@@ -162,8 +153,8 @@ class Lift private constructor() {
   companion object {
     operator fun invoke(
       config: Config,
-      module: C.Module,
-    ): L.Module =
-      Lift().liftModule(module)
+      resource: C.Resource,
+    ): List<L.Resource> =
+      Lift().liftResource(resource)
   }
 }
