@@ -69,21 +69,16 @@ class Parse private constructor(
           "function"        -> {
             skipTrivia()
             val name = readWord()
-            skipTrivia()
             expect('(')
             skipTrivia()
             val binder = parsePattern()
-            skipTrivia()
             expect(':')
             skipTrivia()
             val param = parseType()
-            skipTrivia()
             expect(')')
-            skipTrivia()
             expect("->")
             skipTrivia()
             val result = parseType()
-            skipTrivia()
             expect('=')
             skipTrivia()
             val body = parseTerm()
@@ -108,7 +103,6 @@ class Parse private constructor(
     ranging {
       skipTrivia()
       val name = readWord()
-      skipTrivia()
       expect('=')
       skipTrivia()
       val body = parseTerm()
@@ -168,7 +162,6 @@ class Parse private constructor(
             skipTrivia()
             if (canRead() && peek() == ';') {
               skip()
-              skipTrivia()
               expect(']')
               when (element) {
                 is S.Type.Byte -> S.Type.ByteArray(until())
@@ -184,7 +177,6 @@ class Parse private constructor(
           '{'  -> {
             val elements = parseList(',', '{', '}') {
               val key = readString()
-              skipTrivia()
               expect(':')
               skipTrivia()
               val element = parseType()
@@ -259,13 +251,11 @@ class Parse private constructor(
                         when (operator.name) {
                           "is" -> {
                             val third = parsePattern()
-                            skipTrivia()
                             expect(')')
                             S.Term.Is(first, third, until())
                           }
                           else -> {
                             val third = parseTerm()
-                            skipTrivia()
                             expect(')')
                             val range = until()
                             S.Term.Run(operator.name.toLocation(), S.Term.TupleOf(listOf(first, third), range), range)
@@ -335,7 +325,6 @@ class Parse private constructor(
           '{'  -> {
             val values = parseList(',', '{', '}') {
               val key = parseRanged { readString() }
-              skipTrivia()
               expect(':')
               skipTrivia()
               val value = parseTerm()
@@ -356,11 +345,9 @@ class Parse private constructor(
               "if"      -> {
                 skipTrivia()
                 val condition = parseTerm()
-                skipTrivia()
                 expect("then")
                 skipTrivia()
                 val thenClause = parseTerm()
-                skipTrivia()
                 expect("else")
                 skipTrivia()
                 val elseClause = parseTerm()
@@ -369,11 +356,9 @@ class Parse private constructor(
               "let"     -> {
                 skipTrivia()
                 val name = parsePattern()
-                skipTrivia()
                 expect('=')
                 skipTrivia()
                 val init = parseTerm()
-                skipTrivia()
                 expect(';')
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
@@ -470,7 +455,6 @@ class Parse private constructor(
                           readWord()
                             .toIntOrNull()
                             ?.let { max ->
-                              skipTrivia()
                               expect(')')
                               S.Pattern.IntRangeOf(min.value, max, annotations, until())
                             }
@@ -611,25 +595,29 @@ class Parse private constructor(
 
   private fun expect(
     expected: Char,
-  ): Boolean =
-    if (canRead() && peek() == expected) {
+  ): Boolean {
+    skipTrivia()
+    return if (canRead() && peek() == expected) {
       skip()
       true
     } else {
       diagnostics += Diagnostic.ExpectedToken(expected.toString(), here())
       false
     }
+  }
 
   private fun expect(
     expected: String,
-  ): Boolean =
-    if (canRead(expected.length) && text.startsWith(expected, cursor)) {
+  ): Boolean {
+    skipTrivia()
+    return if (canRead(expected.length) && text.startsWith(expected, cursor)) {
       skip(expected.length)
       true
     } else {
       diagnostics += Diagnostic.ExpectedToken(expected, here())
       false
     }
+  }
 
   private inline fun <R> ranging(action: RangingContext.() -> R): R =
     RangingContext(here()).action()
