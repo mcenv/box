@@ -11,20 +11,20 @@ object Surface {
 
   sealed interface Resource {
     val annotations: List<Annotation>
-    val name: String
+    val name: Ranged<String>
     val range: Range
 
     data class JsonResource(
       override val annotations: List<Annotation>,
       val registry: Registry,
-      override val name: String,
+      override val name: Ranged<String>,
       val body: Term,
       override val range: Range,
     ) : Resource
 
     data class Function(
       override val annotations: List<Annotation>,
-      override val name: String,
+      override val name: Ranged<String>,
       val binder: Pattern,
       val param: Type,
       val result: Type,
@@ -36,7 +36,7 @@ object Surface {
       override val range: Range,
     ) : Resource {
       override val annotations: List<Annotation> get() = throw IllegalStateException()
-      override val name: String get() = throw IllegalStateException()
+      override val name: Ranged<String> get() = throw IllegalStateException()
     }
   }
 

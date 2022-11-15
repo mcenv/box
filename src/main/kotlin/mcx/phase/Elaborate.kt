@@ -93,15 +93,12 @@ class Elaborate private constructor(
     module: Location,
     resource: S.Resource,
   ): C.Resource {
+    val name = module + resource.name.value
     return when (resource) {
       is S.Resource.JsonResource   -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         C.Resource
-          .JsonResource(
-            annotations,
-            resource.registry,
-            module + resource.name,
-          )
+          .JsonResource(annotations, resource.registry, name)
           .also {
             if (!signature) {
               val env = emptyEnv(resources)
@@ -117,14 +114,9 @@ class Elaborate private constructor(
         val binder = elaboratePattern(env, resource.binder, param)
         val result = elaborateType(resource.result)
         C.Resource
-          .Function(
-            annotations,
-            module + resource.name,
-            binder,
-            param,
-            result,
-          )
+          .Function(annotations, name, binder, param, result)
           .also {
+            hover(resource.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
               val body = elaborateTerm(env, resource.body, result)
               it.body = body
@@ -251,7 +243,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.CompoundOf &&
-      expected == null      -> {
+      expected == null            -> {
         val elements = term.elements.associate { (key, element) ->
           @Suppress("NAME_SHADOWING")
           val element = elaborateTerm(env, element)

@@ -68,7 +68,7 @@ class Parse private constructor(
           "/dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
           "function"        -> {
             skipTrivia()
-            val name = readWord()
+            val name = parseRanged { readWord() }
             expect('(')
             skipTrivia()
             val binder = parsePattern()
@@ -102,7 +102,7 @@ class Parse private constructor(
   ): S.Resource.JsonResource =
     ranging {
       skipTrivia()
-      val name = readWord()
+      val name = parseRanged { readWord() }
       expect('=')
       skipTrivia()
       val body = parseTerm()
