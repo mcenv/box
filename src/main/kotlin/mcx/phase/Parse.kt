@@ -190,7 +190,7 @@ class Parse private constructor(
           }
           '&'  -> {
             skip()
-            S.Type.Box(parseType(), until())
+            S.Type.Ref(parseType(), until())
           }
           else -> when (readWord()) {
             "end"    -> S.Type.End(until())
@@ -342,7 +342,7 @@ class Parse private constructor(
           '&'  -> {
             skip()
             skipTrivia()
-            S.Term.BoxOf(parseTerm(), until())
+            S.Term.RefOf(parseTerm(), until())
           }
           else -> {
             when (val word = readWord()) {

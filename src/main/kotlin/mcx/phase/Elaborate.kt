@@ -168,7 +168,7 @@ class Elaborate private constructor(
       type is S.Type.LongArray && one          -> C.Type.LongArray
       type is S.Type.List && one               -> C.Type.List(elaborateType(type.element, C.Kind.ONE))
       type is S.Type.Compound && one           -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.ONE) })
-      type is S.Type.Box && one                -> C.Type.Box(elaborateType(type.element, C.Kind.ONE))
+      type is S.Type.Ref && one                -> C.Type.Ref(elaborateType(type.element, C.Kind.ONE))
       type is S.Type.Tuple && expected == null -> C.Type.Tuple(type.elements.map { elaborateType(it) })
       type is S.Type.Hole                      -> C.Type.Hole
       expected == null                         -> error("kind must be non-null")
@@ -290,10 +290,10 @@ class Elaborate private constructor(
         C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
-      term is S.Term.BoxOf &&
-      expected is C.Type.Box?     -> {
+      term is S.Term.RefOf &&
+      expected is C.Type.Ref?     -> {
         val element = elaborateTerm(env, term.element, expected?.element)
-        C.Term.BoxOf(element, C.Type.Box(element.type))
+        C.Term.RefOf(element, C.Type.Ref(element.type))
       }
 
       term is S.Term.If           -> {
@@ -527,7 +527,7 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
                                    type1.elements.all { (key1, element1) ->
                                      when (val element2 = type2.elements[key1]) {
                                        null -> false
@@ -535,18 +535,18 @@ class Elaborate private constructor(
                                      }
                                    }
 
-      type1 is C.Type.Box &&
-      type2 is C.Type.Box            -> type1.element isSubtypeOf type2.element
+      type1 is C.Type.Ref &&
+      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple          -> type1.elements.size == type2.elements.size &&
-                                        (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
+                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1       -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1       -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Hole           -> true
       type2 is C.Type.Hole           -> true

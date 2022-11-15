@@ -114,7 +114,7 @@ object Core {
       override val kind: Kind get() = Kind.ONE
     }
 
-    data class Box(
+    data class Ref(
       val element: Type,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
@@ -199,7 +199,7 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class BoxOf(
+    data class RefOf(
       val element: Term,
       override val type: Type,
     ) : Term

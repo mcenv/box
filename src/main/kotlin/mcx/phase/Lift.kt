@@ -61,7 +61,7 @@ class Lift private constructor(
       is C.Type.LongArray -> L.Type.LongArray
       is C.Type.List      -> L.Type.List(liftType(type.element))
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
-      is C.Type.Box       -> L.Type.Box(liftType(type.element))
+      is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
       is C.Type.Hole      -> unexpectedHole()
     }
@@ -85,7 +85,7 @@ class Lift private constructor(
       is C.Term.LongArrayOf -> L.Term.LongArrayOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.ListOf      -> L.Term.ListOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
-      is C.Term.BoxOf       -> L.Term.BoxOf(liftTerm(term.element), type)
+      is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)

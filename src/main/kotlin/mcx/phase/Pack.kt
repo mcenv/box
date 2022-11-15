@@ -99,9 +99,9 @@ class Pack private constructor() {
           drop(valueType)
         }
       }
-      is L.Term.BoxOf       -> {
+      is L.Term.RefOf       -> {
         packTerm(term.element)
-        +"function heap/${eraseType(term.element.type).first()}_box"
+        +"function heap/${eraseType(term.element.type).first()}_ref"
         push(P.Type.INT, null)
       }
       is L.Term.TupleOf     -> {
@@ -213,7 +213,7 @@ class Pack private constructor() {
       is L.Type.LongArray -> listOf(P.Type.LONG_ARRAY)
       is L.Type.List      -> listOf(P.Type.LIST)
       is L.Type.Compound  -> listOf(P.Type.COMPOUND)
-      is L.Type.Box       -> listOf(P.Type.INT)
+      is L.Type.Ref       -> listOf(P.Type.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
     }
   }
@@ -265,7 +265,7 @@ class Pack private constructor() {
       is L.Term.LongArrayOf -> Json.ArrayOf(term.elements.map { packJson(it) })
       is L.Term.ListOf      -> Json.ArrayOf(term.elements.map { packJson(it) })
       is L.Term.CompoundOf  -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
-      is L.Term.BoxOf       -> packJson(term.element)
+      is L.Term.RefOf       -> packJson(term.element)
       else                  -> TODO()
     }
   }

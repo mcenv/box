@@ -66,7 +66,7 @@ object Lifted {
       val elements: Map<kotlin.String, Type>,
     ) : Type
 
-    data class Box(
+    data class Ref(
       val element: Type,
     ) : Type
 
@@ -143,7 +143,7 @@ object Lifted {
       override val type: Type,
     ) : Term
 
-    data class BoxOf(
+    data class RefOf(
       val element: Term,
       override val type: Type,
     ) : Term
