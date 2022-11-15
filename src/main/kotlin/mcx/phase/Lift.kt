@@ -6,26 +6,26 @@ import mcx.ast.Location
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
-class Lift private constructor() {
+class Lift private constructor(
+  private val resource: C.Resource,
+) {
   private val liftedResources: MutableList<L.Resource> = mutableListOf()
+  private var freshFunctionId: Int = 0
 
-  private fun liftResource(
-    resource: C.Resource,
-  ): List<L.Resource> {
-    val env = Env(resource.name)
+  private fun lift(): List<L.Resource> {
     val annotations = resource.annotations.map {
       liftAnnotation(it)
     }
     return liftedResources + when (resource) {
       is C.Resource.JsonResource -> {
-        val body = env.liftTerm(resource.body)
+        val body = liftTerm(resource.body)
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
       }
       is Core.Resource.Function  -> {
         val binder = liftPattern(resource.binder)
         val param = liftType(resource.param)
         val result = liftType(resource.result)
-        val body = env.liftTerm(resource.body)
+        val body = liftTerm(resource.body)
         L.Resource.Function(annotations, resource.name, binder, param, result, body)
       }
       is C.Resource.Hole         -> unexpectedHole()
@@ -67,7 +67,7 @@ class Lift private constructor() {
     }
   }
 
-  private fun Env.liftTerm(
+  private fun liftTerm(
     term: C.Term,
   ): L.Term {
     val type = liftType(term.type)
@@ -125,36 +125,30 @@ class Lift private constructor() {
     }
   }
 
+  private fun createFreshFunction(
+    body: L.Term,
+  ): Lifted.Resource.Function {
+    val type = L.Type.Tuple(emptyList())
+    return L.Resource
+      .Function(
+        emptyList(),
+        Location(resource.name.parts.dropLast(1) + "${resource.name.parts.last()}:${freshFunctionId++}"),
+        L.Pattern.TupleOf(emptyList(), emptyList(), type),
+        type,
+        type,
+        body,
+      )
+      .also { liftedResources += it }
+  }
+
   private fun unexpectedHole(): Nothing =
     error("unexpected: hole")
-
-  private inner class Env(
-    private val name: Location,
-  ) {
-    private var id: Int = 0
-
-    fun createFreshFunction(
-      body: L.Term,
-    ): Lifted.Resource.Function {
-      val type = L.Type.Tuple(emptyList())
-      return L.Resource
-        .Function(
-          emptyList(),
-          Location(name.parts.dropLast(1) + "${name.parts.last()}:${id++}"),
-          L.Pattern.TupleOf(emptyList(), emptyList(), type),
-          type,
-          type,
-          body,
-        )
-        .also { liftedResources += it }
-    }
-  }
 
   companion object {
     operator fun invoke(
       config: Config,
       resource: C.Resource,
     ): List<L.Resource> =
-      Lift().liftResource(resource)
+      Lift(resource).lift()
   }
 }
