@@ -244,7 +244,7 @@ class Parse private constructor(
                       skip()
                       (first as? S.Term.Var)?.let { operator ->
                         val range = until()
-                        S.Term.Run(operator.name.toLocation(), second, range)
+                        S.Term.Run(S.Ranged(operator.name.toLocation(), operator.range), second, range)
                       }
                     } else {
                       (second as? S.Term.Var)?.let { operator ->
@@ -258,7 +258,7 @@ class Parse private constructor(
                             val third = parseTerm()
                             expect(')')
                             val range = until()
-                            S.Term.Run(operator.name.toLocation(), S.Term.TupleOf(listOf(first, third), range), range)
+                            S.Term.Run(S.Ranged(operator.name.toLocation(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
                           }
                         }
                       }

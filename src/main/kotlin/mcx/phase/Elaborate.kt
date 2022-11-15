@@ -332,15 +332,15 @@ class Elaborate private constructor(
 
       term is S.Term.Run &&
       expected == null            -> {
-        val resources = env.findResources(term.name)
+        val resources = env.findResources(term.name.value)
         when (resources.size) {
           0    -> {
-            diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
+            diagnostics += Diagnostic.ResourceNotFound(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
           1    -> when (val resource = resources.first()) {
             !is Core.Resource.Function -> {
-              diagnostics += Diagnostic.ExpectedFunction(term.range)
+              diagnostics += Diagnostic.ExpectedFunction(term.name.range)
               C.Term.Hole(C.Type.Hole)
             }
             else                       -> {
@@ -349,7 +349,7 @@ class Elaborate private constructor(
             }
           }
           else -> {
-            diagnostics += Diagnostic.AmbiguousResource(term.name, term.range)
+            diagnostics += Diagnostic.AmbiguousResource(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
