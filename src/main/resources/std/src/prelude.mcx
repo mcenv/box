@@ -1,89 +1,89 @@
-function + @no_drop _: (int, int) -> int =
+function + (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx"
 
-function - @no_drop _: (int, int) -> int =
+function - (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx"
 
-function * @no_drop _: (int, int) -> int =
+function * (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx"
 
-function / @no_drop _: (int, int) -> int =
+function / (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx"
 
-function % @no_drop _: (int, int) -> int =
+function % (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx"
 
-function min @no_drop _: (int, int) -> int =
+function min (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx"
 
-function max @no_drop _: (int, int) -> int =
+function max (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx"
 
-function = @no_drop _: (int, int) -> int =
+function = (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function < @no_drop _: (int, int) -> int =
+function < (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function <= @no_drop _: (int, int) -> int =
+function <= (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function > @no_drop _: (int, int) -> int =
+function > (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function >= @no_drop _: (int, int) -> int =
+function >= (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function != @no_drop _: (int, int) -> int =
+function != (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   let @no_drop _ = 1b;
   command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b"
 
-function load_ints _: () -> (end, end, end) = (
+function load_ints (_: ()) -> (end, end, end) = (
   command "execute store result score #0 mcx run data get storage mcx: int[-1]",
   command "data remove storage mcx: int[-1]",
   command "execute store result score #1 mcx run data get storage mcx: int[-1]",
 )
 
-function int_to_byte _: int -> byte =
+function int_to_byte (_: int) -> byte =
   let @no_drop _ = 0b;
   command "execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]"
 
-function int_to_short _: int -> short =
+function int_to_short (_: int) -> short =
   let @no_drop _ = 0s;
   command "execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]"
 
-function int_to_int @no_drop _: int -> int =
+function int_to_int (@no_drop _: int) -> int =
   command ""
 
-function int_to_long _: int -> long =
+function int_to_long (_: int) -> long =
   let @no_drop _ = 0l;
   command "execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]"
 
-function int_to_float _: int -> float =
+function int_to_float (_: int) -> float =
   let @no_drop _ = 0.0f;
   command "execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]"
 
-function int_to_double _: int -> double =
+function int_to_double (_: int) -> double =
   let @no_drop _ = 0.0;
   command "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]"
 
-function int_dup @no_drop _: int -> (int, int) =
+function int_dup (@no_drop _: int) -> (int, int) =
   command "data modify storage mcx: int append from storage mcx: int[-1]"
