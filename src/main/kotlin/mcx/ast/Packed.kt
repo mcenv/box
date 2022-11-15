@@ -36,6 +36,9 @@ object Packed {
     INT_ARRAY("int_array"),
     LONG_ARRAY("long_array"),
     LIST("list"),
-    COMPOUND("compound"),
+    COMPOUND("compound");
+
+    override fun toString(): String =
+      stack
   }
 }

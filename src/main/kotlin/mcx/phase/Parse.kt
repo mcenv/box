@@ -444,7 +444,11 @@ class Parse private constructor(
           }
           else -> when (val word = readWord()) {
             "_"  -> S.Pattern.Discard(annotations, until())
-            else -> S.Pattern.Var(word, annotations, until())
+            else ->
+              word
+                .toIntOrNull()
+                ?.let { S.Pattern.IntOf(it, annotations, until()) }
+              ?: S.Pattern.Var(word, annotations, until())
           }
         }
       } else {

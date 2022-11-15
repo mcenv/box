@@ -259,6 +259,12 @@ object Surface {
     val annotations: List<Annotation>
     val range: Range
 
+    data class IntOf(
+      val value: Int,
+      override val annotations: List<Annotation>,
+      override val range: Range,
+    ) : Pattern
+
     data class TupleOf(
       val elements: List<Pattern>,
       override val annotations: List<Annotation>,

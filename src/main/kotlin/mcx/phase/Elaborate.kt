@@ -190,7 +190,7 @@ class Elaborate private constructor(
   ): C.Term {
     return when {
       term is S.Term.BoolOf &&
-      expected is C.Type.Bool?   -> C.Term.BoolOf(term.value, C.Type.Bool)
+      expected is C.Type.Bool?    -> C.Term.BoolOf(term.value, C.Type.Bool)
 
       term is S.Term.ByteOf &&
       expected is C.Type.Byte?      -> C.Term.ByteOf(term.value, C.Type.Byte)
@@ -304,7 +304,7 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is S.Term.Let         -> {
+      term is S.Term.Let          -> {
         val init = elaborateTerm(env, term.init)
         val (binder, body) = env.restoring {
           val binder = elaboratePattern(env, term.binder, init.type)
@@ -315,7 +315,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Var &&
-      expected == null         ->
+      expected == null            ->
         when (val entry = env[term.name]) {
           null -> {
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
@@ -331,7 +331,7 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Run &&
-      expected == null         ->
+      expected == null            ->
         when (val resource = env.findResource(term.name)) {
           null                       -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name, term.range)
@@ -348,7 +348,7 @@ class Elaborate private constructor(
         }
 
       term is S.Term.Is &&
-      expected is C.Type.Bool? -> {
+      expected is C.Type.Bool?    -> {
         val scrutinee = elaborateTerm(env, term.scrutinee)
         val scrutineer = env.restoring {
           elaboratePattern(env, term.scrutineer, scrutinee.type)
@@ -356,10 +356,10 @@ class Elaborate private constructor(
         C.Term.Is(scrutinee, scrutineer, C.Type.Bool)
       }
 
-      term is S.Term.Command   -> C.Term.Command(term.value, expected ?: C.Type.End)
+      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
 
       term is S.Term.TupleOf &&
-      expected == null         -> {
+      expected == null            -> {
         val elements = term.elements.map { element ->
           elaborateTerm(env, element)
         }
@@ -367,7 +367,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.TupleOf &&
-      expected is C.Type.Tuple -> {
+      expected is C.Type.Tuple    -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range)
         }
@@ -377,12 +377,12 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
       }
 
-      term is S.Term.Hole        ->
+      term is S.Term.Hole         ->
         C.Term.Hole(expected ?: C.Type.Hole)
 
-      expected == null           -> error("type must be non-null")
+      expected == null            -> error("type must be non-null")
 
-      else                       -> {
+      else                        -> {
         val actual = elaborateTerm(env, term)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += Diagnostic.TypeMismatch(expected, actual.type, term.range)
@@ -417,8 +417,11 @@ class Elaborate private constructor(
   ): C.Pattern {
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
+      pattern is S.Pattern.IntOf &&
+      expected is C.Type.Int?  -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int)
+
       pattern is S.Pattern.TupleOf &&
-      expected is C.Type.Tuple     -> {
+      expected is C.Type.Tuple -> {
         if (expected.elements.size != pattern.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end)
         }
@@ -429,7 +432,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null -> {
+      expected == null         -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(env, element)
         }
@@ -437,7 +440,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected != null -> {
+      expected != null         -> {
         if (C.Kind.ONE isSubkindOf expected.kind) {
           env.bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, annotations, expected)
@@ -448,7 +451,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected == null -> {
+      expected == null         -> {
         diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
         C.Pattern.Var(pattern.name, annotations, C.Type.End)
       }
@@ -485,10 +488,10 @@ class Elaborate private constructor(
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type.End -> true
+      type1 is C.Type.End            -> true
 
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool     -> true
+      type2 is C.Type.Bool           -> true
 
       type1 is C.Type.Byte &&
       type2 is C.Type.Byte      -> true
@@ -524,31 +527,31 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
                                    type1.elements.all { (key1, element1) ->
                                      when (val element2 = type2.elements[key1]) {
                                        null -> false
                                        else -> element1 isSubtypeOf element2
-                                    }
-                                  }
+                                     }
+                                   }
 
       type1 is C.Type.Box &&
-      type2 is C.Type.Box       -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Box            -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
-                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple          -> type1.elements.size == type2.elements.size &&
+                                        (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1       -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1       -> type1 isSubtypeOf type2.elements.first()
 
-      type1 is C.Type.Hole     -> true
-      type2 is C.Type.Hole     -> true
+      type1 is C.Type.Hole           -> true
+      type2 is C.Type.Hole           -> true
 
-      else                     -> false
+      else                           -> false
     }
   }
 

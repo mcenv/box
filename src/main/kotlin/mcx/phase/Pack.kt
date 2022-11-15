@@ -62,7 +62,7 @@ class Pack private constructor() {
         pushType(P.Type.BYTE_ARRAY, "value ${term.elements.joinToString(",", "[B;", "]") { "0b" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.BYTE_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.BYTE.stack}[-1]"
+          +"data modify storage $MCX_STORAGE ${P.Type.BYTE_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.BYTE}[-1]"
           dropType(P.Type.BYTE)
         }
       }
@@ -70,7 +70,7 @@ class Pack private constructor() {
         pushType(P.Type.INT_ARRAY, "value ${term.elements.joinToString(",", "[I;", "]") { "0" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.INT_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.INT.stack}[-1]"
+          +"data modify storage $MCX_STORAGE ${P.Type.INT_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.INT}[-1]"
           dropType(P.Type.INT)
         }
       }
@@ -78,7 +78,7 @@ class Pack private constructor() {
         pushType(P.Type.LONG_ARRAY, "value ${term.elements.joinToString(",", "[L;", "]") { "0l" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.LONG_ARRAY.stack}[-1][$index] set from storage $MCX_STORAGE ${P.Type.LONG.stack}[-1]"
+          +"data modify storage $MCX_STORAGE ${P.Type.LONG_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.LONG}[-1]"
           dropType(P.Type.LONG)
         }
       }
@@ -89,7 +89,7 @@ class Pack private constructor() {
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == P.Type.LIST) -2 else -1
-            +"data modify storage $MCX_STORAGE ${P.Type.LIST.stack}[$index] append from storage $MCX_STORAGE ${elementType.stack}[-1]"
+            +"data modify storage $MCX_STORAGE ${P.Type.LIST}[$index] append from storage $MCX_STORAGE $elementType[-1]"
             dropType(elementType)
           }
         }
@@ -100,13 +100,13 @@ class Pack private constructor() {
           packTerm(element)
           val valueType = eraseType(element.type).first()
           val index = if (valueType == P.Type.COMPOUND) -2 else -1
-          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND.stack}[$index].$key set from storage $MCX_STORAGE ${valueType.stack}[-1]"
+          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND}[$index].$key set from storage $MCX_STORAGE $valueType[-1]"
           dropType(valueType)
         }
       }
       is L.Term.BoxOf       -> {
         packTerm(term.element)
-        +"function heap/${eraseType(term.element.type).first().stack}_box"
+        +"function heap/${eraseType(term.element.type).first()}_box"
         bind(null, P.Type.INT)
       }
       is L.Term.TupleOf     -> {
@@ -122,7 +122,7 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Let     -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -135,12 +135,12 @@ class Pack private constructor() {
           }
         }
       }
-      is L.Term.Var     -> {
+      is L.Term.Var         -> {
         val type = eraseType(term.type).first() // TODO
         val index = this[term.name, type]
-        pushType(type, "from storage $MCX_STORAGE ${type.stack}[$index]")
+        pushType(type, "from storage $MCX_STORAGE $type[$index]")
       }
-      is L.Term.Run     -> {
+      is L.Term.Run         -> {
         packTerm(term.arg)
 
         +"function ${packLocation(term.name)}"
@@ -149,12 +149,11 @@ class Pack private constructor() {
         }
         eraseType(term.type).forEach { bind(null, it) }
       }
-      is L.Term.Is      -> {
+      is L.Term.Is          -> {
         packTerm(term.scrutinee)
-        eraseType(term.scrutinee.type).forEach { dropType(it) }
-        pushType(P.Type.BYTE, "value 1b") // always matches for now
+        matchPattern(term.scrutineer)
       }
-      is L.Term.Command -> {
+      is L.Term.Command     -> {
         +term.value
         eraseType(term.type).forEach { bind(null, it) }
       }
@@ -165,6 +164,7 @@ class Pack private constructor() {
     pattern: L.Pattern,
   ) {
     when (pattern) {
+      is L.Pattern.IntOf   -> Unit
       is L.Pattern.TupleOf ->
         pattern.elements
           .asReversed()
@@ -174,12 +174,38 @@ class Pack private constructor() {
     }
   }
 
+  private fun Env.matchPattern(
+    scrutineer: L.Pattern,
+  ) {
+    +"scoreboard players set $REGISTER_0 1"
+    fun visit(
+      scrutineer: L.Pattern,
+    ) {
+      when (scrutineer) {
+        is L.Pattern.IntOf   -> {
+          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Type.INT}[-1]"
+          dropType(P.Type.INT)
+          +"execute unless score $REGISTER_1 matches ${scrutineer.value} run scoreboard players set $REGISTER_0 0"
+        }
+        is L.Pattern.TupleOf ->
+          scrutineer.elements
+            .asReversed()
+            .forEach { visit(it) } // TODO: short-circuit optimization (in lift phase?)
+        is L.Pattern.Var     -> dropType(eraseType(scrutineer.type).first())
+        is L.Pattern.Discard -> eraseType(scrutineer.type).forEach { dropType(it) }
+      }
+    }
+    visit(scrutineer)
+    pushType(P.Type.BYTE, "value 0b")
+    +"execute store result storage $MCX_STORAGE ${P.Type.BYTE}[-1] byte 1 run scoreboard players get $REGISTER_0"
+  }
+
   private fun Env.pushType(
     type: P.Type,
     source: String,
   ) {
     if (type != P.Type.END) {
-      +"data modify storage $MCX_STORAGE ${type.stack} append $source"
+      +"data modify storage $MCX_STORAGE $type append $source"
     }
     bind(null, type)
   }
@@ -191,7 +217,7 @@ class Pack private constructor() {
   ) {
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != P.Type.END) {
-      +"data remove storage $MCX_STORAGE ${drop.stack}[$index]"
+      +"data remove storage $MCX_STORAGE $drop[$index]"
     }
     drop(drop, index)
   }
@@ -331,6 +357,9 @@ class Pack private constructor() {
 
   companion object {
     private const val MCX_STORAGE: String = "mcx:"
+    private const val MCX_OBJECTIVE: String = "mcx"
+    private const val REGISTER_0: String = "#0 $MCX_OBJECTIVE"
+    private const val REGISTER_1: String = "#1 $MCX_OBJECTIVE"
 
     operator fun invoke(
       config: Config,

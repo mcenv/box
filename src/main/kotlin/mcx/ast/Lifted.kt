@@ -199,6 +199,12 @@ object Lifted {
     val annotations: List<Annotation>
     val type: Type
 
+    data class IntOf(
+      val value: Int,
+      override val annotations: List<Annotation>,
+      override val type: Type,
+    ) : Pattern
+
     data class TupleOf(
       val elements: List<Pattern>,
       override val annotations: List<Annotation>,
