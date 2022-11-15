@@ -50,3 +50,10 @@ tasks.withType<KotlinCompile> {
 application {
   mainClass.set("mcx.cli.MainKt")
 }
+
+@Suppress("UnstableApiUsage")
+tasks.withType<ProcessResources> {
+  filesMatching("version") {
+    expand("version" to version)
+  }
+}

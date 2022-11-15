@@ -10,6 +10,7 @@ fun main(args: Array<String>) {
     Build,
     Init,
     Lsp,
+    Version,
   )
   parser.parse(args)
 }
