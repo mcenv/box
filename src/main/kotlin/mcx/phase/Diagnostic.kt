@@ -163,6 +163,19 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class StageMismatch(
+    expected: Int,
+    actual: Int,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    """stage mismatch:
+      |  expected: $expected
+      |  actual  : $actual
+    """.trimMargin(),
+    DiagnosticSeverity.Error,
+  )
+
   class ArityMismatch(
     expected: Int,
     actual: Int,

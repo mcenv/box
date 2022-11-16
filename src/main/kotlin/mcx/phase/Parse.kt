@@ -186,7 +186,13 @@ class Parse private constructor(
           }
           '&'  -> {
             skip()
+            skipTrivia()
             S.Type.Ref(parseType(), until())
+          }
+          '`'  -> {
+            skip()
+            skipTrivia()
+            S.Type.Code(parseType(), until())
           }
           else -> when (readWord()) {
             "end"    -> S.Type.End(until())
@@ -336,6 +342,16 @@ class Parse private constructor(
             skip()
             skipTrivia()
             S.Term.RefOf(parseTerm(), until())
+          }
+          '`'  -> {
+            skip()
+            skipTrivia()
+            S.Term.CodeOf(parseTerm(), until())
+          }
+          '$'  -> {
+            skip()
+            skipTrivia()
+            S.Term.Splice(parseTerm(), until())
           }
           else -> {
             when (val word = readWord()) {

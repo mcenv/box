@@ -131,6 +131,11 @@ object Surface {
       override val range: Range,
     ) : Type
 
+    data class Code(
+      val element: Type,
+      override val range: Range,
+    ) : Type
+
     data class Hole(
       override val range: Range,
     ) : Type
@@ -247,6 +252,16 @@ object Surface {
 
     data class Command(
       val value: String,
+      override val range: Range,
+    ) : Term
+
+    data class CodeOf(
+      val element: Term,
+      override val range: Range,
+    ) : Term
+
+    data class Splice(
+      val element: Term,
       override val range: Range,
     ) : Term
 

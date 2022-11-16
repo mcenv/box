@@ -93,12 +93,11 @@ class Elaborate private constructor(
     module: Location,
     resource: S.Resource,
   ): C.Resource {
-    val name = module + resource.name.value
     return when (resource) {
       is S.Resource.JsonResource   -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         C.Resource
-          .JsonResource(annotations, resource.registry, name)
+          .JsonResource(annotations, resource.registry, module + resource.name.value)
           .also {
             if (!signature) {
               val env = emptyEnv(resources)
@@ -114,7 +113,7 @@ class Elaborate private constructor(
         val binder = elaboratePattern(env, resource.binder, param)
         val result = elaborateType(resource.result)
         C.Resource
-          .Function(annotations, name, binder, param, result)
+          .Function(annotations, module + resource.name.value, binder, param, result)
           .also {
             hover(resource.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
@@ -161,9 +160,9 @@ class Elaborate private constructor(
       type is S.Type.Compound && one           -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.ONE) })
       type is S.Type.Ref && one                -> C.Type.Ref(elaborateType(type.element, C.Kind.ONE))
       type is S.Type.Tuple && expected == null -> C.Type.Tuple(type.elements.map { elaborateType(it) })
+      type is S.Type.Code && one               -> C.Type.Code(elaborateType(type.element))
       type is S.Type.Hole                      -> C.Type.Hole
       expected == null                         -> error("kind must be non-null")
-
       else                                     -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
@@ -312,10 +311,13 @@ class Elaborate private constructor(
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
             C.Term.Hole(C.Type.Hole)
           }
-          else -> if (entry.used) {
-            diagnostics += Diagnostic.VarAlreadyUsed(term.name, term.range)
-            C.Term.Hole(entry.type)
-          } else {
+          else -> {
+            if (entry.used) {
+              diagnostics += Diagnostic.VarAlreadyUsed(term.name, term.range)
+            }
+            if (env.stage != entry.stage) {
+              diagnostics += Diagnostic.StageMismatch(env.stage, entry.stage, term.range)
+            }
             entry.used = true
             C.Term.Var(term.name, entry.type)
           }
@@ -356,8 +358,6 @@ class Elaborate private constructor(
         C.Term.Is(scrutinee, scrutineer, C.Type.Bool)
       }
 
-      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
-
       term is S.Term.TupleOf &&
       expected == null            -> {
         val elements = term.elements.map { element ->
@@ -376,6 +376,23 @@ class Elaborate private constructor(
         }
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }))
       }
+
+      term is S.Term.CodeOf &&
+      expected is C.Type.Code?    -> {
+        val element = env.quoting {
+          elaborateTerm(env, term.element, expected?.element)
+        }
+        C.Term.CodeOf(element, C.Type.Code(element.type))
+      }
+
+      term is S.Term.Splice       -> {
+        val element = env.splicing {
+          elaborateTerm(env, term.element, expected?.let { C.Type.Code(it) })
+        }
+        C.Term.Splice(element, element.type)
+      }
+
+      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
 
       term is S.Term.Hole         ->
         C.Term.Hole(expected ?: C.Type.Hole)
@@ -547,6 +564,9 @@ class Elaborate private constructor(
       type2 is C.Type.Tuple &&
       type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
 
+      type1 is C.Type.Code &&
+      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+
       type1 is C.Type.Hole     -> true
       type2 is C.Type.Hole     -> true
 
@@ -584,6 +604,8 @@ class Elaborate private constructor(
   ) {
     val entries: List<Entry> get() = _entries
     private var savedSize: Int = 0
+    var stage: Int = 0
+      private set
 
     operator fun get(name: String): Entry? =
       _entries.lastOrNull { it.name == name }
@@ -602,10 +624,10 @@ class Elaborate private constructor(
       name: String,
       type: C.Type,
     ) {
-      _entries += Entry(name, false, type)
+      _entries += Entry(name, false, stage, type)
     }
 
-    fun <R> restoring(
+    inline fun <R> restoring(
       action: () -> R,
     ): R {
       savedSize = _entries.size
@@ -613,6 +635,24 @@ class Elaborate private constructor(
       repeat(_entries.size - savedSize) {
         _entries.removeLast()
       }
+      return result
+    }
+
+    inline fun <R> quoting(
+      action: () -> R,
+    ): R {
+      --stage
+      val result = action()
+      ++stage
+      return result
+    }
+
+    inline fun <R> splicing(
+      action: () -> R,
+    ): R {
+      ++stage
+      val result = action()
+      --stage
       return result
     }
 
@@ -627,6 +667,7 @@ class Elaborate private constructor(
     data class Entry(
       val name: String,
       var used: Boolean,
+      val stage: Int,
       val type: C.Type,
     )
 

@@ -1,6 +1,7 @@
 package mcx.phase
 
 import kotlinx.coroutines.*
+import mcx.ast.Core
 import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.ast.Packed
@@ -129,14 +130,23 @@ class Build(
       }
     }
 
+  suspend fun fetchStaged(
+    config: Config,
+    location: Location,
+  ): Core.Resource =
+    coroutineScope {
+      val core = fetchCore(config, location.dropLast())
+      val resource = core.module.resources.find { it.name == location }!!
+      Stage(config, resource)
+    }
+
   suspend fun fetchLifted(
     config: Config,
     location: Location,
   ): List<Lifted.Resource> =
     coroutineScope {
-      val core = fetchCore(config, location.dropLast())
-      val resource = core.module.resources.find { it.name == location }!!
-      Lift(config, resource)
+      val staged = fetchStaged(config, location)
+      Lift(config, staged)
     }
 
   suspend fun fetchPacked(

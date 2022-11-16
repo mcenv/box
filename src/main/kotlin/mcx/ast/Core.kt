@@ -126,6 +126,12 @@ object Core {
       override val kind: Kind get() = Kind(elements.size)
     }
 
+    data class Code(
+      val element: Type,
+    ) : Type {
+      override val kind: Kind get() = Kind.ONE
+    }
+
     object Hole : Type {
       override val kind: Kind get() = Kind.ZERO
     }
@@ -242,6 +248,16 @@ object Core {
 
     data class Command(
       val value: String,
+      override val type: Type,
+    ) : Term
+
+    data class CodeOf(
+      val element: Term,
+      override val type: Type,
+    ) : Term
+
+    data class Splice(
+      val element: Term,
       override val type: Type,
     ) : Term
 
