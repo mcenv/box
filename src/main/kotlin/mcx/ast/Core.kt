@@ -231,6 +231,7 @@ object Core {
 
     data class Var(
       val name: String,
+      val level: Int,
       override val type: Type,
     ) : Term
 
@@ -291,6 +292,7 @@ object Core {
 
     data class Var(
       val name: String,
+      val level: Int,
       override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern

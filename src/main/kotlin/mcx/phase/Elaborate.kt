@@ -305,13 +305,14 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Var &&
-      expected == null            ->
-        when (val entry = env[term.name]) {
-          null -> {
+      expected == null ->
+        when (val level = env[term.name]) {
+          -1   -> {
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
             C.Term.Hole(C.Type.Hole)
           }
           else -> {
+            val entry = env.entries[level]
             if (entry.used) {
               diagnostics += Diagnostic.VarAlreadyUsed(term.name, term.range)
             }
@@ -319,7 +320,7 @@ class Elaborate private constructor(
               diagnostics += Diagnostic.StageMismatch(env.stage, entry.stage, term.range)
             }
             entry.used = true
-            C.Term.Var(term.name, entry.type)
+            C.Term.Var(term.name, level, entry.type)
           }
         }
 
@@ -468,17 +469,17 @@ class Elaborate private constructor(
       expected != null         -> {
         if (C.Kind.ONE isSubkindOf expected.kind) {
           env.bind(pattern.name, expected)
-          C.Pattern.Var(pattern.name, annotations, expected)
+          C.Pattern.Var(pattern.name, env.entries.lastIndex, annotations, expected)
         } else {
           diagnostics += Diagnostic.KindMismatch(C.Kind.ONE, expected.kind, pattern.range)
-          C.Pattern.Var(pattern.name, annotations, C.Type.End)
+          C.Pattern.Hole(annotations, expected)
         }
       }
 
       pattern is S.Pattern.Var &&
       expected == null         -> {
         diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
-        C.Pattern.Var(pattern.name, annotations, C.Type.End)
+        C.Pattern.Hole(annotations, C.Type.Hole)
       }
 
       pattern is S.Pattern.Discard -> C.Pattern.Discard(annotations, expected ?: C.Type.End)
@@ -607,8 +608,8 @@ class Elaborate private constructor(
     var stage: Int = 0
       private set
 
-    operator fun get(name: String): Entry? =
-      _entries.lastOrNull { it.name == name }
+    operator fun get(name: String): Int =
+      _entries.indexOfLast { it.name == name }
 
     fun findResources(
       expected: Location,

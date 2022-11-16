@@ -168,7 +168,7 @@ object Lifted {
     ) : Term
 
     data class Var(
-      val name: String,
+      val level: Int,
       override val type: Type,
     ) : Term
 
@@ -214,7 +214,7 @@ object Lifted {
     ) : Pattern
 
     data class Var(
-      val name: String,
+      val level: Int,
       override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern

@@ -9,7 +9,7 @@ import mcx.ast.Packed as P
 
 class Pack private constructor() {
   private val commands: MutableList<String> = mutableListOf()
-  private val entries: Map<P.Type, MutableList<String?>> =
+  private val entries: Map<P.Type, MutableList<Int?>> =
     P.Type
       .values()
       .associateWith { mutableListOf() }
@@ -132,7 +132,7 @@ class Pack private constructor() {
       }
       is L.Term.Var         -> {
         val type = eraseType(term.type).first() // TODO
-        val index = this[term.name, type]
+        val index = this[term.level, type]
         push(type, "from storage $MCX_STORAGE $type[$index]")
       }
       is L.Term.Run         -> {
@@ -165,7 +165,7 @@ class Pack private constructor() {
         pattern.elements
           .asReversed()
           .forEach { packPattern(it) }
-      is L.Pattern.Var        -> name(pattern.name, eraseType(pattern.type).first())
+      is L.Pattern.Var        -> bind(pattern.level, eraseType(pattern.type).first())
       is L.Pattern.Discard    -> Unit
     }
   }
@@ -299,28 +299,28 @@ class Pack private constructor() {
     entry.removeAt(entry.size + index)
   }
 
-  private fun name(
-    name: String,
+  private fun bind(
+    level: Int,
     type: P.Type,
   ) {
     val entry = entry(type)
     val index = entry.indexOfLast { it == null }
-    entry[index] = name
+    entry[index] = level
   }
 
   operator fun get(
-    name: String,
+    level: Int,
     type: P.Type,
   ): Int {
     val entry = entry(type)
     return entry
-             .indexOfLast { it == name }
-             .also { require(it != -1) { "not found: '$name'" } } - entry.size
+             .indexOfLast { it == level }
+             .also { require(it != -1) } - entry.size
   }
 
   private fun entry(
     type: P.Type,
-  ): MutableList<String?> =
+  ): MutableList<Int?> =
     entries[type]!!
 
   private operator fun String.unaryPlus() {
