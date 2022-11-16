@@ -26,32 +26,32 @@ function max (@no_drop _: (int, int)) -> int =
   let _ = (load_ints ());
   command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx"
 
-function = (@no_drop _: (int, int)) -> int =
+function = (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function < (@no_drop _: (int, int)) -> int =
+function < (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function <= (@no_drop _: (int, int)) -> int =
+function <= (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function > (@no_drop _: (int, int)) -> int =
+function > (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function >= (@no_drop _: (int, int)) -> int =
+function >= (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 0b;
   command "execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
 
-function != (@no_drop _: (int, int)) -> int =
+function != (@no_drop _: (int, int)) -> bool =
   let _ = (load_ints ());
   let @no_drop _ = 1b;
   command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b"
