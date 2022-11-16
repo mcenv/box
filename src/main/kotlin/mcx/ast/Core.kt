@@ -297,7 +297,7 @@ object Core {
       override val type: Type,
     ) : Pattern
 
-    data class Discard(
+    data class Drop(
       override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern

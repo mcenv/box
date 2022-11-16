@@ -166,7 +166,7 @@ class Pack private constructor() {
           .asReversed()
           .forEach { packPattern(it) }
       is L.Pattern.Var        -> bind(pattern.level, eraseType(pattern.type).first())
-      is L.Pattern.Discard    -> Unit
+      is L.Pattern.Drop       -> Unit
     }
   }
 
@@ -193,7 +193,7 @@ class Pack private constructor() {
             .asReversed()
             .forEach { visit(it) } // TODO: short-circuit optimization (in lift phase?)
         is L.Pattern.Var        -> drop(eraseType(scrutineer.type).first())
-        is L.Pattern.Discard    -> eraseType(scrutineer.type).forEach { drop(it) }
+        is L.Pattern.Drop       -> eraseType(scrutineer.type).forEach { drop(it) }
       }
     }
     visit(scrutineer)

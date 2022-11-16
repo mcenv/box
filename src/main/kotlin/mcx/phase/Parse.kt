@@ -486,7 +486,7 @@ class Parse private constructor(
             }
           }
           else -> when (val word = readWord()) {
-            "_"  -> S.Pattern.Discard(annotations, until())
+            "_"  -> S.Pattern.Drop(annotations, until())
             else ->
               word
                 .toIntOrNull()

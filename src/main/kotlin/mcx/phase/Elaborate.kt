@@ -482,7 +482,7 @@ class Elaborate private constructor(
         C.Pattern.Hole(annotations, C.Type.Hole)
       }
 
-      pattern is S.Pattern.Discard -> C.Pattern.Discard(annotations, expected ?: C.Type.End)
+      pattern is S.Pattern.Drop -> C.Pattern.Drop(annotations, expected ?: C.Type.End)
 
       pattern is S.Pattern.Hole    -> C.Pattern.Hole(annotations, expected ?: C.Type.Hole)
 

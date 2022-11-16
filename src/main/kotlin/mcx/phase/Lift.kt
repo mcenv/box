@@ -93,7 +93,7 @@ class Lift private constructor(
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
           createFreshFunction(
             L.Term.Let(
-              L.Pattern.Discard(listOf(L.Annotation.NoDrop), thenClause.type),
+              L.Pattern.Drop(listOf(L.Annotation.NoDrop), thenClause.type),
               thenClause,
               L.Term.Command("scoreboard players set #0 mcx 1", thenClause.type),
               thenClause.type,
@@ -124,7 +124,7 @@ class Lift private constructor(
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
       is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
       is C.Pattern.Var        -> L.Pattern.Var(pattern.level, annotations, type)
-      is C.Pattern.Discard    -> L.Pattern.Discard(annotations, type)
+      is C.Pattern.Drop       -> L.Pattern.Drop(annotations, type)
       is C.Pattern.Hole       -> unexpectedHole()
     }
   }

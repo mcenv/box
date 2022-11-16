@@ -299,7 +299,7 @@ object Surface {
       override val range: Range,
     ) : Pattern
 
-    data class Discard(
+    data class Drop(
       override val annotations: List<Annotation>,
       override val range: Range,
     ) : Pattern
