@@ -5,7 +5,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import mcx.ast.Location
 import mcx.ast.Value
-import kotlin.math.max
 import mcx.ast.Core as C
 
 class Stage private constructor(
@@ -17,41 +16,16 @@ class Stage private constructor(
     return when (resource) {
       is C.Resource.JsonResource -> resource
       is C.Resource.Function     ->
-        if (max(getMinStage(resource.param), getMinStage(resource.result)) == 0) {
+        if (C.Annotation.Inline in resource.annotations) {
+          null
+        } else {
           C.Resource
             .Function(resource.annotations, resource.name, resource.binder, resource.param, resource.result)
             .also {
               it.body = stageTerm(resource.body)
             }
-        } else {
-          null
         }
       is C.Resource.Hole         -> unexpectedHole()
-    }
-  }
-
-  private fun getMinStage(
-    type: C.Type,
-  ): Int {
-    return when (type) {
-      is C.Type.End       -> 0
-      is C.Type.Bool      -> 0
-      is C.Type.Byte      -> 0
-      is C.Type.Short     -> 0
-      is C.Type.Int       -> 0
-      is C.Type.Long      -> 0
-      is C.Type.Float     -> 0
-      is C.Type.Double    -> 0
-      is C.Type.String    -> 0
-      is C.Type.ByteArray -> 0
-      is C.Type.IntArray  -> 0
-      is C.Type.LongArray -> 0
-      is C.Type.List      -> getMinStage(type.element)
-      is C.Type.Compound  -> type.elements.values.maxOfOrNull { getMinStage(it) } ?: 0
-      is C.Type.Ref       -> getMinStage(type.element)
-      is C.Type.Tuple     -> type.elements.maxOfOrNull { getMinStage(it) } ?: 0
-      is C.Type.Code      -> getMinStage(type.element) + 1
-      is C.Type.Hole      -> 0
     }
   }
 
