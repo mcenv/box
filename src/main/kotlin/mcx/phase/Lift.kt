@@ -1,6 +1,5 @@
 package mcx.phase
 
-import mcx.ast.Core
 import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.ast.Core as C
@@ -13,20 +12,22 @@ class Lift private constructor(
   private var freshFunctionId: Int = 0
 
   private fun lift(): List<L.Resource> {
-    val annotations = resource.annotations.map {
-      liftAnnotation(it)
-    }
+    val annotations = resource.annotations.map { liftAnnotation(it) }
     return liftedResources + when (resource) {
       is C.Resource.JsonResource -> {
         val body = liftTerm(resource.body)
         L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
       }
-      is Core.Resource.Function  -> {
+      is C.Resource.Function     -> {
         val binder = liftPattern(resource.binder)
         val param = liftType(resource.param)
         val result = liftType(resource.result)
-        val body = liftTerm(resource.body)
-        L.Resource.Function(annotations, resource.name, binder, param, result, body)
+        if (L.Annotation.Builtin in annotations) {
+          L.Resource.Builtin(annotations, resource.name)
+        } else {
+          val body = liftTerm(resource.body)
+          L.Resource.Function(annotations, resource.name, binder, param, result, body)
+        }
       }
       is C.Resource.Hole         -> unexpectedHole()
     }

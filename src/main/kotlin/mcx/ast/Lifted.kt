@@ -23,6 +23,11 @@ object Lifted {
       val result: Type,
       val body: Term,
     ) : Resource
+
+    data class Builtin(
+      override val annotations: List<Annotation>,
+      override val name: Location,
+    ) : Resource
   }
 
   sealed interface Annotation {

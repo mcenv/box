@@ -1,8 +1,10 @@
 package mcx.phase
 
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.plus
 import mcx.ast.Location
 import mcx.ast.Value
-import mcx.phase.Stage.Env.Companion.emptyEnv
 import kotlin.math.max
 import mcx.ast.Core as C
 
@@ -49,7 +51,7 @@ class Stage private constructor(
       is C.Type.Ref       -> getMinStage(type.element)
       is C.Type.Tuple     -> type.elements.maxOfOrNull { getMinStage(it) } ?: 0
       is C.Type.Code      -> getMinStage(type.element) + 1
-      is C.Type.Hole      -> unexpectedHole()
+      is C.Type.Hole      -> 0
     }
   }
 
@@ -68,24 +70,23 @@ class Stage private constructor(
       is C.Term.ByteArrayOf -> C.Term.ByteArrayOf(term.elements.map { stageTerm(it) }, term.type)
       is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { stageTerm(it) }, term.type)
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.ListOf     -> C.Term.ListOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.CompoundOf -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, term.type)
-      is C.Term.RefOf      -> C.Term.RefOf(stageTerm(term.element), term.type)
-      is C.Term.TupleOf    -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.If         -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
-      is C.Term.Let        -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
-      is C.Term.Var        -> term
-      is C.Term.Run        -> C.Term.Run(term.name, stageTerm(term.arg), term.type)
-      is C.Term.Is         -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
-      is C.Term.Command    -> term
-      is C.Term.CodeOf     -> term
-      is C.Term.Splice     -> quoteValue(emptyEnv().evalTerm(term), term.type)
-      is C.Term.Hole       -> unexpectedHole()
+      is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { stageTerm(it) }, term.type)
+      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, term.type)
+      is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), term.type)
+      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, term.type)
+      is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
+      is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
+      is C.Term.Var         -> term
+      is C.Term.Run         -> C.Term.Run(term.name, stageTerm(term.arg), term.type)
+      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
+      is C.Term.Command     -> term
+      is C.Term.CodeOf      -> term
+      is C.Term.Splice      -> quoteValue(persistentListOf<Lazy<Value>>().evalTerm(term), term.type)
+      is C.Term.Hole        -> term
     }
   }
 
-  // TODO: laziness
-  private fun Env.evalTerm(
+  private fun PersistentList<Lazy<Value>>.evalTerm(
     term: C.Term,
   ): Value {
     return when (term) {
@@ -109,23 +110,17 @@ class Stage private constructor(
           is Value.BoolOf -> if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
           else            -> Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
         }
-      is C.Term.Let         ->
-        restoring {
-          bindValue(evalTerm(term.init), term.binder)
-          evalTerm(term.body)
-        }
+      is C.Term.Let         -> (this + bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
       is C.Term.Var         -> this[term.level].value
-      is C.Term.Run         ->
-        restoring {
-          val resource = dependencies[term.name] as C.Resource.Function
-          if (C.Annotation.Builtin in resource.annotations) {
-            val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
-            builtin.eval(evalTerm(term.arg))
-          } else {
-            bind(lazy { evalTerm(term.arg) })
-            evalTerm(resource.body)
-          }
+      is C.Term.Run         -> {
+        val resource = dependencies[term.name] as C.Resource.Function
+        if (C.Annotation.Builtin in resource.annotations) {
+          val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
+          builtin.eval(evalTerm(term.arg))
+        } else {
+          bindValue(evalTerm(term.arg), resource.binder).evalTerm(resource.body)
         }
+      }
       is C.Term.Is          -> {
         val scrutinee = evalTerm(term.scrutinee)
         when (val matched = matchValue(scrutinee, term.scrutineer)) {
@@ -144,17 +139,20 @@ class Stage private constructor(
     }
   }
 
-  private fun Env.bindValue(
+  private fun bindValue(
     value: Value,
     binder: C.Pattern,
-  ) {
+  ): PersistentList<Lazy<Value>> {
     return when {
       value is Value.TupleOf &&
-      binder is C.Pattern.TupleOf -> (value.elements zip binder.elements).forEach { (value, binder) -> bindValue(value.value, binder) }
+      binder is C.Pattern.TupleOf ->
+        (value.elements zip binder.elements).fold(persistentListOf()) { env, (value, binder) ->
+          env + bindValue(value.value, binder)
+        }
 
-      binder is C.Pattern.Var     -> bind(lazyOf(value))
+      binder is C.Pattern.Var     -> persistentListOf(lazyOf(value))
 
-      else                        -> Unit
+      else                        -> persistentListOf()
     }
   }
 
@@ -227,38 +225,6 @@ class Stage private constructor(
 
   private fun unexpectedHole(): Nothing =
     error("unexpected: hole")
-
-  private class Env private constructor() {
-    private val values: MutableList<Lazy<Value>> = mutableListOf()
-    private var savedSize: Int = 0
-
-    operator fun get(
-      level: Int,
-    ): Lazy<Value> =
-      values[level]
-
-    fun bind(
-      value: Lazy<Value>,
-    ) {
-      values += value
-    }
-
-    inline fun <R> restoring(
-      action: () -> R,
-    ): R {
-      savedSize = values.size
-      val result = action()
-      repeat(values.size - savedSize) {
-        values.removeLast()
-      }
-      return result
-    }
-
-    companion object {
-      fun emptyEnv(): Env =
-        Env()
-    }
-  }
 
   companion object {
     operator fun invoke(

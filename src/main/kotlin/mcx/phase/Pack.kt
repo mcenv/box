@@ -1,7 +1,6 @@
 package mcx.phase
 
 import mcx.ast.Json
-import mcx.ast.Lifted
 import mcx.ast.Location
 import mcx.util.quoted
 import mcx.ast.Lifted as L
@@ -19,11 +18,11 @@ class Pack private constructor() {
   ): P.Resource {
     val path = packLocation(resource.name)
     return when (resource) {
-      is L.Resource.JsonResource  -> {
+      is L.Resource.JsonResource -> {
         val body = packJson(resource.body)
         P.Resource.JsonResource(resource.registry, path, body)
       }
-      is Lifted.Resource.Function -> {
+      is L.Resource.Function     -> {
         +"# ${resource.name}"
 
         val binderTypes = eraseType(resource.binder.type)
@@ -36,6 +35,12 @@ class Pack private constructor() {
           binderTypes.forEach { drop(it, resultTypes) }
         }
 
+        P.Resource.Function(path, commands)
+      }
+      is L.Resource.Builtin      -> {
+        +"# ${resource.name}"
+        val builtin = BUILTINS[resource.name]!!
+        builtin.commands.forEach { +it }
         P.Resource.Function(path, commands)
       }
     }

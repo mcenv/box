@@ -1,88 +1,104 @@
 package mcx.ast
 
 sealed interface Value {
-  data class BoolOf(
+  @JvmInline
+  value class BoolOf(
     val value: Boolean,
   ) : Value
 
-  data class ByteOf(
+  @JvmInline
+  value class ByteOf(
     val value: Byte,
   ) : Value
 
-  data class ShortOf(
+  @JvmInline
+  value class ShortOf(
     val value: Short,
   ) : Value
 
-  data class IntOf(
+  @JvmInline
+  value class IntOf(
     val value: Int,
   ) : Value
 
-  data class LongOf(
+  @JvmInline
+  value class LongOf(
     val value: Long,
   ) : Value
 
-  data class FloatOf(
+  @JvmInline
+  value class FloatOf(
     val value: Float,
   ) : Value
 
-  data class DoubleOf(
+  @JvmInline
+  value class DoubleOf(
     val value: Double,
   ) : Value
 
-  data class StringOf(
+  @JvmInline
+  value class StringOf(
     val value: String,
   ) : Value
 
-  data class ByteArrayOf(
+  @JvmInline
+  value class ByteArrayOf(
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  data class IntArrayOf(
+  @JvmInline
+  value class IntArrayOf(
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  data class LongArrayOf(
+  @JvmInline
+  value class LongArrayOf(
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  data class ListOf(
+  @JvmInline
+  value class ListOf(
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  data class CompoundOf(
+  @JvmInline
+  value class CompoundOf(
     val elements: Map<String, Lazy<Value>>,
   ) : Value
 
-  data class RefOf(
+  @JvmInline
+  value class RefOf(
     val element: Lazy<Value>,
   ) : Value
 
-  data class TupleOf(
+  @JvmInline
+  value class TupleOf(
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  data class If(
+  class If(
     val condition: Value,
     val thenClause: Lazy<Value>,
     val elseClause: Lazy<Value>,
   ) : Value
 
-  data class Var(
+  class Var(
     val name: String,
     val level: Int,
   ) : Value
 
-  data class Is(
+  class Is(
     val scrutinee: Value,
     val scrutineer: Core.Pattern,
     val scrutineeType: Core.Type,
   ) : Value
 
-  data class CodeOf(
+  @JvmInline
+  value class CodeOf(
     val element: Lazy<Value>,
   ) : Value
 
-  data class Splice(
+  class Splice(
     val element: Value,
     val elementType: Core.Type,
   ) : Value
