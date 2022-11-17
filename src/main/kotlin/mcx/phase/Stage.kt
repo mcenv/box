@@ -77,14 +77,26 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
       is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
       is C.Term.Var         -> term
-      is C.Term.Run         -> C.Term.Run(term.name, stageTerm(term.arg), term.type)
+      is C.Term.Run         -> {
+        val resource = dependencies[term.name] as C.Resource.Function
+        if (C.Annotation.Inline in resource.annotations) {
+          normalizeTerm(term)
+        } else {
+          C.Term.Run(term.name, stageTerm(term.arg), term.type)
+        }
+      }
       is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
       is C.Term.Command     -> term
       is C.Term.CodeOf      -> term
-      is C.Term.Splice      -> quoteValue(persistentListOf<Lazy<Value>>().evalTerm(term), term.type)
+      is C.Term.Splice      -> normalizeTerm(term)
       is C.Term.Hole        -> term
     }
   }
+
+  private fun normalizeTerm(
+    term: C.Term,
+  ): C.Term =
+    quoteValue(persistentListOf<Lazy<Value>>().evalTerm(term), term.type)
 
   private fun PersistentList<Lazy<Value>>.evalTerm(
     term: C.Term,
@@ -111,14 +123,15 @@ class Stage private constructor(
           else            -> Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
         }
       is C.Term.Let         -> (this + bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
-      is C.Term.Var         -> this[term.level].value
+      is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
       is C.Term.Run         -> {
         val resource = dependencies[term.name] as C.Resource.Function
+        val arg = evalTerm(term.arg)
         if (C.Annotation.Builtin in resource.annotations) {
           val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
-          builtin.eval(evalTerm(term.arg))
+          builtin.eval(arg) ?: Value.Run(term.name, arg)
         } else {
-          bindValue(evalTerm(term.arg), resource.binder).evalTerm(resource.body)
+          bindValue(arg, resource.binder).evalTerm(resource.body)
         }
       }
       is C.Term.Is          -> {
@@ -214,6 +227,10 @@ class Stage private constructor(
       }
       is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
       is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Run         -> {
+        val resource = dependencies[value.name] as C.Resource.Function
+        C.Term.Run(value.name, quoteValue(value.arg, resource.param), resource.result)
+      }
       is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
       is Value.CodeOf      -> {
         type as C.Type.Code

@@ -87,6 +87,11 @@ sealed interface Value {
     val level: Int,
   ) : Value
 
+  class Run(
+    val name: Location,
+    val arg: Value,
+  ) : Value
+
   class Is(
     val scrutinee: Value,
     val scrutineer: Core.Pattern,
