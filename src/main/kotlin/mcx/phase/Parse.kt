@@ -133,6 +133,7 @@ class Parse private constructor(
           "tick"    -> S.Annotation.Tick(until())
           "load"    -> S.Annotation.Load(until())
           "no_drop" -> S.Annotation.NoDrop(until())
+          "builtin" -> S.Annotation.Builtin(until())
           else      -> null
         }
       } else {

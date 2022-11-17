@@ -41,6 +41,8 @@ object Core {
 
     object NoDrop : Annotation
 
+    object Builtin : Annotation
+
     object Hole : Annotation
   }
 

@@ -31,6 +31,8 @@ object Lifted {
     object Load : Annotation
 
     object NoDrop : Annotation
+
+    object Builtin : Annotation
   }
 
   sealed interface Type {

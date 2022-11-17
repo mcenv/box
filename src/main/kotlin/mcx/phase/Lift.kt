@@ -36,10 +36,11 @@ class Lift private constructor(
     annotation: C.Annotation,
   ): L.Annotation {
     return when (annotation) {
-      is C.Annotation.Tick   -> L.Annotation.Tick
-      is C.Annotation.Load   -> L.Annotation.Load
-      is C.Annotation.NoDrop -> L.Annotation.NoDrop
-      is C.Annotation.Hole   -> unexpectedHole()
+      is C.Annotation.Tick    -> L.Annotation.Tick
+      is C.Annotation.Load    -> L.Annotation.Load
+      is C.Annotation.NoDrop  -> L.Annotation.NoDrop
+      is C.Annotation.Builtin -> L.Annotation.Builtin
+      is C.Annotation.Hole    -> unexpectedHole()
     }
   }
 
