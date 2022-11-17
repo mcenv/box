@@ -41,15 +41,20 @@ object Core {
 
     object NoDrop : Annotation
 
+    object Inline : Annotation
+
     object Builtin : Annotation
 
     object Hole : Annotation
   }
 
-  data class Kind(val arity: Int) {
+  data class Kind(
+    val arity: Int,
+    val meta: Boolean,
+  ) {
     companion object {
-      val ZERO: Kind = Kind(0)
-      val ONE: Kind = Kind(1)
+      val ZERO: Kind = Kind(0, false)
+      val ONE: Kind = Kind(1, false)
     }
   }
 
@@ -124,14 +129,13 @@ object Core {
 
     data class Tuple(
       val elements: kotlin.collections.List<Type>,
-    ) : Type {
-      override val kind: Kind get() = Kind(elements.size)
-    }
+      override val kind: Kind,
+    ) : Type
 
     data class Code(
       val element: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind(1, true)
     }
 
     object Hole : Type {

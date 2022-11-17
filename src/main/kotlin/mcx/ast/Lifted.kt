@@ -37,6 +37,8 @@ object Lifted {
 
     object NoDrop : Annotation
 
+    object Inline : Annotation
+
     object Builtin : Annotation
   }
 

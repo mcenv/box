@@ -163,6 +163,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class RequiredInline(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "required: @inline",
+    DiagnosticSeverity.Error,
+  )
+
   class StageMismatch(
     expected: Int,
     actual: Int,
@@ -214,19 +222,6 @@ sealed class Diagnostic(
     """type mismatch:
       |  expected: ${prettyType(expected)}
       |  actual  : ${prettyType(actual)}
-    """.trimMargin(),
-    DiagnosticSeverity.Error,
-  )
-
-  class KindMismatch(
-    expected: C.Kind,
-    actual: C.Kind,
-    range: Range,
-  ) : Diagnostic(
-    range,
-    """kind mismatch:
-      |  expected: ${prettyKind(expected)}
-      |  actual  : ${prettyKind(actual)}
     """.trimMargin(),
     DiagnosticSeverity.Error,
   )

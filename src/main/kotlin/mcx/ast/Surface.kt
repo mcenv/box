@@ -55,6 +55,10 @@ object Surface {
       override val range: Range,
     ) : Annotation
 
+    data class Inline(
+      override val range: Range,
+    ) : Annotation
+
     data class Builtin(
       override val range: Range,
     ) : Annotation

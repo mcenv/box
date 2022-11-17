@@ -40,6 +40,7 @@ class Lift private constructor(
       is C.Annotation.Tick    -> L.Annotation.Tick
       is C.Annotation.Load    -> L.Annotation.Load
       is C.Annotation.NoDrop  -> L.Annotation.NoDrop
+      is C.Annotation.Inline  -> L.Annotation.Inline
       is C.Annotation.Builtin -> L.Annotation.Builtin
       is C.Annotation.Hole    -> unexpectedHole()
     }
