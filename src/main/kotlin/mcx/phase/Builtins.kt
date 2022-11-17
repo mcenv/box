@@ -33,7 +33,7 @@ sealed class Builtin(
 ) {
   abstract val commands: List<String>
 
-  abstract fun eval(arg: Value): Value
+  abstract fun eval(arg: Value): Value?
 }
 
 object IntAdd : Builtin(Location("prelude", "+")) {
@@ -44,10 +44,12 @@ object IntAdd : Builtin(Location("prelude", "+")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.IntOf(a.value + b.value)
   }
 }
@@ -60,10 +62,12 @@ object IntSub : Builtin(Location("prelude", "-")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.IntOf(a.value - b.value)
   }
 }
@@ -76,10 +80,12 @@ object IntMul : Builtin(Location("prelude", "*")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.IntOf(a.value * b.value)
   }
 }
@@ -92,10 +98,12 @@ object IntDiv : Builtin(Location("prelude", "/")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return if (b.value == 0) {
       Value.IntOf(0)
     } else {
@@ -112,10 +120,12 @@ object IntMod : Builtin(Location("prelude", "%")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return if (b.value == 0) {
       Value.IntOf(0)
     } else {
@@ -132,10 +142,12 @@ object IntMin : Builtin(Location("prelude", "min")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.IntOf(min(a.value, b.value))
   }
 }
@@ -148,10 +160,12 @@ object IntMax : Builtin(Location("prelude", "max")) {
     "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.IntOf(max(a.value, b.value))
   }
 }
@@ -165,10 +179,12 @@ object IntEq : Builtin(Location("prelude", "=")) {
     "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value == b.value)
   }
 }
@@ -182,10 +198,12 @@ object IntLt : Builtin(Location("prelude", "<")) {
     "execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value < b.value)
   }
 }
@@ -199,10 +217,12 @@ object IntLe : Builtin(Location("prelude", "<=")) {
     "execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value <= b.value)
   }
 }
@@ -216,10 +236,12 @@ object IntGt : Builtin(Location("prelude", ">")) {
     "execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value > b.value)
   }
 }
@@ -233,10 +255,12 @@ object IntGe : Builtin(Location("prelude", ">=")) {
     "execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value >= b.value)
   }
 }
@@ -250,10 +274,12 @@ object IntNe : Builtin(Location("prelude", "!=")) {
     "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.TupleOf
-    val a = arg.elements[0].value as Value.IntOf
-    val b = arg.elements[1].value as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.TupleOf) return null
+    val a = arg.elements[0].value
+    if (a !is Value.IntOf) return null
+    val b = arg.elements[1].value
+    if (b !is Value.IntOf) return null
     return Value.BoolOf(a.value != b.value)
   }
 }
@@ -264,8 +290,8 @@ object IntToByte : Builtin(Location("prelude", "int_to_byte")) {
     "execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
     return Value.ByteOf(arg.value.toByte())
   }
 }
@@ -276,8 +302,8 @@ object IntToShort : Builtin(Location("prelude", "int_to_short")) {
     "execute store result storage mcx: short[-1] byte 1 run data get storage mcx: int[-1]",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
     return Value.ShortOf(arg.value.toShort())
   }
 }
@@ -296,8 +322,8 @@ object IntToLong : Builtin(Location("prelude", "int_to_long")) {
     "execute store result storage mcx: long[-1] byte 1 run data get storage mcx: int[-1]",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
     return Value.LongOf(arg.value.toLong())
   }
 }
@@ -308,8 +334,8 @@ object IntToFloat : Builtin(Location("prelude", "int_to_float")) {
     "execute store result storage mcx: float[-1] byte 1 run data get storage mcx: int[-1]",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
     return Value.FloatOf(arg.value.toFloat())
   }
 }
@@ -320,8 +346,8 @@ object IntToDouble : Builtin(Location("prelude", "int_to_double")) {
     "execute store result storage mcx: double[-1] byte 1 run data get storage mcx: int[-1]",
   )
 
-  override fun eval(arg: Value): Value {
-    arg as Value.IntOf
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
     return Value.DoubleOf(arg.value.toDouble())
   }
 }
