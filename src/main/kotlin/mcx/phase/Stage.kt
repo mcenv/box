@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.Location
 import mcx.phase.Stage.Env.Companion.emptyEnv
+import kotlin.math.max
 import mcx.ast.Core as C
 
 class Stage private constructor(
@@ -9,16 +10,45 @@ class Stage private constructor(
 ) {
   private fun stageResource(
     resource: C.Resource,
-  ): C.Resource {
+  ): C.Resource? {
     return when (resource) {
       is C.Resource.JsonResource -> resource
       is C.Resource.Function     ->
-        C.Resource
-          .Function(resource.annotations, resource.name, resource.binder, resource.param, resource.result)
-          .also {
-            it.body = stageTerm(resource.body)
-          }
+        if (max(getMinStage(resource.param), getMinStage(resource.result)) == 0) {
+          C.Resource
+            .Function(resource.annotations, resource.name, resource.binder, resource.param, resource.result)
+            .also {
+              it.body = stageTerm(resource.body)
+            }
+        } else {
+          null
+        }
       is C.Resource.Hole         -> unexpectedHole()
+    }
+  }
+
+  private fun getMinStage(
+    type: C.Type,
+  ): Int {
+    return when (type) {
+      is C.Type.End       -> 0
+      is C.Type.Bool      -> 0
+      is C.Type.Byte      -> 0
+      is C.Type.Short     -> 0
+      is C.Type.Int       -> 0
+      is C.Type.Long      -> 0
+      is C.Type.Float     -> 0
+      is C.Type.Double    -> 0
+      is C.Type.String    -> 0
+      is C.Type.ByteArray -> 0
+      is C.Type.IntArray  -> 0
+      is C.Type.LongArray -> 0
+      is C.Type.List      -> getMinStage(type.element)
+      is C.Type.Compound  -> type.elements.values.maxOfOrNull { getMinStage(it) } ?: 0
+      is C.Type.Ref       -> getMinStage(type.element)
+      is C.Type.Tuple     -> type.elements.maxOfOrNull { getMinStage(it) } ?: 0
+      is C.Type.Code      -> getMinStage(type.element) + 1
+      is C.Type.Hole      -> unexpectedHole()
     }
   }
 
@@ -47,7 +77,7 @@ class Stage private constructor(
       is C.Term.Run         -> C.Term.Run(term.name, stageTerm(term.arg), term.type)
       is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
       is C.Term.Command     -> term
-      is C.Term.CodeOf      -> term // TODO
+      is C.Term.CodeOf      -> term
       is C.Term.Splice      -> emptyEnv().evalTerm(term)
       is C.Term.Hole        -> unexpectedHole()
     }
@@ -97,7 +127,7 @@ class Stage private constructor(
       is C.Term.Command     -> term
       is C.Term.CodeOf      -> C.Term.CodeOf(evalTerm(term.element), term.type)
       is C.Term.Splice      ->
-        when (val element = stageTerm(term.element)) {
+        when (val element = evalTerm(term.element)) {
           is C.Term.CodeOf -> element.element
           else             -> C.Term.Splice(element, term.type)
         }
@@ -178,7 +208,7 @@ class Stage private constructor(
       config: Config,
       dependencies: Map<Location, C.Resource>,
       resource: C.Resource,
-    ): C.Resource =
+    ): C.Resource? =
       Stage(dependencies).stageResource(resource)
   }
 }

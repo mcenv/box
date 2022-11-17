@@ -133,7 +133,7 @@ class Build(
   suspend fun fetchStaged(
     config: Config,
     location: Location,
-  ): Core.Resource =
+  ): Core.Resource? =
     coroutineScope {
       val core = fetchCore(config, location.dropLast())
       val dependencies =
@@ -152,8 +152,10 @@ class Build(
     location: Location,
   ): List<Lifted.Resource> =
     coroutineScope {
-      val staged = fetchStaged(config, location)
-      Lift(config, staged)
+      when (val staged = fetchStaged(config, location)) {
+        null -> emptyList()
+        else -> Lift(config, staged)
+      }
     }
 
   suspend fun fetchPacked(
