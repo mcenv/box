@@ -136,8 +136,15 @@ class Build(
   ): Core.Resource =
     coroutineScope {
       val core = fetchCore(config, location.dropLast())
+      val dependencies =
+        fetchSurface(config, location.dropLast())!!.module.imports
+          .map { async { fetchCore(config, it.value).module.resources } }
+          .plus(async { fetchCore(config, PRELUDE).module.resources })
+          .awaitAll()
+          .flatten()
+          .associateBy { it.name }
       val resource = core.module.resources.find { it.name == location }!!
-      Stage(config, resource)
+      Stage(config, dependencies, resource)
     }
 
   suspend fun fetchLifted(
