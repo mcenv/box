@@ -14,9 +14,9 @@ object Normalize {
     private val values: PersistentList<Lazy<Value>>,
   ) : List<Lazy<Value>> by values {
     fun bind(
-      values: PersistentList<Lazy<Value>>,
+      values: List<Value>,
     ): Env =
-      Env(resources, this.values + values)
+      Env(resources, this.values + values.map { lazyOf(it) })
 
     companion object {
       fun emptyEnv(
@@ -60,49 +60,52 @@ object Normalize {
         }
       is C.Term.Let         -> bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
       is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run         -> {
-        val resource = resources[term.name] as C.Resource.Function
+      is C.Term.Run     -> {
         val arg = evalTerm(term.arg)
-        if (C.Annotation.Builtin in resource.annotations) {
-          val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
-          builtin.eval(arg) ?: Value.Run(term.name, arg)
-        } else {
-          bind(bindValue(arg, resource.binder)).evalTerm(resource.body)
+        when (val resource = resources[term.name] as? C.Resource.Function) {
+          null -> Value.Run(term.name, arg)
+          else ->
+            if (C.Annotation.Builtin in resource.annotations) {
+              val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
+              builtin.eval(arg) ?: Value.Run(term.name, arg)
+            } else {
+              bind(bindValue(arg, resource.binder)).evalTerm(resource.body)
+            }
         }
       }
-      is C.Term.Is          -> {
+      is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         when (val matched = matchValue(scrutinee, term.scrutineer)) {
           null -> Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
           else -> Value.BoolOf(matched)
         }
       }
-      is C.Term.Command     -> error("unexpected: command") // TODO
-      is C.Term.CodeOf      -> Value.CodeOf(lazy { evalTerm(term.element) })
-      is C.Term.Splice      ->
+      is C.Term.Command -> error("unexpected: command") // TODO
+      is C.Term.CodeOf  -> Value.CodeOf(lazy { evalTerm(term.element) })
+      is C.Term.Splice  ->
         when (val element = evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
-      is C.Term.TypeOf      -> Value.TypeOf(term.value)
-      is C.Term.Hole        -> error("unexpected: hole")
+      is C.Term.TypeOf  -> Value.TypeOf(term.value)
+      is C.Term.Hole    -> Value.Hole(term.type)
     }
   }
 
   fun bindValue(
     value: Value,
     binder: C.Pattern,
-  ): PersistentList<Lazy<Value>> {
+  ): List<Value> {
     return when {
       value is Value.TupleOf &&
       binder is C.Pattern.TupleOf ->
-        (value.elements zip binder.elements).fold(persistentListOf()) { env, (value, binder) ->
-          env + bindValue(value.value, binder)
+        (value.elements zip binder.elements).fold(mutableListOf()) { env, (value, binder) ->
+          env.also { it += bindValue(value.value, binder) }
         }
 
-      binder is C.Pattern.Var     -> persistentListOf(lazyOf(value))
+      binder is C.Pattern.Var     -> listOf(value)
 
-      else                        -> persistentListOf()
+      else                        -> emptyList()
     }
   }
 
@@ -164,17 +167,18 @@ object Normalize {
       }
       is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
       is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run         -> {
+      is Value.Run    -> {
         val resource = resources[value.name] as C.Resource.Function
         C.Term.Run(value.name, quoteValue(value.arg, resource.param), resource.result)
       }
-      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
-      is Value.CodeOf      -> {
+      is Value.Is     -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
+      is Value.CodeOf -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.TypeOf      -> C.Term.TypeOf(value.value, C.Type.Type)
+      is Value.Splice -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.TypeOf -> C.Term.TypeOf(value.value, C.Type.Type)
+      is Value.Hole   -> C.Term.Hole(value.type)
     }
   }
 }

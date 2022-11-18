@@ -112,4 +112,9 @@ sealed interface Value {
   value class TypeOf(
     val value: Core.Type,
   ) : Value
+
+  @JvmInline
+  value class Hole(
+    val type: Core.Type,
+  ) : Value
 }

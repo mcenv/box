@@ -350,11 +350,11 @@ class Elaborate private constructor(
       expected == null            -> {
         val resources = env.findResources(term.name.value)
         when (resources.size) {
-          0    -> {
+          0 -> {
             diagnostics += Diagnostic.ResourceNotFound(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
-          1    -> when (val resource = resources.first()) {
+          1 -> when (val resource = resources.first()) {
             !is Core.Resource.Function -> {
               diagnostics += Diagnostic.ExpectedFunction(term.name.range)
               C.Term.Hole(C.Type.Hole)
@@ -362,7 +362,16 @@ class Elaborate private constructor(
             else                       -> {
               hover(term.name.range) { createFunctionDocumentation(resource) }
               val arg = elaborateTerm(env, term.arg, resource.param)
-              C.Term.Run(resource.name, arg, resource.result)
+              val argValue =
+                Normalize.Env
+                  .emptyEnv(emptyMap())
+                  .evalTerm(arg)
+              val result =
+                Normalize
+                  .bindValue(argValue, resource.binder)
+                  .map { (it as? Value.TypeOf)?.value }
+                  .evalType(resource.result)
+              C.Term.Run(resource.name, arg, result)
             }
           }
           else -> {
