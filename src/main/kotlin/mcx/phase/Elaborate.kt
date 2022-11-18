@@ -481,11 +481,18 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Var &&
       expected != null          -> {
-        if (expected.kind.arity == 1) {
+        val meta = expected.kind.meta == env.meta
+        if (!meta) {
+          diagnostics += Diagnostic.RequiredInline(pattern.range)
+        }
+        val arity = expected.kind.arity == 1
+        if (!arity) {
+          diagnostics += Diagnostic.ArityMismatch(1, expected.kind.arity, pattern.range)
+        }
+        if (meta && arity) {
           env.bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, env.entries.lastIndex, annotations, expected)
         } else {
-          diagnostics += Diagnostic.ArityMismatch(1, expected.kind.arity, pattern.range)
           C.Pattern.Hole(annotations, expected)
         }
       }
