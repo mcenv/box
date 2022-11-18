@@ -608,7 +608,7 @@ class Elaborate private constructor(
     val name = resource.name.parts.last()
     val param = prettyType(resource.param)
     val result = prettyType(resource.result)
-    return "function $name: $param -> $result"
+    return "function ($name: $param) -> $result"
   }
 
   private class Env private constructor(
