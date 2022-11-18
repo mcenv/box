@@ -3,8 +3,10 @@ package mcx.phase
 import mcx.ast.Core
 import mcx.ast.Location
 import mcx.ast.Surface
+import mcx.ast.Value
 import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
+import mcx.phase.Normalize.evalTerm
 import mcx.util.contains
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
@@ -392,8 +394,18 @@ class Elaborate private constructor(
         if (expected.elements.size != term.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range)
         }
-        val elements = term.elements.mapIndexed { index, element ->
-          elaborateTerm(env, element, expected.elements.getOrNull(index))
+        val elements = mutableListOf<C.Type?>().let { types ->
+          term.elements.mapIndexed { index, element ->
+            val type =
+              expected.elements
+                .getOrNull(index)
+                ?.let { types.evalType(it) }
+            elaborateTerm(env, element, type).also {
+              types += (Normalize.Env
+                .emptyEnv(emptyMap())
+                .evalTerm(it) as? Value.TypeOf)?.value
+            }
+          }
         }
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind(elements.size, env.stage > 0)))
       }
@@ -539,6 +551,33 @@ class Elaborate private constructor(
     }
   }
 
+  private fun List<C.Type?>.evalType(
+    type: C.Type,
+  ): C.Type {
+    return when (type) {
+      is C.Type.End       -> type
+      is C.Type.Bool      -> type
+      is C.Type.Byte      -> type
+      is C.Type.Short     -> type
+      is C.Type.Int       -> type
+      is C.Type.Long      -> type
+      is C.Type.Float     -> type
+      is C.Type.Double    -> type
+      is C.Type.String    -> type
+      is C.Type.ByteArray -> type
+      is C.Type.IntArray  -> type
+      is C.Type.LongArray -> type
+      is C.Type.List      -> C.Type.List(evalType(type.element))
+      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { evalType(it.value) })
+      is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
+      is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
+      is C.Type.Code      -> C.Type.Code(evalType(type.element))
+      is C.Type.Type      -> type
+      is C.Type.Var       -> getOrNull(type.level) ?: type
+      is C.Type.Hole      -> type
+    }
+  }
+
   private infix fun C.Type.isSubtypeOf(
     type2: C.Type,
   ): Boolean {
@@ -583,40 +622,40 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                  type1.elements.all { (key1, element1) ->
-                                    when (val element2 = type2.elements[key1]) {
-                                      null -> false
-                                      else -> element1 isSubtypeOf element2
-                                    }
-                                  }
+      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+                                   type1.elements.all { (key1, element1) ->
+                                     when (val element2 = type2.elements[key1]) {
+                                       null -> false
+                                       else -> element1 isSubtypeOf element2
+                                     }
+                                   }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
+                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Type &&
-      type2 is C.Type.Type     -> true
+      type2 is C.Type.Type      -> true
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var      -> type1.level == type2.level
+      type2 is C.Type.Var       -> type1.level == type2.level
 
-      type1 is C.Type.Hole     -> true
-      type2 is C.Type.Hole     -> true
+      type1 is C.Type.Hole      -> true
+      type2 is C.Type.Hole      -> true
 
-      else                     -> false
+      else                      -> false
     }
   }
 
