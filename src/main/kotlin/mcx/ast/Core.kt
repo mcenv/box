@@ -55,90 +55,95 @@ object Core {
     companion object {
       val ZERO: Kind = Kind(0, false)
       val ONE: Kind = Kind(1, false)
+      val META: Kind = Kind(1, true)
     }
   }
 
   sealed interface Type {
     val kind: Kind
 
-    object End : Type {
+    object End : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Bool : Type {
+    object Bool : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Byte : Type {
+    object Byte : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Short : Type {
+    object Short : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Int : Type {
+    object Int : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Long : Type {
+    object Long : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Float : Type {
+    object Float : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Double : Type {
+    object Double : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object String : Type {
+    object String : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object ByteArray : Type {
+    object ByteArray : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object IntArray : Type {
+    object IntArray : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object LongArray : Type {
+    object LongArray : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class List(
-      val element: Type,
-    ) : Type {
+      val element: Core.Type,
+    ) : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Compound(
-      val elements: Map<kotlin.String, Type>,
-    ) : Type {
+      val elements: Map<kotlin.String, Core.Type>,
+    ) : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Ref(
-      val element: Type,
-    ) : Type {
+      val element: Core.Type,
+    ) : Core.Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Tuple(
-      val elements: kotlin.collections.List<Type>,
+      val elements: kotlin.collections.List<Core.Type>,
       override val kind: Kind,
-    ) : Type
+    ) : Core.Type
 
     data class Code(
-      val element: Type,
-    ) : Type {
-      override val kind: Kind get() = Kind(1, true)
+      val element: Core.Type,
+    ) : Core.Type {
+      override val kind: Kind get() = Kind.META
     }
 
-    object Hole : Type {
+    object Type : Core.Type {
+      override val kind: Kind get() = Kind.META
+    }
+
+    object Hole : Core.Type {
       override val kind: Kind get() = Kind.ZERO
     }
   }
@@ -265,6 +270,11 @@ object Core {
 
     data class Splice(
       val element: Term,
+      override val type: Type,
+    ) : Term
+
+    data class TypeOf(
+      val value: Type,
       override val type: Type,
     ) : Term
 

@@ -210,6 +210,7 @@ class Parse private constructor(
             "float"  -> S.Type.Float(until())
             "double" -> S.Type.Double(until())
             "string" -> S.Type.String(until())
+            "type"   -> S.Type.Type(until())
             else     -> null
           }
         }
@@ -358,6 +359,12 @@ class Parse private constructor(
             skip()
             skipTrivia()
             S.Term.Splice(parseTerm(), until())
+          }
+          '^'  -> {
+            skip()
+            skipTrivia()
+            val value = parseType()
+            S.Term.TypeOf(value, until())
           }
           else -> {
             when (val word = readWord()) {

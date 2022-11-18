@@ -51,7 +51,7 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
       is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
       is C.Term.Var         -> term
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val resource = dependencies[term.name] as C.Resource.Function
         if (C.Annotation.Inline in resource.annotations) {
           normalizeTerm(term)
@@ -59,11 +59,12 @@ class Stage private constructor(
           C.Term.Run(term.name, stageTerm(term.arg), term.type)
         }
       }
-      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
-      is C.Term.Command     -> term
-      is C.Term.CodeOf      -> term
-      is C.Term.Splice      -> normalizeTerm(term)
-      is C.Term.Hole        -> term
+      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
+      is C.Term.Command -> term
+      is C.Term.CodeOf  -> term
+      is C.Term.Splice  -> normalizeTerm(term)
+      is C.Term.TypeOf  -> term
+      is C.Term.Hole    -> term
     }
   }
 
@@ -98,7 +99,7 @@ class Stage private constructor(
         }
       is C.Term.Let         -> (this + bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
       is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val resource = dependencies[term.name] as C.Resource.Function
         val arg = evalTerm(term.arg)
         if (C.Annotation.Builtin in resource.annotations) {
@@ -108,21 +109,22 @@ class Stage private constructor(
           bindValue(arg, resource.binder).evalTerm(resource.body)
         }
       }
-      is C.Term.Is          -> {
+      is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         when (val matched = matchValue(scrutinee, term.scrutineer)) {
           null -> Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
           else -> Value.BoolOf(matched)
         }
       }
-      is C.Term.Command     -> error("unexpected: command") // TODO
-      is C.Term.CodeOf      -> Value.CodeOf(lazy { evalTerm(term.element) })
-      is C.Term.Splice      ->
+      is C.Term.Command -> error("unexpected: command") // TODO
+      is C.Term.CodeOf  -> Value.CodeOf(lazy { evalTerm(term.element) })
+      is C.Term.Splice  ->
         when (val element = evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
-      is C.Term.Hole        -> unexpectedHole()
+      is C.Term.TypeOf  -> Value.TypeOf(term.value)
+      is C.Term.Hole    -> unexpectedHole()
     }
   }
 
@@ -200,17 +202,18 @@ class Stage private constructor(
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
       is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run         -> {
+      is Value.Var    -> C.Term.Var(value.name, value.level, type)
+      is Value.Run    -> {
         val resource = dependencies[value.name] as C.Resource.Function
         C.Term.Run(value.name, quoteValue(value.arg, resource.param), resource.result)
       }
-      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
-      is Value.CodeOf      -> {
+      is Value.Is     -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
+      is Value.CodeOf -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Splice -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.TypeOf -> C.Term.TypeOf(value.value, C.Type.Type)
     }
   }
 

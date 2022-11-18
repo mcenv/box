@@ -73,80 +73,84 @@ object Surface {
 
     data class End(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Bool(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Byte(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Short(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Int(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Long(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Float(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Double(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class String(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class ByteArray(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class IntArray(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class LongArray(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class List(
-      val element: Type,
+      val element: Surface.Type,
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Compound(
-      val elements: Map<kotlin.String, Type>,
+      val elements: Map<kotlin.String, Surface.Type>,
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Ref(
-      val element: Type,
+      val element: Surface.Type,
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Tuple(
-      val elements: kotlin.collections.List<Type>,
+      val elements: kotlin.collections.List<Surface.Type>,
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
 
     data class Code(
-      val element: Type,
+      val element: Surface.Type,
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
+
+    data class Type(
+      override val range: Range,
+    ) : Surface.Type
 
     data class Hole(
       override val range: Range,
-    ) : Type
+    ) : Surface.Type
   }
 
   sealed interface Term {
@@ -270,6 +274,11 @@ object Surface {
 
     data class Splice(
       val element: Term,
+      override val range: Range,
+    ) : Term
+
+    data class TypeOf(
+      val value: Type,
       override val range: Range,
     ) : Term
 

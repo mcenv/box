@@ -107,4 +107,9 @@ sealed interface Value {
     val element: Value,
     val elementType: Core.Type,
   ) : Value
+
+  @JvmInline
+  value class TypeOf(
+    val value: Core.Type,
+  ) : Value
 }

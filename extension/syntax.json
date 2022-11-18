@@ -9,7 +9,7 @@
     },
     {
       "name": "keyword.operator.mcx",
-      "match": "[@:=,;&`$_]|(?:->|\\.\\.)"
+      "match": "[@:=,;&`$^_]|(?:->|\\.\\.)"
     },
     {
       "begin": "\\b(import)\\b\\s*{",
@@ -47,7 +47,7 @@
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:end|bool|byte|short|int|long|float|double|string)\\b"
+      "match": "\\b(?:type|end|bool|byte|short|int|long|float|double|string)\\b"
     },
     {
       "name": "keyword.control.mcx",

@@ -167,6 +167,7 @@ class Elaborate private constructor(
         C.Type.Tuple(elements, C.Kind(elements.size, elements.any { it.kind.meta }))
       }
       type is S.Type.Code && arity == null && meta == null -> C.Type.Code(elaborateType(type.element))
+      type is S.Type.Type && arity == null && meta == null -> C.Type.Type
       type is S.Type.Hole                                  -> C.Type.Hole
       else                                                 -> {
         val actual = elaborateType(type)
@@ -386,6 +387,8 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind(elements.size, env.stage > 0)))
       }
 
+      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
+
       term is S.Term.CodeOf &&
       expected is C.Type.Code?    -> {
         val element = env.quoting {
@@ -401,7 +404,11 @@ class Elaborate private constructor(
         C.Term.Splice(element, element.type)
       }
 
-      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
+      term is S.Term.TypeOf &&
+      expected is C.Type.Type?    -> {
+        val value = elaborateType(term.value)
+        C.Term.TypeOf(value, C.Type.Type)
+      }
 
       term is S.Term.Hole         ->
         C.Term.Hole(expected ?: C.Type.Hole)
@@ -475,7 +482,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Var &&
       expected != null          -> {
-        if (C.Kind.ONE == expected.kind) {
+        if (expected.kind.arity == 1) {
           env.bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, env.entries.lastIndex, annotations, expected)
         } else {
@@ -513,10 +520,13 @@ class Elaborate private constructor(
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type.End      -> true
+      type1 is C.Type.Type &&
+      type2 is C.Type.Type      -> true
+
+      type1 is C.Type.End       -> true
 
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool     -> true
+      type2 is C.Type.Bool      -> true
 
       type1 is C.Type.Byte &&
       type2 is C.Type.Byte      -> true
@@ -552,34 +562,34 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                  type1.elements.all { (key1, element1) ->
-                                    when (val element2 = type2.elements[key1]) {
-                                      null -> false
-                                      else -> element1 isSubtypeOf element2
-                                    }
-                                  }
+      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+                                   type1.elements.all { (key1, element1) ->
+                                     when (val element2 = type2.elements[key1]) {
+                                       null -> false
+                                       else -> element1 isSubtypeOf element2
+                                     }
+                                   }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
+                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code      -> type1.element isSubtypeOf type2.element
 
-      type1 is C.Type.Hole     -> true
-      type2 is C.Type.Hole     -> true
+      type1 is C.Type.Hole      -> true
+      type2 is C.Type.Hole      -> true
 
-      else                     -> false
+      else                      -> false
     }
   }
 
