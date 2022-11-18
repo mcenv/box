@@ -143,6 +143,13 @@ object Core {
       override val kind: Kind get() = Kind.META
     }
 
+    data class Var(
+      val name: kotlin.String,
+      val level: kotlin.Int,
+    ) : Core.Type {
+      override val kind: Kind get() = Kind.META
+    }
+
     object Hole : Core.Type {
       override val kind: Kind get() = Kind.ZERO
     }

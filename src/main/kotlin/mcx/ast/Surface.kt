@@ -147,6 +147,11 @@ object Surface {
       override val range: Range,
     ) : Surface.Type
 
+    data class Var(
+      val name: kotlin.String,
+      override val range: Range,
+    ) : Surface.Type
+
     data class Hole(
       override val range: Range,
     ) : Surface.Type

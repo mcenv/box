@@ -111,7 +111,7 @@ class Elaborate private constructor(
         val meta = C.Annotation.Inline in annotations
         val env = emptyEnv(resources, meta)
         val binder = elaboratePattern(env, resource.binder)
-        val result = elaborateType(resource.result, meta = meta)
+        val result = env.elaborateType(resource.result, meta = meta)
         C.Resource
           .Function(annotations, module + resource.name.value, binder, binder.type, result)
           .also {
@@ -140,7 +140,7 @@ class Elaborate private constructor(
     }
   }
 
-  private fun elaborateType(
+  private fun Env.elaborateType(
     type: S.Type,
     arity: Int? = null,
     meta: Boolean? = null,
@@ -167,6 +167,18 @@ class Elaborate private constructor(
       }
       type is S.Type.Code && arity == null && meta == null -> C.Type.Code(elaborateType(type.element))
       type is S.Type.Type && arity == null && meta == null -> C.Type.Type
+      type is S.Type.Var && arity == null && meta == null  -> {
+        when (val level = this[type.name]) {
+          -1   -> {
+            diagnostics += Diagnostic.VarNotFound(type.name, type.range)
+            C.Type.Hole
+          }
+          else -> {
+            val entry = entries[level]
+            C.Type.Var(type.name, level)
+          }
+        }
+      }
       type is S.Type.Hole                                  -> C.Type.Hole
       else                                                 -> {
         val actual = elaborateType(type)
@@ -405,7 +417,7 @@ class Elaborate private constructor(
 
       term is S.Term.TypeOf &&
       expected is C.Type.Type?    -> {
-        val value = elaborateType(term.value, meta = env.meta)
+        val value = env.elaborateType(term.value, meta = env.meta)
         C.Term.TypeOf(value, C.Type.Type)
       }
 
@@ -507,7 +519,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Anno &&
       expected == null          -> {
-        val type = elaborateType(pattern.type, meta = env.meta)
+        val type = env.elaborateType(pattern.type, meta = env.meta)
         elaboratePattern(env, pattern.element, type)
       }
 
@@ -597,6 +609,9 @@ class Elaborate private constructor(
 
       type1 is C.Type.Type &&
       type2 is C.Type.Type     -> true
+
+      type1 is C.Type.Var &&
+      type2 is C.Type.Var      -> type1.level == type2.level
 
       type1 is C.Type.Hole     -> true
       type2 is C.Type.Hole     -> true

@@ -193,7 +193,7 @@ class Parse private constructor(
             skipTrivia()
             S.Type.Code(parseType(), until())
           }
-          else -> when (readWord()) {
+          else -> when (val word = readWord()) {
             "end"    -> S.Type.End(until())
             "bool"   -> S.Type.Bool(until())
             "byte"   -> S.Type.Byte(until())
@@ -204,7 +204,7 @@ class Parse private constructor(
             "double" -> S.Type.Double(until())
             "string" -> S.Type.String(until())
             "type"   -> S.Type.Type(until())
-            else     -> null
+            else     -> S.Type.Var(word, until())
           }
         }
       } else {
