@@ -100,7 +100,7 @@ class Elaborate private constructor(
           .JsonResource(annotations, resource.registry, module + resource.name.value)
           .also {
             if (!signature) {
-              val env = emptyEnv(resources)
+              val env = emptyEnv(resources, true)
               val body = elaborateTerm(env, resource.body /* TODO */)
               it.body = body
             }
@@ -109,12 +109,11 @@ class Elaborate private constructor(
       is Surface.Resource.Function -> {
         val annotations = resource.annotations.map { elaborateAnnotation(it) }
         val meta = C.Annotation.Inline in annotations
-        val env = emptyEnv(resources)
-        val param = elaborateType(resource.param, meta = meta)
-        val binder = elaboratePattern(env, resource.binder, param)
+        val env = emptyEnv(resources, meta)
+        val binder = elaboratePattern(env, resource.binder)
         val result = elaborateType(resource.result, meta = meta)
         C.Resource
-          .Function(annotations, module + resource.name.value, binder, param, result)
+          .Function(annotations, module + resource.name.value, binder, binder.type, result)
           .also {
             hover(resource.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
@@ -406,7 +405,7 @@ class Elaborate private constructor(
 
       term is S.Term.TypeOf &&
       expected is C.Type.Type?    -> {
-        val value = elaborateType(term.value)
+        val value = elaborateType(term.value, meta = env.meta)
         C.Term.TypeOf(value, C.Type.Type)
       }
 
@@ -501,7 +500,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Anno &&
       expected == null          -> {
-        val type = elaborateType(pattern.type)
+        val type = elaborateType(pattern.type, meta = env.meta)
         elaboratePattern(env, pattern.element, type)
       }
 
@@ -566,19 +565,19 @@ class Elaborate private constructor(
 
       type1 is C.Type.Compound &&
       type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+                                  type1.elements.all { (key1, element1) ->
+                                    when (val element2 = type2.elements[key1]) {
+                                      null -> false
+                                      else -> element1 isSubtypeOf element2
+                                    }
+                                  }
 
       type1 is C.Type.Ref &&
       type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
       type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
       type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
@@ -620,6 +619,7 @@ class Elaborate private constructor(
   private class Env private constructor(
     private val resources: Map<Location, C.Resource>,
     private val _entries: MutableList<Entry>,
+    val meta: Boolean,
   ) {
     val entries: List<Entry> get() = _entries
     private var savedSize: Int = 0
@@ -681,6 +681,7 @@ class Elaborate private constructor(
         _entries
           .map { it.copy() }
           .toMutableList(),
+        meta,
       )
 
     data class Entry(
@@ -693,8 +694,9 @@ class Elaborate private constructor(
     companion object {
       fun emptyEnv(
         resources: Map<Location, Core.Resource>,
+        meta: Boolean,
       ): Env =
-        Env(resources, mutableListOf())
+        Env(resources, mutableListOf(), meta)
     }
   }
 

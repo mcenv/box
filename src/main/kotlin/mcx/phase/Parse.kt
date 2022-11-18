@@ -69,13 +69,8 @@ class Parse private constructor(
           "function"        -> {
             skipTrivia()
             val name = parseRanged { readWord() }
-            expect('(')
             skipTrivia()
             val binder = parsePattern()
-            expect(':')
-            skipTrivia()
-            val param = parseType()
-            expect(')')
             expect("->")
             skipTrivia()
             val result = parseType()
@@ -86,7 +81,7 @@ class Parse private constructor(
             } else {
               S.Term.Hole(until())
             }
-            S.Resource.Function(annotations, name, binder, param, result, body, until())
+            S.Resource.Function(annotations, name, binder, result, body, until())
           }
           else              -> null
         }

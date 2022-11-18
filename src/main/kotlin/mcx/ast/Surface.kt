@@ -26,7 +26,6 @@ object Surface {
       override val annotations: List<Annotation>,
       override val name: Ranged<String>,
       val binder: Pattern,
-      val param: Type,
       val result: Type,
       val body: Term,
       override val range: Range,
