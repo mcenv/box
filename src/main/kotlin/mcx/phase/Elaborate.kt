@@ -481,7 +481,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Var &&
       expected != null          -> {
-        val meta = expected.kind.meta == env.meta
+        val meta = !expected.kind.meta || env.meta
         if (!meta) {
           diagnostics += Diagnostic.RequiredInline(pattern.range)
         }
