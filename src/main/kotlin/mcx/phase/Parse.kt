@@ -92,8 +92,7 @@ class Parse private constructor(
         }
       } else {
         null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedResource(range)
         S.Resource.Hole(range)
@@ -143,8 +142,7 @@ class Parse private constructor(
         }
       } else {
         null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedAnnotation(range)
         S.Annotation.Hole(range)
@@ -216,8 +214,7 @@ class Parse private constructor(
         }
       } else {
         null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedType(range)
         S.Type.Hole(range)
@@ -441,8 +438,7 @@ class Parse private constructor(
         }
       } else {
         null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedTerm(range)
         S.Term.Hole(range)
@@ -475,23 +471,26 @@ class Parse private constructor(
                     }
                     S.Pattern.TupleOf(listOf(first) + tail, annotations, until())
                   }
-                  else -> {
-                    skipTrivia()
+                  '.'  -> {
+                    expect("..")
                     (first as? S.Pattern.IntOf)?.let { min ->
-                      when (readWord()) {
-                        ".." -> {
-                          skipTrivia()
-                          readWord()
-                            .toIntOrNull()
-                            ?.let { max ->
-                              expect(')')
-                              S.Pattern.IntRangeOf(min.value, max, annotations, until())
-                            }
+                      skipTrivia()
+                      readWord()
+                        .toIntOrNull()
+                        ?.let { max ->
+                          expect(')')
+                          S.Pattern.IntRangeOf(min.value, max, annotations, until())
                         }
-                        else -> null
-                      }
                     }
                   }
+                  ':'  -> {
+                    skip()
+                    skipTrivia()
+                    val type = parseType()
+                    expect(')')
+                    S.Pattern.Anno(first, type, annotations, until())
+                  }
+                  else -> null
                 }
               } else {
                 null
@@ -509,8 +508,7 @@ class Parse private constructor(
         }
       } else {
         null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedPattern(range)
         S.Pattern.Hole(annotations, range)

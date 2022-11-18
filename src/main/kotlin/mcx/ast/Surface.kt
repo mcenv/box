@@ -321,6 +321,13 @@ object Surface {
       override val range: Range,
     ) : Pattern
 
+    data class Anno(
+      val element: Pattern,
+      val type: Type,
+      override val annotations: List<Annotation>,
+      override val range: Range,
+    ) : Pattern
+
     data class Hole(
       override val annotations: List<Annotation>,
       override val range: Range,
