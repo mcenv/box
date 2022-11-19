@@ -32,14 +32,14 @@ class Parse private constructor(
       emptyList()
     }
 
-    val resources = mutableListOf<S.Resource>()
+    val definitions = mutableListOf<S.Definition>()
     while (true) {
       skipTrivia()
       if (!canRead()) {
         break
       }
       val start = cursor
-      resources += parseResource()
+      definitions += parseDefinition()
       if (start == cursor) {
         break
       }
@@ -50,10 +50,10 @@ class Parse private constructor(
       diagnostics += Diagnostic.ExpectedEndOfFile(here())
     }
 
-    return S.Module(module, imports, resources)
+    return S.Module(module, imports, definitions)
   }
 
-  private fun parseResource(): S.Resource =
+  private fun parseDefinition(): S.Definition =
     ranging {
       val annotations = parseAnnotations()
       if (canRead()) {
@@ -81,7 +81,7 @@ class Parse private constructor(
             } else {
               S.Term.Hole(until())
             }
-            S.Resource.Function(annotations, name, binder, result, body, until())
+            S.Definition.Function(annotations, name, binder, result, body, until())
           }
           else              -> null
         }
@@ -89,22 +89,22 @@ class Parse private constructor(
         null
       } ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedResource(range)
-        S.Resource.Hole(range)
+        diagnostics += Diagnostic.ExpectedDefinition(range)
+        S.Definition.Hole(range)
       }
     }
 
   private fun parseJsonResource(
     annotations: List<S.Annotation>,
     registry: Registry,
-  ): S.Resource.JsonResource =
+  ): S.Definition.Resource =
     ranging {
       skipTrivia()
       val name = parseRanged { readWord() }
       expect('=')
       skipTrivia()
       val body = parseTerm()
-      S.Resource.JsonResource(annotations, registry, name, body, until())
+      S.Definition.Resource(annotations, registry, name, body, until())
     }
 
   private fun parseAnnotations(): List<S.Annotation> {

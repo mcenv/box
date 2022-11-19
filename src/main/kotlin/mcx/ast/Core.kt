@@ -3,18 +3,18 @@ package mcx.ast
 object Core {
   data class Module(
     val name: Location,
-    val resources: List<Resource>,
+    val definitions: List<Definition>,
   )
 
-  sealed interface Resource {
+  sealed interface Definition {
     val annotations: List<Annotation>
     val name: Location
 
-    data class JsonResource(
+    data class Resource(
       override val annotations: List<Annotation>,
       val registry: Registry,
       override val name: Location,
-    ) : Resource {
+    ) : Definition {
       lateinit var body: Term
     }
 
@@ -24,11 +24,11 @@ object Core {
       val binder: Pattern,
       val param: Type,
       val result: Type,
-    ) : Resource {
+    ) : Definition {
       lateinit var body: Term
     }
 
-    object Hole : Resource {
+    object Hole : Definition {
       override val annotations: List<Annotation> get() = throw IllegalStateException()
       override val name: Location get() = throw IllegalStateException()
     }

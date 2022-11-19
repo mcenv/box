@@ -1,6 +1,6 @@
 package mcx.ast
 
-// TODO: use different data types for module location and resource location
+// TODO: use different data types for module location and definition location
 data class Location(val parts: List<String>) {
   constructor(vararg parts: String) : this(parts.toList())
 

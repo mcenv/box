@@ -77,7 +77,7 @@ object Build : Subcommand(
           async {
             val core = build.fetchCore(config, path.toLocation())
             diagnosticsByPath += path to core.diagnostics
-            core.module.resources
+            core.module.definitions
               .map { async { build.fetchGenerated(config, it.name) } }
               .awaitAll()
           }

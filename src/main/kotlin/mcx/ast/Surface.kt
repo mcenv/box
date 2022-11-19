@@ -6,21 +6,21 @@ object Surface {
   data class Module(
     val name: Location,
     val imports: List<Ranged<Location>>,
-    val resources: List<Resource>,
+    val definitions: List<Definition>,
   )
 
-  sealed interface Resource {
+  sealed interface Definition {
     val annotations: List<Annotation>
     val name: Ranged<String>
     val range: Range
 
-    data class JsonResource(
+    data class Resource(
       override val annotations: List<Annotation>,
       val registry: Registry,
       override val name: Ranged<String>,
       val body: Term,
       override val range: Range,
-    ) : Resource
+    ) : Definition
 
     data class Function(
       override val annotations: List<Annotation>,
@@ -29,11 +29,11 @@ object Surface {
       val result: Type,
       val body: Term,
       override val range: Range,
-    ) : Resource
+    ) : Definition
 
     data class Hole(
       override val range: Range,
-    ) : Resource {
+    ) : Definition {
       override val annotations: List<Annotation> get() = throw IllegalStateException()
       override val name: Ranged<String> get() = throw IllegalStateException()
     }

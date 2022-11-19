@@ -21,7 +21,7 @@ class Elaborate private constructor(
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
-  private var resourceCompletionItems: MutableList<CompletionItem> = mutableListOf()
+  private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: (() -> String)? = null
 
   private fun elaborateResult(
@@ -30,7 +30,7 @@ class Elaborate private constructor(
     return Result(
       elaborateModule(input.module),
       input.diagnostics + diagnostics,
-      varCompletionItems + resourceCompletionItems,
+      varCompletionItems + definitionCompletionItems,
       hover,
     )
   }
@@ -38,37 +38,37 @@ class Elaborate private constructor(
   private fun elaborateModule(
     module: Surface.Module,
   ): Core.Module {
-    val resources = hashMapOf<Location, C.Resource>().also { resources ->
+    val definitions = hashMapOf<Location, C.Definition>().also { definitions ->
       dependencies.forEach { dependency ->
         when (dependency.module) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
             dependency.location,
             dependency.range!!,
           )
-          else -> dependency.module.resources.forEach { resource ->
-            if (resource !is C.Resource.Hole) {
-              resources[resource.name] = resource // TODO: handle name duplication
+          else -> dependency.module.definitions.forEach { definition ->
+            if (definition !is C.Definition.Hole) {
+              definitions[definition.name] = definition // TODO: handle name duplication
             }
           }
         }
       }
     }
     if (position != null) {
-      resourceCompletionItems += resources.map { (location, resource) ->
+      definitionCompletionItems += definitions.map { (location, definition) ->
         val name = location.parts.last()
         CompletionItem(name).apply {
           val labelDetails = CompletionItemLabelDetails()
-          kind = when (resource) {
-            is C.Resource.JsonResource -> {
-              labelDetails.detail = ": ${resource.registry.string}"
+          kind = when (definition) {
+            is C.Definition.Resource    -> {
+              labelDetails.detail = ": ${definition.registry.string}"
               CompletionItemKind.Struct
             }
-            is Core.Resource.Function  -> {
-              documentation = forRight(highlight(createFunctionDocumentation(resource)))
-              labelDetails.detail = ": ${prettyType(resource.param)} -> ${prettyType(resource.result)}"
+            is Core.Definition.Function -> {
+              documentation = forRight(highlight(createFunctionDocumentation(definition)))
+              labelDetails.detail = ": ${prettyType(definition.param)} -> ${prettyType(definition.result)}"
               CompletionItemKind.Function
             }
-            else                       -> error("unexpected: hole")
+            else                        -> error("unexpected: hole")
           }
           labelDetails.description =
             location.parts
@@ -80,9 +80,9 @@ class Elaborate private constructor(
     }
     return C.Module(
       module.name,
-      module.resources.map {
-        elaborateResource(
-          resources,
+      module.definitions.map {
+        elaborateDefinition(
+          definitions,
           module.name,
           it,
         )
@@ -90,41 +90,41 @@ class Elaborate private constructor(
     )
   }
 
-  private fun elaborateResource(
-    resources: Map<Location, C.Resource>,
+  private fun elaborateDefinition(
+    definitions: Map<Location, C.Definition>,
     module: Location,
-    resource: S.Resource,
-  ): C.Resource {
-    return when (resource) {
-      is S.Resource.JsonResource   -> {
-        val annotations = resource.annotations.map { elaborateAnnotation(it) }
-        C.Resource
-          .JsonResource(annotations, resource.registry, module + resource.name.value)
+    definition: S.Definition,
+  ): C.Definition {
+    return when (definition) {
+      is S.Definition.Resource       -> {
+        val annotations = definition.annotations.map { elaborateAnnotation(it) }
+        C.Definition
+          .Resource(annotations, definition.registry, module + definition.name.value)
           .also {
             if (!signature) {
-              val env = emptyEnv(resources, true)
-              val body = elaborateTerm(env, resource.body /* TODO */)
+              val env = emptyEnv(definitions, true)
+              val body = elaborateTerm(env, definition.body /* TODO */)
               it.body = body
             }
           }
       }
-      is Surface.Resource.Function -> {
-        val annotations = resource.annotations.map { elaborateAnnotation(it) }
+      is Surface.Definition.Function -> {
+        val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val meta = C.Annotation.Inline in annotations
-        val env = emptyEnv(resources, meta)
-        val binder = elaboratePattern(env, resource.binder)
-        val result = env.elaborateType(resource.result, meta = meta)
-        C.Resource
-          .Function(annotations, module + resource.name.value, binder, binder.type, result)
+        val env = emptyEnv(definitions, meta)
+        val binder = elaboratePattern(env, definition.binder)
+        val result = env.elaborateType(definition.result, meta = meta)
+        C.Definition
+          .Function(annotations, module + definition.name.value, binder, binder.type, result)
           .also {
-            hover(resource.name.range) { createFunctionDocumentation(it) }
+            hover(definition.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
-              val body = elaborateTerm(env, resource.body, result)
+              val body = elaborateTerm(env, definition.body, result)
               it.body = body
             }
           }
       }
-      is S.Resource.Hole           -> C.Resource.Hole
+      is S.Definition.Hole           -> C.Definition.Hole
     }
   }
 
@@ -348,34 +348,34 @@ class Elaborate private constructor(
 
       term is S.Term.Run &&
       expected == null            -> {
-        val resources = env.findResources(term.name.value)
-        when (resources.size) {
-          0 -> {
-            diagnostics += Diagnostic.ResourceNotFound(term.name.value, term.name.range)
+        val definitions = env.findDefinition(term.name.value)
+        when (definitions.size) {
+          0    -> {
+            diagnostics += Diagnostic.DefinitionNotFound(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
-          1 -> when (val resource = resources.first()) {
-            !is Core.Resource.Function -> {
+          1    -> when (val definition = definitions.first()) {
+            !is Core.Definition.Function -> {
               diagnostics += Diagnostic.ExpectedFunction(term.name.range)
               C.Term.Hole(C.Type.Hole)
             }
-            else                       -> {
-              hover(term.name.range) { createFunctionDocumentation(resource) }
-              val arg = elaborateTerm(env, term.arg, resource.param)
+            else                         -> {
+              hover(term.name.range) { createFunctionDocumentation(definition) }
+              val arg = elaborateTerm(env, term.arg, definition.param)
               val argValue =
                 Normalize.Env
                   .emptyEnv(emptyMap())
                   .evalTerm(arg)
               val result =
                 Normalize
-                  .bindValue(argValue, resource.binder)
+                  .bindValue(argValue, definition.binder)
                   .map { (it as? Value.TypeOf)?.value }
-                  .evalType(resource.result)
-              C.Term.Run(resource.name, arg, result)
+                  .evalType(definition.result)
+              C.Term.Run(definition.name, arg, result)
             }
           }
           else -> {
-            diagnostics += Diagnostic.AmbiguousResource(term.name.value, term.name.range)
+            diagnostics += Diagnostic.AmbiguousDefinition(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
@@ -678,16 +678,16 @@ class Elaborate private constructor(
   }
 
   private fun createFunctionDocumentation(
-    resource: C.Resource.Function,
+    definition: C.Definition.Function,
   ): String {
-    val name = resource.name.parts.last()
-    val param = prettyType(resource.param)
-    val result = prettyType(resource.result)
+    val name = definition.name.parts.last()
+    val param = prettyType(definition.param)
+    val result = prettyType(definition.result)
     return "function $name: $param -> $result"
   }
 
   private class Env private constructor(
-    private val resources: Map<Location, C.Resource>,
+    private val definitions: Map<Location, C.Definition>,
     private val _entries: MutableList<Entry>,
     val meta: Boolean,
   ) {
@@ -699,10 +699,10 @@ class Elaborate private constructor(
     operator fun get(name: String): Int =
       _entries.indexOfLast { it.name == name }
 
-    fun findResources(
+    fun findDefinition(
       expected: Location,
-    ): List<C.Resource> =
-      resources.entries
+    ): List<C.Definition> =
+      definitions.entries
         .filter { (actual, _) ->
           expected.parts.size <= actual.parts.size &&
           (expected.parts.asReversed() zip actual.parts.asReversed()).all { it.first == it.second }
@@ -747,7 +747,7 @@ class Elaborate private constructor(
 
     fun copy(): Env =
       Env(
-        resources,
+        definitions,
         _entries
           .map { it.copy() }
           .toMutableList(),
@@ -763,10 +763,10 @@ class Elaborate private constructor(
 
     companion object {
       fun emptyEnv(
-        resources: Map<Location, Core.Resource>,
+        definitions: Map<Location, Core.Definition>,
         meta: Boolean,
       ): Env =
-        Env(resources, mutableListOf(), meta)
+        Env(definitions, mutableListOf(), meta)
     }
   }
 

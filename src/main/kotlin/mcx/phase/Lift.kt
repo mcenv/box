@@ -6,30 +6,30 @@ import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
 class Lift private constructor(
-  private val resource: C.Resource,
+  private val definition: C.Definition,
 ) {
-  private val liftedResources: MutableList<L.Resource> = mutableListOf()
+  private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
   private var freshFunctionId: Int = 0
 
-  private fun lift(): List<L.Resource> {
-    val annotations = resource.annotations.map { liftAnnotation(it) }
-    return liftedResources + when (resource) {
-      is C.Resource.JsonResource -> {
-        val body = liftTerm(resource.body)
-        L.Resource.JsonResource(annotations, resource.registry, resource.name, body)
+  private fun lift(): List<L.Definition> {
+    val annotations = definition.annotations.map { liftAnnotation(it) }
+    return liftedDefinitions + when (definition) {
+      is C.Definition.Resource -> {
+        val body = liftTerm(definition.body)
+        L.Definition.Resource(annotations, definition.registry, definition.name, body)
       }
-      is C.Resource.Function     -> {
-        val binder = liftPattern(resource.binder)
-        val param = liftType(resource.param)
-        val result = liftType(resource.result)
+      is C.Definition.Function -> {
+        val binder = liftPattern(definition.binder)
+        val param = liftType(definition.param)
+        val result = liftType(definition.result)
         if (L.Annotation.Builtin in annotations) {
-          L.Resource.Builtin(annotations, resource.name)
+          L.Definition.Builtin(annotations, definition.name)
         } else {
-          val body = liftTerm(resource.body)
-          L.Resource.Function(annotations, resource.name, binder, param, result, body)
+          val body = liftTerm(definition.body)
+          L.Definition.Function(annotations, definition.name, binder, param, result, body)
         }
       }
-      is C.Resource.Hole         -> unexpectedHole()
+      is C.Definition.Hole     -> unexpectedHole()
     }
   }
 
@@ -137,18 +137,18 @@ class Lift private constructor(
 
   private fun createFreshFunction(
     body: L.Term,
-  ): Lifted.Resource.Function {
+  ): Lifted.Definition.Function {
     val type = L.Type.Tuple(emptyList())
-    return L.Resource
+    return L.Definition
       .Function(
         emptyList(),
-        Location(resource.name.parts.dropLast(1) + "${resource.name.parts.last()}:${freshFunctionId++}"),
+        Location(definition.name.parts.dropLast(1) + "${definition.name.parts.last()}:${freshFunctionId++}"),
         L.Pattern.TupleOf(emptyList(), emptyList(), type),
         type,
         type,
         body,
       )
-      .also { liftedResources += it }
+      .also { liftedDefinitions += it }
   }
 
   private fun unexpectedHole(): Nothing =
@@ -157,8 +157,8 @@ class Lift private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      resource: C.Resource,
-    ): List<L.Resource> =
-      Lift(resource).lift()
+      definition: C.Definition,
+    ): List<L.Definition> =
+      Lift(definition).lift()
   }
 }

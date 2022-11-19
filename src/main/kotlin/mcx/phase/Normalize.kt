@@ -10,27 +10,27 @@ import mcx.ast.Core as C
 
 object Normalize {
   class Env private constructor(
-    val resources: Map<Location, C.Resource>,
+    val definitions: Map<Location, C.Definition>,
     private val values: PersistentList<Lazy<Value>>,
   ) : List<Lazy<Value>> by values {
     fun bind(
       values: List<Value>,
     ): Env =
-      Env(resources, this.values + values.map { lazyOf(it) })
+      Env(definitions, this.values + values.map { lazyOf(it) })
 
     companion object {
       fun emptyEnv(
-        resources: Map<Location, C.Resource>,
+        definitions: Map<Location, C.Definition>,
       ): Env =
-        Env(resources, persistentListOf())
+        Env(definitions, persistentListOf())
     }
   }
 
   fun normalizeTerm(
-    resources: Map<Location, C.Resource>,
+    definitions: Map<Location, C.Definition>,
     term: C.Term,
   ): C.Term =
-    with(emptyEnv(resources)) {
+    with(emptyEnv(definitions)) {
       quoteValue(evalTerm(term), term.type)
     }
 
@@ -62,14 +62,14 @@ object Normalize {
       is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
       is C.Term.Run     -> {
         val arg = evalTerm(term.arg)
-        when (val resource = resources[term.name] as? C.Resource.Function) {
+        when (val definition = definitions[term.name] as? C.Definition.Function) {
           null -> Value.Run(term.name, arg)
           else ->
-            if (C.Annotation.Builtin in resource.annotations) {
-              val builtin = requireNotNull(BUILTINS[resource.name]) { "builtin not found: '${resource.name}'" }
+            if (C.Annotation.Builtin in definition.annotations) {
+              val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
               builtin.eval(arg) ?: Value.Run(term.name, arg)
             } else {
-              bind(bindValue(arg, resource.binder)).evalTerm(resource.body)
+              bind(bindValue(arg, definition.binder)).evalTerm(definition.body)
             }
         }
       }
@@ -168,8 +168,8 @@ object Normalize {
       is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
       is Value.Var         -> C.Term.Var(value.name, value.level, type)
       is Value.Run    -> {
-        val resource = resources[value.name] as C.Resource.Function
-        C.Term.Run(value.name, quoteValue(value.arg, resource.param), resource.result)
+        val definition = definitions[value.name] as C.Definition.Function
+        C.Term.Run(value.name, quoteValue(value.arg, definition.param), definition.result)
       }
       is Value.Is     -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
       is Value.CodeOf -> {

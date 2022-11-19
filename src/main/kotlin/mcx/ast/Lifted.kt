@@ -4,16 +4,16 @@ package mcx.ast
  * A lifted AST, where all code blocks are lifted to top-level.
  */
 object Lifted {
-  sealed interface Resource {
+  sealed interface Definition {
     val annotations: List<Annotation>
     val name: Location
 
-    data class JsonResource(
+    data class Resource(
       override val annotations: List<Annotation>,
       val registry: Registry,
       override val name: Location,
       val body: Term,
-    ) : Resource
+    ) : Definition
 
     data class Function(
       override val annotations: List<Annotation>,
@@ -22,12 +22,12 @@ object Lifted {
       val param: Type,
       val result: Type,
       val body: Term,
-    ) : Resource
+    ) : Definition
 
     data class Builtin(
       override val annotations: List<Annotation>,
       override val name: Location,
-    ) : Resource
+    ) : Definition
   }
 
   sealed interface Annotation {

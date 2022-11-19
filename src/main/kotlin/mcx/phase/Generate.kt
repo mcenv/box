@@ -8,16 +8,16 @@ import mcx.ast.Packed as P
 class Generate private constructor(
   private val config: Config,
 ) {
-  private fun generateResource(
-    resource: P.Resource,
+  private fun generateDefinition(
+    definition: P.Definition,
   ): String {
-    return when (resource) {
-      is P.Resource.JsonResource  ->
-        StringBuilder().apply { generateJson(resource.body) }
-      is Packed.Resource.Function ->
+    return when (definition) {
+      is P.Definition.Resource      ->
+        StringBuilder().apply { generateJson(definition.body) }
+      is Packed.Definition.Function ->
         StringBuilder()
           .apply {
-            resource.commands.forEachIndexed { index, command ->
+            definition.commands.forEachIndexed { index, command ->
               if (index != 0) {
                 append('\n')
               }
@@ -67,9 +67,9 @@ class Generate private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      resource: P.Resource,
+      definition: P.Definition,
     ): String {
-      return Generate(config).generateResource(resource)
+      return Generate(config).generateDefinition(definition)
     }
   }
 }

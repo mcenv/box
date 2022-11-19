@@ -13,35 +13,35 @@ class Pack private constructor() {
       .values()
       .associateWith { mutableListOf() }
 
-  private fun packResource(
-    resource: L.Resource,
-  ): P.Resource {
-    val path = packLocation(resource.name)
-    return when (resource) {
-      is L.Resource.JsonResource -> {
-        val body = packJson(resource.body)
-        P.Resource.JsonResource(resource.registry, path, body)
+  private fun packDefinition(
+    definition: L.Definition,
+  ): P.Definition {
+    val path = packLocation(definition.name)
+    return when (definition) {
+      is L.Definition.Resource -> {
+        val body = packJson(definition.body)
+        P.Definition.Resource(definition.registry, path, body)
       }
-      is L.Resource.Function     -> {
-        +"# ${resource.name}"
+      is L.Definition.Function -> {
+        +"# ${definition.name}"
 
-        val binderTypes = eraseType(resource.binder.type)
+        val binderTypes = eraseType(definition.binder.type)
         binderTypes.forEach { push(it, null) }
-        packPattern(resource.binder)
-        packTerm(resource.body)
+        packPattern(definition.binder)
+        packTerm(definition.body)
 
-        if (L.Annotation.NoDrop !in resource.binder.annotations) {
-          val resultTypes = eraseType(resource.result)
+        if (L.Annotation.NoDrop !in definition.binder.annotations) {
+          val resultTypes = eraseType(definition.result)
           binderTypes.forEach { drop(it, resultTypes) }
         }
 
-        P.Resource.Function(path, commands)
+        P.Definition.Function(path, commands)
       }
-      is L.Resource.Builtin      -> {
-        +"# ${resource.name}"
-        val builtin = BUILTINS[resource.name]!!
+      is L.Definition.Builtin  -> {
+        +"# ${definition.name}"
+        val builtin = BUILTINS[definition.name]!!
         builtin.commands.forEach { +it }
-        P.Resource.Function(path, commands)
+        P.Definition.Function(path, commands)
       }
     }
   }
@@ -340,9 +340,9 @@ class Pack private constructor() {
 
     operator fun invoke(
       config: Config,
-      resource: L.Resource,
-    ): P.Resource {
-      return Pack().packResource(resource)
+      definition: L.Definition,
+    ): P.Definition {
+      return Pack().packDefinition(definition)
     }
   }
 }

@@ -43,11 +43,11 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedResource(
+  class ExpectedDefinition(
     range: Range,
   ) : Diagnostic(
     range,
-    "expected: resource",
+    "expected: definition",
     DiagnosticSeverity.Error,
   )
 
@@ -137,21 +137,21 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ResourceNotFound(
+  class DefinitionNotFound(
     name: Location,
     range: Range,
   ) : Diagnostic(
     range,
-    "resource not found: '$name'",
+    "definition not found: '$name'",
     DiagnosticSeverity.Error,
   )
 
-  class AmbiguousResource(
+  class AmbiguousDefinition(
     name: Location,
     range: Range,
   ) : Diagnostic(
     range,
-    "ambiguous resource: '$name'",
+    "ambiguous definition: '$name'",
     DiagnosticSeverity.Error,
   )
 

@@ -1,26 +1,26 @@
 package mcx.ast
 
 object Packed {
-  sealed interface Resource {
+  sealed interface Definition {
     val registry: Registry
     val path: String
 
-    data class JsonResource(
+    data class Resource(
       override val registry: Registry,
       override val path: String,
       val body: Json,
-    ) : Resource
+    ) : Definition
 
     data class Function(
       override val path: String,
       val commands: List<String>, // TODO: use data types
-    ) : Resource {
+    ) : Definition {
       override val registry: Registry get() = Registry.FUNCTIONS
     }
   }
 
   enum class Type(
-    val stack: String,
+    private val stack: String,
   ) {
     END("end"),
     BYTE("byte"),

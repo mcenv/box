@@ -5,24 +5,24 @@ import mcx.phase.Normalize.normalizeTerm
 import mcx.ast.Core as C
 
 class Stage private constructor(
-  private val dependencies: Map<Location, C.Resource>,
+  private val dependencies: Map<Location, C.Definition>,
 ) {
-  private fun stageResource(
-    resource: C.Resource,
-  ): C.Resource? {
-    return when (resource) {
-      is C.Resource.JsonResource -> resource
-      is C.Resource.Function     ->
-        if (C.Annotation.Inline in resource.annotations) {
+  private fun stageDefinition(
+    definition: C.Definition,
+  ): C.Definition? {
+    return when (definition) {
+      is C.Definition.Resource -> definition
+      is C.Definition.Function ->
+        if (C.Annotation.Inline in definition.annotations) {
           null
         } else {
-          C.Resource
-            .Function(resource.annotations, resource.name, resource.binder, resource.param, resource.result)
+          C.Definition
+            .Function(definition.annotations, definition.name, definition.binder, definition.param, definition.result)
             .also {
-              it.body = stageTerm(resource.body)
+              it.body = stageTerm(definition.body)
             }
         }
-      is C.Resource.Hole         -> error("unexpected: hole")
+      is C.Definition.Hole     -> error("unexpected: hole")
     }
   }
 
@@ -49,8 +49,8 @@ class Stage private constructor(
       is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
       is C.Term.Var         -> term
       is C.Term.Run     -> {
-        val resource = dependencies[term.name] as C.Resource.Function
-        if (C.Annotation.Inline in resource.annotations) {
+        val definition = dependencies[term.name] as C.Definition.Function
+        if (C.Annotation.Inline in definition.annotations) {
           normalizeTerm(dependencies, term)
         } else {
           C.Term.Run(term.name, stageTerm(term.arg), term.type)
@@ -68,9 +68,9 @@ class Stage private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      dependencies: Map<Location, C.Resource>,
-      resource: C.Resource,
-    ): C.Resource? =
-      Stage(dependencies).stageResource(resource)
+      dependencies: Map<Location, C.Definition>,
+      definition: C.Definition,
+    ): C.Definition? =
+      Stage(dependencies).stageDefinition(definition)
   }
 }

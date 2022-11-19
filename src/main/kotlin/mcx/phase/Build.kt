@@ -133,25 +133,25 @@ class Build(
   suspend fun fetchStaged(
     config: Config,
     location: Location,
-  ): Core.Resource? =
+  ): Core.Definition? =
     coroutineScope {
       val core = fetchCore(config, location.dropLast())
-      val resource = core.module.resources.find { it.name == location }!!
+      val definition = core.module.definitions.find { it.name == location }!!
       val dependencies =
         fetchSurface(config, location.dropLast())!!.module.imports
-          .map { async { fetchCore(config, it.value).module.resources } }
-          .plus(async { fetchCore(config, PRELUDE).module.resources })
+          .map { async { fetchCore(config, it.value).module.definitions } }
+          .plus(async { fetchCore(config, PRELUDE).module.definitions })
           .awaitAll()
           .flatten()
-          .plus(core.module.resources)
+          .plus(core.module.definitions)
           .associateBy { it.name }
-      Stage(config, dependencies, resource)
+      Stage(config, dependencies, definition)
     }
 
   suspend fun fetchLifted(
     config: Config,
     location: Location,
-  ): List<Lifted.Resource> =
+  ): List<Lifted.Definition> =
     coroutineScope {
       when (val staged = fetchStaged(config, location)) {
         null -> emptyList()
@@ -162,7 +162,7 @@ class Build(
   suspend fun fetchPacked(
     config: Config,
     location: Location,
-  ): List<Packed.Resource> =
+  ): List<Packed.Definition> =
     coroutineScope {
       val lifted = fetchLifted(config, location)
       lifted

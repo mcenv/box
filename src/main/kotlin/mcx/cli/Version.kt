@@ -9,9 +9,10 @@ object Version : Subcommand(
   "Display the mcx version",
 ) {
   override fun execute() {
-    val version = Version::class.java
-      .getResource("/version")!!
-      .readText()
+    val version =
+      Version::class.java
+        .getResource("/version")!!
+        .readText()
     println("mcx $version")
   }
 }
