@@ -33,8 +33,8 @@ class Elaborate private constructor(
   }
 
   private fun elaborateModule(
-    module: Surface.Module,
-  ): Core.Module {
+    module: S.Module,
+  ): C.Module {
     val definitions = hashMapOf<DefinitionLocation, C.Definition>().also { definitions ->
       dependencies.forEach { dependency ->
         when (dependency.module) {
@@ -55,16 +55,16 @@ class Elaborate private constructor(
         CompletionItem(location.name).apply {
           val labelDetails = CompletionItemLabelDetails()
           kind = when (definition) {
-            is C.Definition.Resource    -> {
+            is C.Definition.Resource -> {
               labelDetails.detail = ": ${definition.registry.string}"
               CompletionItemKind.Struct
             }
-            is Core.Definition.Function -> {
+            is C.Definition.Function -> {
               documentation = forRight(highlight(createFunctionDocumentation(definition)))
               labelDetails.detail = ": ${prettyType(definition.param)} -> ${prettyType(definition.result)}"
               CompletionItemKind.Function
             }
-            else                        -> error("unexpected: hole")
+            else                     -> error("unexpected: hole")
           }
           labelDetails.description = location.module.toString()
           this.labelDetails = labelDetails
@@ -101,7 +101,7 @@ class Elaborate private constructor(
             }
           }
       }
-      is Surface.Definition.Function -> {
+      is S.Definition.Function       -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val meta = C.Annotation.Inline in annotations
         val env = emptyEnv(definitions, meta)
@@ -348,11 +348,11 @@ class Elaborate private constructor(
             C.Term.Hole(C.Type.Hole)
           }
           1 -> when (val definition = definitions.first()) {
-            !is Core.Definition.Function -> {
+            !is C.Definition.Function -> {
               diagnostics += Diagnostic.ExpectedFunction(term.name.range)
               C.Term.Hole(C.Type.Hole)
             }
-            else                         -> {
+            else                      -> {
               hover(term.name.range) { createFunctionDocumentation(definition) }
               val arg = elaborateTerm(env, term.arg, definition.param)
               val argValue =
@@ -761,7 +761,7 @@ class Elaborate private constructor(
 
     companion object {
       fun emptyEnv(
-        definitions: Map<DefinitionLocation, Core.Definition>,
+        definitions: Map<DefinitionLocation, C.Definition>,
         meta: Boolean,
       ): Env =
         Env(definitions, mutableListOf(), meta)
@@ -770,12 +770,12 @@ class Elaborate private constructor(
 
   data class Dependency(
     val location: ModuleLocation,
-    val module: Core.Module?,
+    val module: C.Module?,
     val range: Range?,
   )
 
   data class Result(
-    val module: Core.Module,
+    val module: C.Module,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>,
     val hover: (() -> String)?,
