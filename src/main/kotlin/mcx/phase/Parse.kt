@@ -79,7 +79,7 @@ class Parse private constructor(
               }
             skipTrivia()
             val binder = parsePattern()
-            expect("->")
+            expect("→")
             skipTrivia()
             val result = parseType()
             val body =

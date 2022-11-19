@@ -1,43 +1,43 @@
-@builtin @inline function command (_: string) -> `end
+@builtin @inline function command (_: string) → `end
 
-function identity⟨a⟩ (a: a) -> a = a
+@builtin function + (_: (int, int)) → int
 
-@builtin function + (_: (int, int)) -> int
+@builtin function - (_: (int, int)) → int
 
-@builtin function - (_: (int, int)) -> int
+@builtin function * (_: (int, int)) → int
 
-@builtin function * (_: (int, int)) -> int
+@builtin function / (_: (int, int)) → int
 
-@builtin function / (_: (int, int)) -> int
+@builtin function % (_: (int, int)) → int
 
-@builtin function % (_: (int, int)) -> int
+@builtin function min (_: (int, int)) → int
 
-@builtin function min (_: (int, int)) -> int
+@builtin function max (_: (int, int)) → int
 
-@builtin function max (_: (int, int)) -> int
+@builtin function = (_: (int, int)) → bool
 
-@builtin function = (_: (int, int)) -> bool
+@builtin function < (_: (int, int)) → bool
 
-@builtin function < (_: (int, int)) -> bool
+@builtin function <= (_: (int, int)) → bool
 
-@builtin function <= (_: (int, int)) -> bool
+@builtin function > (_: (int, int)) → bool
 
-@builtin function > (_: (int, int)) -> bool
+@builtin function >= (_: (int, int)) → bool
 
-@builtin function >= (_: (int, int)) -> bool
+@builtin function != (_: (int, int)) → bool
 
-@builtin function != (_: (int, int)) -> bool
+@builtin function int_to_byte (_: int) → byte
 
-@builtin function int_to_byte (_: int) -> byte
+@builtin function int_to_short (_: int) → short
 
-@builtin function int_to_short (_: int) -> short
+@builtin function int_to_int (_: int) → int
 
-@builtin function int_to_int (_: int) -> int
+@builtin function int_to_long (_: int) → long
 
-@builtin function int_to_long (_: int) -> long
+@builtin function int_to_float (_: int) → float
 
-@builtin function int_to_float (_: int) -> float
+@builtin function int_to_double (_: int) → double
 
-@builtin function int_to_double (_: int) -> double
+@builtin function int_dup (_: int) → (int, int)
 
-@builtin function int_dup (_: int) -> (int, int)
+function identity⟨a⟩ (a: a) → a = a

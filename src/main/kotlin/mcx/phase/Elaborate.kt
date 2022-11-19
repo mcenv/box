@@ -652,7 +652,7 @@ class Elaborate private constructor(
     val typeParams = if (definition.typeParams.isEmpty()) "" else definition.typeParams.joinToString(", ", "⟨", "⟩")
     val param = prettyPattern(definition.binder)
     val result = prettyType(definition.result)
-    return "function $name$typeParams $param -> $result"
+    return "function $name$typeParams $param → $result"
   }
 
   private class Env private constructor(
