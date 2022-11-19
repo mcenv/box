@@ -2,25 +2,25 @@ package mcx.ast
 
 object Core {
   data class Module(
-    val name: Location,
+    val name: ModuleLocation,
     val definitions: List<Definition>,
   )
 
   sealed interface Definition {
     val annotations: List<Annotation>
-    val name: Location
+    val name: DefinitionLocation
 
     data class Resource(
       override val annotations: List<Annotation>,
       val registry: Registry,
-      override val name: Location,
+      override val name: DefinitionLocation,
     ) : Definition {
       lateinit var body: Term
     }
 
     data class Function(
       override val annotations: List<Annotation>,
-      override val name: Location,
+      override val name: DefinitionLocation,
       val binder: Pattern,
       val param: Type,
       val result: Type,
@@ -30,7 +30,7 @@ object Core {
 
     object Hole : Definition {
       override val annotations: List<Annotation> get() = throw IllegalStateException()
-      override val name: Location get() = throw IllegalStateException()
+      override val name: DefinitionLocation get() = throw IllegalStateException()
     }
   }
 
@@ -254,7 +254,7 @@ object Core {
     ) : Term
 
     data class Run(
-      val name: Location,
+      val name: DefinitionLocation,
       val arg: Term,
       override val type: Type,
     ) : Term

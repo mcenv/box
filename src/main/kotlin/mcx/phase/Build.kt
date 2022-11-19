@@ -1,10 +1,7 @@
 package mcx.phase
 
 import kotlinx.coroutines.*
-import mcx.ast.Core
-import mcx.ast.Lifted
-import mcx.ast.Location
-import mcx.ast.Packed
+import mcx.ast.*
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -18,13 +15,13 @@ import kotlin.io.path.readText
 class Build(
   private val src: Path,
 ) {
-  private val texts: ConcurrentMap<Location, String> = ConcurrentHashMap()
-  private val parseResults: ConcurrentMap<Location, Trace<Parse.Result>> = ConcurrentHashMap()
-  private val elaborateResults: ConcurrentMap<Location, Trace<Elaborate.Result>> = ConcurrentHashMap()
-  private val signatures: ConcurrentMap<Location, Trace<Elaborate.Result>> = ConcurrentHashMap()
+  private val texts: ConcurrentMap<ModuleLocation, String> = ConcurrentHashMap()
+  private val parseResults: ConcurrentMap<ModuleLocation, Trace<Parse.Result>> = ConcurrentHashMap()
+  private val elaborateResults: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
+  private val signatures: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
 
   fun changeText(
-    location: Location,
+    location: ModuleLocation,
     text: String,
   ) {
     closeText(location)
@@ -32,7 +29,7 @@ class Build(
   }
 
   fun closeText(
-    location: Location,
+    location: ModuleLocation,
   ) {
     texts -= location
     parseResults -= location
@@ -41,7 +38,9 @@ class Build(
   }
 
   // TODO: track external modification?
-  suspend fun fetchText(location: Location): String? {
+  suspend fun fetchText(
+    location: ModuleLocation,
+  ): String? {
     return when (val text = texts[location]) {
       null -> withContext(Dispatchers.IO) {
         src
@@ -74,7 +73,7 @@ class Build(
 
   suspend fun fetchSurface(
     config: Config,
-    location: Location,
+    location: ModuleLocation,
   ): Parse.Result? =
     coroutineScope {
       val text = fetchText(location) ?: return@coroutineScope null
@@ -91,7 +90,7 @@ class Build(
 
   suspend fun fetchSignature(
     config: Config,
-    location: Location,
+    location: ModuleLocation,
   ): Elaborate.Result? =
     coroutineScope {
       val surface = fetchSurface(config, location) ?: return@coroutineScope null
@@ -108,7 +107,7 @@ class Build(
 
   suspend fun fetchCore(
     config: Config,
-    location: Location,
+    location: ModuleLocation,
     position: Position? = null,
   ): Elaborate.Result =
     coroutineScope {
@@ -132,13 +131,13 @@ class Build(
 
   suspend fun fetchStaged(
     config: Config,
-    location: Location,
+    location: DefinitionLocation,
   ): Core.Definition? =
     coroutineScope {
-      val core = fetchCore(config, location.dropLast())
+      val core = fetchCore(config, location.module)
       val definition = core.module.definitions.find { it.name == location }!!
       val dependencies =
-        fetchSurface(config, location.dropLast())!!.module.imports
+        fetchSurface(config, location.module)!!.module.imports
           .map { async { fetchCore(config, it.value).module.definitions } }
           .plus(async { fetchCore(config, PRELUDE).module.definitions })
           .awaitAll()
@@ -150,7 +149,7 @@ class Build(
 
   suspend fun fetchLifted(
     config: Config,
-    location: Location,
+    location: DefinitionLocation,
   ): List<Lifted.Definition> =
     coroutineScope {
       when (val staged = fetchStaged(config, location)) {
@@ -161,7 +160,7 @@ class Build(
 
   suspend fun fetchPacked(
     config: Config,
-    location: Location,
+    location: DefinitionLocation,
   ): List<Packed.Definition> =
     coroutineScope {
       val lifted = fetchLifted(config, location)
@@ -172,7 +171,7 @@ class Build(
 
   suspend fun fetchGenerated(
     config: Config,
-    location: Location,
+    location: DefinitionLocation,
   ): Map<String, String> =
     coroutineScope {
       val packed = fetchPacked(config, location)
@@ -189,7 +188,6 @@ class Build(
 
   companion object {
     private val STD_SRC: Path
-    private val PRELUDE: Location = Location("prelude")
 
     init {
       val uri =

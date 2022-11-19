@@ -1,11 +1,14 @@
 package mcx.phase
 
-import mcx.ast.Location
+import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.ast.Value
 import kotlin.math.max
 import kotlin.math.min
 
-val BUILTINS: Map<Location, Builtin> = listOf(
+val PRELUDE = ModuleLocation("prelude")
+
+val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   Command,
   IntAdd,
   IntSub,
@@ -30,14 +33,14 @@ val BUILTINS: Map<Location, Builtin> = listOf(
 ).associateBy { it.name }
 
 sealed class Builtin(
-  val name: Location,
+  val name: DefinitionLocation,
 ) {
   abstract val commands: List<String>
 
   abstract fun eval(arg: Value): Value?
 }
 
-object Command : Builtin(Location("prelude", "command")) {
+object Command : Builtin(PRELUDE / "command") {
   override val commands: List<String> get() = emptyList()
 
   override fun eval(arg: Value): Value? {
@@ -46,7 +49,7 @@ object Command : Builtin(Location("prelude", "command")) {
   }
 }
 
-object IntAdd : Builtin(Location("prelude", "+")) {
+object IntAdd : Builtin(PRELUDE / "+") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -64,7 +67,7 @@ object IntAdd : Builtin(Location("prelude", "+")) {
   }
 }
 
-object IntSub : Builtin(Location("prelude", "-")) {
+object IntSub : Builtin(PRELUDE / "-") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -82,7 +85,7 @@ object IntSub : Builtin(Location("prelude", "-")) {
   }
 }
 
-object IntMul : Builtin(Location("prelude", "*")) {
+object IntMul : Builtin(PRELUDE / "*") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -100,7 +103,7 @@ object IntMul : Builtin(Location("prelude", "*")) {
   }
 }
 
-object IntDiv : Builtin(Location("prelude", "/")) {
+object IntDiv : Builtin(PRELUDE / "/") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -122,7 +125,7 @@ object IntDiv : Builtin(Location("prelude", "/")) {
   }
 }
 
-object IntMod : Builtin(Location("prelude", "%")) {
+object IntMod : Builtin(PRELUDE / "%") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -144,7 +147,7 @@ object IntMod : Builtin(Location("prelude", "%")) {
   }
 }
 
-object IntMin : Builtin(Location("prelude", "min")) {
+object IntMin : Builtin(PRELUDE / "min") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -162,7 +165,7 @@ object IntMin : Builtin(Location("prelude", "min")) {
   }
 }
 
-object IntMax : Builtin(Location("prelude", "max")) {
+object IntMax : Builtin(PRELUDE / "max") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -180,7 +183,7 @@ object IntMax : Builtin(Location("prelude", "max")) {
   }
 }
 
-object IntEq : Builtin(Location("prelude", "=")) {
+object IntEq : Builtin(PRELUDE / "=") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -199,7 +202,7 @@ object IntEq : Builtin(Location("prelude", "=")) {
   }
 }
 
-object IntLt : Builtin(Location("prelude", "<")) {
+object IntLt : Builtin(PRELUDE / "<") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -218,7 +221,7 @@ object IntLt : Builtin(Location("prelude", "<")) {
   }
 }
 
-object IntLe : Builtin(Location("prelude", "<=")) {
+object IntLe : Builtin(PRELUDE / "<=") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -237,7 +240,7 @@ object IntLe : Builtin(Location("prelude", "<=")) {
   }
 }
 
-object IntGt : Builtin(Location("prelude", ">")) {
+object IntGt : Builtin(PRELUDE / ">") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -256,7 +259,7 @@ object IntGt : Builtin(Location("prelude", ">")) {
   }
 }
 
-object IntGe : Builtin(Location("prelude", ">=")) {
+object IntGe : Builtin(PRELUDE / ">=") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -275,7 +278,7 @@ object IntGe : Builtin(Location("prelude", ">=")) {
   }
 }
 
-object IntNe : Builtin(Location("prelude", "!=")) {
+object IntNe : Builtin(PRELUDE / "!=") {
   override val commands: List<String> = listOf(
     "execute store result score #0 mcx run data get storage mcx: int[-1]",
     "data remove storage mcx: int[-1]",
@@ -294,7 +297,7 @@ object IntNe : Builtin(Location("prelude", "!=")) {
   }
 }
 
-object IntToByte : Builtin(Location("prelude", "int_to_byte")) {
+object IntToByte : Builtin(PRELUDE / "int_to_byte") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: byte append value 0b",
     "execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]",
@@ -306,7 +309,7 @@ object IntToByte : Builtin(Location("prelude", "int_to_byte")) {
   }
 }
 
-object IntToShort : Builtin(Location("prelude", "int_to_short")) {
+object IntToShort : Builtin(PRELUDE / "int_to_short") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: short append value 0s",
     "execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]",
@@ -318,7 +321,7 @@ object IntToShort : Builtin(Location("prelude", "int_to_short")) {
   }
 }
 
-object IntToInt : Builtin(Location("prelude", "int_to_int")) {
+object IntToInt : Builtin(PRELUDE / "int_to_int") {
   override val commands: List<String> = emptyList()
 
   override fun eval(arg: Value): Value {
@@ -326,7 +329,7 @@ object IntToInt : Builtin(Location("prelude", "int_to_int")) {
   }
 }
 
-object IntToLong : Builtin(Location("prelude", "int_to_long")) {
+object IntToLong : Builtin(PRELUDE / "int_to_long") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: long append value 0l",
     "execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]",
@@ -338,7 +341,7 @@ object IntToLong : Builtin(Location("prelude", "int_to_long")) {
   }
 }
 
-object IntToFloat : Builtin(Location("prelude", "int_to_float")) {
+object IntToFloat : Builtin(PRELUDE / "int_to_float") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: float append value 0.0f",
     "execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]",
@@ -350,7 +353,7 @@ object IntToFloat : Builtin(Location("prelude", "int_to_float")) {
   }
 }
 
-object IntToDouble : Builtin(Location("prelude", "int_to_double")) {
+object IntToDouble : Builtin(PRELUDE / "int_to_double") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: double append value 0.0",
     "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]",
@@ -362,7 +365,7 @@ object IntToDouble : Builtin(Location("prelude", "int_to_double")) {
   }
 }
 
-object IntDup : Builtin(Location("prelude", "int_dup")) {
+object IntDup : Builtin(PRELUDE / "int_dup") {
   override val commands: List<String> = listOf(
     "data modify storage mcx: int append from storage mcx: int[-1]",
   )

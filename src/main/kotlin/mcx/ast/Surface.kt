@@ -4,8 +4,8 @@ import org.eclipse.lsp4j.Range
 
 object Surface {
   data class Module(
-    val name: Location,
-    val imports: List<Ranged<Location>>,
+    val name: ModuleLocation,
+    val imports: List<Ranged<ModuleLocation>>,
     val definitions: List<Definition>,
   )
 
@@ -255,7 +255,7 @@ object Surface {
     ) : Term
 
     data class Run(
-      val name: Ranged<Location>,
+      val name: Ranged<DefinitionLocation>,
       val arg: Term,
       override val range: Range,
     ) : Term

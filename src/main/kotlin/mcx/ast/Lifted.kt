@@ -6,18 +6,18 @@ package mcx.ast
 object Lifted {
   sealed interface Definition {
     val annotations: List<Annotation>
-    val name: Location
+    val name: DefinitionLocation
 
     data class Resource(
       override val annotations: List<Annotation>,
       val registry: Registry,
-      override val name: Location,
+      override val name: DefinitionLocation,
       val body: Term,
     ) : Definition
 
     data class Function(
       override val annotations: List<Annotation>,
-      override val name: Location,
+      override val name: DefinitionLocation,
       val binder: Pattern,
       val param: Type,
       val result: Type,
@@ -26,7 +26,7 @@ object Lifted {
 
     data class Builtin(
       override val annotations: List<Annotation>,
-      override val name: Location,
+      override val name: DefinitionLocation,
     ) : Definition
   }
 
@@ -164,8 +164,8 @@ object Lifted {
 
     data class If(
       val condition: Term,
-      val thenName: Location,
-      val elseName: Location,
+      val thenName: DefinitionLocation,
+      val elseName: DefinitionLocation,
       override val type: Type,
     ) : Term
 
@@ -182,7 +182,7 @@ object Lifted {
     ) : Term
 
     data class Run(
-      val name: Location,
+      val name: DefinitionLocation,
       val arg: Term,
       override val type: Type,
     ) : Term

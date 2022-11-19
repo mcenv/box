@@ -1,9 +1,6 @@
 package mcx.phase
 
-import mcx.ast.Core
-import mcx.ast.Location
-import mcx.ast.Surface
-import mcx.ast.Value
+import mcx.ast.*
 import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
 import mcx.phase.Normalize.evalTerm
@@ -38,7 +35,7 @@ class Elaborate private constructor(
   private fun elaborateModule(
     module: Surface.Module,
   ): Core.Module {
-    val definitions = hashMapOf<Location, C.Definition>().also { definitions ->
+    val definitions = hashMapOf<DefinitionLocation, C.Definition>().also { definitions ->
       dependencies.forEach { dependency ->
         when (dependency.module) {
           null -> diagnostics += Diagnostic.ModuleNotFound(
@@ -55,8 +52,7 @@ class Elaborate private constructor(
     }
     if (position != null) {
       definitionCompletionItems += definitions.map { (location, definition) ->
-        val name = location.parts.last()
-        CompletionItem(name).apply {
+        CompletionItem(location.name).apply {
           val labelDetails = CompletionItemLabelDetails()
           kind = when (definition) {
             is C.Definition.Resource    -> {
@@ -70,10 +66,7 @@ class Elaborate private constructor(
             }
             else                        -> error("unexpected: hole")
           }
-          labelDetails.description =
-            location.parts
-              .dropLast(1)
-              .joinToString("/")
+          labelDetails.description = location.module.toString()
           this.labelDetails = labelDetails
         }
       }
@@ -91,15 +84,15 @@ class Elaborate private constructor(
   }
 
   private fun elaborateDefinition(
-    definitions: Map<Location, C.Definition>,
-    module: Location,
+    definitions: Map<DefinitionLocation, C.Definition>,
+    module: ModuleLocation,
     definition: S.Definition,
   ): C.Definition {
     return when (definition) {
       is S.Definition.Resource       -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         C.Definition
-          .Resource(annotations, definition.registry, module + definition.name.value)
+          .Resource(annotations, definition.registry, module / definition.name.value)
           .also {
             if (!signature) {
               val env = emptyEnv(definitions, true)
@@ -115,7 +108,7 @@ class Elaborate private constructor(
         val binder = elaboratePattern(env, definition.binder)
         val result = env.elaborateType(definition.result, meta = meta)
         C.Definition
-          .Function(annotations, module + definition.name.value, binder, binder.type, result)
+          .Function(annotations, module / definition.name.value, binder, binder.type, result)
           .also {
             hover(definition.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
@@ -684,14 +677,14 @@ class Elaborate private constructor(
   private fun createFunctionDocumentation(
     definition: C.Definition.Function,
   ): String {
-    val name = definition.name.parts.last()
+    val name = definition.name
     val param = prettyPattern(definition.binder)
     val result = prettyType(definition.result)
     return "function $name $param -> $result"
   }
 
   private class Env private constructor(
-    private val definitions: Map<Location, C.Definition>,
+    private val definitions: Map<DefinitionLocation, C.Definition>,
     private val _entries: MutableList<Entry>,
     val meta: Boolean,
   ) {
@@ -704,12 +697,13 @@ class Elaborate private constructor(
       _entries.indexOfLast { it.name == name }
 
     fun findDefinition(
-      expected: Location,
+      expected: DefinitionLocation,
     ): List<C.Definition> =
       definitions.entries
         .filter { (actual, _) ->
-          expected.parts.size <= actual.parts.size &&
-          (expected.parts.asReversed() zip actual.parts.asReversed()).all { it.first == it.second }
+          expected.module.parts.size <= actual.module.parts.size &&
+          (expected.name == actual.name) &&
+          (expected.module.parts.asReversed() zip actual.module.parts.asReversed()).all { it.first == it.second }
         }
         .map { it.value }
 
@@ -767,7 +761,7 @@ class Elaborate private constructor(
 
     companion object {
       fun emptyEnv(
-        definitions: Map<Location, Core.Definition>,
+        definitions: Map<DefinitionLocation, Core.Definition>,
         meta: Boolean,
       ): Env =
         Env(definitions, mutableListOf(), meta)
@@ -775,7 +769,7 @@ class Elaborate private constructor(
   }
 
   data class Dependency(
-    val location: Location,
+    val location: ModuleLocation,
     val module: Core.Module?,
     val range: Range?,
   )

@@ -1,7 +1,7 @@
 package mcx.phase
 
+import mcx.ast.DefinitionLocation
 import mcx.ast.Json
-import mcx.ast.Location
 import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
@@ -16,7 +16,7 @@ class Pack private constructor() {
   private fun packDefinition(
     definition: L.Definition,
   ): P.Definition {
-    val path = packLocation(definition.name)
+    val path = packDefinitionLocation(definition.name)
     return when (definition) {
       is L.Definition.Resource -> {
         val body = packJson(definition.body)
@@ -118,8 +118,8 @@ class Pack private constructor() {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
         drop(P.Type.BYTE)
-        +"execute if score #0 mcx matches 1.. run function ${packLocation(term.thenName)}"
-        +"execute if score #0 mcx matches ..0 run function ${packLocation(term.elseName)}"
+        +"execute if score #0 mcx matches 1.. run function ${packDefinitionLocation(term.thenName)}"
+        +"execute if score #0 mcx matches ..0 run function ${packDefinitionLocation(term.elseName)}"
         eraseType(term.type).forEach { push(it, null) }
       }
       is L.Term.Let         -> {
@@ -143,7 +143,7 @@ class Pack private constructor() {
       is L.Term.Run         -> {
         packTerm(term.arg)
 
-        +"function ${packLocation(term.name)}"
+        +"function ${packDefinitionLocation(term.name)}"
         eraseType(term.arg.type).forEach {
           drop(it, relevant = false)
         }
@@ -229,14 +229,10 @@ class Pack private constructor() {
     }
   }
 
-  private fun packLocation(
-    name: Location,
+  private fun packDefinitionLocation(
+    location: DefinitionLocation,
   ): String =
-    "${
-      name.parts
-        .dropLast(1)
-        .joinToString("/")
-    }/${escape(name.parts.last())}"
+    "${location.module.parts.joinToString("/")}/${escape(location.name)}"
 
   private fun escape(
     string: String,

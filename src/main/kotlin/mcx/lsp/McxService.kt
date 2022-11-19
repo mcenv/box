@@ -6,7 +6,7 @@ import kotlinx.coroutines.future.future
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import mcx.ast.Location
+import mcx.ast.ModuleLocation
 import mcx.phase.Build
 import mcx.phase.Config
 import org.eclipse.lsp4j.*
@@ -49,19 +49,19 @@ class McxService : TextDocumentService,
   override fun didOpen(
     params: DidOpenTextDocumentParams,
   ) {
-    build.changeText(params.textDocument.uri.toLocation(), params.textDocument.text)
+    build.changeText(params.textDocument.uri.toModuleLocation(), params.textDocument.text)
   }
 
   override fun didChange(
     params: DidChangeTextDocumentParams,
   ) {
-    build.changeText(params.textDocument.uri.toLocation(), params.contentChanges.last().text)
+    build.changeText(params.textDocument.uri.toModuleLocation(), params.contentChanges.last().text)
   }
 
   override fun didClose(
     params: DidCloseTextDocumentParams,
   ) {
-    build.closeText(params.textDocument.uri.toLocation())
+    build.closeText(params.textDocument.uri.toModuleLocation())
   }
 
   override fun didSave(
@@ -74,7 +74,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val core = build.fetchCore(fetchConfig(), uri.toLocation())
+      val core = build.fetchCore(fetchConfig(), uri.toModuleLocation())
       val newHash = core.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -87,13 +87,13 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
       forLeft(core.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toLocation(), params.position)
+      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
       Hover(
         when (val hover = core.hover) {
           null -> throw CancellationException()
@@ -131,8 +131,8 @@ class McxService : TextDocumentService,
     }
   }
 
-  private fun String.toLocation(): Location =
-    Location(
+  private fun String.toModuleLocation(): ModuleLocation =
+    ModuleLocation(
       root
         .resolve("src")
         .relativize(URI(dropLast(".mcx".length)).toPath())

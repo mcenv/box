@@ -3,14 +3,14 @@ package mcx.phase
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
-import mcx.ast.Location
+import mcx.ast.DefinitionLocation
 import mcx.ast.Value
 import mcx.phase.Normalize.Env.Companion.emptyEnv
 import mcx.ast.Core as C
 
 object Normalize {
   class Env private constructor(
-    val definitions: Map<Location, C.Definition>,
+    val definitions: Map<DefinitionLocation, C.Definition>,
     private val values: PersistentList<Lazy<Value>>,
   ) : List<Lazy<Value>> by values {
     fun bind(
@@ -20,14 +20,14 @@ object Normalize {
 
     companion object {
       fun emptyEnv(
-        definitions: Map<Location, C.Definition>,
+        definitions: Map<DefinitionLocation, C.Definition>,
       ): Env =
         Env(definitions, persistentListOf())
     }
   }
 
   fun normalizeTerm(
-    definitions: Map<Location, C.Definition>,
+    definitions: Map<DefinitionLocation, C.Definition>,
     term: C.Term,
   ): C.Term =
     with(emptyEnv(definitions)) {

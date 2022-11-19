@@ -1,6 +1,7 @@
 package mcx.phase
 
-import mcx.ast.Location
+import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
@@ -84,7 +85,7 @@ sealed class Diagnostic(
   )
 
   class ModuleNotFound(
-    location: Location,
+    location: ModuleLocation,
     range: Range,
   ) : Diagnostic(
     range,
@@ -138,7 +139,7 @@ sealed class Diagnostic(
   )
 
   class DefinitionNotFound(
-    name: Location,
+    name: DefinitionLocation,
     range: Range,
   ) : Diagnostic(
     range,
@@ -147,7 +148,7 @@ sealed class Diagnostic(
   )
 
   class AmbiguousDefinition(
-    name: Location,
+    name: DefinitionLocation,
     range: Range,
   ) : Diagnostic(
     range,

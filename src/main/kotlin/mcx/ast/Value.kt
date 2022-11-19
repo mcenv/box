@@ -88,7 +88,7 @@ sealed interface Value {
   ) : Value
 
   class Run(
-    val name: Location,
+    val name: DefinitionLocation,
     val arg: Value,
   ) : Value
 

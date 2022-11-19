@@ -1,11 +1,11 @@
 package mcx.phase
 
-import mcx.ast.Location
+import mcx.ast.DefinitionLocation
 import mcx.phase.Normalize.normalizeTerm
 import mcx.ast.Core as C
 
 class Stage private constructor(
-  private val dependencies: Map<Location, C.Definition>,
+  private val dependencies: Map<DefinitionLocation, C.Definition>,
 ) {
   private fun stageDefinition(
     definition: C.Definition,
@@ -68,7 +68,7 @@ class Stage private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      dependencies: Map<Location, C.Definition>,
+      dependencies: Map<DefinitionLocation, C.Definition>,
       definition: C.Definition,
     ): C.Definition? =
       Stage(dependencies).stageDefinition(definition)

@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import mcx.ast.Location
+import mcx.ast.ModuleLocation
 import mcx.phase.Build
 import mcx.phase.Config
 import mcx.phase.Diagnostic
@@ -54,8 +54,8 @@ object Build : Subcommand(
           Json.decodeFromStream<Config>(it)
         }
 
-    fun Path.toLocation(): Location =
-      Location(
+    fun Path.toModuleLocation(): ModuleLocation =
+      ModuleLocation(
         src
           .relativize(this)
           .invariantSeparatorsPathString
@@ -75,7 +75,7 @@ object Build : Subcommand(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val core = build.fetchCore(config, path.toLocation())
+            val core = build.fetchCore(config, path.toModuleLocation())
             diagnosticsByPath += path to core.diagnostics
             core.module.definitions
               .map { async { build.fetchGenerated(config, it.name) } }

@@ -1,6 +1,7 @@
 package mcx.phase
 
-import mcx.ast.Location
+import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.ast.Registry
 import mcx.ast.Surface
 import mcx.util.rangeTo
@@ -19,14 +20,14 @@ class Parse private constructor(
   private var character: Int = 0
 
   private fun parseModule(
-    module: Location,
+    module: ModuleLocation,
   ): Surface.Module {
     skipTrivia()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
       skipTrivia()
       parseList(',', '{', '}') {
-        parseRanged { readWord().toLocation() }
+        parseRanged { readWord().toModuleLocation() }
       }
     } else {
       emptyList()
@@ -249,7 +250,7 @@ class Parse private constructor(
                       skip()
                       (first as? S.Term.Var)?.let { operator ->
                         val range = until()
-                        S.Term.Run(S.Ranged(operator.name.toLocation(), operator.range), second, range)
+                        S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), second, range)
                       }
                     } else {
                       (second as? S.Term.Var)?.let { operator ->
@@ -263,7 +264,7 @@ class Parse private constructor(
                             val third = parseTerm()
                             expect(')')
                             val range = until()
-                            S.Term.Run(S.Ranged(operator.name.toLocation(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                            S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
                           }
                         }
                       }
@@ -505,8 +506,13 @@ class Parse private constructor(
       }
     }
 
-  private fun String.toLocation(): Location =
-    Location(this.split('.'))
+  private fun String.toModuleLocation(): ModuleLocation =
+    ModuleLocation(split('.'))
+
+  private fun String.toDefinitionLocation(): DefinitionLocation {
+    val parts = split('.')
+    return DefinitionLocation(ModuleLocation(parts.dropLast(1)), parts.last())
+  }
 
   private fun <R> parseRanged(
     parse: () -> R,
@@ -711,7 +717,7 @@ class Parse private constructor(
   companion object {
     operator fun invoke(
       config: Config,
-      module: Location,
+      module: ModuleLocation,
       text: String,
     ): Result =
       Parse(text).run {

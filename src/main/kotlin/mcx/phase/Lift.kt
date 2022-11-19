@@ -1,7 +1,6 @@
 package mcx.phase
 
 import mcx.ast.Lifted
-import mcx.ast.Location
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
@@ -142,7 +141,7 @@ class Lift private constructor(
     return L.Definition
       .Function(
         emptyList(),
-        Location(definition.name.parts.dropLast(1) + "${definition.name.parts.last()}:${freshFunctionId++}"),
+        definition.name.module / "${definition.name.name}:${freshFunctionId++}",
         L.Pattern.TupleOf(emptyList(), emptyList(), type),
         type,
         type,
