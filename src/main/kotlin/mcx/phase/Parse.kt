@@ -384,11 +384,6 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              "command" -> {
-                skipTrivia()
-                val value = readQuotedString()
-                S.Term.Command(value, until())
-              }
               else      ->
                 word
                   .lastOrNull()

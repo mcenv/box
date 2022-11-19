@@ -98,6 +98,10 @@ sealed interface Value {
     val scrutineeType: Core.Type,
   ) : Value
 
+  class Command(
+    val value: String,
+  ) : Value
+
   @JvmInline
   value class CodeOf(
     val element: Lazy<Value>,

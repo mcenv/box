@@ -161,24 +161,25 @@ object Normalize {
         type as C.Type.Ref
         C.Term.RefOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.TupleOf     -> {
+      is Value.TupleOf -> {
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run    -> {
+      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Var     -> C.Term.Var(value.name, value.level, type)
+      is Value.Run     -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, quoteValue(value.arg, definition.param), definition.result)
       }
-      is Value.Is     -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
-      is Value.CodeOf -> {
+      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
+      is Value.Command -> C.Term.Command(value.value, C.Type.End)
+      is Value.CodeOf  -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.TypeOf -> C.Term.TypeOf(value.value, C.Type.Type)
-      is Value.Hole   -> C.Term.Hole(value.type)
+      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.TypeOf  -> C.Term.TypeOf(value.value, C.Type.Type)
+      is Value.Hole    -> C.Term.Hole(value.type)
     }
   }
 }

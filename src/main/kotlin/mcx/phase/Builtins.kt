@@ -6,6 +6,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 val BUILTINS: Map<Location, Builtin> = listOf(
+  Command,
   IntAdd,
   IntSub,
   IntMul,
@@ -34,6 +35,15 @@ sealed class Builtin(
   abstract val commands: List<String>
 
   abstract fun eval(arg: Value): Value?
+}
+
+object Command : Builtin(Location("prelude", "command")) {
+  override val commands: List<String> get() = emptyList()
+
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.StringOf) return null
+    return Value.CodeOf(lazyOf(Value.Command(arg.value)))
+  }
 }
 
 object IntAdd : Builtin(Location("prelude", "+")) {

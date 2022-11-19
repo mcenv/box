@@ -51,7 +51,7 @@
     },
     {
       "name": "keyword.control.mcx",
-      "match": "\\b(?:if|then|else|let|is|command)\\b"
+      "match": "\\b(?:if|then|else|let|is)\\b"
     },
     {
       "name": "constant.language.mcx",

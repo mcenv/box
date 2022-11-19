@@ -350,11 +350,11 @@ class Elaborate private constructor(
       expected == null            -> {
         val definitions = env.findDefinition(term.name.value)
         when (definitions.size) {
-          0    -> {
+          0 -> {
             diagnostics += Diagnostic.DefinitionNotFound(term.name.value, term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
-          1    -> when (val definition = definitions.first()) {
+          1 -> when (val definition = definitions.first()) {
             !is Core.Definition.Function -> {
               diagnostics += Diagnostic.ExpectedFunction(term.name.range)
               C.Term.Hole(C.Type.Hole)
@@ -419,8 +419,6 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind(elements.size, env.stage > 0)))
       }
 
-      term is S.Term.Command      -> C.Term.Command(term.value, expected ?: C.Type.End)
-
       term is S.Term.CodeOf &&
       expected is C.Type.Code?    -> {
         val element = env.quoting {
@@ -433,7 +431,13 @@ class Elaborate private constructor(
         val element = env.splicing {
           elaborateTerm(env, term.element, expected?.let { C.Type.Code(it) })
         }
-        C.Term.Splice(element, element.type)
+        when (val elementType = element.type) {
+          is C.Type.Code -> C.Term.Splice(element, elementType.element)
+          else           -> {
+            diagnostics += Diagnostic.TypeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
+            C.Term.Hole(C.Type.End)
+          }
+        }
       }
 
       term is S.Term.TypeOf &&

@@ -266,11 +266,6 @@ object Surface {
       override val range: Range,
     ) : Term
 
-    data class Command(
-      val value: String,
-      override val range: Range,
-    ) : Term
-
     data class CodeOf(
       val element: Term,
       override val range: Range,
