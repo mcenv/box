@@ -685,9 +685,9 @@ class Elaborate private constructor(
     definition: C.Definition.Function,
   ): String {
     val name = definition.name.parts.last()
-    val param = prettyType(definition.param)
+    val param = prettyPattern(definition.binder)
     val result = prettyType(definition.result)
-    return "function $name: $param -> $result"
+    return "function $name $param -> $result"
   }
 
   private class Env private constructor(
