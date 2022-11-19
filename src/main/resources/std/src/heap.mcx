@@ -8,7 +8,7 @@ function set_pos (addr: int) -> () =
   ];
   $(command "data modify entity 0-0-0-0-0 Pos set from storage mcx: list[-1]")
 
-function allocate (_: ()) -> int =
+function allocate () -> int =
   let addr = 0;
   let _ = $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players add #0 free 1");
   let (addr, addr') = (int_dup addr);
@@ -16,7 +16,7 @@ function allocate (_: ()) -> int =
   let _ = $(command "execute at 0-0-0-0-0 run setblock ~ ~ ~ dispenser[facing=up]{Items: [{id: \"bow\", Count: 1b, tag: {}}]}");
   addr'
 
-function deallocate (_: ()) -> () =
+function deallocate () -> () =
   let addr = 0;
   let _ = $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players get #0 free");
   let _ = $(command "scoreboard players remove #0 free 1");
