@@ -299,7 +299,7 @@ object IntToByte : Builtin(Location("prelude", "int_to_byte")) {
 object IntToShort : Builtin(Location("prelude", "int_to_short")) {
   override val commands: List<String> = listOf(
     "data modify storage mcx: short append value 0s",
-    "execute store result storage mcx: short[-1] byte 1 run data get storage mcx: int[-1]",
+    "execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]",
   )
 
   override fun eval(arg: Value): Value? {
@@ -319,7 +319,7 @@ object IntToInt : Builtin(Location("prelude", "int_to_int")) {
 object IntToLong : Builtin(Location("prelude", "int_to_long")) {
   override val commands: List<String> = listOf(
     "data modify storage mcx: long append value 0l",
-    "execute store result storage mcx: long[-1] byte 1 run data get storage mcx: int[-1]",
+    "execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]",
   )
 
   override fun eval(arg: Value): Value? {
@@ -331,7 +331,7 @@ object IntToLong : Builtin(Location("prelude", "int_to_long")) {
 object IntToFloat : Builtin(Location("prelude", "int_to_float")) {
   override val commands: List<String> = listOf(
     "data modify storage mcx: float append value 0.0f",
-    "execute store result storage mcx: float[-1] byte 1 run data get storage mcx: int[-1]",
+    "execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]",
   )
 
   override fun eval(arg: Value): Value? {
@@ -343,7 +343,7 @@ object IntToFloat : Builtin(Location("prelude", "int_to_float")) {
 object IntToDouble : Builtin(Location("prelude", "int_to_double")) {
   override val commands: List<String> = listOf(
     "data modify storage mcx: double append value 0.0",
-    "execute store result storage mcx: double[-1] byte 1 run data get storage mcx: int[-1]",
+    "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]",
   )
 
   override fun eval(arg: Value): Value? {
