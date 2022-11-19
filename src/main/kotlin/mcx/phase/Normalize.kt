@@ -63,11 +63,11 @@ object Normalize {
       is C.Term.Run     -> {
         val arg = evalTerm(term.arg)
         when (val definition = definitions[term.name] as? C.Definition.Function) {
-          null -> Value.Run(term.name, arg)
+          null -> Value.Run(term.name, term.typeArgs, arg)
           else ->
             if (C.Annotation.Builtin in definition.annotations) {
               val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
-              builtin.eval(arg) ?: Value.Run(term.name, arg)
+              builtin.eval(arg) ?: Value.Run(term.name, term.typeArgs, arg)
             } else {
               bind(bindValue(arg, definition.binder)).evalTerm(definition.body)
             }
@@ -87,7 +87,6 @@ object Normalize {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
-      is C.Term.TypeOf  -> Value.TypeOf(term.value)
       is C.Term.Hole    -> Value.Hole(term.type)
     }
   }
@@ -169,7 +168,7 @@ object Normalize {
       is Value.Var     -> C.Term.Var(value.name, value.level, type)
       is Value.Run     -> {
         val definition = definitions[value.name] as C.Definition.Function
-        C.Term.Run(value.name, quoteValue(value.arg, definition.param), definition.result)
+        C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.param), definition.result)
       }
       is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
       is Value.Command -> C.Term.Command(value.value, C.Type.End)
@@ -178,7 +177,6 @@ object Normalize {
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
       is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.TypeOf  -> C.Term.TypeOf(value.value, C.Type.Type)
       is Value.Hole    -> C.Term.Hole(value.type)
     }
   }

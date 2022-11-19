@@ -1,5 +1,7 @@
 @builtin @inline function command (_: string) -> `end
 
+function identity⟨a⟩ (a: a) -> a = a
+
 @builtin function + (_: (int, int)) -> int
 
 @builtin function - (_: (int, int)) -> int

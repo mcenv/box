@@ -22,12 +22,12 @@
       "patterns": [
         {
           "name": "entity.name.function.mcx",
-          "match": "[^ \n\r:;,()\\[\\]{}]+(?:\\.[^ \n\r:;,()\\[\\]{}]+)*"
+          "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+(?:\\.[^ \n\r:;,()\\[\\]{}⟨⟩]+)*"
         }
       ]
     },
     {
-      "match": "\\b(function) +([^ \n\r:;,()\\[\\]{}]+)",
+      "match": "\\b(function) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
       "captures": {
         "1": {
           "name": "keyword.mcx"
@@ -70,11 +70,11 @@
     },
     {
       "name": "entity.name.function.mcx",
-      "match": "[^ \n\r:;,()\\[\\]{}]+(?:\\.[^ \n\r:;,()\\[\\]{}]+)+"
+      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+(?:\\.[^ \n\r:;,()\\[\\]{}⟨⟩]+)+"
     },
     {
       "name": "variable.mcx",
-      "match": "[^ \n\r:;,()\\[\\]{}]+"
+      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+"
     }
   ],
   "repository": {

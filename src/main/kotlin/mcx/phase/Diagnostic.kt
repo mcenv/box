@@ -129,6 +129,15 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class TypeVarNotFound(
+    name: String,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "type variable not found: '$name'",
+    DiagnosticSeverity.Error,
+  )
+
   class VarAlreadyUsed(
     name: String,
     range: Range,

@@ -13,11 +13,14 @@ class Stage private constructor(
     return when (definition) {
       is C.Definition.Resource -> definition
       is C.Definition.Function ->
-        if (C.Annotation.Inline in definition.annotations) {
+        if (
+          definition.typeParams.isNotEmpty() || // TODO: monomorphization
+          C.Annotation.Inline in definition.annotations
+        ) {
           null
         } else {
           C.Definition
-            .Function(definition.annotations, definition.name, definition.binder, definition.param, definition.result)
+            .Function(definition.annotations, definition.name, definition.typeParams, definition.binder, definition.param, definition.result)
             .also {
               it.body = stageTerm(definition.body)
             }
@@ -48,20 +51,19 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
       is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
       is C.Term.Var         -> term
-      is C.Term.Run     -> {
+      is C.Term.Run         -> {
         val definition = dependencies[term.name] as C.Definition.Function
         if (C.Annotation.Inline in definition.annotations) {
           normalizeTerm(dependencies, term)
         } else {
-          C.Term.Run(term.name, stageTerm(term.arg), term.type)
+          C.Term.Run(term.name, term.typeArgs, stageTerm(term.arg), term.type)
         }
       }
-      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
-      is C.Term.Command -> term
-      is C.Term.CodeOf  -> term
-      is C.Term.Splice  -> normalizeTerm(dependencies, term)
-      is C.Term.TypeOf  -> term
-      is C.Term.Hole    -> term
+      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
+      is C.Term.Command     -> term
+      is C.Term.CodeOf      -> term
+      is C.Term.Splice      -> normalizeTerm(dependencies, term)
+      is C.Term.Hole        -> term
     }
   }
 

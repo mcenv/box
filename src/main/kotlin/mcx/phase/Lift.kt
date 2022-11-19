@@ -66,7 +66,6 @@ class Lift private constructor(
       is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
-      is C.Type.Type      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
       is C.Type.Hole      -> unexpectedHole()
     }
@@ -114,7 +113,6 @@ class Lift private constructor(
       is C.Term.Command     -> L.Term.Command(term.value, type)
       is C.Term.CodeOf      -> error("unexpected: code_of")
       is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.TypeOf      -> error("unexpected: type_of")
       is C.Term.Hole        -> unexpectedHole()
     }
   }

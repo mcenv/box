@@ -21,6 +21,7 @@ object Core {
     data class Function(
       override val annotations: List<Annotation>,
       override val name: DefinitionLocation,
+      val typeParams: List<String>,
       val binder: Pattern,
       val param: Type,
       val result: Type,
@@ -62,95 +63,91 @@ object Core {
   sealed interface Type {
     val kind: Kind
 
-    object End : Core.Type {
+    object End : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Bool : Core.Type {
+    object Bool : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Byte : Core.Type {
+    object Byte : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Short : Core.Type {
+    object Short : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Int : Core.Type {
+    object Int : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Long : Core.Type {
+    object Long : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Float : Core.Type {
+    object Float : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Double : Core.Type {
+    object Double : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object String : Core.Type {
+    object String : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object ByteArray : Core.Type {
+    object ByteArray : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object IntArray : Core.Type {
+    object IntArray : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object LongArray : Core.Type {
+    object LongArray : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class List(
-      val element: Core.Type,
-    ) : Core.Type {
+      val element: Type,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Compound(
-      val elements: Map<kotlin.String, Core.Type>,
-    ) : Core.Type {
+      val elements: Map<kotlin.String, Type>,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Ref(
-      val element: Core.Type,
-    ) : Core.Type {
+      val element: Type,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
     data class Tuple(
-      val elements: kotlin.collections.List<Core.Type>,
+      val elements: kotlin.collections.List<Type>,
       override val kind: Kind,
-    ) : Core.Type
+    ) : Type
 
     data class Code(
-      val element: Core.Type,
-    ) : Core.Type {
-      override val kind: Kind get() = Kind.META
-    }
-
-    object Type : Core.Type {
+      val element: Type,
+    ) : Type {
       override val kind: Kind get() = Kind.META
     }
 
     data class Var(
       val name: kotlin.String,
       val level: kotlin.Int,
-    ) : Core.Type {
-      override val kind: Kind get() = Kind.META
+    ) : Type {
+      override val kind: Kind get() = Kind.ONE
     }
 
-    object Hole : Core.Type {
+    object Hole : Type {
       override val kind: Kind get() = Kind.ZERO
     }
   }
@@ -255,6 +252,7 @@ object Core {
 
     data class Run(
       val name: DefinitionLocation,
+      val typeArgs: List<Type>,
       val arg: Term,
       override val type: Type,
     ) : Term
@@ -277,11 +275,6 @@ object Core {
 
     data class Splice(
       val element: Term,
-      override val type: Type,
-    ) : Term
-
-    data class TypeOf(
-      val value: Type,
       override val type: Type,
     ) : Term
 

@@ -89,6 +89,7 @@ sealed interface Value {
 
   class Run(
     val name: DefinitionLocation,
+    val typeArgs: List<Core.Type>,
     val arg: Value,
   ) : Value
 
@@ -110,11 +111,6 @@ sealed interface Value {
   class Splice(
     val element: Value,
     val elementType: Core.Type,
-  ) : Value
-
-  @JvmInline
-  value class TypeOf(
-    val value: Core.Type,
   ) : Value
 
   @JvmInline

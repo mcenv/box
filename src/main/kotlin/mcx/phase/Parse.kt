@@ -71,18 +71,26 @@ class Parse private constructor(
             skipTrivia()
             val name = parseRanged { readWord() }
             skipTrivia()
+            val typeParams =
+              if (canRead() && peek() == '⟨') {
+                parseList(',', '⟨', '⟩') { readWord() }
+              } else {
+                emptyList()
+              }
+            skipTrivia()
             val binder = parsePattern()
             expect("->")
             skipTrivia()
             val result = parseType()
-            val body = if (annotations.find { it is S.Annotation.Builtin } == null) {
-              expect('=')
-              skipTrivia()
-              parseTerm()
-            } else {
-              S.Term.Hole(until())
-            }
-            S.Definition.Function(annotations, name, binder, result, body, until())
+            val body =
+              if (annotations.find { it is S.Annotation.Builtin } == null) {
+                expect('=')
+                skipTrivia()
+                parseTerm()
+              } else {
+                S.Term.Hole(until())
+              }
+            S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
           else              -> null
         }
@@ -204,7 +212,6 @@ class Parse private constructor(
             "float"  -> S.Type.Float(until())
             "double" -> S.Type.Double(until())
             "string" -> S.Type.String(until())
-            "type"   -> S.Type.Type(until())
             else     -> S.Type.Var(word, until())
           }
         }
@@ -243,6 +250,15 @@ class Parse private constructor(
                     }
                     S.Term.TupleOf(listOf(first) + tail, until())
                   }
+                  '⟨'  -> {
+                    val typeArgs = parseRanged { parseList(',', '⟨', '⟩') { parseType() } }
+                    skipTrivia()
+                    val arg = parseTerm()
+                    expect(')')
+                    (first as? S.Term.Var)?.let { operator ->
+                      S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), typeArgs, arg, until())
+                    }
+                  }
                   else -> {
                     val second = parseTerm()
                     skipTrivia()
@@ -250,7 +266,7 @@ class Parse private constructor(
                       skip()
                       (first as? S.Term.Var)?.let { operator ->
                         val range = until()
-                        S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), second, range)
+                        S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Ranged(emptyList(), operator.range), second, range)
                       }
                     } else {
                       (second as? S.Term.Var)?.let { operator ->
@@ -264,7 +280,7 @@ class Parse private constructor(
                             val third = parseTerm()
                             expect(')')
                             val range = until()
-                            S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                            S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
                           }
                         }
                       }
@@ -353,18 +369,12 @@ class Parse private constructor(
             skipTrivia()
             S.Term.Splice(parseTerm(), until())
           }
-          '^'  -> {
-            skip()
-            skipTrivia()
-            val value = parseType()
-            S.Term.TypeOf(value, until())
-          }
           else -> {
             when (val word = readWord()) {
-              ""        -> null
-              "false"   -> S.Term.BoolOf(false, until())
-              "true"    -> S.Term.BoolOf(true, until())
-              "if"      -> {
+              ""      -> null
+              "false" -> S.Term.BoolOf(false, until())
+              "true"  -> S.Term.BoolOf(true, until())
+              "if"    -> {
                 skipTrivia()
                 val condition = parseTerm()
                 expect("then")
@@ -375,7 +385,7 @@ class Parse private constructor(
                 val elseClause = parseTerm()
                 S.Term.If(condition, thenClause, elseClause, until())
               }
-              "let"     -> {
+              "let"   -> {
                 skipTrivia()
                 val name = parsePattern()
                 expect('=')
@@ -385,7 +395,7 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              else      ->
+              else    ->
                 word
                   .lastOrNull()
                   ?.let { suffix ->
@@ -612,8 +622,8 @@ class Parse private constructor(
 
   private inline fun Char.isWordPart(): Boolean =
     when (this) {
-      ' ', '\n', '\r', ':', ';', ',', '(', ')', '[', ']', '{', '}' -> false
-      else                                                         -> true
+      ' ', '\n', '\r', ':', ';', ',', '(', ')', '[', ']', '{', '}', '⟨', '⟩' -> false
+      else                                                                   -> true
     }
 
   private fun expect(

@@ -25,6 +25,7 @@ object Surface {
     data class Function(
       override val annotations: List<Annotation>,
       override val name: Ranged<String>,
+      val typeParams: List<String>,
       val binder: Pattern,
       val result: Type,
       val body: Term,
@@ -72,89 +73,85 @@ object Surface {
 
     data class End(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Bool(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Byte(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Short(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Int(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Long(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Float(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Double(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class String(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class ByteArray(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class IntArray(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class LongArray(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class List(
-      val element: Surface.Type,
+      val element: Type,
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Compound(
-      val elements: Map<kotlin.String, Surface.Type>,
+      val elements: Map<kotlin.String, Type>,
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Ref(
-      val element: Surface.Type,
+      val element: Type,
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Tuple(
-      val elements: kotlin.collections.List<Surface.Type>,
+      val elements: kotlin.collections.List<Type>,
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Code(
-      val element: Surface.Type,
+      val element: Type,
       override val range: Range,
-    ) : Surface.Type
-
-    data class Type(
-      override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Var(
       val name: kotlin.String,
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
 
     data class Hole(
       override val range: Range,
-    ) : Surface.Type
+    ) : Type
   }
 
   sealed interface Term {
@@ -256,6 +253,7 @@ object Surface {
 
     data class Run(
       val name: Ranged<DefinitionLocation>,
+      val typeArgs: Ranged<List<Type>>,
       val arg: Term,
       override val range: Range,
     ) : Term
@@ -273,11 +271,6 @@ object Surface {
 
     data class Splice(
       val element: Term,
-      override val range: Range,
-    ) : Term
-
-    data class TypeOf(
-      val value: Type,
       override val range: Range,
     ) : Term
 
