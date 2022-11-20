@@ -395,10 +395,15 @@ class Elaborate private constructor(
 
       term is S.Term.CodeOf &&
       expected is C.Type.Code?      -> {
-        val element = quoting {
-          elaborateTerm(term.element, expected?.element)
+        if (meta) {
+          val element = quoting {
+            elaborateTerm(term.element, expected?.element)
+          }
+          C.Term.CodeOf(element, C.Type.Code(element.type))
+        } else {
+          diagnostics += Diagnostic.RequiredInline(term.range)
+          C.Term.Hole(C.Type.End)
         }
-        C.Term.CodeOf(element, C.Type.Code(element.type))
       }
 
       term is S.Term.Splice         -> {
@@ -486,18 +491,11 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Var &&
       expected != null          -> {
-        val meta = !expected.kind.meta || meta
-        if (!meta) {
-          diagnostics += Diagnostic.RequiredInline(pattern.range)
-        }
-        val arity = expected.kind.arity == 1
-        if (!arity) {
-          diagnostics += Diagnostic.ArityMismatch(1, expected.kind.arity, pattern.range)
-        }
-        if (meta && arity) {
+        if (expected.kind.arity == 1) {
           bind(pattern.name, expected)
           C.Pattern.Var(pattern.name, entries.lastIndex, annotations, expected)
         } else {
+          diagnostics += Diagnostic.ArityMismatch(1, expected.kind.arity, pattern.range)
           C.Pattern.Hole(annotations, expected)
         }
       }
