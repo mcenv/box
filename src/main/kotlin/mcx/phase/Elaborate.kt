@@ -143,7 +143,6 @@ class Elaborate private constructor(
     meta: Boolean? = null,
   ): C.Type {
     return when {
-      type is S.Type.End && arity == null                  -> C.Type.End
       type is S.Type.Bool && arity == null                 -> C.Type.Bool(type.value)
       type is S.Type.Byte && arity == null                 -> C.Type.Byte(type.value)
       type is S.Type.Short && arity == null                -> C.Type.Short(type.value)
@@ -162,6 +161,23 @@ class Elaborate private constructor(
         val elements = type.elements.map { elaborateType(it, meta = meta) }
         C.Type.Tuple(elements, C.Kind(elements.size, elements.any { it.kind.meta }))
       }
+      type is S.Type.Union                                 ->
+        if (type.elements.isEmpty()) {
+          C.Type.Union.END
+        } else {
+          val head = elaborateType(type.elements.first(), meta = meta)
+          val tail =
+            type.elements
+              .drop(1)
+              .map {
+                val element = elaborateType(it, head.kind.arity, meta = meta)
+                if (element::class != head::class) {
+                  diagnostics += Diagnostic.TypeMismatch(head, element, it.range)
+                }
+                element
+              }
+          C.Type.Union(listOf(head) + tail, head.kind)
+        }
       type is S.Type.Code && arity == null && meta == null -> C.Type.Code(elaborateType(type.element))
       type is S.Type.Var && arity == null                  -> {
         when (val level = getType(type.name)) {
@@ -240,7 +256,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.ListOf &&
-      term.elements.isEmpty()       -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.End))
+      term.elements.isEmpty()             -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.Hole))
 
       term is S.Term.ListOf &&
       expected is C.Type.List?      -> {
@@ -403,7 +419,7 @@ class Elaborate private constructor(
           C.Term.CodeOf(element, C.Type.Code(element.type))
         } else {
           diagnostics += Diagnostic.RequiredInline(term.range)
-          C.Term.Hole(C.Type.End)
+          C.Term.Hole(expected ?: C.Type.Hole)
         }
       }
 
@@ -415,7 +431,7 @@ class Elaborate private constructor(
           is C.Type.Code -> C.Term.Splice(element, elementType.element)
           else           -> {
             diagnostics += Diagnostic.TypeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
-            C.Term.Hole(C.Type.End)
+            C.Term.Hole(expected ?: C.Type.Hole)
           }
         }
       }
@@ -461,7 +477,7 @@ class Elaborate private constructor(
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int?         -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int(null))
+      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int(null))
 
       pattern is S.Pattern.IntRangeOf &&
       expected is C.Type.Int?   -> {
@@ -507,7 +523,7 @@ class Elaborate private constructor(
         C.Pattern.Hole(annotations, C.Type.Hole)
       }
 
-      pattern is S.Pattern.Drop -> C.Pattern.Drop(annotations, expected ?: C.Type.End)
+      pattern is S.Pattern.Drop -> C.Pattern.Drop(annotations, expected ?: C.Type.Hole)
 
       pattern is S.Pattern.Anno &&
       expected == null          -> {
@@ -535,7 +551,6 @@ class Elaborate private constructor(
     type: C.Type,
   ): C.Type {
     return when (type) {
-      is C.Type.End       -> type
       is C.Type.Bool      -> type
       is C.Type.Byte      -> type
       is C.Type.Short     -> type
@@ -551,6 +566,7 @@ class Elaborate private constructor(
       is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { evalType(it.value) })
       is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
+      is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
       is C.Type.Code      -> C.Type.Code(evalType(type.element))
       is C.Type.Var       -> getOrNull(type.level) ?: type
       is C.Type.Hole      -> type
@@ -562,31 +578,29 @@ class Elaborate private constructor(
   ): Boolean {
     val type1 = this
     return when {
-      type1 is C.Type.End       -> true
-
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Bool      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Byte      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short  -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Short     -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Int &&
-      type2 is C.Type.Int    -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Int       -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Long &&
-      type2 is C.Type.Long   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Long      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Float &&
-      type2 is C.Type.Float  -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Float     -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Double &&
-      type2 is C.Type.Double -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Double    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.String &&
-      type2 is C.Type.String -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.String    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.ByteArray &&
       type2 is C.Type.ByteArray -> true
@@ -621,6 +635,9 @@ class Elaborate private constructor(
 
       type2 is C.Type.Tuple &&
       type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
+
+      type1 is C.Type.Union     -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union     -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
       type2 is C.Type.Code      -> type1.element isSubtypeOf type2.element

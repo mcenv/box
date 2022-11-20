@@ -75,10 +75,6 @@ object Surface {
   sealed interface Type {
     val range: Range
 
-    data class End(
-      override val range: Range,
-    ) : Type
-
     data class Bool(
       val value: Boolean?,
       override val range: Range,
@@ -147,6 +143,11 @@ object Surface {
     ) : Type
 
     data class Tuple(
+      val elements: kotlin.collections.List<Type>,
+      override val range: Range,
+    ) : Type
+
+    data class Union(
       val elements: kotlin.collections.List<Type>,
       override val range: Range,
     ) : Type

@@ -50,7 +50,6 @@ class Lift private constructor(
     type: C.Type,
   ): L.Type {
     return when (type) {
-      is C.Type.End       -> L.Type.End
       is C.Type.Bool      -> L.Type.Bool(type.value)
       is C.Type.Byte      -> L.Type.Byte(type.value)
       is C.Type.Short     -> L.Type.Short(type.value)
@@ -66,6 +65,7 @@ class Lift private constructor(
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
       is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
+      is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
       is C.Type.Hole      -> unexpectedHole()

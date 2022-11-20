@@ -43,8 +43,6 @@ object Lifted {
   }
 
   sealed interface Type {
-    object End : Type
-
     data class Bool(
       val value: Boolean?,
     ) : Type
@@ -96,6 +94,10 @@ object Lifted {
     ) : Type
 
     data class Tuple(
+      val elements: kotlin.collections.List<Type>,
+    ) : Type
+
+    data class Union(
       val elements: kotlin.collections.List<Type>,
     ) : Type
   }

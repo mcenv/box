@@ -65,10 +65,6 @@ object Core {
   sealed interface Type {
     val kind: Kind
 
-    object End : Type {
-      override val kind: Kind get() = Kind.ONE
-    }
-
     data class Bool(
       val value: Boolean?,
     ) : Type {
@@ -152,6 +148,15 @@ object Core {
       override val kind: Kind,
     ) : Type
 
+    data class Union(
+      val elements: kotlin.collections.List<Type>,
+      override val kind: Kind,
+    ) : Type {
+      companion object {
+        val END: Union = Union(emptyList(), Kind.ONE)
+      }
+    }
+
     data class Code(
       val element: Type,
     ) : Type {
@@ -166,7 +171,7 @@ object Core {
     }
 
     object Hole : Type {
-      override val kind: Kind get() = Kind.ZERO
+      override val kind: Kind get() = Kind.ONE
     }
   }
 

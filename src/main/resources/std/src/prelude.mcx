@@ -1,4 +1,4 @@
-@builtin @inline function command (_: string) → `end
+@builtin @inline function command (_: string) → `⟨⟩
 
 @builtin function + (_: (int, int)) → int
 

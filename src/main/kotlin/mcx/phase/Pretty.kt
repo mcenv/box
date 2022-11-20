@@ -7,7 +7,6 @@ fun prettyType(
   type: C.Type,
 ): String =
   when (type) {
-    is C.Type.End       -> "end"
     is C.Type.Bool      -> if (type.value == null) "bool" else type.value.toString()
     is C.Type.Byte      -> if (type.value == null) "byte" else "${type.value}b"
     is C.Type.Short     -> if (type.value == null) "short" else "${type.value}s"
@@ -23,6 +22,7 @@ fun prettyType(
     is C.Type.Compound  -> type.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key: ${prettyType(element)}" }
     is C.Type.Ref       -> "&${prettyType(type.element)}"
     is C.Type.Tuple     -> type.elements.joinToString(", ", "(", ")") { prettyType(it) }
+    is C.Type.Union     -> type.elements.joinToString(", ", "⟨", "⟩") { prettyType(it) }
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
     is C.Type.Hole      -> "?"

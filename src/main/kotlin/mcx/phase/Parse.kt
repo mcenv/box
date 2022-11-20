@@ -199,6 +199,10 @@ class Parse private constructor(
             skipTrivia()
             S.Type.Ref(parseType(), until())
           }
+          '⟨'  -> {
+            val elements = parseList(',', '⟨', '⟩') { parseType() }
+            S.Type.Union(elements, until())
+          }
           '`'  -> {
             skip()
             skipTrivia()
@@ -206,7 +210,6 @@ class Parse private constructor(
           }
           else -> when (val word = readWord()) {
             ""       -> null
-            "end"    -> S.Type.End(until())
             "bool"   -> S.Type.Bool(null, until())
             "byte"   -> S.Type.Byte(null, until())
             "short"  -> S.Type.Short(null, until())

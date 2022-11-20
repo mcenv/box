@@ -47,7 +47,7 @@
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:type|end|bool|byte|short|int|long|float|double|string)\\b"
+      "match": "\\b(?:bool|byte|short|int|long|float|double|string)\\b"
     },
     {
       "name": "keyword.control.mcx",

@@ -210,7 +210,6 @@ class Pack private constructor() {
     type: L.Type,
   ): List<P.Type> {
     return when (type) {
-      is L.Type.End       -> listOf(P.Type.END)
       is L.Type.Bool      -> listOf(P.Type.BYTE)
       is L.Type.Byte      -> listOf(P.Type.BYTE)
       is L.Type.Short     -> listOf(P.Type.SHORT)
@@ -226,6 +225,9 @@ class Pack private constructor() {
       is L.Type.Compound  -> listOf(P.Type.COMPOUND)
       is L.Type.Ref       -> listOf(P.Type.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
+      is L.Type.Union     -> type.elements
+                               .firstOrNull()
+                               ?.let { eraseType(it) } ?: listOf(P.Type.END)
     }
   }
 
