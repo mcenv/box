@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.util.quoted
 import mcx.ast.Core as C
 
 fun prettyType(
@@ -7,14 +8,14 @@ fun prettyType(
 ): String =
   when (type) {
     is C.Type.End       -> "end"
-    is C.Type.Bool      -> "bool"
-    is C.Type.Byte      -> "byte"
-    is C.Type.Short     -> "short"
-    is C.Type.Int       -> "int"
-    is C.Type.Long      -> "long"
-    is C.Type.Float     -> "float"
-    is C.Type.Double    -> "double"
-    is C.Type.String    -> "string"
+    is C.Type.Bool      -> if (type.value == null) "bool" else type.value.toString()
+    is C.Type.Byte      -> if (type.value == null) "byte" else "${type.value}b"
+    is C.Type.Short     -> if (type.value == null) "short" else "${type.value}s"
+    is C.Type.Int       -> if (type.value == null) "int" else type.value.toString()
+    is C.Type.Long      -> if (type.value == null) "long" else "${type.value}l"
+    is C.Type.Float     -> if (type.value == null) "float" else "${type.value}f"
+    is C.Type.Double    -> if (type.value == null) "double" else type.value.toString()
+    is C.Type.String    -> if (type.value == null) "string" else type.value.quoted('"')
     is C.Type.ByteArray -> "[byte;]"
     is C.Type.IntArray  -> "[int;]"
     is C.Type.LongArray -> "[long;]"

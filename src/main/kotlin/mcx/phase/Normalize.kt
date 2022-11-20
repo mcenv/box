@@ -137,17 +137,17 @@ object Normalize {
     type: C.Type,
   ): C.Term {
     return when (value) {
-      is Value.BoolOf      -> C.Term.BoolOf(value.value, C.Type.Bool)
-      is Value.ByteOf      -> C.Term.ByteOf(value.value, C.Type.Byte)
-      is Value.ShortOf     -> C.Term.ShortOf(value.value, C.Type.Short)
-      is Value.IntOf       -> C.Term.IntOf(value.value, C.Type.Int)
-      is Value.LongOf      -> C.Term.LongOf(value.value, C.Type.Long)
-      is Value.FloatOf     -> C.Term.FloatOf(value.value, C.Type.Float)
-      is Value.DoubleOf    -> C.Term.DoubleOf(value.value, C.Type.Double)
-      is Value.StringOf    -> C.Term.StringOf(value.value, C.Type.String)
-      is Value.ByteArrayOf -> C.Term.ByteArrayOf(value.elements.map { quoteValue(it.value, C.Type.Byte) }, C.Type.ByteArray)
-      is Value.IntArrayOf  -> C.Term.IntArrayOf(value.elements.map { quoteValue(it.value, C.Type.Int) }, C.Type.IntArray)
-      is Value.LongArrayOf -> C.Term.LongArrayOf(value.elements.map { quoteValue(it.value, C.Type.Long) }, C.Type.LongArray)
+      is Value.BoolOf      -> C.Term.BoolOf(value.value, C.Type.Bool(value.value))
+      is Value.ByteOf      -> C.Term.ByteOf(value.value, C.Type.Byte(value.value))
+      is Value.ShortOf     -> C.Term.ShortOf(value.value, C.Type.Short(value.value))
+      is Value.IntOf       -> C.Term.IntOf(value.value, C.Type.Int(value.value))
+      is Value.LongOf      -> C.Term.LongOf(value.value, C.Type.Long(value.value))
+      is Value.FloatOf     -> C.Term.FloatOf(value.value, C.Type.Float(value.value))
+      is Value.DoubleOf    -> C.Term.DoubleOf(value.value, C.Type.Double(value.value))
+      is Value.StringOf    -> C.Term.StringOf(value.value, C.Type.String(value.value))
+      is Value.ByteArrayOf -> C.Term.ByteArrayOf(value.elements.map { quoteValue(it.value, C.Type.Byte(null)) }, C.Type.ByteArray)
+      is Value.IntArrayOf  -> C.Term.IntArrayOf(value.elements.map { quoteValue(it.value, C.Type.Int(null)) }, C.Type.IntArray)
+      is Value.LongArrayOf -> C.Term.LongArrayOf(value.elements.map { quoteValue(it.value, C.Type.Long(null)) }, C.Type.LongArray)
       is Value.ListOf      -> {
         type as C.Type.List
         C.Term.ListOf(value.elements.map { quoteValue(it.value, type.element) }, type)
@@ -160,24 +160,24 @@ object Normalize {
         type as C.Type.Ref
         C.Term.RefOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.TupleOf -> {
+      is Value.TupleOf     -> {
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var     -> C.Term.Var(value.name, value.level, type)
-      is Value.Run     -> {
+      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Run         -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.param), definition.result)
       }
-      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool)
-      is Value.Command -> C.Term.Command(value.value, C.Type.End)
-      is Value.CodeOf  -> {
+      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command     -> C.Term.Command(value.value, C.Type.End)
+      is Value.CodeOf      -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole    -> C.Term.Hole(value.type)
+      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole        -> C.Term.Hole(value.type)
     }
   }
 }

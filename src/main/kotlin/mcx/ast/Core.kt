@@ -69,35 +69,51 @@ object Core {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Bool : Type {
+    data class Bool(
+      val value: Boolean?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Byte : Type {
+    data class Byte(
+      val value: kotlin.Byte?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Short : Type {
+    data class Short(
+      val value: kotlin.Short?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Int : Type {
+    data class Int(
+      val value: kotlin.Int?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Long : Type {
+    data class Long(
+      val value: kotlin.Long?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Float : Type {
+    data class Float(
+      val value: kotlin.Float?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object Double : Type {
+    data class Double(
+      val value: kotlin.Double?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 
-    object String : Type {
+    data class String(
+      val value: kotlin.String?,
+    ) : Type {
       override val kind: Kind get() = Kind.ONE
     }
 

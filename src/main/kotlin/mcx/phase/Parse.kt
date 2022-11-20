@@ -164,6 +164,7 @@ class Parse private constructor(
             }
             S.Type.Tuple(elements, until())
           }
+          '"'  -> S.Type.String(readQuotedString(), until())
           '['  -> {
             skip()
             skipTrivia()
@@ -204,16 +205,57 @@ class Parse private constructor(
             S.Type.Code(parseType(), until())
           }
           else -> when (val word = readWord()) {
+            ""       -> null
             "end"    -> S.Type.End(until())
-            "bool"   -> S.Type.Bool(until())
-            "byte"   -> S.Type.Byte(until())
-            "short"  -> S.Type.Short(until())
-            "int"    -> S.Type.Int(until())
-            "long"   -> S.Type.Long(until())
-            "float"  -> S.Type.Float(until())
-            "double" -> S.Type.Double(until())
-            "string" -> S.Type.String(until())
-            else     -> S.Type.Var(word, until())
+            "bool"   -> S.Type.Bool(null, until())
+            "byte"   -> S.Type.Byte(null, until())
+            "short"  -> S.Type.Short(null, until())
+            "int"    -> S.Type.Int(null, until())
+            "long"   -> S.Type.Long(null, until())
+            "float"  -> S.Type.Float(null, until())
+            "double" -> S.Type.Double(null, until())
+            "string" -> S.Type.String(null, until())
+            "false"  -> S.Type.Bool(false, until())
+            "true"   -> S.Type.Bool(true, until())
+            else     ->
+              word
+                .lastOrNull()
+                ?.let { suffix ->
+                  when (suffix) {
+                    'b'  ->
+                      word
+                        .dropLast(1)
+                        .toByteOrNull()
+                        ?.let { S.Type.Byte(it, until()) }
+                    's'  ->
+                      word
+                        .dropLast(1)
+                        .toShortOrNull()
+                        ?.let { S.Type.Short(it, until()) }
+                    'l'  ->
+                      word
+                        .dropLast(1)
+                        .toLongOrNull()
+                        ?.let { S.Type.Long(it, until()) }
+                    'f'  ->
+                      word
+                        .dropLast(1)
+                        .toFloatOrNull()
+                        ?.let { S.Type.Float(it, until()) }
+                    'd'  ->
+                      word
+                        .dropLast(1)
+                        .toDoubleOrNull()
+                        ?.let { S.Type.Double(it, until()) }
+                    else ->
+                      word
+                        .toIntOrNull()
+                        ?.let { S.Type.Int(it, until()) }
+                      ?: word
+                        .toDoubleOrNull()
+                        ?.let { S.Type.Double(it, until()) }
+                  }
+                } ?: S.Type.Var(word, until())
           }
         }
       } else {

@@ -51,14 +51,14 @@ class Lift private constructor(
   ): L.Type {
     return when (type) {
       is C.Type.End       -> L.Type.End
-      is C.Type.Bool      -> L.Type.Bool
-      is C.Type.Byte      -> L.Type.Byte
-      is C.Type.Short     -> L.Type.Short
-      is C.Type.Int       -> L.Type.Int
-      is C.Type.Long      -> L.Type.Long
-      is C.Type.Float     -> L.Type.Float
-      is C.Type.Double    -> L.Type.Double
-      is C.Type.String    -> L.Type.String
+      is C.Type.Bool      -> L.Type.Bool(type.value)
+      is C.Type.Byte      -> L.Type.Byte(type.value)
+      is C.Type.Short     -> L.Type.Short(type.value)
+      is C.Type.Int       -> L.Type.Int(type.value)
+      is C.Type.Long      -> L.Type.Long(type.value)
+      is C.Type.Float     -> L.Type.Float(type.value)
+      is C.Type.Double    -> L.Type.Double(type.value)
+      is C.Type.String    -> L.Type.String(type.value)
       is C.Type.ByteArray -> L.Type.ByteArray
       is C.Type.IntArray  -> L.Type.IntArray
       is C.Type.LongArray -> L.Type.LongArray

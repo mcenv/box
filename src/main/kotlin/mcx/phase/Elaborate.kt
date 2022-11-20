@@ -144,14 +144,14 @@ class Elaborate private constructor(
   ): C.Type {
     return when {
       type is S.Type.End && arity == null                  -> C.Type.End
-      type is S.Type.Bool && arity == null                 -> C.Type.Bool
-      type is S.Type.Byte && arity == null                 -> C.Type.Byte
-      type is S.Type.Short && arity == null                -> C.Type.Short
-      type is S.Type.Int && arity == null                  -> C.Type.Int
-      type is S.Type.Long && arity == null                 -> C.Type.Long
-      type is S.Type.Float && arity == null                -> C.Type.Float
-      type is S.Type.Double && arity == null               -> C.Type.Double
-      type is S.Type.String && arity == null               -> C.Type.String
+      type is S.Type.Bool && arity == null                 -> C.Type.Bool(type.value)
+      type is S.Type.Byte && arity == null                 -> C.Type.Byte(type.value)
+      type is S.Type.Short && arity == null                -> C.Type.Short(type.value)
+      type is S.Type.Int && arity == null                  -> C.Type.Int(type.value)
+      type is S.Type.Long && arity == null                 -> C.Type.Long(type.value)
+      type is S.Type.Float && arity == null                -> C.Type.Float(type.value)
+      type is S.Type.Double && arity == null               -> C.Type.Double(type.value)
+      type is S.Type.String && arity == null               -> C.Type.String(type.value)
       type is S.Type.ByteArray && arity == null            -> C.Type.ByteArray
       type is S.Type.IntArray && arity == null             -> C.Type.IntArray
       type is S.Type.LongArray && arity == null            -> C.Type.LongArray
@@ -192,33 +192,33 @@ class Elaborate private constructor(
   ): C.Term {
     return when {
       term is S.Term.BoolOf &&
-      expected is C.Type.Bool?      -> C.Term.BoolOf(term.value, C.Type.Bool)
+      expected == null                    -> C.Term.BoolOf(term.value, C.Type.Bool(term.value))
 
       term is S.Term.ByteOf &&
-      expected is C.Type.Byte?      -> C.Term.ByteOf(term.value, C.Type.Byte)
+      expected == null                    -> C.Term.ByteOf(term.value, C.Type.Byte(term.value))
 
       term is S.Term.ShortOf &&
-      expected is C.Type.Short?     -> C.Term.ShortOf(term.value, C.Type.Short)
+      expected == null                    -> C.Term.ShortOf(term.value, C.Type.Short(term.value))
 
       term is S.Term.IntOf &&
-      expected is C.Type.Int?       -> C.Term.IntOf(term.value, C.Type.Int)
+      expected == null                    -> C.Term.IntOf(term.value, C.Type.Int(term.value))
 
       term is S.Term.LongOf &&
-      expected is C.Type.Long?      -> C.Term.LongOf(term.value, C.Type.Long)
+      expected == null                    -> C.Term.LongOf(term.value, C.Type.Long(term.value))
 
       term is S.Term.FloatOf &&
-      expected is C.Type.Float?     -> C.Term.FloatOf(term.value, C.Type.Float)
+      expected == null                    -> C.Term.FloatOf(term.value, C.Type.Float(term.value))
 
       term is S.Term.DoubleOf &&
-      expected is C.Type.Double?    -> C.Term.DoubleOf(term.value, C.Type.Double)
+      expected == null                    -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
 
       term is S.Term.StringOf &&
-      expected is C.Type.String?    -> C.Term.StringOf(term.value, C.Type.String)
+      expected == null                    -> C.Term.StringOf(term.value, C.Type.String(term.value))
 
       term is S.Term.ByteArrayOf &&
       expected is C.Type.ByteArray? -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Byte)
+          elaborateTerm(element, C.Type.Byte(null))
         }
         C.Term.ByteArrayOf(elements, C.Type.ByteArray)
       }
@@ -226,7 +226,7 @@ class Elaborate private constructor(
       term is S.Term.IntArrayOf &&
       expected is C.Type.IntArray?  -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Int)
+          elaborateTerm(element, C.Type.Int(null))
         }
         C.Term.IntArrayOf(elements, C.Type.IntArray)
       }
@@ -234,7 +234,7 @@ class Elaborate private constructor(
       term is S.Term.LongArrayOf &&
       expected is C.Type.LongArray? -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Long)
+          elaborateTerm(element, C.Type.Long(null))
         }
         C.Term.LongArrayOf(elements, C.Type.LongArray)
       }
@@ -297,7 +297,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.If             -> {
-        val condition = elaborateTerm(term.condition, C.Type.Bool)
+        val condition = elaborateTerm(term.condition, C.Type.Bool(null))
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
         val elseClause = elseEnv.elaborateTerm(term.elseClause, expected ?: thenClause.type)
@@ -372,7 +372,7 @@ class Elaborate private constructor(
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
         }
-        C.Term.Is(scrutinee, scrutineer, C.Type.Bool)
+        C.Term.Is(scrutinee, scrutineer, C.Type.Bool(null))
       }
 
       term is S.Term.TupleOf &&
@@ -461,14 +461,14 @@ class Elaborate private constructor(
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int)
+      expected is C.Type.Int?         -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int(null))
 
       pattern is S.Pattern.IntRangeOf &&
       expected is C.Type.Int?   -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
-        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int)
+        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int(null))
       }
 
       pattern is S.Pattern.TupleOf &&
@@ -565,28 +565,28 @@ class Elaborate private constructor(
       type1 is C.Type.End       -> true
 
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool      -> true
+      type2 is C.Type.Bool   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte      -> true
+      type2 is C.Type.Byte   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short     -> true
+      type2 is C.Type.Short  -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Int &&
-      type2 is C.Type.Int       -> true
+      type2 is C.Type.Int    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Long &&
-      type2 is C.Type.Long      -> true
+      type2 is C.Type.Long   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Float &&
-      type2 is C.Type.Float     -> true
+      type2 is C.Type.Float  -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Double &&
-      type2 is C.Type.Double    -> true
+      type2 is C.Type.Double -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.String &&
-      type2 is C.Type.String    -> true
+      type2 is C.Type.String -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.ByteArray &&
       type2 is C.Type.ByteArray -> true

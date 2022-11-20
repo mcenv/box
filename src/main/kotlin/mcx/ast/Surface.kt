@@ -80,34 +80,42 @@ object Surface {
     ) : Type
 
     data class Bool(
+      val value: Boolean?,
       override val range: Range,
     ) : Type
 
     data class Byte(
+      val value: kotlin.Byte?,
       override val range: Range,
     ) : Type
 
     data class Short(
+      val value: kotlin.Short?,
       override val range: Range,
     ) : Type
 
     data class Int(
+      val value: kotlin.Int?,
       override val range: Range,
     ) : Type
 
     data class Long(
+      val value: kotlin.Long?,
       override val range: Range,
     ) : Type
 
     data class Float(
+      val value: kotlin.Float?,
       override val range: Range,
     ) : Type
 
     data class Double(
+      val value: kotlin.Double?,
       override val range: Range,
     ) : Type
 
     data class String(
+      val value: kotlin.String?,
       override val range: Range,
     ) : Type
 
