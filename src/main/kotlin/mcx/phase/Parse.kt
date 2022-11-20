@@ -437,7 +437,7 @@ class Parse private constructor(
                 expect('=')
                 skipTrivia()
                 val init = parseTerm()
-                expect(';')
+                skipTrivia()
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
