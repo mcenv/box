@@ -56,7 +56,6 @@ object Core {
     val meta: Boolean,
   ) {
     companion object {
-      val ZERO: Kind = Kind(0, false)
       val ONE: Kind = Kind(1, false)
       val META: Kind = Kind(1, true)
     }
@@ -69,48 +68,80 @@ object Core {
       val value: Boolean?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Bool = Bool(null)
+      }
     }
 
     data class Byte(
       val value: kotlin.Byte?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Byte = Byte(null)
+      }
     }
 
     data class Short(
       val value: kotlin.Short?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Short = Short(null)
+      }
     }
 
     data class Int(
       val value: kotlin.Int?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Int = Int(null)
+      }
     }
 
     data class Long(
       val value: kotlin.Long?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Long = Long(null)
+      }
     }
 
     data class Float(
       val value: kotlin.Float?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Float = Float(null)
+      }
     }
 
     data class Double(
       val value: kotlin.Double?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: Double = Double(null)
+      }
     }
 
     data class String(
       val value: kotlin.String?,
     ) : Type {
       override val kind: Kind get() = Kind.ONE
+
+      companion object {
+        val SET: String = String(null)
+      }
     }
 
     object ByteArray : Type {

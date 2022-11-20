@@ -234,7 +234,7 @@ class Elaborate private constructor(
       term is S.Term.ByteArrayOf &&
       expected is C.Type.ByteArray? -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Byte(null))
+          elaborateTerm(element, C.Type.Byte.SET)
         }
         C.Term.ByteArrayOf(elements, C.Type.ByteArray)
       }
@@ -242,7 +242,7 @@ class Elaborate private constructor(
       term is S.Term.IntArrayOf &&
       expected is C.Type.IntArray?  -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Int(null))
+          elaborateTerm(element, C.Type.Int.SET)
         }
         C.Term.IntArrayOf(elements, C.Type.IntArray)
       }
@@ -250,7 +250,7 @@ class Elaborate private constructor(
       term is S.Term.LongArrayOf &&
       expected is C.Type.LongArray? -> {
         val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Long(null))
+          elaborateTerm(element, C.Type.Long.SET)
         }
         C.Term.LongArrayOf(elements, C.Type.LongArray)
       }
@@ -313,7 +313,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.If             -> {
-        val condition = elaborateTerm(term.condition, C.Type.Bool(null))
+        val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
         val elseClause = elseEnv.elaborateTerm(term.elseClause, expected ?: thenClause.type)
@@ -388,7 +388,7 @@ class Elaborate private constructor(
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
         }
-        C.Term.Is(scrutinee, scrutineer, C.Type.Bool(null))
+        C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
       }
 
       term is S.Term.TupleOf &&
@@ -477,14 +477,14 @@ class Elaborate private constructor(
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int(null))
+      expected is C.Type.Int?         -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
 
       pattern is S.Pattern.IntRangeOf &&
       expected is C.Type.Int?   -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
-        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int(null))
+        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int.SET)
       }
 
       pattern is S.Pattern.TupleOf &&
