@@ -43,6 +43,10 @@ object Surface {
   sealed interface Annotation {
     val range: Range
 
+    data class Export(
+      override val range: Range,
+    ) : Annotation
+
     data class Tick(
       override val range: Range,
     ) : Annotation

@@ -127,6 +127,7 @@ class Elaborate private constructor(
   ): C.Annotation {
     // TODO: validate
     return when (annotation) {
+      is S.Annotation.Export  -> C.Annotation.Export
       is S.Annotation.Tick    -> C.Annotation.Tick
       is S.Annotation.Load    -> C.Annotation.Load
       is S.Annotation.NoDrop  -> C.Annotation.NoDrop

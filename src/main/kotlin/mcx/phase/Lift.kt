@@ -36,6 +36,7 @@ class Lift private constructor(
     annotation: C.Annotation,
   ): L.Annotation {
     return when (annotation) {
+      is C.Annotation.Export  -> error("unexpected: export")
       is C.Annotation.Tick    -> L.Annotation.Tick
       is C.Annotation.Load    -> L.Annotation.Load
       is C.Annotation.NoDrop  -> L.Annotation.NoDrop

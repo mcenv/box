@@ -36,6 +36,8 @@ object Core {
   }
 
   sealed interface Annotation {
+    object Export : Annotation
+
     object Tick : Annotation
 
     object Load : Annotation
