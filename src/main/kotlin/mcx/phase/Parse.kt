@@ -332,25 +332,38 @@ class Parse private constructor(
                   else -> {
                     val second = parseTerm()
                     skipTrivia()
-                    if (canRead() && peek() == ')') {
-                      skip()
-                      S.Term.Run(first, S.Ranged(emptyList(), first.range), second, until())
-                    } else {
-                      (second as? S.Term.Var)?.let { operator ->
-                        when (operator.name) {
-                          "is" -> {
-                            val third = parsePattern()
-                            expect(')')
-                            S.Term.Is(first, third, until())
-                          }
-                          else -> {
-                            val third = parseTerm()
-                            expect(')')
-                            val range = until()
-                            S.Term.Run(operator, S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                    if (canRead()) {
+                      when (peek()) {
+                        ')'  -> {
+                          skip()
+                          S.Term.Run(first, S.Ranged(emptyList(), first.range), second, until())
+                        }
+                        else -> {
+                          val typeArgs =
+                            if (canRead() && peek() == '⟨') {
+                              parseRanged { parseList(',', '⟨', '⟩') { parseType() } }
+                            } else {
+                              null
+                            }
+                          (second as? S.Term.Var)?.let { operator ->
+                            when (operator.name) {
+                              "is" -> {
+                                val third = parsePattern()
+                                expect(')')
+                                S.Term.Is(first, third, until())
+                              }
+                              else -> {
+                                val third = parseTerm()
+                                expect(')')
+                                val range = until()
+                                S.Term.Run(operator, typeArgs ?: S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                              }
+                            }
                           }
                         }
                       }
+                    } else {
+                      null
                     }
                   }
                 }
