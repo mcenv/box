@@ -335,12 +335,17 @@ class Elaborate private constructor(
 
       term is S.Term.FunOf &&
       expected is C.Type.Fun?           -> {
-        val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, expected?.param)
-          val body = elaborateTerm(term.body, expected?.result)
-          binder to body
+        if (meta || stage > 0) {
+          val (binder, body) = restoring {
+            val binder = elaboratePattern(term.binder, expected?.param)
+            val body = elaborateTerm(term.body, expected?.result)
+            binder to body
+          }
+          C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
+        } else {
+          diagnostics += Diagnostic.RequiredInline(term.range)
+          C.Term.Hole(expected ?: C.Type.Hole)
         }
-        C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
       }
 
       term is S.Term.If                 -> {
@@ -442,7 +447,7 @@ class Elaborate private constructor(
 
       term is S.Term.CodeOf &&
       expected is C.Type.Code?      -> {
-        if (meta) {
+        if (meta || stage > 0) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
           }
@@ -557,7 +562,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Anno &&
       expected == null          -> {
-        val type = elaborateType(pattern.type, meta = meta)
+        val type = elaborateType(pattern.type, meta = meta || stage > 0)
         elaboratePattern(pattern.element, type)
       }
 
