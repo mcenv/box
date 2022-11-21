@@ -48,6 +48,8 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, term.type)
       is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), term.type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, term.type)
+      is C.Term.FunOf       -> term
+      is C.Term.Apply       -> term
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
       is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
       is C.Term.Var         -> term

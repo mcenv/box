@@ -76,6 +76,17 @@ sealed interface Value {
     val elements: List<Lazy<Value>>,
   ) : Value
 
+  class FunOf(
+    val binder: Core.Pattern,
+    val body: Core.Term,
+  ) : Value
+
+  class Apply(
+    val operator: Value,
+    val arg: Lazy<Value>,
+    val operatorType: Core.Type,
+  ) : Value
+
   class If(
     val condition: Value,
     val thenClause: Lazy<Value>,

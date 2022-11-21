@@ -53,6 +53,12 @@ object Normalize {
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
       is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
+      is C.Term.FunOf       -> Value.FunOf(term.binder, term.body)
+      is C.Term.Apply       ->
+        when (val operator = evalTerm(term.operator)) {
+          is Value.FunOf -> bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
+          else           -> Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
+        }
       is C.Term.If          ->
         when (val condition = evalTerm(term.condition)) {
           is Value.BoolOf -> if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
@@ -60,7 +66,7 @@ object Normalize {
         }
       is C.Term.Let         -> bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
       is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run     -> {
+      is C.Term.Run         -> {
         val arg = evalTerm(term.arg)
         when (val definition = definitions[term.name] as? C.Definition.Function) {
           null -> Value.Run(term.name, term.typeArgs, arg)
@@ -69,25 +75,27 @@ object Normalize {
               val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
               builtin.eval(arg) ?: Value.Run(term.name, term.typeArgs, arg)
             } else {
-              bind(bindValue(arg, definition.binder)).evalTerm(definition.body)
+              emptyEnv(definitions)
+                .bind(bindValue(arg, definition.binder))
+                .evalTerm(definition.body)
             }
         }
       }
-      is C.Term.Is      -> {
+      is C.Term.Is          -> {
         val scrutinee = evalTerm(term.scrutinee)
         when (val matched = matchValue(scrutinee, term.scrutineer)) {
           null -> Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
           else -> Value.BoolOf(matched)
         }
       }
-      is C.Term.Command -> error("unexpected: command") // TODO
-      is C.Term.CodeOf  -> Value.CodeOf(lazy { evalTerm(term.element) })
-      is C.Term.Splice  ->
+      is C.Term.Command     -> error("unexpected: command") // TODO
+      is C.Term.CodeOf      -> Value.CodeOf(lazy { evalTerm(term.element) })
+      is C.Term.Splice      ->
         when (val element = evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
-      is C.Term.Hole    -> Value.Hole(term.type)
+      is C.Term.Hole        -> Value.Hole(term.type)
     }
   }
 
@@ -160,24 +168,32 @@ object Normalize {
         type as C.Type.Ref
         C.Term.RefOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.TupleOf -> {
+      is Value.TupleOf     -> {
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var     -> C.Term.Var(value.name, value.level, type)
-      is Value.Run     -> {
+      is Value.FunOf       -> {
+        type as C.Type.Fun
+        C.Term.FunOf(value.binder, value.body, type)
+      }
+      is Value.Apply       -> {
+        value.operatorType as C.Type.Fun
+        C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
+      }
+      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Run         -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.param), definition.result)
       }
-      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command -> C.Term.Command(value.value, C.Type.Union.END)
-      is Value.CodeOf  -> {
+      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command     -> C.Term.Command(value.value, C.Type.Union.END)
+      is Value.CodeOf      -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole    -> C.Term.Hole(value.type)
+      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole        -> C.Term.Hole(value.type)
     }
   }
 }

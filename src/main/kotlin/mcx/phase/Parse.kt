@@ -1,6 +1,5 @@
 package mcx.phase
 
-import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.ast.Registry
 import mcx.ast.Surface
@@ -27,7 +26,7 @@ class Parse private constructor(
       skip("import".length)
       skipTrivia()
       parseList(',', '{', '}') {
-        parseRanged { readWord().toModuleLocation() }
+        parseRanged { ModuleLocation(readWord().split('.')) }
       }
     } else {
       emptyList()
@@ -159,10 +158,37 @@ class Parse private constructor(
       if (canRead()) {
         when (peek()) {
           '('  -> {
-            val elements = parseList(',', '(', ')') {
-              parseType()
+            skip()
+            skipTrivia()
+            if (canRead() && peek() == ')') {
+              skip()
+              S.Type.Tuple(emptyList(), until())
+            } else {
+              val first = parseType()
+              skipTrivia()
+              if (canRead()) {
+                when (peek()) {
+                  ')'  -> {
+                    skip()
+                    S.Type.Tuple(listOf(first), until())
+                  }
+                  ','  -> {
+                    val tail = parseList(',', ',', ')') { parseType() }
+                    S.Type.Tuple(listOf(first) + tail, until())
+                  }
+                  '→'  -> {
+                    skip()
+                    skipTrivia()
+                    val result = parseType()
+                    expect(')')
+                    S.Type.Fun(first, result, until())
+                  }
+                  else -> null
+                }
+              } else {
+                null
+              }
             }
-            S.Type.Tuple(elements, until())
           }
           '"'  -> S.Type.String(readQuotedString(), until())
           '['  -> {
@@ -301,19 +327,14 @@ class Parse private constructor(
                     skipTrivia()
                     val arg = parseTerm()
                     expect(')')
-                    (first as? S.Term.Var)?.let { operator ->
-                      S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), typeArgs, arg, until())
-                    }
+                    S.Term.Run(first, typeArgs, arg, until())
                   }
                   else -> {
                     val second = parseTerm()
                     skipTrivia()
                     if (canRead() && peek() == ')') {
                       skip()
-                      (first as? S.Term.Var)?.let { operator ->
-                        val range = until()
-                        S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Ranged(emptyList(), operator.range), second, range)
-                      }
+                      S.Term.Run(first, S.Ranged(emptyList(), first.range), second, until())
                     } else {
                       (second as? S.Term.Var)?.let { operator ->
                         when (operator.name) {
@@ -326,7 +347,7 @@ class Parse private constructor(
                             val third = parseTerm()
                             expect(')')
                             val range = until()
-                            S.Term.Run(S.Ranged(operator.name.toDefinitionLocation(), operator.range), S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                            S.Term.Run(operator, S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
                           }
                         }
                       }
@@ -420,6 +441,14 @@ class Parse private constructor(
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
               "true"  -> S.Term.BoolOf(true, until())
+              "fun"   -> {
+                skipTrivia()
+                val binder = parsePattern()
+                expect('→')
+                skipTrivia()
+                val body = parseTerm()
+                S.Term.FunOf(binder, body, until())
+              }
               "if"    -> {
                 skipTrivia()
                 val condition = parseTerm()
@@ -561,14 +590,6 @@ class Parse private constructor(
         S.Pattern.Hole(annotations, range)
       }
     }
-
-  private fun String.toModuleLocation(): ModuleLocation =
-    ModuleLocation(split('.'))
-
-  private fun String.toDefinitionLocation(): DefinitionLocation {
-    val parts = split('.')
-    return DefinitionLocation(ModuleLocation(parts.dropLast(1)), parts.last())
-  }
 
   private fun <R> parseRanged(
     parse: () -> R,

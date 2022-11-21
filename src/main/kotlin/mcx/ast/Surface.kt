@@ -147,6 +147,12 @@ object Surface {
       override val range: Range,
     ) : Type
 
+    data class Fun(
+      val param: Type,
+      val result: Type,
+      override val range: Range,
+    ) : Type
+
     data class Union(
       val elements: kotlin.collections.List<Type>,
       override val range: Range,
@@ -245,6 +251,12 @@ object Surface {
       override val range: Range,
     ) : Term
 
+    data class FunOf(
+      val binder: Pattern,
+      val body: Term,
+      override val range: Range,
+    ) : Term
+
     data class If(
       val condition: Term,
       val thenClause: Term,
@@ -265,7 +277,7 @@ object Surface {
     ) : Term
 
     data class Run(
-      val name: Ranged<DefinitionLocation>,
+      val operator: Term,
       val typeArgs: Ranged<List<Type>>,
       val arg: Term,
       override val range: Range,

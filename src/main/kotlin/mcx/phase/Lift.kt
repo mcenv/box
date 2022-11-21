@@ -65,6 +65,7 @@ class Lift private constructor(
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
       is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
+      is C.Type.Fun       -> error("unexpected: ${prettyType(type)}")
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
@@ -92,6 +93,8 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
+      is C.Term.FunOf       -> error("unexpected: fun_of")
+      is C.Term.Apply       -> error("unexpected: apply")
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->

@@ -179,6 +179,13 @@ object Core {
       override val kind: Kind,
     ) : Type
 
+    data class Fun(
+      val param: Type,
+      val result: Type,
+    ) : Type {
+      override val kind: Kind get() = Kind.META
+    }
+
     data class Union(
       val elements: kotlin.collections.List<Type>,
       override val kind: Kind,
@@ -281,6 +288,18 @@ object Core {
 
     data class TupleOf(
       val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class FunOf(
+      val binder: Pattern,
+      val body: Term,
+      override val type: Type,
+    ) : Term
+
+    data class Apply(
+      val operator: Term,
+      val arg: Term,
       override val type: Type,
     ) : Term
 
