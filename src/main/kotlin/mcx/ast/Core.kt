@@ -183,7 +183,7 @@ object Core {
       val param: Type,
       val result: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.META
+      override val kind: Kind get() = Kind.ONE
     }
 
     data class Union(

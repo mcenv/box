@@ -94,7 +94,7 @@ class Pack private constructor() {
           }
         }
       }
-      is L.Term.CompoundOf  -> {
+      is L.Term.CompoundOf -> {
         push(P.Type.COMPOUND, "value {}")
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -104,17 +104,23 @@ class Pack private constructor() {
           drop(valueType)
         }
       }
-      is L.Term.RefOf       -> {
+      is L.Term.RefOf      -> {
         packTerm(term.element)
         +"function heap/${eraseType(term.element.type).first()}_ref"
         push(P.Type.INT, null)
       }
-      is L.Term.TupleOf     -> {
+      is L.Term.TupleOf    -> {
         term.elements.forEach { element ->
           packTerm(element)
         }
       }
-      is L.Term.If          -> {
+      is L.Term.FunOf      -> {
+        push(P.Type.COMPOUND, "value {id:${term.id}}")
+      }
+      is L.Term.Apply      -> {
+        // TODO: dispatch
+      }
+      is L.Term.If         -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
         drop(P.Type.BYTE)
@@ -122,7 +128,7 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packDefinitionLocation(term.elseName)}"
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let         -> {
+      is L.Term.Let        -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -225,6 +231,7 @@ class Pack private constructor() {
       is L.Type.Compound  -> listOf(P.Type.COMPOUND)
       is L.Type.Ref       -> listOf(P.Type.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
+      is L.Type.Fun       -> listOf(P.Type.COMPOUND)
       is L.Type.Union     -> type.elements
                                .firstOrNull()
                                ?.let { eraseType(it) } ?: listOf(P.Type.END)

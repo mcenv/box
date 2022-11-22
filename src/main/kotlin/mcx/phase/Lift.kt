@@ -1,6 +1,6 @@
 package mcx.phase
 
-import mcx.ast.Lifted
+import java.util.concurrent.atomic.AtomicInteger
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
@@ -10,7 +10,7 @@ class Lift private constructor(
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
   private var freshFunctionId: Int = 0
 
-  private fun lift(): List<L.Definition> {
+  private fun lift(): List<L.Definition> /* TODO: add metadata to lifted definitions */ {
     val annotations = definition.annotations.map { liftAnnotation(it) }
     return liftedDefinitions + when (definition) {
       is C.Definition.Resource -> {
@@ -65,7 +65,7 @@ class Lift private constructor(
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
       is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
-      is C.Type.Fun       -> error("unexpected: ${prettyType(type)}")
+      is C.Type.Fun       -> L.Type.Fun(liftType(type.param), liftType(type.result))
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
@@ -93,8 +93,11 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf       -> error("unexpected: fun_of")
-      is C.Term.Apply       -> error("unexpected: apply")
+      is C.Term.FunOf       -> {
+        createFreshFunction(liftTerm(term.body))
+        L.Term.FunOf(globalFreshFunctionId.getAndIncrement(), type) // TODO: capture variables
+      }
+      is C.Term.Apply       -> L.Term.Apply(liftTerm(term.operator), liftTerm(term.arg), type)
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
         val thenFunction = liftTerm(term.thenClause).let { thenClause ->
@@ -104,11 +107,11 @@ class Lift private constructor(
               thenClause,
               L.Term.Command("scoreboard players set #0 mcx 1", thenClause.type),
               thenClause.type,
-            )
+            ) // TODO: do this in pack phase using metadata
           )
         }
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
-        L.Term.If(condition, thenFunction.name, elseFunction.name, type)
+        L.Term.If(condition, thenFunction.name, elseFunction.name, type) // TODO: capture variables
       }
       is C.Term.Let         -> L.Term.Let(liftPattern(term.binder), liftTerm(term.init), liftTerm(term.body), type)
       is C.Term.Var         -> L.Term.Var(term.level, type)
@@ -138,7 +141,7 @@ class Lift private constructor(
 
   private fun createFreshFunction(
     body: L.Term,
-  ): Lifted.Definition.Function {
+  ): L.Definition.Function {
     val type = L.Type.Tuple(emptyList())
     return L.Definition
       .Function(
@@ -156,6 +159,8 @@ class Lift private constructor(
     error("unexpected: hole")
 
   companion object {
+    private val globalFreshFunctionId: AtomicInteger = AtomicInteger()
+
     operator fun invoke(
       config: Config,
       definition: C.Definition,

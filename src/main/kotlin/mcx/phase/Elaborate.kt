@@ -178,7 +178,7 @@ class Elaborate private constructor(
               }
           C.Type.Union(listOf(head) + tail, head.kind)
         }
-      type is S.Type.Fun && arity == null && meta == null  -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
+      type is S.Type.Fun && arity == null                  -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
       type is S.Type.Code && arity == null && meta == null -> C.Type.Code(elaborateType(type.element))
       type is S.Type.Var && arity == null                  -> {
         when (val level = getType(type.name)) {
@@ -209,28 +209,28 @@ class Elaborate private constructor(
   ): C.Term {
     return when {
       term is S.Term.BoolOf &&
-      expected == null                  -> C.Term.BoolOf(term.value, C.Type.Bool(term.value))
+      expected == null            -> C.Term.BoolOf(term.value, C.Type.Bool(term.value))
 
       term is S.Term.ByteOf &&
-      expected == null                  -> C.Term.ByteOf(term.value, C.Type.Byte(term.value))
+      expected == null            -> C.Term.ByteOf(term.value, C.Type.Byte(term.value))
 
       term is S.Term.ShortOf &&
-      expected == null                  -> C.Term.ShortOf(term.value, C.Type.Short(term.value))
+      expected == null            -> C.Term.ShortOf(term.value, C.Type.Short(term.value))
 
       term is S.Term.IntOf &&
-      expected == null                  -> C.Term.IntOf(term.value, C.Type.Int(term.value))
+      expected == null            -> C.Term.IntOf(term.value, C.Type.Int(term.value))
 
       term is S.Term.LongOf &&
-      expected == null                  -> C.Term.LongOf(term.value, C.Type.Long(term.value))
+      expected == null            -> C.Term.LongOf(term.value, C.Type.Long(term.value))
 
       term is S.Term.FloatOf &&
-      expected == null                  -> C.Term.FloatOf(term.value, C.Type.Float(term.value))
+      expected == null            -> C.Term.FloatOf(term.value, C.Type.Float(term.value))
 
       term is S.Term.DoubleOf &&
-      expected == null                  -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
+      expected == null            -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
 
       term is S.Term.StringOf &&
-      expected == null                  -> C.Term.StringOf(term.value, C.Type.String(term.value))
+      expected == null            -> C.Term.StringOf(term.value, C.Type.String(term.value))
 
       term is S.Term.ByteArrayOf &&
       expected is C.Type.ByteArray? -> {
@@ -258,7 +258,7 @@ class Elaborate private constructor(
 
       term is S.Term.ListOf &&
       term.elements.isEmpty() &&
-      expected is C.Type.List?          -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
+      expected is C.Type.List?    -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
 
       term is S.Term.ListOf &&
       expected is C.Type.List?      -> {
@@ -309,13 +309,13 @@ class Elaborate private constructor(
       }
 
       term is S.Term.RefOf &&
-      expected is C.Type.Ref?           -> {
+      expected is C.Type.Ref?     -> {
         val element = elaborateTerm(term.element, expected?.element)
         C.Term.RefOf(element, C.Type.Ref(element.type))
       }
 
       term is S.Term.TupleOf &&
-      expected == null                  -> {
+      expected == null            -> {
         val elements = term.elements.map { element ->
           elaborateTerm(element)
         }
@@ -323,7 +323,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.TupleOf &&
-      expected is C.Type.Tuple          -> {
+      expected is C.Type.Tuple    -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range)
         }
@@ -334,21 +334,16 @@ class Elaborate private constructor(
       }
 
       term is S.Term.FunOf &&
-      expected is C.Type.Fun?           -> {
-        if (meta || stage > 0) {
-          val (binder, body) = restoring {
-            val binder = elaboratePattern(term.binder, expected?.param)
-            val body = elaborateTerm(term.body, expected?.result)
-            binder to body
-          }
-          C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
-        } else {
-          diagnostics += Diagnostic.RequiredInline(term.range)
-          C.Term.Hole(expected ?: C.Type.Hole)
+      expected is C.Type.Fun?     -> {
+        val (binder, body) = restoring {
+          val binder = elaboratePattern(term.binder, expected?.param)
+          val body = elaborateTerm(term.body, expected?.result)
+          binder to body
         }
+        C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
       }
 
-      term is S.Term.If                 -> {
+      term is S.Term.If           -> {
         val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
@@ -356,7 +351,7 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is S.Term.Let                -> {
+      term is S.Term.Let          -> {
         val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder, init.type)
@@ -367,7 +362,7 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Var &&
-      expected == null                  ->
+      expected == null            ->
         when (val level = getVar(term.name)) {
           -1   -> {
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
@@ -652,12 +647,12 @@ class Elaborate private constructor(
 
       type1 is C.Type.Compound &&
       type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+                                  type1.elements.all { (key1, element1) ->
+                                    when (val element2 = type2.elements[key1]) {
+                                      null -> false
+                                      else -> element1 isSubtypeOf element2
+                                    }
+                                  }
 
       type1 is C.Type.Ref &&
       type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element

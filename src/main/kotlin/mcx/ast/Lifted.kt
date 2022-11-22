@@ -97,6 +97,11 @@ object Lifted {
       val elements: kotlin.collections.List<Type>,
     ) : Type
 
+    data class Fun(
+      val param: Type,
+      val result: Type,
+    ) : Type
+
     data class Union(
       val elements: kotlin.collections.List<Type>,
     ) : Type
@@ -177,6 +182,17 @@ object Lifted {
 
     data class TupleOf(
       val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class FunOf(
+      val id: Int,
+      override val type: Type,
+    ) : Term
+
+    data class Apply(
+      val operator: Term,
+      val arg: Term,
       override val type: Type,
     ) : Term
 
