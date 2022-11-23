@@ -816,7 +816,7 @@ class Elaborate private constructor(
 
   companion object {
     operator fun invoke(
-      config: Config,
+      context: Context,
       dependencies: List<Dependency>,
       input: Parse.Result,
       signature: Boolean,

@@ -1,20 +1,24 @@
 package mcx.phase
 
 import kotlinx.coroutines.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.*
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import kotlin.io.path.exists
-import kotlin.io.path.readText
+import kotlin.io.path.*
 
 class Build(
-  private val src: Path,
+  private val root: Path,
 ) {
+  private val src: Path = root.resolve("src")
   private val texts: ConcurrentMap<ModuleLocation, String> = ConcurrentHashMap()
   private val parseResults: ConcurrentMap<ModuleLocation, Trace<Parse.Result>> = ConcurrentHashMap()
   private val elaborateResults: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
@@ -72,7 +76,7 @@ class Build(
   }
 
   suspend fun fetchSurface(
-    config: Config,
+    context: Context,
     location: ModuleLocation,
   ): Parse.Result? =
     coroutineScope {
@@ -80,7 +84,7 @@ class Build(
       val newHash = text.hashCode()
       val parseResult = parseResults[location]
       if (parseResult == null || parseResult.hash != newHash) {
-        Parse(config, location, text).also {
+        Parse(context, location, text).also {
           parseResults[location] = Trace(it, newHash)
         }
       } else {
@@ -89,15 +93,15 @@ class Build(
     }
 
   suspend fun fetchSignature(
-    config: Config,
+    context: Context,
     location: ModuleLocation,
   ): Elaborate.Result? =
     coroutineScope {
-      val surface = fetchSurface(config, location) ?: return@coroutineScope null
+      val surface = fetchSurface(context, location) ?: return@coroutineScope null
       val newHash = surface.hashCode()
       val signature = signatures[location]
       if (signature == null || signature.hash != newHash) {
-        Elaborate(config, emptyList(), surface, true).also {
+        Elaborate(context, emptyList(), surface, true).also {
           signatures[location] = Trace(it, newHash)
         }
       } else {
@@ -106,22 +110,22 @@ class Build(
     }
 
   suspend fun fetchCore(
-    config: Config,
+    context: Context,
     location: ModuleLocation,
     position: Position? = null,
   ): Elaborate.Result =
     coroutineScope {
-      val surface = fetchSurface(config, location)!!
+      val surface = fetchSurface(context, location)!!
       val dependencies =
         surface.module.imports
-          .map { async { Elaborate.Dependency(it.value, fetchSignature(config, it.value)?.module, it.range) } }
-          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(config, PRELUDE)!!.module, null) })
-          .plus(async { Elaborate.Dependency(location, fetchSignature(config, location)!!.module, null) })
+          .map { async { Elaborate.Dependency(it.value, fetchSignature(context, it.value)?.module, it.range) } }
+          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(context, PRELUDE)!!.module, null) })
+          .plus(async { Elaborate.Dependency(location, fetchSignature(context, location)!!.module, null) })
           .awaitAll()
       val newHash = Objects.hash(surface, dependencies)
       val elaborateResult = elaborateResults[location]
       if (elaborateResult == null || elaborateResult.hash != newHash || position != null) {
-        Elaborate(config, dependencies, surface, false, position).also {
+        Elaborate(context, dependencies, surface, false, position).also {
           elaborateResults[location] = Trace(it, newHash)
         }
       } else {
@@ -130,56 +134,136 @@ class Build(
     }
 
   suspend fun fetchStaged(
-    config: Config,
+    context: Context,
     location: DefinitionLocation,
   ): Core.Definition? =
     coroutineScope {
-      val core = fetchCore(config, location.module)
+      val core = fetchCore(context, location.module)
       val definition = core.module.definitions.find { it.name == location }!!
       val dependencies =
-        fetchSurface(config, location.module)!!.module.imports
-          .map { async { fetchCore(config, it.value).module.definitions } }
-          .plus(async { fetchCore(config, PRELUDE).module.definitions })
+        fetchSurface(context, location.module)!!.module.imports
+          .map { async { fetchCore(context, it.value).module.definitions } }
+          .plus(async { fetchCore(context, PRELUDE).module.definitions })
           .awaitAll()
           .flatten()
           .plus(core.module.definitions)
           .associateBy { it.name }
-      Stage(config, dependencies, definition)
+      Stage(context, dependencies, definition)
     }
 
   suspend fun fetchLifted(
-    config: Config,
+    context: Context,
     location: DefinitionLocation,
   ): List<Lifted.Definition> =
     coroutineScope {
-      when (val staged = fetchStaged(config, location)) {
+      when (val staged = fetchStaged(context, location)) {
         null -> emptyList()
-        else -> Lift(config, staged)
+        else -> Lift(context, staged)
       }
     }
 
   suspend fun fetchPacked(
-    config: Config,
+    context: Context,
     location: DefinitionLocation,
   ): List<Packed.Definition> =
     coroutineScope {
-      val lifted = fetchLifted(config, location)
+      val lifted = fetchLifted(context, location)
       lifted
-        .map { async { Pack(config, it) } }
+        .map { async { Pack(context, it) } }
         .awaitAll()
     }
 
   suspend fun fetchGenerated(
-    config: Config,
+    context: Context,
     location: DefinitionLocation,
   ): Map<String, String> =
     coroutineScope {
-      val packed = fetchPacked(config, location)
+      val packed = fetchPacked(context, location)
       packed
-        .map { async { "data/minecraft/${it.registry.string}/${it.path}.${it.registry.extension}" to Generate(config, it) } }
+        .map { async { "data/minecraft/${it.registry.string}/${it.path}.${it.registry.extension}" to Generate(context, it) } }
         .awaitAll()
         .toMap()
     }
+
+  @OptIn(ExperimentalSerializationApi::class)
+  suspend operator fun invoke(): List<Pair<Path, List<Diagnostic>>> {
+    val serverProperties = Properties().apply {
+      load(
+        root
+          .resolve("server.properties")
+          .inputStream()
+          .buffered()
+      )
+    }
+    val levelName = serverProperties.getProperty("level-name")
+    val datapacks =
+      root
+        .resolve(levelName)
+        .resolve("datapacks")
+        .also { it.createDirectories() }
+
+    val context =
+      root
+        .resolve("pack.json")
+        .inputStream()
+        .buffered()
+        .use {
+          Json.decodeFromStream<Context>(it)
+        }
+
+    fun Path.toModuleLocation(): ModuleLocation =
+      ModuleLocation(
+        src
+          .relativize(this)
+          .invariantSeparatorsPathString
+          .dropLast(".mcx".length)
+          .split('/')
+      )
+
+    val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
+
+    val datapackRoot = datapacks
+      .resolve(context.name)
+      .also { it.createDirectories() }
+
+    // TODO: generate dispatcher
+    val outputModules = runBlocking {
+      Files
+        .walk(src)
+        .filter { it.extension == "mcx" }
+        .map { path ->
+          async {
+            val core = fetchCore(context, path.toModuleLocation())
+            diagnosticsByPath += path to core.diagnostics
+            core.module.definitions
+              .map { async { fetchGenerated(context, it.name) } }
+              .awaitAll()
+          }
+        }
+        .toList()
+        .awaitAll()
+        .flatten()
+        .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
+        .reduce { acc, map -> acc + map }
+        .onEach { (name, definition) ->
+          name
+            .also { it.parent.createDirectories() }
+            .bufferedWriter()
+            .use { it.write(definition) }
+        }
+    }
+
+    Files
+      .walk(datapackRoot)
+      .filter { it.isRegularFile() }
+      .forEach {
+        if (it !in outputModules) {
+          it.deleteExisting()
+        }
+      }
+
+    return diagnosticsByPath
+  }
 
   private data class Trace<V>(
     val value: V,

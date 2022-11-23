@@ -71,7 +71,7 @@ class Stage private constructor(
 
   companion object {
     operator fun invoke(
-      config: Config,
+      context: Context,
       dependencies: Map<DefinitionLocation, C.Definition>,
       definition: C.Definition,
     ): C.Definition? =

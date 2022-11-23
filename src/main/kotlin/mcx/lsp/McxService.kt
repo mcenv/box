@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.ModuleLocation
 import mcx.phase.Build
-import mcx.phase.Config
+import mcx.phase.Context
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
@@ -33,7 +33,7 @@ class McxService : TextDocumentService,
   private lateinit var client: LanguageClient
   private lateinit var root: Path
   private lateinit var build: Build
-  private var config: Config? = null
+  private var context: Context? = null
   private val diagnosticsHashes: ConcurrentMap<String, Int> = ConcurrentHashMap()
 
   override fun connect(client: LanguageClient) {
@@ -42,7 +42,7 @@ class McxService : TextDocumentService,
 
   fun setup(folder: WorkspaceFolder) {
     root = URI(folder.uri).toPath()
-    build = Build(root.resolve("src"))
+    build = Build(root)
     updateConfig()
   }
 
@@ -113,13 +113,13 @@ class McxService : TextDocumentService,
     updateConfig()
   }
 
-  private fun fetchConfig(): Config =
-    config ?: throw CancellationException()
+  private fun fetchConfig(): Context =
+    context ?: throw CancellationException()
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun updateConfig() {
     val path = root.resolve("pack.json")
-    config = if (path.exists() && path.isRegularFile()) {
+    context = if (path.exists() && path.isRegularFile()) {
       path
         .inputStream()
         .buffered()

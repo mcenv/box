@@ -1,10 +1,10 @@
 package mcx.phase
 
-import java.util.concurrent.atomic.AtomicInteger
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
 class Lift private constructor(
+  private val context: Context,
   private val definition: C.Definition,
 ) {
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
@@ -96,8 +96,9 @@ class Lift private constructor(
       is C.Term.FunOf       ->
         restoring {
           liftPattern(term.binder)
-          createFreshFunction(liftTerm(term.body))
-          L.Term.FunOf(globalFreshFunctionId.getAndIncrement(), type)
+          val body = createFreshFunction(liftTerm(term.body))
+          val id = context.liftFunction(body.name)
+          L.Term.FunOf(id, type)
         }
       is C.Term.Apply       -> L.Term.Apply(liftTerm(term.operator), liftTerm(term.arg), type)
       is C.Term.If          -> {
@@ -187,12 +188,10 @@ class Lift private constructor(
     error("unexpected: hole")
 
   companion object {
-    private val globalFreshFunctionId: AtomicInteger = AtomicInteger()
-
     operator fun invoke(
-      config: Config,
+      context: Context,
       definition: C.Definition,
     ): List<L.Definition> =
-      Lift(definition).lift()
+      Lift(context, definition).lift()
   }
 }

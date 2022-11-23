@@ -806,7 +806,7 @@ class Parse private constructor(
 
   companion object {
     operator fun invoke(
-      config: Config,
+      context: Context,
       module: ModuleLocation,
       text: String,
     ): Result =

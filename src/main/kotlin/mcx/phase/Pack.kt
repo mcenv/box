@@ -118,7 +118,9 @@ class Pack private constructor() {
         push(P.Type.COMPOUND, "value {id:${term.id}}")
       }
       is L.Term.Apply      -> {
-        // TODO: dispatch
+        packTerm(term.arg)
+        packTerm(term.operator)
+        +"# dispatch" // TODO
       }
       is L.Term.If         -> {
         packTerm(term.condition)
@@ -344,7 +346,7 @@ class Pack private constructor() {
     private const val REGISTER_1: String = "#1 $MCX_OBJECTIVE"
 
     operator fun invoke(
-      config: Config,
+      context: Context,
       definition: L.Definition,
     ): P.Definition {
       return Pack().packDefinition(definition)

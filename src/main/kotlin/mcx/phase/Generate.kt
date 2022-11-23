@@ -6,7 +6,7 @@ import mcx.util.quoted
 import mcx.ast.Packed as P
 
 class Generate private constructor(
-  private val config: Config,
+  private val context: Context,
 ) {
   private fun generateDefinition(
     definition: P.Definition,
@@ -66,10 +66,10 @@ class Generate private constructor(
 
   companion object {
     operator fun invoke(
-      config: Config,
+      context: Context,
       definition: P.Definition,
     ): String {
-      return Generate(config).generateDefinition(definition)
+      return Generate(context).generateDefinition(definition)
     }
   }
 }
