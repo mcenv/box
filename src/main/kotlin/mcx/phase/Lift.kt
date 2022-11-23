@@ -28,7 +28,7 @@ class Lift private constructor(
           L.Definition.Function(annotations, definition.name, binder, body, null)
         }
       }
-      is C.Definition.Hole     -> unexpectedHole()
+      is C.Definition.Hole     -> throw UnexpectedHole
     }
   }
 
@@ -42,7 +42,7 @@ class Lift private constructor(
       is C.Annotation.NoDrop  -> L.Annotation.NoDrop
       is C.Annotation.Inline  -> L.Annotation.Inline
       is C.Annotation.Builtin -> L.Annotation.Builtin
-      is C.Annotation.Hole    -> unexpectedHole()
+      is C.Annotation.Hole    -> throw UnexpectedHole
     }
   }
 
@@ -69,7 +69,7 @@ class Lift private constructor(
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
-      is C.Type.Hole      -> unexpectedHole()
+      is C.Type.Hole      -> throw UnexpectedHole
     }
   }
 
@@ -113,7 +113,7 @@ class Lift private constructor(
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let         -> {
+      is C.Term.Let     -> {
         val init = liftTerm(term.init)
         val (binder, body) = restoring {
           val binder = liftPattern(term.binder)
@@ -122,16 +122,16 @@ class Lift private constructor(
         }
         L.Term.Let(binder, init, body, type)
       }
-      is C.Term.Var         -> L.Term.Var(term.level, type)
-      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Is          ->
+      is C.Term.Var     -> L.Term.Var(term.level, type)
+      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is      ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Command     -> L.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> error("unexpected: code_of")
-      is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.Hole        -> unexpectedHole()
+      is C.Term.Command -> L.Term.Command(term.value, type)
+      is C.Term.CodeOf  -> error("unexpected: code_of")
+      is C.Term.Splice  -> error("unexpected: splice")
+      is C.Term.Hole    -> throw UnexpectedHole
     }
   }
 
@@ -149,7 +149,7 @@ class Lift private constructor(
         L.Pattern.Var(pattern.level, annotations, type)
       }
       is C.Pattern.Drop       -> L.Pattern.Drop(annotations, type)
-      is C.Pattern.Hole       -> unexpectedHole()
+      is C.Pattern.Hole       -> throw UnexpectedHole
     }
   }
 
@@ -182,9 +182,6 @@ class Lift private constructor(
     }
     return result
   }
-
-  private fun unexpectedHole(): Nothing =
-    error("unexpected: hole")
 
   companion object {
     operator fun invoke(

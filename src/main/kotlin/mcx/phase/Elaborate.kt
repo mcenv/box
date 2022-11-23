@@ -3,6 +3,7 @@ package mcx.phase
 import mcx.ast.*
 import mcx.lsp.highlight
 import mcx.phase.Elaborate.Env.Companion.emptyEnv
+import mcx.phase.Normalize.evalType
 import mcx.util.contains
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
@@ -61,7 +62,7 @@ class Elaborate private constructor(
             }
             is C.Definition.Function -> {
               documentation = forRight(highlight(createFunctionDocumentation(definition)))
-              labelDetails.detail = ": ${prettyType(definition.param)} -> ${prettyType(definition.result)}"
+              labelDetails.detail = ": ${prettyType(definition.binder.type)} -> ${prettyType(definition.result)}"
               CompletionItemKind.Function
             }
             else                     -> error("unexpected: hole")
@@ -109,7 +110,7 @@ class Elaborate private constructor(
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result, meta = meta)
         C.Definition
-          .Function(annotations, module / definition.name.value, definition.typeParams, binder, binder.type, result)
+          .Function(annotations, module / definition.name.value, definition.typeParams, binder, result)
           .also {
             hover(definition.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
@@ -405,7 +406,7 @@ class Elaborate private constructor(
                   diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
                 }
                 val typeArgs = term.typeArgs.value.map { elaborateType(it) }
-                val param = typeArgs.evalType(definition.param)
+                val param = typeArgs.evalType(definition.binder.type)
                 val arg = elaborateTerm(term.arg, param)
                 val result = typeArgs.evalType(definition.result)
                 C.Term.Run(definition.name, typeArgs, arg, result)
@@ -574,33 +575,6 @@ class Elaborate private constructor(
       }
     }.also {
       hover(pattern.range) { prettyType(it.type) }
-    }
-  }
-
-  private fun List<C.Type>.evalType(
-    type: C.Type,
-  ): C.Type {
-    return when (type) {
-      is C.Type.Bool      -> type
-      is C.Type.Byte      -> type
-      is C.Type.Short     -> type
-      is C.Type.Int       -> type
-      is C.Type.Long      -> type
-      is C.Type.Float     -> type
-      is C.Type.Double    -> type
-      is C.Type.String    -> type
-      is C.Type.ByteArray -> type
-      is C.Type.IntArray  -> type
-      is C.Type.LongArray -> type
-      is C.Type.List      -> C.Type.List(evalType(type.element))
-      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { evalType(it.value) })
-      is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
-      is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
-      is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
-      is C.Type.Fun       -> C.Type.Fun(evalType(type.param), evalType(type.result))
-      is C.Type.Code      -> C.Type.Code(evalType(type.element))
-      is C.Type.Var       -> getOrNull(type.level) ?: type
-      is C.Type.Hole      -> type
     }
   }
 

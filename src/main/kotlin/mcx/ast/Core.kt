@@ -23,7 +23,6 @@ object Core {
       override val name: DefinitionLocation,
       val typeParams: List<String>,
       val binder: Pattern,
-      val param: Type,
       val result: Type,
     ) : Definition {
       lateinit var body: Term

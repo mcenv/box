@@ -136,7 +136,7 @@ class Build(
   suspend fun fetchStaged(
     context: Context,
     location: DefinitionLocation,
-  ): Core.Definition? =
+  ): List<Core.Definition> =
     coroutineScope {
       val core = fetchCore(context, location.module)
       val definition = core.module.definitions.find { it.name == location }!!
@@ -156,10 +156,8 @@ class Build(
     location: DefinitionLocation,
   ): List<Lifted.Definition> =
     coroutineScope {
-      when (val staged = fetchStaged(context, location)) {
-        null -> emptyList()
-        else -> Lift(context, staged)
-      }
+      val staged = fetchStaged(context, location)
+      staged.flatMap { Lift(context, it) }
     }
 
   suspend fun fetchPacked(
@@ -228,7 +226,7 @@ class Build(
 
     // TODO: generate dispatcher
     val outputModules = runBlocking {
-      val inputs = Files
+      Files
         .walk(src)
         .filter { it.extension == "mcx" }
         .map { path ->
@@ -243,7 +241,6 @@ class Build(
         .toList()
         .awaitAll()
         .flatten()
-      inputs
         .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
         .reduce { acc, map -> acc + map }
         .onEach { (name, definition) ->

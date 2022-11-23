@@ -1,37 +1,54 @@
 package mcx.phase
 
 import mcx.ast.DefinitionLocation
+import mcx.phase.Normalize.evalType
 import mcx.phase.Normalize.normalizeTerm
 import mcx.ast.Core as C
 
 class Stage private constructor(
   private val dependencies: Map<DefinitionLocation, C.Definition>,
 ) {
-  private fun stageDefinition(
+  private val stagedDefinitions: MutableList<C.Definition> = mutableListOf()
+
+  private fun stage(
     definition: C.Definition,
-  ): C.Definition? {
-    return when (definition) {
+  ): List<C.Definition> {
+    emptyList<C.Type>().stageDefinition(definition)
+    return stagedDefinitions
+  }
+
+  private fun List<C.Type>.stageDefinition(
+    definition: C.Definition,
+  ) {
+    when (definition) {
       is C.Definition.Resource -> definition
-      is C.Definition.Function ->
+      is C.Definition.Function -> {
         if (
-          definition.typeParams.isNotEmpty() || // TODO: monomorphization
-          C.Annotation.Inline in definition.annotations
+          definition.typeParams.isEmpty() &&
+          C.Annotation.Inline !in definition.annotations
         ) {
-          null
-        } else {
+          val binder = stagePattern(definition.binder)
+          val result = evalType(definition.result)
+          val body = stageTerm(definition.body)
           C.Definition
-            .Function(definition.annotations, definition.name, definition.typeParams, definition.binder, definition.param, definition.result)
+            .Function(definition.annotations, definition.name, emptyList(), binder, result)
             .also {
-              it.body = stageTerm(definition.body)
+              it.body = body
             }
+        } else {
+          null
         }
-      is C.Definition.Hole     -> error("unexpected: hole")
+      }
+      is C.Definition.Hole     -> throw UnexpectedHole
+    }?.also {
+      stagedDefinitions += it
     }
   }
 
-  private fun stageTerm(
+  private fun List<C.Type>.stageTerm(
     term: C.Term,
   ): C.Term {
+    val type = evalType(term.type)
     return when (term) {
       is C.Term.BoolOf      -> term
       is C.Term.ByteOf      -> term
@@ -41,40 +58,79 @@ class Stage private constructor(
       is C.Term.FloatOf     -> term
       is C.Term.DoubleOf    -> term
       is C.Term.StringOf    -> term
-      is C.Term.ByteArrayOf -> C.Term.ByteArrayOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, term.type)
-      is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), term.type)
-      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, term.type)
-      is C.Term.FunOf       -> C.Term.FunOf(term.binder, stageTerm(term.body), term.type)
-      is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), term.type)
-      is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), term.type)
-      is C.Term.Let         -> C.Term.Let(term.binder, stageTerm(term.init), stageTerm(term.body), term.type)
-      is C.Term.Var         -> term
+      is C.Term.ByteArrayOf -> C.Term.ByteArrayOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
+      is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), type)
+      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.FunOf       -> C.Term.FunOf(stagePattern(term.binder), stageTerm(term.body), type)
+      is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), type)
+      is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
+      is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
+      is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
       is C.Term.Run         -> {
         val definition = dependencies[term.name] as C.Definition.Function
         if (C.Annotation.Inline in definition.annotations) {
-          normalizeTerm(dependencies, term)
+          stageTerm(normalizeTerm(dependencies, term))
+        } else if (term.typeArgs.isEmpty()) {
+          val arg = stageTerm(term.arg)
+          C.Term.Run(term.name, emptyList(), arg, type)
         } else {
-          C.Term.Run(term.name, term.typeArgs, stageTerm(term.arg), term.type)
+          val typeArgs = term.typeArgs.map { evalType(it) }
+          val mangledName = mangle(term.name, typeArgs)
+          val arg = stageTerm(term.arg)
+          typeArgs.stageDefinition(
+            C.Definition
+              .Function(
+                definition.annotations,
+                mangledName,
+                emptyList(),
+                definition.binder,
+                definition.result,
+              )
+              .also {
+                it.body = definition.body
+              }
+          )
+          C.Term.Run(mangledName, emptyList(), arg, type)
         }
       }
-      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), term.scrutineer, term.type)
-      is C.Term.Command     -> term
-      is C.Term.CodeOf      -> term
-      is C.Term.Splice      -> normalizeTerm(dependencies, term)
-      is C.Term.Hole        -> term
+      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Command     -> C.Term.Command(term.value, type)
+      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, term))
+      is C.Term.Hole        -> C.Term.Hole(type)
     }
   }
+
+  private fun List<C.Type>.stagePattern(
+    pattern: C.Pattern,
+  ): C.Pattern {
+    val type = evalType(pattern.type)
+    return when (pattern) {
+      is C.Pattern.IntOf      -> pattern
+      is C.Pattern.IntRangeOf -> pattern
+      is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { stagePattern(it) }, pattern.annotations, type)
+      is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, pattern.annotations, type)
+      is C.Pattern.Drop       -> C.Pattern.Drop(pattern.annotations, type)
+      is C.Pattern.Hole       -> C.Pattern.Hole(pattern.annotations, type)
+    }
+  }
+
+  private fun mangle(
+    location: DefinitionLocation,
+    types: List<C.Type>,
+  ): DefinitionLocation =
+    location.module / "${location.name}:${types.joinToString(":") { prettyType(it) }}"
 
   companion object {
     operator fun invoke(
       context: Context,
       dependencies: Map<DefinitionLocation, C.Definition>,
       definition: C.Definition,
-    ): C.Definition? =
-      Stage(dependencies).stageDefinition(definition)
+    ): List<C.Definition> =
+      Stage(dependencies).stage(definition)
   }
 }

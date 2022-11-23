@@ -176,24 +176,51 @@ object Normalize {
         type as C.Type.Fun
         C.Term.FunOf(value.binder, value.body, type)
       }
-      is Value.Apply       -> {
+      is Value.Apply   -> {
         value.operatorType as C.Type.Fun
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
       }
-      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run         -> {
+      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Var     -> C.Term.Var(value.name, value.level, type)
+      is Value.Run     -> {
         val definition = definitions[value.name] as C.Definition.Function
-        C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.param), definition.result)
+        C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
-      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command     -> C.Term.Command(value.value, C.Type.Union.END)
-      is Value.CodeOf      -> {
+      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command -> C.Term.Command(value.value, C.Type.Union.END)
+      is Value.CodeOf  -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole        -> C.Term.Hole(value.type)
+      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole    -> C.Term.Hole(value.type)
+    }
+  }
+
+  fun List<C.Type>.evalType(
+    type: C.Type,
+  ): C.Type {
+    return when (type) {
+      is C.Type.Bool      -> type
+      is C.Type.Byte      -> type
+      is C.Type.Short     -> type
+      is C.Type.Int       -> type
+      is C.Type.Long      -> type
+      is C.Type.Float     -> type
+      is C.Type.Double    -> type
+      is C.Type.String    -> type
+      is C.Type.ByteArray -> type
+      is C.Type.IntArray  -> type
+      is C.Type.LongArray -> type
+      is C.Type.List      -> C.Type.List(evalType(type.element))
+      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { evalType(it.value) })
+      is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
+      is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
+      is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
+      is C.Type.Fun       -> C.Type.Fun(evalType(type.param), evalType(type.result))
+      is C.Type.Code      -> C.Type.Code(evalType(type.element))
+      is C.Type.Var       -> getOrNull(type.level) ?: type
+      is C.Type.Hole      -> type
     }
   }
 }
