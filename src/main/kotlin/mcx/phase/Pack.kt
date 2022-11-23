@@ -35,6 +35,10 @@ class Pack private constructor() {
           binderTypes.forEach { drop(it, resultTypes) }
         }
 
+        if (definition.restore != null) {
+          +"scoreboard players set $REGISTER_0 ${definition.restore}"
+        }
+
         P.Definition.Function(path, commands)
       }
       is L.Definition.Builtin  -> {
@@ -116,11 +120,6 @@ class Pack private constructor() {
       }
       is L.Term.FunOf      -> {
         push(P.Type.COMPOUND, "value {id:${term.id}}")
-      }
-      is L.Term.Apply      -> {
-        packTerm(term.arg)
-        packTerm(term.operator)
-        +"# dispatch" // TODO
       }
       is L.Term.If         -> {
         packTerm(term.condition)
@@ -243,7 +242,7 @@ class Pack private constructor() {
   private fun packDefinitionLocation(
     location: DefinitionLocation,
   ): String =
-    "${location.module.parts.joinToString("/")}/${escape(location.name)}"
+    (location.module.parts + escape(location.name)).joinToString("/")
 
   private fun escape(
     string: String,

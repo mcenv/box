@@ -25,7 +25,7 @@ class Lift private constructor(
           L.Definition.Builtin(annotations, definition.name)
         } else {
           val body = liftTerm(definition.body)
-          L.Definition.Function(annotations, definition.name, binder, body)
+          L.Definition.Function(annotations, definition.name, binder, body, null)
         }
       }
       is C.Definition.Hole     -> unexpectedHole()
@@ -96,23 +96,20 @@ class Lift private constructor(
       is C.Term.FunOf       ->
         restoring {
           liftPattern(term.binder)
-          val body = createFreshFunction(liftTerm(term.body))
-          val id = context.liftFunction(body.name)
+          val body = liftTerm(term.body)
+          val id = context.liftedFunctions.size
+          val bodyFunction = createFreshFunction(body, id)
+          context.liftFunction(bodyFunction)
           L.Term.FunOf(id, type)
         }
-      is C.Term.Apply       -> L.Term.Apply(liftTerm(term.operator), liftTerm(term.arg), type)
+      is C.Term.Apply       -> {
+        val operator = liftTerm(term.operator)
+        val arg = liftTerm(term.arg)
+        L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
+      }
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
-        val thenFunction = liftTerm(term.thenClause).let { thenClause ->
-          createFreshFunction(
-            L.Term.Let(
-              L.Pattern.Drop(listOf(L.Annotation.NoDrop), thenClause.type),
-              thenClause,
-              L.Term.Command("scoreboard players set #0 mcx 1", thenClause.type),
-              thenClause.type,
-            ) // TODO: do this in pack phase using metadata
-          )
-        }
+        val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
@@ -158,6 +155,7 @@ class Lift private constructor(
 
   private fun createFreshFunction(
     body: L.Term,
+    restore: Int? = null,
   ): L.Definition.Function {
     val type = L.Type.Tuple(types.toList())
     val params = types.mapIndexed { level, entry ->
@@ -169,6 +167,7 @@ class Lift private constructor(
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
         L.Pattern.TupleOf(params, listOf(L.Annotation.NoDrop), type),
         body,
+        restore,
       )
       .also { liftedDefinitions += it }
   }

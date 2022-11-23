@@ -228,7 +228,7 @@ class Build(
 
     // TODO: generate dispatcher
     val outputModules = runBlocking {
-      Files
+      val inputs = Files
         .walk(src)
         .filter { it.extension == "mcx" }
         .map { path ->
@@ -243,6 +243,7 @@ class Build(
         .toList()
         .awaitAll()
         .flatten()
+      inputs
         .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
         .reduce { acc, map -> acc + map }
         .onEach { (name, definition) ->

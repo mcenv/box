@@ -3,6 +3,8 @@ package mcx.phase
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import mcx.ast.DefinitionLocation
+import mcx.ast.Lifted
+import mcx.ast.ModuleLocation
 import java.util.*
 
 @Serializable
@@ -11,13 +13,16 @@ data class Context(
   val debug: Boolean = false,
 ) {
   @Transient
-  private val _liftedFunctions: MutableList<DefinitionLocation> = Collections.synchronizedList(mutableListOf())
-  val liftedFunctions: List<DefinitionLocation> get() = _liftedFunctions
+  private val _liftedFunctions: MutableList<Lifted.Definition.Function> = Collections.synchronizedList(mutableListOf())
+  val liftedFunctions: List<Lifted.Definition.Function> get() = _liftedFunctions
 
   fun liftFunction(
-    location: DefinitionLocation,
-  ): Int {
-    _liftedFunctions += location
-    return _liftedFunctions.lastIndex
+    function: Lifted.Definition.Function,
+  ) {
+    _liftedFunctions += function
+  }
+
+  companion object {
+    val DISPATCH: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch")
   }
 }

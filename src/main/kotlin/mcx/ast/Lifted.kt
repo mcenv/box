@@ -20,6 +20,7 @@ object Lifted {
       override val name: DefinitionLocation,
       val binder: Pattern,
       val body: Term,
+      val restore: Int?,
     ) : Definition
 
     data class Builtin(
@@ -185,12 +186,6 @@ object Lifted {
 
     data class FunOf(
       val id: Int,
-      override val type: Type,
-    ) : Term
-
-    data class Apply(
-      val operator: Term,
-      val arg: Term,
       override val type: Type,
     ) : Term
 
