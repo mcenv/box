@@ -19,8 +19,6 @@ object Lifted {
       override val annotations: List<Annotation>,
       override val name: DefinitionLocation,
       val binder: Pattern,
-      val param: Type,
-      val result: Type,
       val body: Term,
     ) : Definition
 

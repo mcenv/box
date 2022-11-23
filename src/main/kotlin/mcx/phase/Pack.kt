@@ -31,7 +31,7 @@ class Pack private constructor() {
         packTerm(definition.body)
 
         if (L.Annotation.NoDrop !in definition.binder.annotations) {
-          val resultTypes = eraseType(definition.result)
+          val resultTypes = eraseType(definition.body.type)
           binderTypes.forEach { drop(it, resultTypes) }
         }
 
