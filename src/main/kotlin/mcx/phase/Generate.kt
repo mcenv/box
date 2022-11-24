@@ -8,6 +8,11 @@ import mcx.ast.Packed as P
 class Generate private constructor(
   private val context: Context,
 ) {
+  private fun generate(
+    definition: P.Definition,
+  ): Pair<String, String> =
+    "data/minecraft/${definition.registry.string}/${definition.path}.${definition.registry.extension}" to generateDefinition(definition)
+
   private fun generateDefinition(
     definition: P.Definition,
   ): String {
@@ -68,8 +73,8 @@ class Generate private constructor(
     operator fun invoke(
       context: Context,
       definition: P.Definition,
-    ): String {
-      return Generate(context).generateDefinition(definition)
+    ): Pair<String, String> {
+      return Generate(context).generate(definition)
     }
   }
 }

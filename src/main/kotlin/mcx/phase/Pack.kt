@@ -2,6 +2,7 @@ package mcx.phase
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.Json
+import mcx.phase.Context.Companion.DISPATCH
 import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
@@ -98,7 +99,7 @@ class Pack private constructor() {
           }
         }
       }
-      is L.Term.CompoundOf -> {
+      is L.Term.CompoundOf  -> {
         push(P.Type.COMPOUND, "value {}")
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -108,20 +109,20 @@ class Pack private constructor() {
           drop(valueType)
         }
       }
-      is L.Term.RefOf      -> {
+      is L.Term.RefOf       -> {
         packTerm(term.element)
         +"function heap/${eraseType(term.element.type).first()}_ref"
         push(P.Type.INT, null)
       }
-      is L.Term.TupleOf    -> {
+      is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
           packTerm(element)
         }
       }
-      is L.Term.FunOf      -> {
+      is L.Term.FunOf       -> {
         push(P.Type.COMPOUND, "value {id:${term.id}}")
       }
-      is L.Term.If         -> {
+      is L.Term.If          -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
         drop(P.Type.BYTE)
@@ -129,7 +130,7 @@ class Pack private constructor() {
         +"execute if score #0 mcx matches ..0 run function ${packDefinitionLocation(term.elseName)}"
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let        -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -239,32 +240,6 @@ class Pack private constructor() {
     }
   }
 
-  private fun packDefinitionLocation(
-    location: DefinitionLocation,
-  ): String =
-    (location.module.parts + escape(location.name)).joinToString("/")
-
-  private fun escape(
-    string: String,
-  ): String =
-    string
-      .encodeToByteArray()
-      .joinToString("") {
-        when (
-          val char =
-            it
-              .toInt()
-              .toChar()
-        ) {
-          in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
-          else                               -> ".${
-            it
-              .toUByte()
-              .toString(Character.MAX_RADIX)
-          }"
-        }
-      }
-
   private fun packJson(
     term: L.Term,
   ): Json {
@@ -343,6 +318,45 @@ class Pack private constructor() {
     private const val MCX_OBJECTIVE: String = "mcx"
     private const val REGISTER_0: String = "#0 $MCX_OBJECTIVE"
     private const val REGISTER_1: String = "#1 $MCX_OBJECTIVE"
+
+    private fun packDefinitionLocation(
+      location: DefinitionLocation,
+    ): String =
+      (location.module.parts + escape(location.name)).joinToString("/")
+
+    private fun escape(
+      string: String,
+    ): String =
+      string
+        .encodeToByteArray()
+        .joinToString("") {
+          when (
+            val char =
+              it
+                .toInt()
+                .toChar()
+          ) {
+            in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
+            else                               -> ".${
+              it
+                .toUByte()
+                .toString(Character.MAX_RADIX)
+            }"
+          }
+        }
+
+    // TODO: specialize dispatcher by type
+    fun packDispatch(
+      functions: List<L.Definition.Function>,
+    ): P.Definition.Function {
+      val name = packDefinitionLocation(DISPATCH)
+      val commands = listOf(
+        "execute store result score $REGISTER_0 run data get storage $MCX_STORAGE compound[-1].id"
+      ) + functions.mapIndexed { index, function ->
+        "execute if score $REGISTER_0 matches $index run function ${packDefinitionLocation(function.name)}"
+      }
+      return P.Definition.Function(name, commands)
+    }
 
     operator fun invoke(
       context: Context,

@@ -93,21 +93,21 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf       ->
+      is C.Term.FunOf   ->
         restoring {
           liftPattern(term.binder)
           val body = liftTerm(term.body)
           val id = context.liftedFunctions.size
-          val bodyFunction = createFreshFunction(body, id)
+          val bodyFunction = createFreshFunction(body, id) // TODO: capture and drop
           context.liftFunction(bodyFunction)
           L.Term.FunOf(id, type)
         }
-      is C.Term.Apply       -> {
+      is C.Term.Apply   -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
       }
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause))

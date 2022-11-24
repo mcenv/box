@@ -178,7 +178,7 @@ class Build(
     coroutineScope {
       val packed = fetchPacked(context, location)
       packed
-        .map { async { "data/minecraft/${it.registry.string}/${it.path}.${it.registry.extension}" to Generate(context, it) } }
+        .map { async { Generate(context, it) } }
         .awaitAll()
         .toMap()
     }
@@ -240,7 +240,9 @@ class Build(
         }
         .toList()
         .awaitAll()
+        .asSequence()
         .flatten()
+        .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
         .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
         .reduce { acc, map -> acc + map }
         .onEach { (name, definition) ->
@@ -249,6 +251,7 @@ class Build(
             .bufferedWriter()
             .use { it.write(definition) }
         }
+        .toMap()
     }
 
     Files
