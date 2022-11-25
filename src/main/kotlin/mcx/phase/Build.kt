@@ -5,6 +5,13 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.*
+import mcx.phase.backend.Generate
+import mcx.phase.backend.Lift
+import mcx.phase.backend.Pack
+import mcx.phase.backend.Stage
+import mcx.phase.frontend.Diagnostic
+import mcx.phase.frontend.Elaborate
+import mcx.phase.frontend.Parse
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Files

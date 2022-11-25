@@ -1,8 +1,11 @@
-package mcx.phase
+package mcx.phase.backend
 
 import mcx.ast.DefinitionLocation
+import mcx.phase.Context
 import mcx.phase.Normalize.evalType
 import mcx.phase.Normalize.normalizeTerm
+import mcx.phase.UnexpectedHole
+import mcx.phase.prettyType
 import mcx.ast.Core as C
 
 class Stage private constructor(

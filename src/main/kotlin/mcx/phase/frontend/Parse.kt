@@ -1,8 +1,9 @@
-package mcx.phase
+package mcx.phase.frontend
 
 import mcx.ast.ModuleLocation
 import mcx.ast.Registry
 import mcx.ast.Surface
+import mcx.phase.Context
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range

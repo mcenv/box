@@ -1,9 +1,12 @@
-package mcx.phase
+package mcx.phase.frontend
 
 import mcx.ast.*
 import mcx.lsp.highlight
-import mcx.phase.Elaborate.Env.Companion.emptyEnv
+import mcx.phase.Context
 import mcx.phase.Normalize.evalType
+import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
+import mcx.phase.prettyPattern
+import mcx.phase.prettyType
 import mcx.util.contains
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*

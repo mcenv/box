@@ -1,7 +1,8 @@
-package mcx.phase
+package mcx.phase.frontend
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
+import mcx.phase.prettyType
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
