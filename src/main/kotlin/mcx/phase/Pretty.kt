@@ -26,7 +26,16 @@ fun prettyType(
     is C.Type.Fun       -> "(${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
-    is C.Type.Meta      -> "?"
+    is C.Type.Meta      -> "?${
+      type.index
+        .toString()
+        .toCharArray()
+        .joinToString("") {
+          (it.code + ('₀' - '0'))
+            .toChar()
+            .toString()
+        }
+    }"
     is C.Type.Hole      -> " "
   }
 
