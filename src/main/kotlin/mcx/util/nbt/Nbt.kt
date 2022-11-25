@@ -6,6 +6,9 @@ import java.io.DataOutput
 @Serializable
 sealed interface Nbt {
   @Serializable
+  object End : Nbt
+
+  @Serializable
   @JvmInline
   value class Byte(val value: kotlin.Byte) : Nbt
 
@@ -31,7 +34,7 @@ sealed interface Nbt {
 
   @Serializable
   @JvmInline
-  value class ByteArray(val value: kotlin.collections.List<kotlin.Byte>) : Nbt
+  value class ByteArray(val elements: kotlin.collections.List<kotlin.Byte>) : Nbt
 
   @Serializable
   @JvmInline
@@ -48,6 +51,11 @@ sealed interface Nbt {
   @Serializable
   sealed interface List<T : Nbt> : Nbt {
     val elements: kotlin.collections.List<T>
+
+    @Serializable
+    object End : Nbt.List<Nbt.End> {
+      override val elements: kotlin.collections.List<Nbt.End> get() = emptyList()
+    }
 
     @Serializable
     @JvmInline

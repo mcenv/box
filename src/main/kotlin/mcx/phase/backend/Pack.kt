@@ -2,17 +2,27 @@ package mcx.phase.backend
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.Json
-import mcx.phase.BUILTINS
-import mcx.phase.Context
+import mcx.ast.Packed.Command
+import mcx.ast.Packed.Command.*
+import mcx.ast.Packed.Command.Execute.ConditionalScore.Comparator.*
+import mcx.ast.Packed.Command.Execute.Mode.*
+import mcx.ast.Packed.Command.Execute.StoreStorage.Type
+import mcx.ast.Packed.DataAccessor
+import mcx.ast.Packed.DataManipulator
+import mcx.ast.Packed.Operation.*
+import mcx.ast.Packed.SourceProvider
+import mcx.data.ResourceLocation
+import mcx.phase.*
 import mcx.phase.Context.Companion.DISPATCH
-import mcx.util.quoted
+import mcx.util.nbt.Nbt
+import mcx.util.nbtPath
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
 class Pack private constructor(
   private val context: Context,
 ) {
-  private val commands: MutableList<String> = mutableListOf()
+  private val commands: MutableList<Command> = mutableListOf()
   private val entries: Map<P.Stack, MutableList<Int?>> =
     P.Stack
       .values()
@@ -28,7 +38,7 @@ class Pack private constructor(
         P.Definition.Resource(definition.registry, path, body)
       }
       is L.Definition.Function -> {
-        !{ "# ${definition.name}" }
+        !{ Raw("# ${definition.name}") }
 
         val binderTypes = eraseType(definition.binder.type)
         binderTypes.forEach { push(it, null) }
@@ -42,13 +52,13 @@ class Pack private constructor(
         }
 
         if (definition.restore != null) {
-          +"scoreboard players set $REGISTER_0 ${definition.restore}"
+          +SetScore(REG_0, REG, definition.restore)
         }
 
         P.Definition.Function(path, commands)
       }
       is L.Definition.Builtin  -> {
-        +"# ${definition.name}"
+        !{ Raw("# ${definition.name}") }
         val builtin = BUILTINS[definition.name]!!
         builtin.commands.forEach { +it }
         P.Definition.Function(path, commands)
@@ -60,63 +70,63 @@ class Pack private constructor(
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf      -> push(P.Stack.BYTE, "value ${if (term.value) 1 else 0}b")
-      is L.Term.ByteOf      -> push(P.Stack.BYTE, "value ${term.value}b")
-      is L.Term.ShortOf     -> push(P.Stack.SHORT, "value ${term.value}s")
-      is L.Term.IntOf       -> push(P.Stack.INT, "value ${term.value}")
-      is L.Term.LongOf      -> push(P.Stack.LONG, "value ${term.value}l")
-      is L.Term.FloatOf     -> push(P.Stack.FLOAT, "value ${term.value}f")
-      is L.Term.DoubleOf    -> push(P.Stack.DOUBLE, "value ${term.value}")
-      is L.Term.StringOf    -> push(P.Stack.STRING, "value ${term.value.quoted('"')}") // TODO: quote only if necessary
+      is L.Term.BoolOf      -> push(P.Stack.BYTE, SourceProvider.Value(Nbt.Byte(if (term.value) 1 else 0)))
+      is L.Term.ByteOf      -> push(P.Stack.BYTE, SourceProvider.Value(Nbt.Byte(term.value)))
+      is L.Term.ShortOf     -> push(P.Stack.SHORT, SourceProvider.Value(Nbt.Short(term.value)))
+      is L.Term.IntOf       -> push(P.Stack.INT, SourceProvider.Value(Nbt.Int(term.value)))
+      is L.Term.LongOf      -> push(P.Stack.LONG, SourceProvider.Value(Nbt.Long(term.value)))
+      is L.Term.FloatOf     -> push(P.Stack.FLOAT, SourceProvider.Value(Nbt.Float(term.value)))
+      is L.Term.DoubleOf    -> push(P.Stack.DOUBLE, SourceProvider.Value(Nbt.Double(term.value)))
+      is L.Term.StringOf    -> push(P.Stack.STRING, SourceProvider.Value(Nbt.String(term.value)))
       is L.Term.ByteArrayOf -> {
-        push(P.Stack.BYTE_ARRAY, "value ${term.elements.joinToString(",", "[B;", "]") { "0b" }}")
+        push(P.Stack.BYTE_ARRAY, SourceProvider.Value(Nbt.ByteArray(List(term.elements.size) { 0 })))
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Stack.BYTE_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.BYTE}[-1]"
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }))))
           drop(P.Stack.BYTE)
         }
       }
       is L.Term.IntArrayOf  -> {
-        push(P.Stack.INT_ARRAY, "value ${term.elements.joinToString(",", "[I;", "]") { "0" }}")
+        push(P.Stack.INT_ARRAY, SourceProvider.Value(Nbt.IntArray(List(term.elements.size) { 0 })))
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Stack.INT_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }))))
           drop(P.Stack.INT)
         }
       }
       is L.Term.LongArrayOf -> {
-        push(P.Stack.LONG_ARRAY, "value ${term.elements.joinToString(",", "[L;", "]") { "0l" }}")
+        push(P.Stack.LONG_ARRAY, SourceProvider.Value(Nbt.LongArray(List(term.elements.size) { 0 })))
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Stack.LONG_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.LONG}[-1]"
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LONG_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }))))
           drop(P.Stack.LONG)
         }
       }
       is L.Term.ListOf      -> {
-        push(P.Stack.LIST, "value []")
+        push(P.Stack.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
           val elementType = eraseType(term.elements.first().type).first()
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == P.Stack.LIST) -2 else -1
-            +"data modify storage $MCX_STORAGE ${P.Stack.LIST}[$index] append from storage $MCX_STORAGE $elementType[-1]"
+            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LIST)(index) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(elementType.key)(-1) }))))
             drop(elementType)
           }
         }
       }
       is L.Term.CompoundOf  -> {
-        push(P.Stack.COMPOUND, "value {}")
+        push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
           val valueType = eraseType(element.type).first()
           val index = if (valueType == P.Stack.COMPOUND) -2 else -1
-          +"data modify storage $MCX_STORAGE ${P.Stack.COMPOUND}[$index].$key set from storage $MCX_STORAGE $valueType[-1]"
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.key)(-1) }))))
           drop(valueType)
         }
       }
       is L.Term.RefOf       -> {
         packTerm(term.element)
-        +"function heap/${eraseType(term.element.type).first()}_ref"
+        !{ Raw("# todo: $term") }
         push(P.Stack.INT, null)
       }
       is L.Term.TupleOf     -> {
@@ -125,19 +135,23 @@ class Pack private constructor(
         }
       }
       is L.Term.FunOf       -> {
-        push(P.Stack.COMPOUND, "value {_:${term.tag}}")
+        push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.vars.forEach { (name, level, type) ->
           val stack = eraseType(type).first()
           val index = this[level, stack]
-          +"data modify storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name set from storage $MCX_STORAGE $stack[$index]"
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.key)(index) }))))
         }
       }
       is L.Term.If          -> {
         packTerm(term.condition)
-        +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
+        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }))))
         drop(P.Stack.BYTE)
-        +"execute if score #0 mcx matches 1.. run function ${packDefinitionLocation(term.thenName)}"
-        +"execute if score #0 mcx matches ..0 run function ${packDefinitionLocation(term.elseName)}"
+        +Execute.ConditionalScoreMatches(true, REG_0, REG, 1..Int.MAX_VALUE,
+                                         Execute.Run(
+                                           RunFunction(packDefinitionLocation(term.thenName))))
+        +Execute.ConditionalScoreMatches(true, REG_0, REG, Int.MIN_VALUE..0,
+                                         Execute.Run(
+                                           RunFunction(packDefinitionLocation(term.elseName))))
         eraseType(term.type).forEach { push(it, null) }
       }
       is L.Term.Let         -> {
@@ -153,12 +167,12 @@ class Pack private constructor(
       is L.Term.Var         -> {
         val type = eraseType(term.type).first()
         val index = this[term.level, type]
-        push(type, "from storage $MCX_STORAGE $type[$index]")
+        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.key)(index) })))
       }
       is L.Term.Run         -> {
         packTerm(term.arg)
 
-        +"function ${packDefinitionLocation(term.name)}"
+        +RunFunction(packDefinitionLocation(term.name))
         eraseType(term.arg.type).forEach {
           drop(it, relevant = false)
         }
@@ -169,7 +183,8 @@ class Pack private constructor(
         matchPattern(term.scrutineer)
       }
       is L.Term.Command     -> {
-        +term.value
+        !{ Raw("# command") }
+        +Raw(term.value)
         eraseType(term.type).forEach { push(it, null) }
       }
     }
@@ -183,7 +198,7 @@ class Pack private constructor(
       is L.Pattern.IntRangeOf -> Unit
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(eraseType(element.type).first(), "from storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name")
+          push(eraseType(element.type).first(), SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(-1)(name) })))
           packPattern(element)
         }
       }
@@ -221,20 +236,28 @@ class Pack private constructor(
   private fun matchPattern(
     scrutineer: L.Pattern,
   ) {
-    +"scoreboard players set $REGISTER_0 1"
+    +SetScore(REG_0, REG, 1)
     fun visit(
       scrutineer: L.Pattern,
     ) {
       when (scrutineer) {
         is L.Pattern.IntOf      -> {
-          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          +Execute.StoreScore(RESULT, REG_1, REG,
+                              Execute.Run(
+                                GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }))))
           drop(P.Stack.INT)
-          +"execute unless score $REGISTER_1 matches ${scrutineer.value} run scoreboard players set $REGISTER_0 0"
+          +Execute.ConditionalScoreMatches(false, REG_1, REG, scrutineer.value..scrutineer.value,
+                                           Execute.Run(
+                                             SetScore(REG_0, REG, 0)))
         }
         is L.Pattern.IntRangeOf -> {
-          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          +Execute.StoreScore(RESULT, REG_1, REG,
+                              Execute.Run(
+                                GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }))))
           drop(P.Stack.INT)
-          +"execute unless score $REGISTER_1 matches ${scrutineer.min}..${scrutineer.max} run scoreboard players set $REGISTER_0 0"
+          +Execute.ConditionalScoreMatches(false, REG_1, REG, scrutineer.min..scrutineer.max,
+                                           Execute.Run(
+                                             SetScore(REG_0, REG, 0)))
         }
         is L.Pattern.CompoundOf -> TODO()
         is L.Pattern.TupleOf    ->
@@ -246,8 +269,10 @@ class Pack private constructor(
       }
     }
     visit(scrutineer)
-    push(P.Stack.BYTE, "value 0b")
-    +"execute store result storage $MCX_STORAGE ${P.Stack.BYTE}[-1] byte 1 run scoreboard players get $REGISTER_0"
+    push(P.Stack.BYTE, SourceProvider.Value(Nbt.Byte(0)))
+    +Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), Type.BYTE, 1.0,
+                          Execute.Run(
+                            GetScore(REG_0, REG)))
   }
 
   private fun eraseType(
@@ -300,11 +325,11 @@ class Pack private constructor(
 
   private fun push(
     stack: P.Stack,
-    source: String?,
+    source: SourceProvider?,
   ) {
     if (source != null && stack != P.Stack.END) {
-      !{ "# push $stack" }
-      +"data modify storage $MCX_STORAGE $stack append $source"
+      !{ Raw("# push ${stack.key}") }
+      +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(stack.key) }), DataManipulator.Append(source))
     }
     entry(stack) += null
   }
@@ -316,8 +341,8 @@ class Pack private constructor(
   ) {
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != P.Stack.END) {
-      !{ "# drop $drop under ${keeps.joinToString(", ", "[", "]")}" }
-      +"data remove storage $MCX_STORAGE $drop[$index]"
+      !{ Raw("# drop ${drop.key} under ${keeps.joinToString(", ", "[", "]") { it.key }}") }
+      +RemoveData(DataAccessor.Storage(MCX, nbtPath { it(drop.key)(index) }))
     }
     val entry = entry(drop)
     entry.removeAt(entry.size + index)
@@ -348,27 +373,22 @@ class Pack private constructor(
     entries[stack]!!
 
   @Suppress("NOTHING_TO_INLINE")
-  private inline operator fun String.unaryPlus() {
+  private inline operator fun Command.unaryPlus() {
     commands += this
   }
 
   @Suppress("NOTHING_TO_INLINE")
-  private inline operator fun (() -> String).not() {
+  private inline operator fun (() -> Command).not() {
     if (context.debug) {
       +this()
     }
   }
 
   companion object {
-    private const val MCX_STORAGE: String = "mcx:"
-    private const val MCX_OBJECTIVE: String = "mcx"
-    private const val REGISTER_0: String = "#0 $MCX_OBJECTIVE"
-    private const val REGISTER_1: String = "#1 $MCX_OBJECTIVE"
-
     private fun packDefinitionLocation(
       location: DefinitionLocation,
-    ): String =
-      (location.module.parts + escape(location.name)).joinToString("/")
+    ): ResourceLocation =
+      ResourceLocation("minecraft", (location.module.parts + escape(location.name)).joinToString("/"))
 
     private fun escape(
       string: String,
@@ -397,9 +417,9 @@ class Pack private constructor(
     ): P.Definition.Function {
       val name = packDefinitionLocation(DISPATCH)
       val commands = listOf(
-        "execute store result score $REGISTER_0 run data get storage $MCX_STORAGE compound[-1]._"
+        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(-1)("_") }))))
       ) + functions.mapIndexed { index, function ->
-        "execute if score $REGISTER_0 matches $index run function ${packDefinitionLocation(function.name)}"
+        Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       }
       return P.Definition.Function(name, commands)
     }
