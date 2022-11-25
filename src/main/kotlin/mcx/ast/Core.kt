@@ -1,5 +1,7 @@
 package mcx.ast
 
+import org.eclipse.lsp4j.Range
+
 object Core {
   data class Module(
     val name: ModuleLocation,
@@ -209,6 +211,7 @@ object Core {
 
     data class Meta(
       val index: kotlin.Int,
+      val source: Range,
       override val kind: Kind,
     ) : Type
 

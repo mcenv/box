@@ -1,15 +1,17 @@
 package mcx.phase.frontend
 
+import org.eclipse.lsp4j.Range
 import mcx.ast.Core as C
 
 class MetaEnv {
   private val solutions: MutableList<C.Type?> = mutableListOf()
 
   fun fresh(
+    range: Range,
     kind: C.Kind,
   ): C.Type =
     C.Type
-      .Meta(solutions.size, kind)
+      .Meta(solutions.size, range, kind)
       .also { solutions += null }
 
   tailrec fun force(
@@ -22,6 +24,35 @@ class MetaEnv {
           else -> force(forced)
         }
       else           -> type
+    }
+  }
+
+  fun zonk(
+    type: C.Type,
+  ): C.Type {
+    return when (@Suppress("NAME_SHADOWING")
+    val type = force(type)) {
+      is C.Type.Bool      -> type
+      is C.Type.Byte      -> type
+      is C.Type.Short     -> type
+      is C.Type.Int       -> type
+      is C.Type.Long      -> type
+      is C.Type.Float     -> type
+      is C.Type.Double    -> type
+      is C.Type.String    -> type
+      is C.Type.ByteArray -> type
+      is C.Type.IntArray  -> type
+      is C.Type.LongArray -> type
+      is C.Type.List      -> C.Type.List(zonk(type.element))
+      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { zonk(it.value) })
+      is C.Type.Ref       -> C.Type.Ref(zonk(type.element))
+      is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonk(it) }, type.kind)
+      is C.Type.Union     -> C.Type.Union(type.elements.map { zonk(it) }, type.kind)
+      is C.Type.Fun       -> C.Type.Fun(zonk(type.param), zonk(type.result))
+      is C.Type.Code      -> C.Type.Code(zonk(type.element))
+      is C.Type.Var       -> type
+      is C.Type.Meta      -> type
+      is C.Type.Hole      -> type
     }
   }
 

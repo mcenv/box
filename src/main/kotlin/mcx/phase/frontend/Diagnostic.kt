@@ -228,4 +228,13 @@ sealed class Diagnostic(
     """.trimMargin(),
     DiagnosticSeverity.Error,
   )
+
+  class UnsolvedMeta(
+    type: C.Type,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "unsolved meta: ${prettyType(type)}",
+    DiagnosticSeverity.Error,
+  )
 }

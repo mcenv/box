@@ -74,12 +74,12 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val core = build.fetchCore(fetchConfig(), uri.toModuleLocation())
-      val newHash = core.diagnostics.hashCode()
+      val zonked = build.fetchZonked(fetchConfig(), uri.toModuleLocation())
+      val newHash = zonked.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
         diagnosticsHashes[uri] = newHash
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(core.diagnostics))
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(zonked.diagnostics))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
@@ -87,15 +87,15 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
-      forLeft(core.completionItems + GLOBAL_COMPLETION_ITEMS)
+      val zonked = build.fetchZonked(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
+      forLeft(zonked.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val core = build.fetchCore(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
+      val zonked = build.fetchZonked(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
       Hover(
-        when (val hover = core.hover) {
+        when (val hover = zonked.hover) {
           null -> throw CancellationException()
           else -> highlight(hover())
         }

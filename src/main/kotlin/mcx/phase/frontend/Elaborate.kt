@@ -355,12 +355,12 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Let          -> {
+        val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder)
+          val binder = elaboratePattern(term.binder, init.type)
           val body = elaborateTerm(term.body, expected)
           binder to body
         }
-        val init = elaborateTerm(term.init, binder.type)
         C.Term.Let(binder, init, body, body.type)
       }
 
@@ -590,7 +590,7 @@ class Elaborate private constructor(
 
       pattern is S.Pattern.Var &&
       expected == null            -> {
-        val type = metaEnv.fresh(C.Kind(1, meta || stage > 0))
+        val type = metaEnv.fresh(pattern.range, C.Kind(1, meta || stage > 0))
         bind(pattern.name, type)
         C.Pattern.Var(pattern.name, entries.lastIndex, annotations, type)
       }
@@ -710,7 +710,7 @@ class Elaborate private constructor(
     range: Range,
     type: C.Type,
   ) {
-    hover(range) { prettyType(metaEnv.force(type)) }
+    hover(range) { prettyType(metaEnv.zonk(type)) }
   }
 
   private fun hover(

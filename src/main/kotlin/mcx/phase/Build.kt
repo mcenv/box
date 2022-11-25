@@ -12,6 +12,7 @@ import mcx.phase.backend.Stage
 import mcx.phase.frontend.Diagnostic
 import mcx.phase.frontend.Elaborate
 import mcx.phase.frontend.Parse
+import mcx.phase.frontend.Zonk
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -22,14 +23,16 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.*
 
+// TODO: redesign
 class Build(
   private val root: Path,
 ) {
   private val src: Path = root.resolve("src")
   private val texts: ConcurrentMap<ModuleLocation, String> = ConcurrentHashMap()
   private val parseResults: ConcurrentMap<ModuleLocation, Trace<Parse.Result>> = ConcurrentHashMap()
-  private val elaborateResults: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
   private val signatures: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
+  private val elaborateResults: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
+  private val zonkResults: ConcurrentMap<ModuleLocation, Trace<Zonk.Result>> = ConcurrentHashMap()
 
   fun changeText(
     location: ModuleLocation,
@@ -44,8 +47,9 @@ class Build(
   ) {
     texts -= location
     parseResults -= location
-    elaborateResults -= location
     signatures -= location
+    elaborateResults -= location
+    zonkResults -= location
   }
 
   // TODO: track external modification?
@@ -129,9 +133,9 @@ class Build(
           .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(context, PRELUDE)!!.module, null) })
           .plus(async { Elaborate.Dependency(location, fetchSignature(context, location)!!.module, null) })
           .awaitAll()
-      val newHash = Objects.hash(surface, dependencies)
+      val newHash = Objects.hash(surface, dependencies, position)
       val elaborateResult = elaborateResults[location]
-      if (elaborateResult == null || elaborateResult.hash != newHash || position != null) {
+      if (elaborateResult == null || elaborateResult.hash != newHash) {
         Elaborate(context, dependencies, surface, false, position).also {
           elaborateResults[location] = Trace(it, newHash)
         }
@@ -140,20 +144,38 @@ class Build(
       }
     }
 
+  suspend fun fetchZonked(
+    context: Context,
+    location: ModuleLocation,
+    position: Position? = null,
+  ): Zonk.Result =
+    coroutineScope {
+      val core = fetchCore(context, location, position)
+      val newHash = Objects.hash(core, position)
+      val zonkResult = zonkResults[location]
+      if (zonkResult == null || zonkResult.hash != newHash) {
+        Zonk(context, core).also {
+          zonkResults[location] = Trace(it, newHash)
+        }
+      } else {
+        zonkResult.value
+      }
+    }
+
   suspend fun fetchStaged(
     context: Context,
     location: DefinitionLocation,
   ): List<Core.Definition> =
     coroutineScope {
-      val core = fetchCore(context, location.module)
-      val definition = core.module.definitions.find { it.name == location }!!
+      val zonked = fetchZonked(context, location.module)
+      val definition = zonked.module.definitions.find { it.name == location }!!
       val dependencies =
         fetchSurface(context, location.module)!!.module.imports
-          .map { async { fetchCore(context, it.value).module.definitions } }
-          .plus(async { fetchCore(context, PRELUDE).module.definitions })
+          .map { async { fetchZonked(context, it.value).module.definitions } }
+          .plus(async { fetchZonked(context, PRELUDE).module.definitions })
           .awaitAll()
           .flatten()
-          .plus(core.module.definitions)
+          .plus(zonked.module.definitions)
           .associateBy { it.name }
       Stage(context, dependencies, definition)
     }
@@ -238,9 +260,9 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val core = fetchCore(context, path.toModuleLocation())
-            diagnosticsByPath += path to core.diagnostics
-            core.module.definitions
+            val zonked = fetchZonked(context, path.toModuleLocation())
+            diagnosticsByPath += path to zonked.diagnostics
+            zonked.module.definitions
               .map { async { fetchGenerated(context, it.name) } }
               .awaitAll()
           }
