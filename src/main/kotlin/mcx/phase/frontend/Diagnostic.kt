@@ -216,14 +216,6 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class CannotSynthesizeType(
-    range: Range,
-  ) : Diagnostic(
-    range,
-    "cannot synthesize type",
-    DiagnosticSeverity.Error,
-  )
-
   class TypeMismatch(
     expected: C.Type,
     actual: C.Type,

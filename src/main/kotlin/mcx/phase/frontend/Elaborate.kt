@@ -20,6 +20,7 @@ class Elaborate private constructor(
   private val signature: Boolean,
   private val position: Position?,
 ) {
+  private val metaEnv: MetaEnv = MetaEnv()
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
@@ -30,6 +31,7 @@ class Elaborate private constructor(
   ): Result {
     return Result(
       elaborateModule(input.module),
+      metaEnv,
       input.diagnostics + diagnostics,
       varCompletionItems + definitionCompletionItems,
       hover,
@@ -78,11 +80,7 @@ class Elaborate private constructor(
     return C.Module(
       module.name,
       module.definitions.map {
-        elaborateDefinition(
-          definitions,
-          module.name,
-          it,
-        )
+        elaborateDefinition(definitions, module.name, it)
       },
     )
   }
@@ -211,6 +209,7 @@ class Elaborate private constructor(
     term: S.Term,
     expected: C.Type? = null,
   ): C.Term {
+    val expected = expected?.let { metaEnv.force(it) }
     return when {
       term is S.Term.BoolOf &&
       expected == null            -> C.Term.BoolOf(term.value, C.Type.Bool(term.value))
@@ -279,7 +278,7 @@ class Elaborate private constructor(
       expected == null              -> {
         val elements = term.elements.associate { (key, element) ->
           val element = elaborateTerm(element)
-          hover(key.range) { prettyType(element.type) }
+          hoverType(key.range, element.type)
           key.value to element
         }
         C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
@@ -293,11 +292,11 @@ class Elaborate private constructor(
             null -> {
               diagnostics += Diagnostic.ExtraKey(key.value, key.range)
               val element = elaborateTerm(element)
-              hover(key.range) { prettyType(element.type) }
+              hoverType(key.range, element.type)
               elements[key.value] = element
             }
             else -> {
-              hover(key.range) { prettyType(type) }
+              hoverType(key.range, type)
               elements[key.value] = elaborateTerm(element, type)
             }
           }
@@ -356,12 +355,12 @@ class Elaborate private constructor(
       }
 
       term is S.Term.Let          -> {
-        val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, init.type)
+          val binder = elaboratePattern(term.binder)
           val body = elaborateTerm(term.body, expected)
           binder to body
         }
+        val init = elaborateTerm(term.init, binder.type)
         C.Term.Let(binder, init, body, body.type)
       }
 
@@ -422,7 +421,7 @@ class Elaborate private constructor(
           }
         } else {
           val operator = elaborateTerm(term.operator)
-          when (val operatorType = operator.type) {
+          when (val operatorType = metaEnv.force(operator.type)) {
             is C.Type.Fun -> {
               val arg = elaborateTerm(term.arg, operatorType.param)
               C.Term.Apply(operator, arg, operatorType.result)
@@ -500,7 +499,7 @@ class Elaborate private constructor(
               }
         }
       }
-      hover(term.range) { prettyType(it.type) }
+      hoverType(term.range, it.type)
     }
   }
 
@@ -508,13 +507,14 @@ class Elaborate private constructor(
     pattern: S.Pattern,
     expected: C.Type? = null,
   ): C.Pattern {
+    val expected = expected?.let { metaEnv.force(it) }
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int?     -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
+      expected is C.Type.Int?           -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
 
       pattern is S.Pattern.IntRangeOf &&
-      expected is C.Type.Int?     -> {
+      expected is C.Type.Int?           -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
@@ -525,7 +525,7 @@ class Elaborate private constructor(
       expected == null            -> {
         val elements = pattern.elements.associate { (key, element) ->
           val element = elaboratePattern(element)
-          hover(key.range) { prettyType(element.type) }
+          hoverType(key.range, element.type)
           key.value to element
         }
         C.Pattern.CompoundOf(elements, annotations, C.Type.Compound(elements.mapValues { it.value.type }))
@@ -539,11 +539,11 @@ class Elaborate private constructor(
             null -> {
               diagnostics += Diagnostic.ExtraKey(key.value, key.range)
               val element = elaboratePattern(element)
-              hover(key.range) { prettyType(element.type) }
+              hoverType(key.range, element.type)
               elements[key.value] = element
             }
             else -> {
-              hover(key.range) { prettyType(type) }
+              hoverType(key.range, type)
               elements[key.value] = elaboratePattern(element, type)
             }
           }
@@ -589,12 +589,13 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected == null          -> {
-        diagnostics += Diagnostic.CannotSynthesizeType(pattern.range)
-        C.Pattern.Hole(annotations, C.Type.Hole)
+      expected == null            -> {
+        val type = metaEnv.fresh(C.Kind(1, meta || stage > 0))
+        bind(pattern.name, type)
+        C.Pattern.Var(pattern.name, entries.lastIndex, annotations, type)
       }
 
-      pattern is S.Pattern.Drop -> C.Pattern.Drop(annotations, expected ?: C.Type.Hole)
+      pattern is S.Pattern.Drop         -> C.Pattern.Drop(annotations, expected ?: C.Type.Hole /* TODO: use meta? */)
 
       pattern is S.Pattern.Anno &&
       expected == null          -> {
@@ -614,23 +615,24 @@ class Elaborate private constructor(
         actual
       }
     }.also {
-      hover(pattern.range) { prettyType(it.type) }
+      hoverType(pattern.range, it.type)
     }
   }
 
   private infix fun C.Type.isSubtypeOf(
     type2: C.Type,
   ): Boolean {
-    val type1 = this
+    val type1 = metaEnv.force(this)
+    val type2 = metaEnv.force(type2)
     return when {
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool      -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Bool           -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte      -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Byte           -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short     -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Short          -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Int &&
       type2 is C.Type.Int       -> type2.value == null || type1.value == type2.value
@@ -685,20 +687,30 @@ class Elaborate private constructor(
       type2 is C.Type.Fun      -> type2.param isSubtypeOf type1.param &&
                                   type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union    -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union          -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union          -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code           -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var      -> type1.level == type2.level
+      type2 is C.Type.Var            -> type1.level == type2.level
 
-      type1 is C.Type.Hole     -> true
-      type2 is C.Type.Hole     -> true
+      type1 is C.Type.Meta           -> metaEnv.unify(type1, type2)
+      type2 is C.Type.Meta           -> metaEnv.unify(type1, type2)
 
-      else                     -> false
+      type1 is C.Type.Hole           -> true
+      type2 is C.Type.Hole           -> true
+
+      else                           -> false
     }
+  }
+
+  private fun hoverType(
+    range: Range,
+    type: C.Type,
+  ) {
+    hover(range) { prettyType(metaEnv.force(type)) }
   }
 
   private fun hover(
@@ -823,6 +835,7 @@ class Elaborate private constructor(
 
   data class Result(
     val module: C.Module,
+    val metaEnv: MetaEnv,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>,
     val hover: (() -> String)?,

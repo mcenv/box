@@ -26,7 +26,8 @@ fun prettyType(
     is C.Type.Fun       -> "(${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
-    is C.Type.Hole      -> "?"
+    is C.Type.Meta      -> "?"
+    is C.Type.Hole      -> " "
   }
 
 fun prettyPattern(
@@ -39,5 +40,5 @@ fun prettyPattern(
     is C.Pattern.TupleOf    -> pattern.elements.joinToString(", ", "(", ")") { prettyPattern(it) }
     is C.Pattern.Var        -> "(${pattern.name}: ${prettyType(pattern.type)})"
     is C.Pattern.Drop       -> "(_: ${prettyType(pattern.type)})"
-    is C.Pattern.Hole       -> "?"
+    is C.Pattern.Hole       -> " "
   }

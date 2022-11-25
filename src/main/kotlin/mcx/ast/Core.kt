@@ -207,6 +207,11 @@ object Core {
       override val kind: Kind get() = Kind.ONE
     }
 
+    data class Meta(
+      val index: kotlin.Int,
+      override val kind: Kind,
+    ) : Type
+
     object Hole : Type {
       override val kind: Kind get() = Kind.ONE
     }
