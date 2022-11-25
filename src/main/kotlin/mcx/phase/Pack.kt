@@ -2,13 +2,14 @@ package mcx.phase
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.Json
-import mcx.ast.Lifted
 import mcx.phase.Context.Companion.DISPATCH
 import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
-class Pack private constructor(private val definition: Lifted.Definition) {
+class Pack private constructor(
+  private val context: Context,
+) {
   private val commands: MutableList<String> = mutableListOf()
   private val entries: Map<P.Stack, MutableList<Int?>> =
     P.Stack
@@ -25,28 +26,21 @@ class Pack private constructor(private val definition: Lifted.Definition) {
         P.Definition.Resource(definition.registry, path, body)
       }
       is L.Definition.Function -> {
-        +"# ${definition.name}"
+        !{ "# ${definition.name}" }
 
         val binderTypes = eraseType(definition.binder.type)
         binderTypes.forEach { push(it, null) }
         packPattern(definition.binder)
 
-        if (definition.attributes.captures != null) {
-          definition.attributes.captures.forEach { (name, type) ->
-            val stack = eraseType(type).first()
-            push(stack, "from storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name")
-          }
-        }
-
         packTerm(definition.body)
 
         if (L.Annotation.NoDrop !in definition.binder.annotations) {
           val resultTypes = eraseType(definition.body.type)
-          binderTypes.forEach { drop(it, resultTypes) }
+          dropPattern(definition.binder, resultTypes)
         }
 
-        if (definition.attributes.restore != null) {
-          +"scoreboard players set $REGISTER_0 ${definition.attributes.restore}"
+        if (definition.restore != null) {
+          +"scoreboard players set $REGISTER_0 ${definition.restore}"
         }
 
         P.Definition.Function(path, commands)
@@ -150,11 +144,8 @@ class Pack private constructor(private val definition: Lifted.Definition) {
         packTerm(term.body)
 
         if (L.Annotation.NoDrop !in term.binder.annotations) {
-          val binderTypes = eraseType(term.binder.type)
           val bodyTypes = eraseType(term.body.type)
-          binderTypes.forEach { binderType ->
-            drop(binderType, bodyTypes)
-          }
+          dropPattern(term.binder, bodyTypes)
         }
       }
       is L.Term.Var         -> {
@@ -188,12 +179,40 @@ class Pack private constructor(private val definition: Lifted.Definition) {
     when (pattern) {
       is L.Pattern.IntOf      -> Unit
       is L.Pattern.IntRangeOf -> Unit
+      is L.Pattern.CompoundOf -> {
+        pattern.elements.forEach { (name, element) ->
+          push(eraseType(element.type).first(), "from storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name")
+          packPattern(element)
+        }
+      }
       is L.Pattern.TupleOf    ->
         pattern.elements
           .asReversed()
           .forEach { packPattern(it) }
       is L.Pattern.Var        -> bind(pattern.level, eraseType(pattern.type).first())
       is L.Pattern.Drop       -> Unit
+    }
+  }
+
+  private fun dropPattern(
+    pattern: L.Pattern,
+    keeps: List<P.Stack>,
+  ) {
+    when (pattern) {
+      is L.Pattern.IntOf      -> drop(P.Stack.INT, keeps)
+      is L.Pattern.IntRangeOf -> drop(P.Stack.INT, keeps)
+      is L.Pattern.CompoundOf -> {
+        pattern.elements
+          .asReversed()
+          .forEach { (_, element) -> dropPattern(element, keeps) }
+        drop(P.Stack.COMPOUND, keeps)
+      }
+      is L.Pattern.TupleOf    ->
+        pattern.elements
+          .asReversed()
+          .forEach { dropPattern(it, keeps) }
+      is L.Pattern.Var        -> drop(eraseType(pattern.type).first(), keeps)
+      is L.Pattern.Drop       -> eraseType(pattern.type).forEach { drop(it, keeps) }
     }
   }
 
@@ -215,6 +234,7 @@ class Pack private constructor(private val definition: Lifted.Definition) {
           drop(P.Stack.INT)
           +"execute unless score $REGISTER_1 matches ${scrutineer.min}..${scrutineer.max} run scoreboard players set $REGISTER_0 0"
         }
+        is L.Pattern.CompoundOf -> TODO()
         is L.Pattern.TupleOf    ->
           scrutineer.elements
             .asReversed()
@@ -281,6 +301,7 @@ class Pack private constructor(private val definition: Lifted.Definition) {
     source: String?,
   ) {
     if (source != null && stack != P.Stack.END) {
+      !{ "# push $stack" }
       +"data modify storage $MCX_STORAGE $stack append $source"
     }
     entry(stack) += null
@@ -293,6 +314,7 @@ class Pack private constructor(private val definition: Lifted.Definition) {
   ) {
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != P.Stack.END) {
+      !{ "# drop $drop under ${keeps.joinToString(", ", "[", "]")}" }
       +"data remove storage $MCX_STORAGE $drop[$index]"
     }
     val entry = entry(drop)
@@ -323,8 +345,16 @@ class Pack private constructor(private val definition: Lifted.Definition) {
   ): MutableList<Int?> =
     entries[stack]!!
 
-  private operator fun String.unaryPlus() {
+  @Suppress("NOTHING_TO_INLINE")
+  private inline operator fun String.unaryPlus() {
     commands += this
+  }
+
+  @Suppress("NOTHING_TO_INLINE")
+  private inline operator fun (() -> String).not() {
+    if (context.debug) {
+      +this()
+    }
   }
 
   companion object {
@@ -376,7 +406,7 @@ class Pack private constructor(private val definition: Lifted.Definition) {
       context: Context,
       definition: L.Definition,
     ): P.Definition {
-      return Pack(definition).packDefinition(definition)
+      return Pack(context).packDefinition(definition)
     }
   }
 }

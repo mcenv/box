@@ -35,6 +35,7 @@ fun prettyPattern(
   when (pattern) {
     is C.Pattern.IntOf      -> pattern.value.toString()
     is C.Pattern.IntRangeOf -> "(${pattern.min} .. ${pattern.max})"
+    is C.Pattern.CompoundOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key: ${prettyPattern(element)}" }
     is C.Pattern.TupleOf    -> pattern.elements.joinToString(", ", "(", ")") { prettyPattern(it) }
     is C.Pattern.Var        -> "(${pattern.name}: ${prettyType(pattern.type)})"
     is C.Pattern.Drop       -> "(_: ${prettyType(pattern.type)})"

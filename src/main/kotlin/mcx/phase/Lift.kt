@@ -25,7 +25,7 @@ class Lift private constructor(
           L.Definition.Builtin(annotations, definition.name)
         } else {
           val body = env.liftTerm(definition.body)
-          L.Definition.Function(annotations, definition.name, binder, body, L.Definition.Function.Attribute(null, null))
+          L.Definition.Function(annotations, definition.name, binder, body, null)
         }
       }
       is C.Definition.Hole     -> throw UnexpectedHole
@@ -94,20 +94,26 @@ class Lift private constructor(
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.FunOf       ->
+        // remap levels
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
+          val binderSize = types.size
           val freeVars = freeVars(term)
           freeVars.forEach { (name, type) -> bind(name, type.second) }
-          val varsType = L.Type.Compound(freeVars.mapValues { it.value.second })
+          val capture = L.Pattern.CompoundOf(
+            freeVars.entries.mapIndexed { index, (name, type) -> name to L.Pattern.Var(binderSize + index, emptyList(), type.second) },
+            emptyList(),
+            L.Type.Compound(freeVars.mapValues { it.value.second }),
+          )
           val body = liftTerm(term.body)
           val tag = context.liftedFunctions.size
           val bodyFunction = L.Definition
             .Function(
               emptyList(),
               definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-              L.Pattern.TupleOf(listOf(binder, L.Pattern.Var(types.lastIndex, emptyList(), varsType)), emptyList(), L.Type.Tuple(listOf(binder.type, varsType))),
+              L.Pattern.TupleOf(listOf(binder, capture), emptyList(), L.Type.Tuple(listOf(binder.type, capture.type))),
               body,
-              L.Definition.Function.Attribute(tag, freeVars.mapValues { it.value.second }),
+              tag,
             )
             .also { liftedDefinitions += it }
           context.liftFunction(bodyFunction)
@@ -120,8 +126,8 @@ class Lift private constructor(
       }
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
-        val thenFunction = createFreshFunction(liftTerm(term.thenClause), L.Definition.Function.Attribute(1, null))
-        val elseFunction = createFreshFunction(liftTerm(term.elseClause), L.Definition.Function.Attribute(null, null))
+        val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
+        val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
       is C.Term.Let         -> {
@@ -154,6 +160,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, annotations, type)
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
+      is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, annotations, type)
       is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
       is C.Pattern.Var        -> {
         bind(pattern.name, type)
@@ -203,6 +210,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.IntRangeOf -> emptySet()
+      is C.Pattern.CompoundOf -> pattern.elements.values.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
@@ -212,7 +220,7 @@ class Lift private constructor(
 
   private fun Env.createFreshFunction(
     body: L.Term,
-    attribute: L.Definition.Function.Attribute,
+    restore: Int?,
   ): L.Definition.Function {
     val type = L.Type.Tuple(types.map { (_, type) -> type })
     val params = types.mapIndexed { level, (_, type) ->
@@ -224,7 +232,7 @@ class Lift private constructor(
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
         L.Pattern.TupleOf(params, listOf(L.Annotation.NoDrop), type),
         body,
-        attribute,
+        restore,
       )
       .also { liftedDefinitions += it }
   }

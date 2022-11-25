@@ -1,3 +1,4 @@
 {
-  "name": "std"
+  "name": "std",
+  "debug": true
 }

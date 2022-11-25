@@ -104,15 +104,21 @@ object Normalize {
     binder: C.Pattern,
   ): List<Value> {
     return when {
-      value is Value.TupleOf &&
-      binder is C.Pattern.TupleOf ->
-        (value.elements zip binder.elements).fold(mutableListOf()) { env, (value, binder) ->
-          env.also { it += bindValue(value.value, binder) }
+      value is Value.CompoundOf &&
+      binder is C.Pattern.CompoundOf ->
+        value.elements.entries.fold(mutableListOf()) { acc, (name, value) ->
+          acc.also { it += bindValue(value.value, binder.elements[name]!!) }
         }
 
-      binder is C.Pattern.Var     -> listOf(value)
+      value is Value.TupleOf &&
+      binder is C.Pattern.TupleOf    ->
+        (value.elements zip binder.elements).fold(mutableListOf()) { acc, (value, binder) ->
+          acc.also { it += bindValue(value.value, binder) }
+        }
 
-      else                        -> emptyList()
+      binder is C.Pattern.Var        -> listOf(value)
+
+      else                           -> emptyList()
     }
   }
 
@@ -126,6 +132,9 @@ object Normalize {
 
       value is Value.IntOf &&
       pattern is C.Pattern.IntRangeOf -> value.value in pattern.min..pattern.max
+
+      value is Value.CompoundOf &&
+      pattern is C.Pattern.CompoundOf -> value.elements.all { (name, value) -> matchValue(value.value, pattern.elements[name]!!) == true }
 
       value is Value.TupleOf &&
       pattern is C.Pattern.TupleOf    -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
@@ -176,24 +185,24 @@ object Normalize {
         type as C.Type.Fun
         C.Term.FunOf(value.binder, value.body, type)
       }
-      is Value.Apply   -> {
+      is Value.Apply       -> {
         value.operatorType as C.Type.Fun
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
       }
-      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Var     -> C.Term.Var(value.name, value.level, type)
-      is Value.Run     -> {
+      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Run         -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
-      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command -> C.Term.Command(value.value, C.Type.Union.END)
-      is Value.CodeOf  -> {
+      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command     -> C.Term.Command(value.value, C.Type.Union.END)
+      is Value.CodeOf      -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole    -> C.Term.Hole(value.type)
+      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole        -> C.Term.Hole(value.type)
     }
   }
 

@@ -586,6 +586,16 @@ class Parse private constructor(
               }
             }
           }
+          '{'  -> {
+            val elements = parseList(',', '{', '}') {
+              val key = parseRanged { readString() }
+              expect(':')
+              skipTrivia()
+              val element = parsePattern()
+              key to element
+            }
+            S.Pattern.CompoundOf(elements, annotations, until())
+          }
           else -> when (val word = readWord()) {
             "_"  -> S.Pattern.Drop(annotations, until())
             else ->

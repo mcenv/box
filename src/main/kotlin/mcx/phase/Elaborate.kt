@@ -508,18 +508,55 @@ class Elaborate private constructor(
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int? -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
+      expected is C.Type.Int?     -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
 
       pattern is S.Pattern.IntRangeOf &&
-      expected is C.Type.Int?   -> {
+      expected is C.Type.Int?     -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
         C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int.SET)
       }
 
+      pattern is S.Pattern.CompoundOf &&
+      expected == null            -> {
+        val elements = pattern.elements.associate { (key, element) ->
+          val element = elaboratePattern(element)
+          hover(key.range) { prettyType(element.type) }
+          key.value to element
+        }
+        C.Pattern.CompoundOf(elements, annotations, C.Type.Compound(elements.mapValues { it.value.type }))
+      }
+
+      pattern is S.Pattern.CompoundOf &&
+      expected is C.Type.Compound -> {
+        val elements = mutableMapOf<String, C.Pattern>()
+        pattern.elements.forEach { (key, element) ->
+          when (val type = expected.elements[key.value]) {
+            null -> {
+              diagnostics += Diagnostic.ExtraKey(key.value, key.range)
+              val element = elaboratePattern(element)
+              hover(key.range) { prettyType(element.type) }
+              elements[key.value] = element
+            }
+            else -> {
+              hover(key.range) { prettyType(type) }
+              elements[key.value] = elaboratePattern(element, type)
+            }
+          }
+        }
+        expected.elements.keys
+          .minus(
+            pattern.elements
+              .map { it.first.value }
+              .toSet()
+          )
+          .forEach { diagnostics += Diagnostic.KeyNotFound(it, pattern.range) }
+        C.Pattern.CompoundOf(elements, annotations, C.Type.Compound(elements.mapValues { it.value.type }))
+      }
+
       pattern is S.Pattern.TupleOf &&
-      expected is C.Type.Tuple  -> {
+      expected is C.Type.Tuple    -> {
         if (expected.elements.size != pattern.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end)
         }
@@ -530,7 +567,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null          -> {
+      expected == null            -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(element)
         }

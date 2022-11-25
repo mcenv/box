@@ -20,13 +20,8 @@ object Lifted {
       override val name: DefinitionLocation,
       val binder: Pattern,
       val body: Term,
-      val attributes: Attribute,
-    ) : Definition {
-      data class Attribute(
-        val restore: Int?,
-        val captures: Map<String, Type>?,
-      )
-    }
+      val restore: Int?,
+    ) : Definition
 
     data class Builtin(
       override val annotations: List<Annotation>,
@@ -245,6 +240,12 @@ object Lifted {
     data class IntRangeOf(
       val min: Int,
       val max: Int,
+      override val annotations: List<Annotation>,
+      override val type: Type,
+    ) : Pattern
+
+    data class CompoundOf(
+      val elements: List<Pair<String, Pattern>>,
       override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern

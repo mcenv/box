@@ -372,6 +372,12 @@ object Core {
       override val type: Type,
     ) : Pattern
 
+    data class CompoundOf(
+      val elements: Map<String, Pattern>,
+      override val annotations: List<Annotation>,
+      override val type: Type,
+    ) : Pattern
+
     data class TupleOf(
       val elements: List<Pattern>,
       override val annotations: List<Annotation>,
