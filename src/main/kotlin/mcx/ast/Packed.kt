@@ -19,8 +19,8 @@ object Packed {
     }
   }
 
-  enum class Type(
-    private val stack: String,
+  enum class Stack(
+    private val key: String,
   ) {
     END("end"),
     BYTE("byte"),
@@ -37,6 +37,6 @@ object Packed {
     COMPOUND("compound");
 
     override fun toString(): String =
-      stack
+      key
   }
 }

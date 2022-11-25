@@ -20,8 +20,13 @@ object Lifted {
       override val name: DefinitionLocation,
       val binder: Pattern,
       val body: Term,
-      val restore: Int?,
-    ) : Definition
+      val attributes: Attribute,
+    ) : Definition {
+      data class Attribute(
+        val restore: Int?,
+        val captures: Map<String, Type>?,
+      )
+    }
 
     data class Builtin(
       override val annotations: List<Annotation>,
@@ -185,7 +190,8 @@ object Lifted {
     ) : Term
 
     data class FunOf(
-      val id: Int,
+      val tag: Int,
+      val vars: List<Triple<String, Int, Type>>,
       override val type: Type,
     ) : Term
 

@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.phase.Lift.Env.Companion.emptyEnv
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
@@ -8,24 +9,23 @@ class Lift private constructor(
   private val definition: C.Definition,
 ) {
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
-  private val types: MutableList<L.Type> = mutableListOf()
-  private var savedSize: Int = 0
   private var freshFunctionId: Int = 0
 
   private fun lift(): List<L.Definition> /* TODO: add metadata to lifted definitions */ {
     val annotations = definition.annotations.map { liftAnnotation(it) }
     return liftedDefinitions + when (definition) {
       is C.Definition.Resource -> {
-        val body = liftTerm(definition.body)
+        val body = emptyEnv().liftTerm(definition.body)
         L.Definition.Resource(annotations, definition.registry, definition.name, body)
       }
       is C.Definition.Function -> {
-        val binder = liftPattern(definition.binder)
+        val env = emptyEnv()
+        val binder = env.liftPattern(definition.binder)
         if (L.Annotation.Builtin in annotations) {
           L.Definition.Builtin(annotations, definition.name)
         } else {
-          val body = liftTerm(definition.body)
-          L.Definition.Function(annotations, definition.name, binder, body, null)
+          val body = env.liftTerm(definition.body)
+          L.Definition.Function(annotations, definition.name, binder, body, L.Definition.Function.Attribute(null, null))
         }
       }
       is C.Definition.Hole     -> throw UnexpectedHole
@@ -73,7 +73,7 @@ class Lift private constructor(
     }
   }
 
-  private fun liftTerm(
+  private fun Env.liftTerm(
     term: C.Term,
   ): L.Term {
     val type = liftType(term.type)
@@ -93,27 +93,38 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf   ->
-        restoring {
-          liftPattern(term.binder)
+      is C.Term.FunOf       ->
+        with(emptyEnv()) {
+          val binder = liftPattern(term.binder)
+          val freeVars = freeVars(term)
+          freeVars.forEach { (name, type) -> bind(name, type.second) }
+          val varsType = L.Type.Compound(freeVars.mapValues { it.value.second })
           val body = liftTerm(term.body)
-          val id = context.liftedFunctions.size
-          val bodyFunction = createFreshFunction(body, id) // TODO: capture and drop
+          val tag = context.liftedFunctions.size
+          val bodyFunction = L.Definition
+            .Function(
+              emptyList(),
+              definition.name.module / "${definition.name.name}:${freshFunctionId++}",
+              L.Pattern.TupleOf(listOf(binder, L.Pattern.Var(types.lastIndex, emptyList(), varsType)), emptyList(), L.Type.Tuple(listOf(binder.type, varsType))),
+              body,
+              L.Definition.Function.Attribute(tag, freeVars.mapValues { it.value.second }),
+            )
+            .also { liftedDefinitions += it }
           context.liftFunction(bodyFunction)
-          L.Term.FunOf(id, type)
+          L.Term.FunOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
-      is C.Term.Apply   -> {
+      is C.Term.Apply       -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
       }
-      is C.Term.If      -> {
+      is C.Term.If          -> {
         val condition = liftTerm(term.condition)
-        val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
-        val elseFunction = createFreshFunction(liftTerm(term.elseClause))
+        val thenFunction = createFreshFunction(liftTerm(term.thenClause), L.Definition.Function.Attribute(1, null))
+        val elseFunction = createFreshFunction(liftTerm(term.elseClause), L.Definition.Function.Attribute(null, null))
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let     -> {
+      is C.Term.Let         -> {
         val init = liftTerm(term.init)
         val (binder, body) = restoring {
           val binder = liftPattern(term.binder)
@@ -122,20 +133,20 @@ class Lift private constructor(
         }
         L.Term.Let(binder, init, body, type)
       }
-      is C.Term.Var     -> L.Term.Var(term.level, type)
-      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Is      ->
+      is C.Term.Var         -> L.Term.Var(this[term.name], type)
+      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is          ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Command -> L.Term.Command(term.value, type)
-      is C.Term.CodeOf  -> error("unexpected: code_of")
-      is C.Term.Splice  -> error("unexpected: splice")
-      is C.Term.Hole    -> throw UnexpectedHole
+      is C.Term.Command     -> L.Term.Command(term.value, type)
+      is C.Term.CodeOf      -> error("unexpected: code_of")
+      is C.Term.Splice      -> error("unexpected: splice")
+      is C.Term.Hole        -> throw UnexpectedHole
     }
   }
 
-  private fun liftPattern(
+  private fun Env.liftPattern(
     pattern: C.Pattern,
   ): L.Pattern {
     val annotations = pattern.annotations.map { liftAnnotation(it) }
@@ -145,21 +156,67 @@ class Lift private constructor(
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
       is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
       is C.Pattern.Var        -> {
-        types += type
-        L.Pattern.Var(pattern.level, annotations, type)
+        bind(pattern.name, type)
+        L.Pattern.Var(types.lastIndex, annotations, type)
       }
       is C.Pattern.Drop       -> L.Pattern.Drop(annotations, type)
       is C.Pattern.Hole       -> throw UnexpectedHole
     }
   }
 
-  private fun createFreshFunction(
+  private fun freeVars(
+    term: C.Term,
+  ): LinkedHashMap<String, Pair<Int, L.Type>> {
+    return when (term) {
+      is C.Term.BoolOf      -> linkedMapOf()
+      is C.Term.ByteOf      -> linkedMapOf()
+      is C.Term.ShortOf     -> linkedMapOf()
+      is C.Term.IntOf       -> linkedMapOf()
+      is C.Term.LongOf      -> linkedMapOf()
+      is C.Term.FloatOf     -> linkedMapOf()
+      is C.Term.DoubleOf    -> linkedMapOf()
+      is C.Term.StringOf    -> linkedMapOf()
+      is C.Term.ByteArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.IntArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.RefOf       -> freeVars(term.element)
+      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.FunOf       -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
+      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
+      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Run         -> freeVars(term.arg)
+      is C.Term.Is          -> freeVars(term.scrutinee)
+      is C.Term.Command     -> linkedMapOf()
+      is C.Term.CodeOf      -> error("unexpected: code_of")
+      is C.Term.Splice      -> error("unexpected: splice")
+      is C.Term.Hole        -> throw UnexpectedHole
+    }
+  }
+
+  private fun boundVars(
+    pattern: C.Pattern,
+  ): Set<String> {
+    return when (pattern) {
+      is C.Pattern.IntOf      -> emptySet()
+      is C.Pattern.IntRangeOf -> emptySet()
+      is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
+      is C.Pattern.Var        -> setOf(pattern.name)
+      is C.Pattern.Drop       -> emptySet()
+      is C.Pattern.Hole       -> throw UnexpectedHole
+    }
+  }
+
+  private fun Env.createFreshFunction(
     body: L.Term,
-    restore: Int? = null,
+    attribute: L.Definition.Function.Attribute,
   ): L.Definition.Function {
-    val type = L.Type.Tuple(types.toList())
-    val params = types.mapIndexed { level, entry ->
-      L.Pattern.Var(level, emptyList(), entry)
+    val type = L.Type.Tuple(types.map { (_, type) -> type })
+    val params = types.mapIndexed { level, (_, type) ->
+      L.Pattern.Var(level, emptyList(), type)
     }
     return L.Definition
       .Function(
@@ -167,20 +224,43 @@ class Lift private constructor(
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
         L.Pattern.TupleOf(params, listOf(L.Annotation.NoDrop), type),
         body,
-        restore,
+        attribute,
       )
       .also { liftedDefinitions += it }
   }
 
-  private inline fun <R> restoring(
-    action: () -> R,
-  ): R {
-    savedSize = types.size
-    val result = action()
-    repeat(types.size - savedSize) {
-      types.removeLast()
+  private class Env private constructor() {
+    private var savedSize: Int = 0
+    private val _types: MutableList<Pair<String, L.Type>> = mutableListOf()
+    val types: List<Pair<String, L.Type>> get() = _types
+
+    operator fun get(
+      name: String,
+    ): Int =
+      _types.indexOfLast { it.first == name }
+
+    fun bind(
+      name: String,
+      type: L.Type,
+    ) {
+      _types += name to type
     }
-    return result
+
+    inline fun <R> restoring(
+      action: () -> R,
+    ): R {
+      savedSize = _types.size
+      val result = action()
+      repeat(_types.size - savedSize) {
+        _types.removeLast()
+      }
+      return result
+    }
+
+    companion object {
+      fun emptyEnv(): Env =
+        Env()
+    }
   }
 
   companion object {

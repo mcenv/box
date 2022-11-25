@@ -2,15 +2,16 @@ package mcx.phase
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.Json
+import mcx.ast.Lifted
 import mcx.phase.Context.Companion.DISPATCH
 import mcx.util.quoted
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
-class Pack private constructor() {
+class Pack private constructor(private val definition: Lifted.Definition) {
   private val commands: MutableList<String> = mutableListOf()
-  private val entries: Map<P.Type, MutableList<Int?>> =
-    P.Type
+  private val entries: Map<P.Stack, MutableList<Int?>> =
+    P.Stack
       .values()
       .associateWith { mutableListOf() }
 
@@ -29,6 +30,14 @@ class Pack private constructor() {
         val binderTypes = eraseType(definition.binder.type)
         binderTypes.forEach { push(it, null) }
         packPattern(definition.binder)
+
+        if (definition.attributes.captures != null) {
+          definition.attributes.captures.forEach { (name, type) ->
+            val stack = eraseType(type).first()
+            push(stack, "from storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name")
+          }
+        }
+
         packTerm(definition.body)
 
         if (L.Annotation.NoDrop !in definition.binder.annotations) {
@@ -36,8 +45,8 @@ class Pack private constructor() {
           binderTypes.forEach { drop(it, resultTypes) }
         }
 
-        if (definition.restore != null) {
-          +"scoreboard players set $REGISTER_0 ${definition.restore}"
+        if (definition.attributes.restore != null) {
+          +"scoreboard players set $REGISTER_0 ${definition.attributes.restore}"
         }
 
         P.Definition.Function(path, commands)
@@ -55,64 +64,64 @@ class Pack private constructor() {
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf      -> push(P.Type.BYTE, "value ${if (term.value) 1 else 0}b")
-      is L.Term.ByteOf      -> push(P.Type.BYTE, "value ${term.value}b")
-      is L.Term.ShortOf     -> push(P.Type.SHORT, "value ${term.value}s")
-      is L.Term.IntOf       -> push(P.Type.INT, "value ${term.value}")
-      is L.Term.LongOf      -> push(P.Type.LONG, "value ${term.value}l")
-      is L.Term.FloatOf     -> push(P.Type.FLOAT, "value ${term.value}f")
-      is L.Term.DoubleOf    -> push(P.Type.DOUBLE, "value ${term.value}")
-      is L.Term.StringOf    -> push(P.Type.STRING, "value ${term.value.quoted('"')}") // TODO: quote only if necessary
+      is L.Term.BoolOf      -> push(P.Stack.BYTE, "value ${if (term.value) 1 else 0}b")
+      is L.Term.ByteOf      -> push(P.Stack.BYTE, "value ${term.value}b")
+      is L.Term.ShortOf     -> push(P.Stack.SHORT, "value ${term.value}s")
+      is L.Term.IntOf       -> push(P.Stack.INT, "value ${term.value}")
+      is L.Term.LongOf      -> push(P.Stack.LONG, "value ${term.value}l")
+      is L.Term.FloatOf     -> push(P.Stack.FLOAT, "value ${term.value}f")
+      is L.Term.DoubleOf    -> push(P.Stack.DOUBLE, "value ${term.value}")
+      is L.Term.StringOf    -> push(P.Stack.STRING, "value ${term.value.quoted('"')}") // TODO: quote only if necessary
       is L.Term.ByteArrayOf -> {
-        push(P.Type.BYTE_ARRAY, "value ${term.elements.joinToString(",", "[B;", "]") { "0b" }}")
+        push(P.Stack.BYTE_ARRAY, "value ${term.elements.joinToString(",", "[B;", "]") { "0b" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.BYTE_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.BYTE}[-1]"
-          drop(P.Type.BYTE)
+          +"data modify storage $MCX_STORAGE ${P.Stack.BYTE_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.BYTE}[-1]"
+          drop(P.Stack.BYTE)
         }
       }
       is L.Term.IntArrayOf  -> {
-        push(P.Type.INT_ARRAY, "value ${term.elements.joinToString(",", "[I;", "]") { "0" }}")
+        push(P.Stack.INT_ARRAY, "value ${term.elements.joinToString(",", "[I;", "]") { "0" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.INT_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.INT}[-1]"
-          drop(P.Type.INT)
+          +"data modify storage $MCX_STORAGE ${P.Stack.INT_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          drop(P.Stack.INT)
         }
       }
       is L.Term.LongArrayOf -> {
-        push(P.Type.LONG_ARRAY, "value ${term.elements.joinToString(",", "[L;", "]") { "0l" }}")
+        push(P.Stack.LONG_ARRAY, "value ${term.elements.joinToString(",", "[L;", "]") { "0l" }}")
         term.elements.forEachIndexed { index, element ->
           packTerm(element)
-          +"data modify storage $MCX_STORAGE ${P.Type.LONG_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Type.LONG}[-1]"
-          drop(P.Type.LONG)
+          +"data modify storage $MCX_STORAGE ${P.Stack.LONG_ARRAY}[-1][$index] set from storage $MCX_STORAGE ${P.Stack.LONG}[-1]"
+          drop(P.Stack.LONG)
         }
       }
       is L.Term.ListOf      -> {
-        push(P.Type.LIST, "value []")
+        push(P.Stack.LIST, "value []")
         if (term.elements.isNotEmpty()) {
           val elementType = eraseType(term.elements.first().type).first()
           term.elements.forEach { element ->
             packTerm(element)
-            val index = if (elementType == P.Type.LIST) -2 else -1
-            +"data modify storage $MCX_STORAGE ${P.Type.LIST}[$index] append from storage $MCX_STORAGE $elementType[-1]"
+            val index = if (elementType == P.Stack.LIST) -2 else -1
+            +"data modify storage $MCX_STORAGE ${P.Stack.LIST}[$index] append from storage $MCX_STORAGE $elementType[-1]"
             drop(elementType)
           }
         }
       }
       is L.Term.CompoundOf  -> {
-        push(P.Type.COMPOUND, "value {}")
+        push(P.Stack.COMPOUND, "value {}")
         term.elements.forEach { (key, element) ->
           packTerm(element)
           val valueType = eraseType(element.type).first()
-          val index = if (valueType == P.Type.COMPOUND) -2 else -1
-          +"data modify storage $MCX_STORAGE ${P.Type.COMPOUND}[$index].$key set from storage $MCX_STORAGE $valueType[-1]"
+          val index = if (valueType == P.Stack.COMPOUND) -2 else -1
+          +"data modify storage $MCX_STORAGE ${P.Stack.COMPOUND}[$index].$key set from storage $MCX_STORAGE $valueType[-1]"
           drop(valueType)
         }
       }
       is L.Term.RefOf       -> {
         packTerm(term.element)
         +"function heap/${eraseType(term.element.type).first()}_ref"
-        push(P.Type.INT, null)
+        push(P.Stack.INT, null)
       }
       is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
@@ -120,12 +129,17 @@ class Pack private constructor() {
         }
       }
       is L.Term.FunOf       -> {
-        push(P.Type.COMPOUND, "value {id:${term.id}}")
+        push(P.Stack.COMPOUND, "value {_:${term.tag}}")
+        term.vars.forEach { (name, level, type) ->
+          val stack = eraseType(type).first()
+          val index = this[level, stack]
+          +"data modify storage $MCX_STORAGE ${P.Stack.COMPOUND}[-1].$name set from storage $MCX_STORAGE $stack[$index]"
+        }
       }
       is L.Term.If          -> {
         packTerm(term.condition)
         +"execute store result score #0 mcx run data get storage mcx: byte[-1]"
-        drop(P.Type.BYTE)
+        drop(P.Stack.BYTE)
         +"execute if score #0 mcx matches 1.. run function ${packDefinitionLocation(term.thenName)}"
         +"execute if score #0 mcx matches ..0 run function ${packDefinitionLocation(term.elseName)}"
         eraseType(term.type).forEach { push(it, null) }
@@ -144,7 +158,7 @@ class Pack private constructor() {
         }
       }
       is L.Term.Var         -> {
-        val type = eraseType(term.type).first() // TODO
+        val type = eraseType(term.type).first()
         val index = this[term.level, type]
         push(type, "from storage $MCX_STORAGE $type[$index]")
       }
@@ -192,13 +206,13 @@ class Pack private constructor() {
     ) {
       when (scrutineer) {
         is L.Pattern.IntOf      -> {
-          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Type.INT}[-1]"
-          drop(P.Type.INT)
+          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          drop(P.Stack.INT)
           +"execute unless score $REGISTER_1 matches ${scrutineer.value} run scoreboard players set $REGISTER_0 0"
         }
         is L.Pattern.IntRangeOf -> {
-          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Type.INT}[-1]"
-          drop(P.Type.INT)
+          +"execute store result score $REGISTER_1 run data get storage $MCX_STORAGE ${P.Stack.INT}[-1]"
+          drop(P.Stack.INT)
           +"execute unless score $REGISTER_1 matches ${scrutineer.min}..${scrutineer.max} run scoreboard players set $REGISTER_0 0"
         }
         is L.Pattern.TupleOf    ->
@@ -210,33 +224,33 @@ class Pack private constructor() {
       }
     }
     visit(scrutineer)
-    push(P.Type.BYTE, "value 0b")
-    +"execute store result storage $MCX_STORAGE ${P.Type.BYTE}[-1] byte 1 run scoreboard players get $REGISTER_0"
+    push(P.Stack.BYTE, "value 0b")
+    +"execute store result storage $MCX_STORAGE ${P.Stack.BYTE}[-1] byte 1 run scoreboard players get $REGISTER_0"
   }
 
   private fun eraseType(
     type: L.Type,
-  ): List<P.Type> {
+  ): List<P.Stack> {
     return when (type) {
-      is L.Type.Bool      -> listOf(P.Type.BYTE)
-      is L.Type.Byte      -> listOf(P.Type.BYTE)
-      is L.Type.Short     -> listOf(P.Type.SHORT)
-      is L.Type.Int       -> listOf(P.Type.INT)
-      is L.Type.Long      -> listOf(P.Type.LONG)
-      is L.Type.Float     -> listOf(P.Type.FLOAT)
-      is L.Type.Double    -> listOf(P.Type.DOUBLE)
-      is L.Type.String    -> listOf(P.Type.STRING)
-      is L.Type.ByteArray -> listOf(P.Type.BYTE_ARRAY)
-      is L.Type.IntArray  -> listOf(P.Type.INT_ARRAY)
-      is L.Type.LongArray -> listOf(P.Type.LONG_ARRAY)
-      is L.Type.List      -> listOf(P.Type.LIST)
-      is L.Type.Compound  -> listOf(P.Type.COMPOUND)
-      is L.Type.Ref       -> listOf(P.Type.INT)
+      is L.Type.Bool      -> listOf(P.Stack.BYTE)
+      is L.Type.Byte      -> listOf(P.Stack.BYTE)
+      is L.Type.Short     -> listOf(P.Stack.SHORT)
+      is L.Type.Int       -> listOf(P.Stack.INT)
+      is L.Type.Long      -> listOf(P.Stack.LONG)
+      is L.Type.Float     -> listOf(P.Stack.FLOAT)
+      is L.Type.Double    -> listOf(P.Stack.DOUBLE)
+      is L.Type.String    -> listOf(P.Stack.STRING)
+      is L.Type.ByteArray -> listOf(P.Stack.BYTE_ARRAY)
+      is L.Type.IntArray  -> listOf(P.Stack.INT_ARRAY)
+      is L.Type.LongArray -> listOf(P.Stack.LONG_ARRAY)
+      is L.Type.List      -> listOf(P.Stack.LIST)
+      is L.Type.Compound  -> listOf(P.Stack.COMPOUND)
+      is L.Type.Ref       -> listOf(P.Stack.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
-      is L.Type.Fun       -> listOf(P.Type.COMPOUND)
+      is L.Type.Fun       -> listOf(P.Stack.COMPOUND)
       is L.Type.Union     -> type.elements
                                .firstOrNull()
-                               ?.let { eraseType(it) } ?: listOf(P.Type.END)
+                               ?.let { eraseType(it) } ?: listOf(P.Stack.END)
     }
   }
 
@@ -263,22 +277,22 @@ class Pack private constructor() {
   }
 
   private fun push(
-    type: P.Type,
+    stack: P.Stack,
     source: String?,
   ) {
-    if (source != null && type != P.Type.END) {
-      +"data modify storage $MCX_STORAGE $type append $source"
+    if (source != null && stack != P.Stack.END) {
+      +"data modify storage $MCX_STORAGE $stack append $source"
     }
-    entry(type) += null
+    entry(stack) += null
   }
 
   private fun drop(
-    drop: P.Type,
-    keeps: List<P.Type> = emptyList(),
+    drop: P.Stack,
+    keeps: List<P.Stack> = emptyList(),
     relevant: Boolean = true,
   ) {
     val index = -1 - keeps.count { it == drop }
-    if (relevant && drop != P.Type.END) {
+    if (relevant && drop != P.Stack.END) {
       +"data remove storage $MCX_STORAGE $drop[$index]"
     }
     val entry = entry(drop)
@@ -287,27 +301,27 @@ class Pack private constructor() {
 
   private fun bind(
     level: Int,
-    type: P.Type,
+    stack: P.Stack,
   ) {
-    val entry = entry(type)
+    val entry = entry(stack)
     val index = entry.indexOfLast { it == null }
     entry[index] = level
   }
 
   operator fun get(
     level: Int,
-    type: P.Type,
+    stack: P.Stack,
   ): Int {
-    val entry = entry(type)
+    val entry = entry(stack)
     return entry
              .indexOfLast { it == level }
              .also { require(it != -1) } - entry.size
   }
 
   private fun entry(
-    type: P.Type,
+    stack: P.Stack,
   ): MutableList<Int?> =
-    entries[type]!!
+    entries[stack]!!
 
   private operator fun String.unaryPlus() {
     commands += this
@@ -351,7 +365,7 @@ class Pack private constructor() {
     ): P.Definition.Function {
       val name = packDefinitionLocation(DISPATCH)
       val commands = listOf(
-        "execute store result score $REGISTER_0 run data get storage $MCX_STORAGE compound[-1].id"
+        "execute store result score $REGISTER_0 run data get storage $MCX_STORAGE compound[-1]._"
       ) + functions.mapIndexed { index, function ->
         "execute if score $REGISTER_0 matches $index run function ${packDefinitionLocation(function.name)}"
       }
@@ -362,7 +376,7 @@ class Pack private constructor() {
       context: Context,
       definition: L.Definition,
     ): P.Definition {
-      return Pack().packDefinition(definition)
+      return Pack(definition).packDefinition(definition)
     }
   }
 }
