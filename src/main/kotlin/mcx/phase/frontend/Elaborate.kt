@@ -402,10 +402,15 @@ class Elaborate private constructor(
               }
               else                      -> {
                 hover(term.operator.range) { createFunctionDocumentation(definition) }
-                if (definition.typeParams.size != term.typeArgs.value.size) {
-                  diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
-                }
-                val typeArgs = term.typeArgs.value.map { elaborateType(it) }
+                val typeArgs =
+                  if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
+                    definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
+                  } else {
+                    if (definition.typeParams.size != term.typeArgs.value.size) {
+                      diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+                    }
+                    term.typeArgs.value.map { elaborateType(it) }
+                  }
                 val param = typeArgs.evalType(definition.binder.type)
                 val arg = elaborateTerm(term.arg, param)
                 val result = typeArgs.evalType(definition.result)
@@ -509,10 +514,10 @@ class Elaborate private constructor(
     val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is S.Pattern.IntOf &&
-      expected is C.Type.Int?        -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
+      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
 
       pattern is S.Pattern.IntRangeOf &&
-      expected is C.Type.Int?        -> {
+      expected is C.Type.Int?   -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
@@ -557,7 +562,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected is C.Type.Tuple -> {
+      expected is C.Type.Tuple  -> {
         if (expected.elements.size != pattern.elements.size) {
           diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
         }
@@ -568,7 +573,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.TupleOf &&
-      expected == null         -> {
+      expected == null          -> {
         val elements = pattern.elements.map { element ->
           elaboratePattern(element)
         }
@@ -576,7 +581,7 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected != null         -> {
+      expected != null          -> {
         when (val kind = metaEnv.forceKind(expected.kind)) {
           is C.Kind.Type ->
             if (kind.arity == 1) {
@@ -595,25 +600,25 @@ class Elaborate private constructor(
       }
 
       pattern is S.Pattern.Var &&
-      expected == null         -> {
+      expected == null          -> {
         val type = metaEnv.freshType(pattern.range, C.Kind.Type(1))
         bind(pattern.name, type)
         C.Pattern.Var(pattern.name, entries.lastIndex, annotations, type)
       }
 
-      pattern is S.Pattern.Drop      -> C.Pattern.Drop(annotations, expected ?: metaEnv.freshType(pattern.range))
+      pattern is S.Pattern.Drop -> C.Pattern.Drop(annotations, expected ?: metaEnv.freshType(pattern.range))
 
       pattern is S.Pattern.Anno &&
-      expected == null               -> {
+      expected == null          -> {
         val type = elaborateType(pattern.type)
         elaboratePattern(pattern.element, type)
       }
 
-      pattern is S.Pattern.Hole      -> C.Pattern.Hole(annotations, expected ?: C.Type.Hole)
+      pattern is S.Pattern.Hole -> C.Pattern.Hole(annotations, expected ?: C.Type.Hole)
 
-      expected == null               -> error("type must be non-null")
+      expected == null          -> error("type must be non-null")
 
-      else                           -> {
+      else                      -> {
         val actual = elaboratePattern(pattern)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += Diagnostic.TypeMismatch(expected, actual.type, pattern.range)
