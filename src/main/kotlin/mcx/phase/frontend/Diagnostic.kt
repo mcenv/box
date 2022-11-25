@@ -2,6 +2,7 @@ package mcx.phase.frontend
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
+import mcx.phase.prettyKind
 import mcx.phase.prettyType
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.DiagnosticSeverity
@@ -213,6 +214,19 @@ sealed class Diagnostic(
   ) : Diagnostic(
     range,
     "empty range",
+    DiagnosticSeverity.Error,
+  )
+
+  class KindMismatch(
+    expected: C.Kind,
+    actual: C.Kind,
+    range: Range,
+  ) : Diagnostic(
+    range,
+    """kind mismatch:
+      |  expected: ${prettyKind(expected)}
+      |  actual  : ${prettyKind(actual)}
+    """.trimMargin(),
     DiagnosticSeverity.Error,
   )
 

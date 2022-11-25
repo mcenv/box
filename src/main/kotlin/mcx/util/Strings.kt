@@ -14,3 +14,13 @@ fun String.quoted(
   builder.append(quote)
   return builder.toString()
 }
+
+fun Int.toSubscript(): String =
+  this
+    .toString()
+    .toCharArray()
+    .joinToString("") {
+      (it.code + ('₀' - '0'))
+        .toChar()
+        .toString()
+    }

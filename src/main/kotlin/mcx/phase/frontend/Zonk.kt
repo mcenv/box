@@ -50,7 +50,7 @@ class Zonk private constructor(
   private fun zonkType(
     type: C.Type,
   ): C.Type {
-    return when (val type = metaEnv.force(type)) {
+    return when (val type = metaEnv.forceType(type)) {
       is C.Type.Bool      -> type
       is C.Type.Byte      -> type
       is C.Type.Short     -> type

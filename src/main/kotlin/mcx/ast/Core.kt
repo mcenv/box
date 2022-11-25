@@ -52,14 +52,18 @@ object Core {
     object Hole : Annotation
   }
 
-  data class Kind(
-    val arity: Int,
-    val meta: Boolean,
-  ) {
-    companion object {
-      val ONE: Kind = Kind(1, false)
-      val META: Kind = Kind(1, true)
+  sealed interface Kind {
+    data class Type(
+      val arity: Int,
+    ) : Kind {
+      companion object {
+        val ONE: Kind = Type(1)
+      }
     }
+
+    data class Meta(
+      val index: Int,
+    ) : Kind
   }
 
   sealed interface Type {
@@ -68,7 +72,7 @@ object Core {
     data class Bool(
       val value: Boolean?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Bool = Bool(null)
@@ -78,7 +82,7 @@ object Core {
     data class Byte(
       val value: kotlin.Byte?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Byte = Byte(null)
@@ -88,7 +92,7 @@ object Core {
     data class Short(
       val value: kotlin.Short?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Short = Short(null)
@@ -98,7 +102,7 @@ object Core {
     data class Int(
       val value: kotlin.Int?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Int = Int(null)
@@ -108,7 +112,7 @@ object Core {
     data class Long(
       val value: kotlin.Long?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Long = Long(null)
@@ -118,7 +122,7 @@ object Core {
     data class Float(
       val value: kotlin.Float?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Float = Float(null)
@@ -128,7 +132,7 @@ object Core {
     data class Double(
       val value: kotlin.Double?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: Double = Double(null)
@@ -138,7 +142,7 @@ object Core {
     data class String(
       val value: kotlin.String?,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
 
       companion object {
         val SET: String = String(null)
@@ -146,33 +150,33 @@ object Core {
     }
 
     object ByteArray : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     object IntArray : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     object LongArray : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class List(
       val element: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Compound(
       val elements: Map<kotlin.String, Type>,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Ref(
       val element: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Tuple(
@@ -184,7 +188,7 @@ object Core {
       val param: Type,
       val result: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Union(
@@ -192,21 +196,21 @@ object Core {
       override val kind: Kind,
     ) : Type {
       companion object {
-        val END: Union = Union(emptyList(), Kind.ONE)
+        val END: Union = Union(emptyList(), Kind.Type.ONE)
       }
     }
 
     data class Code(
       val element: Type,
     ) : Type {
-      override val kind: Kind get() = Kind.META
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Var(
       val name: kotlin.String,
       val level: kotlin.Int,
     ) : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
 
     data class Meta(
@@ -216,7 +220,7 @@ object Core {
     ) : Type
 
     object Hole : Type {
-      override val kind: Kind get() = Kind.ONE
+      override val kind: Kind get() = Kind.Type.ONE
     }
   }
 
