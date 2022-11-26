@@ -29,16 +29,11 @@ class Build(
 ) {
   private val src: Path = root.resolve("src")
   private val texts: ConcurrentMap<ModuleLocation, String> = ConcurrentHashMap()
-  private val parseResults: ConcurrentMap<ModuleLocation, Trace<Parse.Result>> = ConcurrentHashMap()
-  private val signatures: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
-  private val elaborateResults: ConcurrentMap<ModuleLocation, Trace<Elaborate.Result>> = ConcurrentHashMap()
-  private val zonkResults: ConcurrentMap<ModuleLocation, Trace<Zonk.Result>> = ConcurrentHashMap()
 
   fun changeText(
     location: ModuleLocation,
     text: String,
   ) {
-    closeText(location)
     texts[location] = text
   }
 
@@ -46,10 +41,6 @@ class Build(
     location: ModuleLocation,
   ) {
     texts -= location
-    parseResults -= location
-    signatures -= location
-    elaborateResults -= location
-    zonkResults -= location
   }
 
   // TODO: track external modification?
@@ -92,15 +83,7 @@ class Build(
   ): Parse.Result? =
     coroutineScope {
       val text = fetchText(location) ?: return@coroutineScope null
-      val newHash = text.hashCode()
-      val parseResult = parseResults[location]
-      if (parseResult == null || parseResult.hash != newHash) {
-        Parse(context, location, text).also {
-          parseResults[location] = Trace(it, newHash)
-        }
-      } else {
-        parseResult.value
-      }
+      Parse(context, location, text)
     }
 
   suspend fun fetchSignature(
@@ -109,15 +92,7 @@ class Build(
   ): Elaborate.Result? =
     coroutineScope {
       val surface = fetchSurface(context, location) ?: return@coroutineScope null
-      val newHash = surface.hashCode()
-      val signature = signatures[location]
-      if (signature == null || signature.hash != newHash) {
-        Elaborate(context, emptyList(), surface, true).also {
-          signatures[location] = Trace(it, newHash)
-        }
-      } else {
-        signature.value
-      }
+      Elaborate(context, emptyList(), surface, true)
     }
 
   suspend fun fetchCore(
@@ -133,15 +108,7 @@ class Build(
           .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(context, PRELUDE)!!.module, null) })
           .plus(async { Elaborate.Dependency(location, fetchSignature(context, location)!!.module, null) })
           .awaitAll()
-      val newHash = Objects.hash(surface, dependencies, position)
-      val elaborateResult = elaborateResults[location]
-      if (elaborateResult == null || elaborateResult.hash != newHash) {
-        Elaborate(context, dependencies, surface, false, position).also {
-          elaborateResults[location] = Trace(it, newHash)
-        }
-      } else {
-        elaborateResult.value
-      }
+      Elaborate(context, dependencies, surface, false, position)
     }
 
   suspend fun fetchZonked(
@@ -151,15 +118,7 @@ class Build(
   ): Zonk.Result =
     coroutineScope {
       val core = fetchCore(context, location, position)
-      val newHash = Objects.hash(core, position)
-      val zonkResult = zonkResults[location]
-      if (zonkResult == null || zonkResult.hash != newHash) {
-        Zonk(context, core).also {
-          zonkResults[location] = Trace(it, newHash)
-        }
-      } else {
-        zonkResult.value
-      }
+      Zonk(context, core)
     }
 
   suspend fun fetchStaged(
