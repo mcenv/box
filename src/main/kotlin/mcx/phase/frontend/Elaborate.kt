@@ -1,6 +1,7 @@
 package mcx.phase.frontend
 
 import mcx.ast.*
+import mcx.ast.Annotation
 import mcx.lsp.highlight
 import mcx.phase.Context
 import mcx.phase.Normalize.evalType
@@ -11,6 +12,17 @@ import mcx.util.contains
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
+import kotlin.Boolean
+import kotlin.Int
+import kotlin.Pair
+import kotlin.String
+import kotlin.Suppress
+import kotlin.also
+import kotlin.apply
+import kotlin.error
+import kotlin.let
+import kotlin.repeat
+import kotlin.to
 import mcx.ast.Core as C
 import mcx.ast.Surface as S
 
@@ -106,7 +118,7 @@ class Elaborate private constructor(
       is S.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-        val meta = C.Annotation.Inline in annotations
+        val meta = Annotation.Inline in annotations
         val env = emptyEnv(definitions, types, meta)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
@@ -125,18 +137,10 @@ class Elaborate private constructor(
   }
 
   private fun elaborateAnnotation(
-    annotation: S.Annotation,
-  ): C.Annotation {
+    annotation: S.Ranged<Annotation>,
+  ): Annotation {
     // TODO: validate
-    return when (annotation) {
-      is S.Annotation.Export  -> C.Annotation.Export
-      is S.Annotation.Tick    -> C.Annotation.Tick
-      is S.Annotation.Load    -> C.Annotation.Load
-      is S.Annotation.NoDrop  -> C.Annotation.NoDrop
-      is S.Annotation.Inline  -> C.Annotation.Inline
-      is S.Annotation.Builtin -> C.Annotation.Builtin
-      is S.Annotation.Hole    -> C.Annotation.Hole
-    }
+    return annotation.value
   }
 
   private fun Env.elaborateType(

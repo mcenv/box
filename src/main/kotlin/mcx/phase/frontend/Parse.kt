@@ -1,5 +1,6 @@
 package mcx.phase.frontend
 
+import mcx.ast.Annotation
 import mcx.ast.ModuleLocation
 import mcx.ast.Registry
 import mcx.ast.Surface
@@ -83,7 +84,7 @@ class Parse private constructor(
             skipTrivia()
             val result = parseType()
             val body =
-              if (annotations.find { it is S.Annotation.Builtin } == null) {
+              if (annotations.find { it.value is Annotation.Builtin } == null) {
                 expect('=')
                 skipTrivia()
                 parseTerm()
@@ -104,7 +105,7 @@ class Parse private constructor(
     }
 
   private fun parseJsonResource(
-    annotations: List<S.Annotation>,
+    annotations: List<S.Ranged<Annotation>>,
     registry: Registry,
   ): S.Definition.Resource =
     ranging {
@@ -116,8 +117,8 @@ class Parse private constructor(
       S.Definition.Resource(annotations, registry, name, body, until())
     }
 
-  private fun parseAnnotations(): List<S.Annotation> {
-    val annotations = mutableListOf<S.Annotation>()
+  private fun parseAnnotations(): List<S.Ranged<Annotation>> {
+    val annotations = mutableListOf<S.Ranged<Annotation>>()
     while (true) {
       skipTrivia()
       if (!canRead() || peek() != '@') {
@@ -133,16 +134,16 @@ class Parse private constructor(
     return annotations
   }
 
-  private fun parseAnnotation(): S.Annotation =
+  private fun parseAnnotation(): S.Ranged<Annotation> =
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "export"  -> S.Annotation.Export(until())
-          "tick"    -> S.Annotation.Tick(until())
-          "load"    -> S.Annotation.Load(until())
-          "no_drop" -> S.Annotation.NoDrop(until())
-          "inline"  -> S.Annotation.Inline(until())
-          "builtin" -> S.Annotation.Builtin(until())
+          "export"  -> S.Ranged(Annotation.Export, until())
+          "tick"    -> S.Ranged(Annotation.Tick, until())
+          "load"    -> S.Ranged(Annotation.Load, until())
+          "no_drop" -> S.Ranged(Annotation.NoDrop, until())
+          "inline"  -> S.Ranged(Annotation.Inline, until())
+          "builtin" -> S.Ranged(Annotation.Builtin, until())
           else      -> null
         }
       } else {
@@ -150,7 +151,7 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedAnnotation(range)
-        S.Annotation.Hole(range)
+        S.Ranged(Annotation.Hole, range)
       }
     }
 

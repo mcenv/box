@@ -10,12 +10,12 @@ object Surface {
   )
 
   sealed interface Definition {
-    val annotations: List<Annotation>
+    val annotations: List<Ranged<Annotation>>
     val name: Ranged<String>
     val range: Range
 
     data class Resource(
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       val registry: Registry,
       override val name: Ranged<String>,
       val body: Term,
@@ -23,7 +23,7 @@ object Surface {
     ) : Definition
 
     data class Function(
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val name: Ranged<String>,
       val typeParams: List<String>,
       val binder: Pattern,
@@ -35,41 +35,9 @@ object Surface {
     data class Hole(
       override val range: Range,
     ) : Definition {
-      override val annotations: List<Annotation> get() = throw IllegalStateException()
+      override val annotations: List<Ranged<Annotation>> get() = throw IllegalStateException()
       override val name: Ranged<String> get() = throw IllegalStateException()
     }
-  }
-
-  sealed interface Annotation {
-    val range: Range
-
-    data class Export(
-      override val range: Range,
-    ) : Annotation
-
-    data class Tick(
-      override val range: Range,
-    ) : Annotation
-
-    data class Load(
-      override val range: Range,
-    ) : Annotation
-
-    data class NoDrop(
-      override val range: Range,
-    ) : Annotation
-
-    data class Inline(
-      override val range: Range,
-    ) : Annotation
-
-    data class Builtin(
-      override val range: Range,
-    ) : Annotation
-
-    data class Hole(
-      override val range: Range,
-    ) : Annotation
   }
 
   sealed interface Type {
@@ -305,54 +273,54 @@ object Surface {
   }
 
   sealed interface Pattern {
-    val annotations: List<Annotation>
+    val annotations: List<Ranged<Annotation>>
     val range: Range
 
     data class IntOf(
       val value: Int,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class IntRangeOf(
       val min: Int,
       val max: Int,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class TupleOf(
       val elements: List<Pattern>,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Var(
       val name: String,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Drop(
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Anno(
       val element: Pattern,
       val type: Type,
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Hole(
-      override val annotations: List<Annotation>,
+      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
   }

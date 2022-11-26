@@ -1,5 +1,6 @@
 package mcx.phase.backend
 
+import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
 import mcx.phase.Context
 import mcx.phase.Normalize.evalType
@@ -28,7 +29,7 @@ class Stage private constructor(
       is C.Definition.Function -> {
         if (
           definition.typeParams.isEmpty() &&
-          C.Annotation.Inline !in definition.annotations
+          Annotation.Inline !in definition.annotations
         ) {
           val binder = stagePattern(definition.binder)
           val result = evalType(definition.result)
@@ -75,7 +76,7 @@ class Stage private constructor(
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
       is C.Term.Run         -> {
         val definition = dependencies[term.name] as C.Definition.Function
-        if (C.Annotation.Inline in definition.annotations) {
+        if (Annotation.Inline in definition.annotations) {
           stageTerm(normalizeTerm(dependencies, term))
         } else if (term.typeArgs.isEmpty()) {
           val arg = stageTerm(term.arg)

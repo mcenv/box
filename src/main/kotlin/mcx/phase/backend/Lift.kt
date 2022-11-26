@@ -1,5 +1,6 @@
 package mcx.phase.backend
 
+import mcx.ast.Annotation
 import mcx.phase.Context
 import mcx.phase.UnexpectedHole
 import mcx.phase.backend.Lift.Env.Companion.emptyEnv
@@ -36,16 +37,16 @@ class Lift private constructor(
   }
 
   private fun liftAnnotation(
-    annotation: C.Annotation,
+    annotation: Annotation,
   ): L.Annotation {
     return when (annotation) {
-      is C.Annotation.Export  -> error("unexpected: export")
-      is C.Annotation.Tick    -> L.Annotation.Tick
-      is C.Annotation.Load    -> L.Annotation.Load
-      is C.Annotation.NoDrop  -> L.Annotation.NoDrop
-      is C.Annotation.Inline  -> L.Annotation.Inline
-      is C.Annotation.Builtin -> L.Annotation.Builtin
-      is C.Annotation.Hole    -> throw UnexpectedHole
+      is Annotation.Export  -> error("unexpected: export")
+      is Annotation.Tick    -> L.Annotation.Tick
+      is Annotation.Load    -> L.Annotation.Load
+      is Annotation.NoDrop  -> L.Annotation.NoDrop
+      is Annotation.Inline  -> L.Annotation.Inline
+      is Annotation.Builtin -> L.Annotation.Builtin
+      is Annotation.Hole    -> throw UnexpectedHole
     }
   }
 

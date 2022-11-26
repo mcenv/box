@@ -3,6 +3,7 @@ package mcx.phase
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
+import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
 import mcx.ast.Value
 import mcx.phase.Normalize.Env.Companion.emptyEnv
@@ -71,7 +72,7 @@ object Normalize {
         when (val definition = definitions[term.name] as? C.Definition.Function) {
           null -> Value.Run(term.name, term.typeArgs, arg)
           else ->
-            if (C.Annotation.Builtin in definition.annotations) {
+            if (Annotation.Builtin in definition.annotations) {
               val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
               builtin.eval(arg) ?: Value.Run(term.name, term.typeArgs, arg)
             } else {

@@ -36,22 +36,6 @@ object Core {
     }
   }
 
-  sealed interface Annotation {
-    object Export : Annotation
-
-    object Tick : Annotation
-
-    object Load : Annotation
-
-    object NoDrop : Annotation
-
-    object Inline : Annotation
-
-    object Builtin : Annotation
-
-    object Hole : Annotation
-  }
-
   sealed interface Kind {
     data class Type(
       val arity: Int,
