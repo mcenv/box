@@ -27,8 +27,15 @@ object Surface {
       override val name: Ranged<String>,
       val typeParams: List<String>,
       val binder: Pattern,
-      val result: Type,
+      val result: Surface.Type,
       val body: Term,
+      override val range: Range,
+    ) : Definition
+
+    data class Type(
+      override val annotations: List<Ranged<Annotation>>,
+      override val name: Ranged<String>,
+      val body: Surface.Type,
       override val range: Range,
     ) : Definition
 

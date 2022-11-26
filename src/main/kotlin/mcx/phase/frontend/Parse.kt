@@ -68,7 +68,7 @@ class Parse private constructor(
           "/dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
           "/worldgen/biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
           "/dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
-          "function"        -> {
+          "function" -> {
             skipTrivia()
             val name = parseRanged { readWord() }
             skipTrivia()
@@ -93,7 +93,15 @@ class Parse private constructor(
               }
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
-          else              -> null
+          "type"     -> {
+            skipTrivia()
+            val name = parseRanged { readWord() }
+            expect('=')
+            skipTrivia()
+            val body = parseType()
+            S.Definition.Type(annotations, name, body, until())
+          }
+          else       -> null
         }
       } else {
         null

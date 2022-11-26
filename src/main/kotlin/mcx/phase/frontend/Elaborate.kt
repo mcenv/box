@@ -82,7 +82,11 @@ class Elaborate private constructor(
               labelDetails.detail = ": ${prettyType(definition.binder.type)} -> ${prettyType(definition.result)}"
               CompletionItemKind.Function
             }
-            else                     -> error("unexpected: hole")
+            is C.Definition.Type     -> {
+              // TODO: add documentation and detail
+              CompletionItemKind.Class
+            }
+            is C.Definition.Hole     -> error("unexpected: hole")
           }
           labelDetails.description = location.module.toString()
           this.labelDetails = labelDetails
@@ -105,8 +109,9 @@ class Elaborate private constructor(
     return when (definition) {
       is S.Definition.Resource -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
+        val name = module / definition.name.value
         C.Definition
-          .Resource(annotations, definition.registry, module / definition.name.value)
+          .Resource(annotations, definition.registry, name)
           .also {
             if (!signature) {
               val env = emptyEnv(definitions, emptyList(), true)
@@ -117,13 +122,14 @@ class Elaborate private constructor(
       }
       is S.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
+        val name = module / definition.name.value
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
         val meta = Annotation.Inline in annotations
         val env = emptyEnv(definitions, types, meta)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
         C.Definition
-          .Function(annotations, module / definition.name.value, definition.typeParams, binder, result)
+          .Function(annotations, name, definition.typeParams, binder, result)
           .also {
             hover(definition.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
@@ -131,6 +137,14 @@ class Elaborate private constructor(
               it.body = body
             }
           }
+      }
+      is S.Definition.Type     -> {
+        val annotations = definition.annotations.map { elaborateAnnotation(it) }
+        val name = module / definition.name.value
+        val meta = Annotation.Inline in annotations
+        val env = emptyEnv(definitions, emptyList(), meta)
+        val body = env.elaborateType(definition.body)
+        C.Definition.Type(annotations, name, body)
       }
       is S.Definition.Hole     -> C.Definition.Hole
     }

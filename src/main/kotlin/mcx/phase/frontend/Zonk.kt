@@ -43,6 +43,10 @@ class Zonk private constructor(
             it.body = body
           }
       }
+      is C.Definition.Type     -> {
+        val body = zonkType(definition.body)
+        C.Definition.Type(definition.annotations, definition.name, body)
+      }
       is C.Definition.Hole     -> definition
     }
   }

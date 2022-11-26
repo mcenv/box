@@ -38,8 +38,19 @@
       }
     },
     {
+      "match": "\\b(type) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
+      "captures": {
+        "1": {
+          "name": "keyword.mcx"
+        },
+        "2": {
+          "name": "support.type.mcx"
+        }
+      }
+    },
+    {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|function)\\b"
+      "match": "\\b(?:import|function|type)\\b"
     },
     {
       "name": "keyword.mcx",

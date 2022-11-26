@@ -25,10 +25,16 @@ object Core {
       override val name: DefinitionLocation,
       val typeParams: List<String>,
       val binder: Pattern,
-      val result: Type,
+      val result: Core.Type,
     ) : Definition {
       lateinit var body: Term
     }
+
+    data class Type(
+      override val annotations: List<Annotation>,
+      override val name: DefinitionLocation,
+      val body: Core.Type,
+    ) : Definition
 
     object Hole : Definition {
       override val annotations: List<Annotation> get() = throw IllegalStateException()

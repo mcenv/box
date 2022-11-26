@@ -43,6 +43,7 @@ class Stage private constructor(
           null
         }
       }
+      is C.Definition.Type     -> null
       is C.Definition.Hole     -> throw UnexpectedHole
     }?.also {
       stagedDefinitions += it

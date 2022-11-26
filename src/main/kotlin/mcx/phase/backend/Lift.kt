@@ -15,25 +15,27 @@ class Lift private constructor(
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
   private var freshFunctionId: Int = 0
 
-  private fun lift(): List<L.Definition> /* TODO: add metadata to lifted definitions */ {
+  private fun lift(): List<L.Definition> {
     val annotations = definition.annotations.map { liftAnnotation(it) }
-    return liftedDefinitions + when (definition) {
+    when (definition) {
       is C.Definition.Resource -> {
         val body = emptyEnv().liftTerm(definition.body)
-        L.Definition.Resource(annotations, definition.registry, definition.name, body)
+        liftedDefinitions += L.Definition.Resource(annotations, definition.registry, definition.name, body)
       }
       is C.Definition.Function -> {
         val env = emptyEnv()
         val binder = env.liftPattern(definition.binder)
         if (L.Annotation.Builtin in annotations) {
-          L.Definition.Builtin(annotations, definition.name)
+          liftedDefinitions += L.Definition.Builtin(annotations, definition.name)
         } else {
           val body = env.liftTerm(definition.body)
-          L.Definition.Function(annotations, definition.name, binder, body, null)
+          liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
         }
       }
+      is C.Definition.Type     -> Unit
       is C.Definition.Hole     -> throw UnexpectedHole
     }
+    return liftedDefinitions
   }
 
   private fun liftAnnotation(
