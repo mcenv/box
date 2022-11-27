@@ -637,92 +637,99 @@ class Elaborate private constructor(
     val type2 = metaEnv.forceType(type2)
     return when {
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool                   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Bool      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte                   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Byte      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short                  -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Short     -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Int &&
-      type2 is C.Type.Int                    -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Int       -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Long &&
-      type2 is C.Type.Long                   -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Long      -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Float &&
-      type2 is C.Type.Float                  -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Float     -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Double &&
-      type2 is C.Type.Double                 -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Double    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.String &&
-      type2 is C.Type.String                 -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.String    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.ByteArray &&
-      type2 is C.Type.ByteArray              -> true
+      type2 is C.Type.ByteArray -> true
 
       type1 is C.Type.IntArray &&
-      type2 is C.Type.IntArray               -> true
+      type2 is C.Type.IntArray  -> true
 
       type1 is C.Type.LongArray &&
-      type2 is C.Type.LongArray              -> true
+      type2 is C.Type.LongArray -> true
 
       type1 is C.Type.List &&
-      type2 is C.Type.List                   -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound               -> type1.elements.size == type2.elements.size &&
-                                                type1.elements.all { (key1, element1) ->
-                                                  when (val element2 = type2.elements[key1]) {
-                                                    null -> false
-                                                    else -> element1 isSubtypeOf element2
-                                                  }
-                                                }
+      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+                                   type1.elements.all { (key1, element1) ->
+                                     when (val element2 = type2.elements[key1]) {
+                                       null -> false
+                                       else -> element1 isSubtypeOf element2
+                                     }
+                                   }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref                    -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple                  -> type1.elements.size == type2.elements.size &&
-                                                (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
+                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1               -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1               -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Fun &&
-      type2 is C.Type.Fun                    -> type2.param isSubtypeOf type1.param &&
-                                                type1.result isSubtypeOf type2.result
+      type2 is C.Type.Fun       -> type2.param isSubtypeOf type1.param &&
+                                   type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union                  -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union                  -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union     -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union     -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code                   -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var                    -> type1.level == type2.level
+      type2 is C.Type.Var       -> type1.level == type2.level
 
       type1 is C.Type.Run &&
-      type1.name.module == input.module.name -> TypeEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
+      type2 is C.Type.Run &&
+      type1.name == type2.name  -> true
+
+      type1 is C.Type.Run &&
+      (
+          type1.name.module == input.module.name ||
+          Annotation.Inline in definitions[type1.name]!!.annotations
+      )                         -> TypeEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
-      type2.name.module == input.module.name -> type1 isSubtypeOf TypeEnv(definitions, emptyList(), true).evalType(type2)
+      (
+          type2.name.module == input.module.name ||
+          Annotation.Inline in definitions[type2.name]!!.annotations
+      )                         -> type1 isSubtypeOf TypeEnv(definitions, emptyList(), true).evalType(type2)
 
-      type1 is C.Type.Run &&
-      type2 is C.Type.Run                    -> type1.name == type2.name
+      type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
 
-      type1 is C.Type.Meta                   -> metaEnv.unifyTypes(type1, type2)
-      type2 is C.Type.Meta                   -> metaEnv.unifyTypes(type1, type2)
+      type1 is C.Type.Hole      -> true
+      type2 is C.Type.Hole      -> true
 
-      type1 is C.Type.Hole                   -> true
-      type2 is C.Type.Hole                   -> true
-
-      else                                   -> false
+      else                      -> false
     }
   }
 
