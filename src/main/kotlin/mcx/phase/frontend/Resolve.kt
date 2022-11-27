@@ -13,8 +13,10 @@ class Resolve private constructor(
   private val input: Parse.Result,
 ) {
   private val locations: List<DefinitionLocation> =
-    input.module.definitions.map { input.module.name / it.name.value } +
-    dependencies.flatMap { dependency -> dependency.definitions.map { it.name.value } }
+    input.module.definitions.mapNotNull { if (it is S.Definition.Hole) null else input.module.name / it.name.value } +
+    dependencies.flatMap { dependency ->
+      dependency.definitions.mapNotNull { if (it is R.Definition.Hole) null else it.name.value }
+    }
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
 
   private fun resolve(): Result {

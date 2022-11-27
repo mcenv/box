@@ -30,6 +30,7 @@ import mcx.ast.Resolved as R
 @Suppress("NAME_SHADOWING")
 class Elaborate private constructor(
   private val dependencies: List<Dependency>,
+  private val input: Resolve.Result,
   private val signature: Boolean,
   private val position: Position?,
 ) {
@@ -55,9 +56,7 @@ class Elaborate private constructor(
       }
     }
 
-  private fun elaborateResult(
-    input: Resolve.Result,
-  ): Result {
+  private fun elaborate(): Result {
     return Result(
       elaborateModule(input.module),
       metaEnv,
@@ -71,7 +70,7 @@ class Elaborate private constructor(
     module: R.Module,
   ): C.Module {
     if (position != null) {
-      definitionCompletionItems += definitions.map { (location, definition) ->
+      definitionCompletionItems += definitions.mapNotNull { (location, definition) ->
         CompletionItem(location.name).apply {
           val labelDetails = CompletionItemLabelDetails()
           kind = when (definition) {
@@ -88,7 +87,7 @@ class Elaborate private constructor(
               // TODO: add documentation and detail
               CompletionItemKind.Class
             }
-            is C.Definition.Hole     -> error("unexpected: hole")
+            is C.Definition.Hole     -> return@mapNotNull null
           }
           labelDetails.description = location.module.toString()
           this.labelDetails = labelDetails
@@ -193,7 +192,15 @@ class Elaborate private constructor(
       type is R.Type.Fun && expected == null       -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Code && expected == null      -> C.Type.Code(elaborateType(type.element))
       type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
-      type is R.Type.Run                           -> C.Type.Run(type.name, expected ?: metaEnv.freshKind())
+      type is R.Type.Run && expected == null       -> {
+        when (val definition = definitions[type.name]) {
+          is C.Definition.Type -> C.Type.Run(type.name, definition.body)
+          else                 -> {
+            diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
+            C.Type.Hole
+          }
+        }
+      }
       type is R.Type.Hole                          -> C.Type.Hole
       expected == null                             -> error("kind must be non-null")
       else                                         -> {
@@ -412,7 +419,7 @@ class Elaborate private constructor(
             C.Term.Run(definition.name, typeArgs, arg, result)
           }
           else                     -> {
-            diagnostics += Diagnostic.ExpectedFunction(term.name.range)
+            diagnostics += Diagnostic.ExpectedFunctionDefinition(term.name.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
@@ -624,86 +631,92 @@ class Elaborate private constructor(
     val type2 = metaEnv.forceType(type2)
     return when {
       type1 is C.Type.Bool &&
-      type2 is C.Type.Bool      -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Bool                   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Byte &&
-      type2 is C.Type.Byte      -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Byte                   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Short &&
-      type2 is C.Type.Short     -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Short                  -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Int &&
-      type2 is C.Type.Int       -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Int                    -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Long &&
-      type2 is C.Type.Long      -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Long                   -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Float &&
-      type2 is C.Type.Float     -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Float                  -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.Double &&
-      type2 is C.Type.Double    -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.Double                 -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.String &&
-      type2 is C.Type.String    -> type2.value == null || type1.value == type2.value
+      type2 is C.Type.String                 -> type2.value == null || type1.value == type2.value
 
       type1 is C.Type.ByteArray &&
-      type2 is C.Type.ByteArray -> true
+      type2 is C.Type.ByteArray              -> true
 
       type1 is C.Type.IntArray &&
-      type2 is C.Type.IntArray  -> true
+      type2 is C.Type.IntArray               -> true
 
       type1 is C.Type.LongArray &&
-      type2 is C.Type.LongArray -> true
+      type2 is C.Type.LongArray              -> true
 
       type1 is C.Type.List &&
-      type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.List                   -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+      type2 is C.Type.Compound               -> type1.elements.size == type2.elements.size &&
+                                                type1.elements.all { (key1, element1) ->
+                                                  when (val element2 = type2.elements[key1]) {
+                                                    null -> false
+                                                    else -> element1 isSubtypeOf element2
+                                                  }
+                                                }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref                    -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple                  -> type1.elements.size == type2.elements.size &&
+                                                (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1               -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1               -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Fun &&
-      type2 is C.Type.Fun      -> type2.param isSubtypeOf type1.param &&
-                                  type1.result isSubtypeOf type2.result
+      type2 is C.Type.Fun                    -> type2.param isSubtypeOf type1.param &&
+                                                type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union    -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union                  -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union                  -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code                   -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var      -> type1.level == type2.level
+      type2 is C.Type.Var                    -> type1.level == type2.level
 
       type1 is C.Type.Run &&
-      type2 is C.Type.Run      -> type1.name == type2.name
+      type1.name.module == input.module.name -> type1.body isSubtypeOf type2
 
-      type1 is C.Type.Meta     -> metaEnv.unifyTypes(type1, type2)
-      type2 is C.Type.Meta     -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Run &&
+      type2.name.module == input.module.name -> type1 isSubtypeOf type2.body
 
-      type1 is C.Type.Hole     -> true
-      type2 is C.Type.Hole     -> true
+      type1 is C.Type.Run &&
+      type2 is C.Type.Run                    -> type1.name == type2.name
 
-      else                     -> false
+      type1 is C.Type.Meta                   -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Meta                   -> metaEnv.unifyTypes(type1, type2)
+
+      type1 is C.Type.Hole                   -> true
+      type2 is C.Type.Hole                   -> true
+
+      else                                   -> false
     }
   }
 
@@ -829,6 +842,6 @@ class Elaborate private constructor(
       signature: Boolean,
       position: Position? = null,
     ): Result =
-      Elaborate(dependencies, signature, position).elaborateResult(input)
+      Elaborate(dependencies, input, signature, position).elaborate()
   }
 }

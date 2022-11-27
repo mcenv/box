@@ -166,11 +166,19 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class ExpectedFunction(
+  class ExpectedFunctionDefinition(
     range: Range,
   ) : Diagnostic(
     range,
-    "expected: function",
+    "expected: function definition",
+    DiagnosticSeverity.Error,
+  )
+
+  class ExpectedTypeDefinition(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: type definition",
     DiagnosticSeverity.Error,
   )
 
