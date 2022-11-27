@@ -33,7 +33,6 @@ class Lift private constructor(
         }
       }
       is C.Definition.Type     -> Unit
-      is C.Definition.Hole     -> throw UnexpectedHole
     }
     return liftedDefinitions
   }

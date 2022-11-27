@@ -10,9 +10,10 @@ import mcx.ast.Resolved as R
 import mcx.ast.Surface as S
 
 class Resolve private constructor(
-  dependencies: List<R.Module>,
+  dependencies: List<Dependency>,
   private val input: Parse.Result,
 ) {
+  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private val locations: List<DefinitionLocation> =
     input.module.definitions.mapNotNull { definition ->
       if (definition is S.Definition.Hole) {
@@ -22,15 +23,22 @@ class Resolve private constructor(
       }
     } +
     dependencies.flatMap { dependency ->
-      dependency.definitions.mapNotNull { definition ->
-        if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.Export }) {
-          null
-        } else {
-          definition.name.value
+      when (val module = dependency.module) {
+        null -> {
+          diagnostics += Diagnostic.ModuleNotFound(dependency.location, dependency.range!!)
+          emptyList()
+        }
+        else -> {
+          module.definitions.mapNotNull { definition ->
+            if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.Export }) {
+              null
+            } else {
+              definition.name.value
+            }
+          }
         }
       }
     }
-  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
 
   private fun resolve(): Result {
     val module = resolveModule(input.module)
@@ -272,6 +280,12 @@ class Resolve private constructor(
     }
   }
 
+  data class Dependency(
+    val location: ModuleLocation,
+    val module: R.Module?,
+    val range: Range?,
+  )
+
   data class Result(
     val module: R.Module,
     val diagnostics: List<Diagnostic>,
@@ -280,7 +294,7 @@ class Resolve private constructor(
   companion object {
     operator fun invoke(
       context: Context,
-      dependencies: List<R.Module>,
+      dependencies: List<Dependency>,
       input: Parse.Result,
     ): Result =
       Resolve(dependencies, input).resolve()

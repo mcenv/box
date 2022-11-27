@@ -35,11 +35,6 @@ object Core {
       override val name: DefinitionLocation,
       val body: Core.Type,
     ) : Definition
-
-    object Hole : Definition {
-      override val annotations: List<Annotation> get() = throw IllegalStateException()
-      override val name: DefinitionLocation get() = throw IllegalStateException()
-    }
   }
 
   sealed interface Kind {

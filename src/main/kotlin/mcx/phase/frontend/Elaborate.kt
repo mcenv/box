@@ -30,7 +30,7 @@ import mcx.ast.Resolved as R
 
 @Suppress("NAME_SHADOWING")
 class Elaborate private constructor(
-  private val dependencies: List<Dependency>,
+  dependencies: List<C.Module>,
   private val input: Resolve.Result,
   private val signature: Boolean,
   private val position: Position?,
@@ -41,21 +41,9 @@ class Elaborate private constructor(
   private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: (() -> String)? = null
   private val definitions: Map<DefinitionLocation, C.Definition> =
-    hashMapOf<DefinitionLocation, C.Definition>().also { definitions ->
-      dependencies.forEach { dependency ->
-        when (dependency.module) {
-          null -> diagnostics += Diagnostic.ModuleNotFound(
-            dependency.location,
-            dependency.range!!,
-          )
-          else -> dependency.module.definitions.forEach { definition ->
-            if (definition !is C.Definition.Hole) {
-              definitions[definition.name] = definition // TODO: handle name duplication
-            }
-          }
-        }
-      }
-    }
+    dependencies
+      .flatMap { dependency -> dependency.definitions.map { it.name to it } }
+      .toMap()
 
   private fun elaborate(): Result {
     return Result(
@@ -70,37 +58,14 @@ class Elaborate private constructor(
   private fun elaborateModule(
     module: R.Module,
   ): C.Module {
-    if (position != null) {
-      definitionCompletionItems += definitions.mapNotNull { (location, definition) ->
-        CompletionItem(location.name).apply {
-          val labelDetails = CompletionItemLabelDetails()
-          kind = when (definition) {
-            is C.Definition.Resource -> {
-              labelDetails.detail = ": ${definition.registry.string}"
-              CompletionItemKind.Struct
-            }
-            is C.Definition.Function -> {
-              documentation = forRight(highlight(createFunctionDocumentation(definition)))
-              labelDetails.detail = ": ${prettyType(definition.binder.type)} -> ${prettyType(definition.result)}"
-              CompletionItemKind.Function
-            }
-            is C.Definition.Type     -> {
-              // TODO: add documentation and detail
-              CompletionItemKind.Class
-            }
-            is C.Definition.Hole     -> return@mapNotNull null
-          }
-          labelDetails.description = location.module.toString()
-          this.labelDetails = labelDetails
-        }
-      }
-    }
-    return C.Module(module.name, module.definitions.map { elaborateDefinition(it) })
+    completionDefinitions()
+    val definitions = module.definitions.mapNotNull { elaborateDefinition(it) }
+    return C.Module(module.name, definitions)
   }
 
   private fun elaborateDefinition(
     definition: R.Definition,
-  ): C.Definition {
+  ): C.Definition? {
     return when (definition) {
       is R.Definition.Resource -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
@@ -138,7 +103,7 @@ class Elaborate private constructor(
         val body = env.elaborateType(definition.body)
         C.Definition.Type(annotations, definition.name.value, body)
       }
-      is R.Definition.Hole     -> C.Definition.Hole
+      is R.Definition.Hole     -> null
     }
   }
 
@@ -479,24 +444,8 @@ class Elaborate private constructor(
         actual
       }
     }.also {
-      if (position != null && position in term.range) {
-        if (varCompletionItems.isEmpty()) {
-          varCompletionItems +=
-            entries
-              .filter { entry -> !entry.used }
-              .map { entry ->
-                CompletionItem(entry.name).apply {
-                  val type = prettyType(entry.type)
-                  documentation = forRight(highlight(type))
-                  labelDetails = CompletionItemLabelDetails().apply {
-                    detail = ": $type"
-                  }
-                  kind = CompletionItemKind.Variable
-                }
-              }
-        }
-      }
       hoverType(term.range, it.type)
+      completionVars(term.range)
     }
   }
 
@@ -749,6 +698,55 @@ class Elaborate private constructor(
     }
   }
 
+  private fun completionDefinitions() {
+    if (position != null) {
+      definitionCompletionItems += definitions.mapNotNull { (location, definition) ->
+        CompletionItem(location.name).apply {
+          val labelDetails = CompletionItemLabelDetails()
+          kind = when (definition) {
+            is C.Definition.Resource -> {
+              labelDetails.detail = ": ${definition.registry.string}"
+              CompletionItemKind.Struct
+            }
+            is C.Definition.Function -> {
+              documentation = forRight(highlight(createFunctionDocumentation(definition)))
+              labelDetails.detail = ": ${prettyType(definition.binder.type)} -> ${prettyType(definition.result)}"
+              CompletionItemKind.Function
+            }
+            is C.Definition.Type     -> {
+              // TODO: add documentation and detail
+              CompletionItemKind.Class
+            }
+          }
+          labelDetails.description = location.module.toString()
+          this.labelDetails = labelDetails
+        }
+      }
+    }
+  }
+
+  private fun Env.completionVars(
+    range: Range,
+  ) {
+    if (position != null && position in range) {
+      if (varCompletionItems.isEmpty()) {
+        varCompletionItems +=
+          entries
+            .filter { entry -> !entry.used }
+            .map { entry ->
+              CompletionItem(entry.name).apply {
+                val type = prettyType(entry.type)
+                documentation = forRight(highlight(type))
+                labelDetails = CompletionItemLabelDetails().apply {
+                  detail = ": $type"
+                }
+                kind = CompletionItemKind.Variable
+              }
+            }
+      }
+    }
+  }
+
   private fun createFunctionDocumentation(
     definition: C.Definition.Function,
   ): String {
@@ -833,12 +831,6 @@ class Elaborate private constructor(
     }
   }
 
-  data class Dependency(
-    val location: ModuleLocation,
-    val module: C.Module?,
-    val range: Range?,
-  )
-
   data class Result(
     val module: C.Module,
     val metaEnv: MetaEnv,
@@ -850,7 +842,7 @@ class Elaborate private constructor(
   companion object {
     operator fun invoke(
       context: Context,
-      dependencies: List<Dependency>,
+      dependencies: List<C.Module>,
       input: Resolve.Result,
       signature: Boolean,
       position: Position? = null,

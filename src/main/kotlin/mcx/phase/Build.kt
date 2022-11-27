@@ -91,8 +91,8 @@ class Build(
       val surface = fetchSurface(context, location) ?: return@coroutineScope null
       val dependencies =
         surface.module.imports
-          .map { async { fetchResolved(context, it.value)?.module } }
-          .plus(async { if (location == PRELUDE) null else fetchResolved(context, PRELUDE)!!.module })
+          .map { async { Resolve.Dependency(it.value, fetchResolved(context, it.value)?.module, it.range) } }
+          .plus(async { if (location == PRELUDE) null else Resolve.Dependency(PRELUDE, fetchResolved(context, PRELUDE)!!.module, null) })
           .awaitAll()
           .filterNotNull()
       Resolve(context, dependencies, surface)
@@ -116,10 +116,11 @@ class Build(
       val resolved = fetchResolved(context, location)!!
       val dependencies =
         resolved.module.imports
-          .map { async { Elaborate.Dependency(it.value, fetchSignature(context, it.value)?.module, it.range) } }
-          .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(context, PRELUDE)!!.module, null) })
-          .plus(async { Elaborate.Dependency(location, fetchSignature(context, location)!!.module, null) })
+          .map { async { fetchSignature(context, it.value)?.module } }
+          .plus(async { fetchSignature(context, PRELUDE)!!.module })
+          .plus(async { fetchSignature(context, location)!!.module })
           .awaitAll()
+          .filterNotNull()
       Elaborate(context, dependencies, resolved, false, position)
     }
 
