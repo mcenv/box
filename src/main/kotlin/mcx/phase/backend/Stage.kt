@@ -3,6 +3,7 @@ package mcx.phase.backend
 import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
 import mcx.phase.Context
+import mcx.phase.Normalize.TypeEnv
 import mcx.phase.Normalize.evalType
 import mcx.phase.Normalize.normalizeTerm
 import mcx.phase.UnexpectedHole
@@ -17,11 +18,11 @@ class Stage private constructor(
   private fun stage(
     definition: C.Definition,
   ): List<C.Definition> {
-    emptyList<C.Type>().stageDefinition(definition)
+    TypeEnv(dependencies, emptyList(), true).stageDefinition(definition)
     return stagedDefinitions
   }
 
-  private fun List<C.Type>.stageDefinition(
+  private fun TypeEnv.stageDefinition(
     definition: C.Definition,
   ) {
     when (definition) {
@@ -50,7 +51,7 @@ class Stage private constructor(
     }
   }
 
-  private fun List<C.Type>.stageTerm(
+  private fun TypeEnv.stageTerm(
     term: C.Term,
   ): C.Term {
     val type = evalType(term.type)
@@ -86,7 +87,8 @@ class Stage private constructor(
           val typeArgs = term.typeArgs.map { evalType(it) }
           val mangledName = mangle(term.name, typeArgs)
           val arg = stageTerm(term.arg)
-          typeArgs.stageDefinition(
+          val typeEnv = TypeEnv(dependencies, typeArgs, true)
+          typeEnv.stageDefinition(
             C.Definition
               .Function(
                 definition.annotations,
@@ -110,7 +112,7 @@ class Stage private constructor(
     }
   }
 
-  private fun List<C.Type>.stagePattern(
+  private fun TypeEnv.stagePattern(
     pattern: C.Pattern,
   ): C.Pattern {
     val type = evalType(pattern.type)

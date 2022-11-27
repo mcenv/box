@@ -4,6 +4,7 @@ import mcx.ast.*
 import mcx.ast.Annotation
 import mcx.lsp.highlight
 import mcx.phase.Context
+import mcx.phase.Normalize.TypeEnv
 import mcx.phase.Normalize.evalType
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
 import mcx.phase.prettyPattern
@@ -123,8 +124,8 @@ class Elaborate private constructor(
         C.Definition
           .Function(annotations, definition.name.value, definition.typeParams, binder, result)
           .also {
-            hover(definition.name.range) { createFunctionDocumentation(it) }
             if (!signature) {
+              hover(definition.name.range) { createFunctionDocumentation(it) }
               val body = env.elaborateTerm(definition.body, result)
               it.body = body
             }
@@ -194,10 +195,14 @@ class Elaborate private constructor(
       type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
       type is R.Type.Run && expected == null       -> {
         when (val definition = definitions[type.name]) {
-          is C.Definition.Type -> C.Type.Run(type.name, definition.body)
+          is C.Definition.Type -> C.Type.Run(type.name, definition.body.kind)
           else                 -> {
-            diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
-            C.Type.Hole
+            if (signature) {
+              C.Type.Run(type.name, metaEnv.freshKind())
+            } else {
+              diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
+              C.Type.Hole
+            }
           }
         }
       }
@@ -413,9 +418,10 @@ class Elaborate private constructor(
                 }
                 term.typeArgs.value.map { elaborateType(it) }
               }
-            val param = typeArgs.evalType(definition.binder.type)
+            val typeEnv = TypeEnv(definitions, typeArgs, false)
+            val param = typeEnv.evalType(definition.binder.type)
             val arg = elaborateTerm(term.arg, param)
-            val result = typeArgs.evalType(definition.result)
+            val result = typeEnv.evalType(definition.result)
             C.Term.Run(definition.name, typeArgs, arg, result)
           }
           else                     -> {
@@ -702,10 +708,10 @@ class Elaborate private constructor(
       type2 is C.Type.Var                    -> type1.level == type2.level
 
       type1 is C.Type.Run &&
-      type1.name.module == input.module.name -> type1.body isSubtypeOf type2
+      type1.name.module == input.module.name -> TypeEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
-      type2.name.module == input.module.name -> type1 isSubtypeOf type2.body
+      type2.name.module == input.module.name -> type1 isSubtypeOf TypeEnv(definitions, emptyList(), true).evalType(type2)
 
       type1 is C.Type.Run &&
       type2 is C.Type.Run                    -> type1.name == type2.name

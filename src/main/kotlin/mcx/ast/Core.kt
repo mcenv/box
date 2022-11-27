@@ -205,10 +205,8 @@ object Core {
 
     data class Run(
       val name: DefinitionLocation,
-      val body: Type,
-    ) : Type {
-      override val kind: Kind get() = body.kind
-    }
+      override val kind: Kind,
+    ) : Type
 
     data class Meta(
       val index: kotlin.Int,
