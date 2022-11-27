@@ -203,6 +203,11 @@ object Core {
       override val kind: Kind get() = Kind.Type.ONE
     }
 
+    data class Run(
+      val name: DefinitionLocation,
+      override val kind: Kind,
+    ) : Type
+
     data class Meta(
       val index: kotlin.Int,
       val source: Range,

@@ -62,7 +62,7 @@
     },
     {
       "name": "keyword.control.mcx",
-      "match": "\\b(?:fun|if|then|else|let|is)\\b"
+      "match": "\\b(?:fun|of|if|then|else|let|is)\\b"
     },
     {
       "name": "constant.language.mcx",

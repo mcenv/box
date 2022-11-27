@@ -3,7 +3,7 @@ package mcx.ast
 import mcx.util.Ranged
 import org.eclipse.lsp4j.Range
 
-object Surface {
+object Resolved {
   data class Module(
     val name: ModuleLocation,
     val imports: List<Ranged<ModuleLocation>>,
@@ -12,31 +12,31 @@ object Surface {
 
   sealed interface Definition {
     val annotations: List<Ranged<Annotation>>
-    val name: Ranged<String>
+    val name: Ranged<DefinitionLocation>
     val range: Range
 
     data class Resource(
       override val annotations: List<Ranged<Annotation>>,
       val registry: Registry,
-      override val name: Ranged<String>,
+      override val name: Ranged<DefinitionLocation>,
       val body: Term,
       override val range: Range,
     ) : Definition
 
     data class Function(
       override val annotations: List<Ranged<Annotation>>,
-      override val name: Ranged<String>,
+      override val name: Ranged<DefinitionLocation>,
       val typeParams: List<String>,
       val binder: Pattern,
-      val result: Surface.Type,
+      val result: Resolved.Type,
       val body: Term,
       override val range: Range,
     ) : Definition
 
     data class Type(
       override val annotations: List<Ranged<Annotation>>,
-      override val name: Ranged<String>,
-      val body: Surface.Type,
+      override val name: Ranged<DefinitionLocation>,
+      val body: Resolved.Type,
       override val range: Range,
     ) : Definition
 
@@ -44,7 +44,7 @@ object Surface {
       override val range: Range,
     ) : Definition {
       override val annotations: List<Ranged<Annotation>> get() = throw IllegalStateException()
-      override val name: Ranged<String> get() = throw IllegalStateException()
+      override val name: Ranged<DefinitionLocation> get() = throw IllegalStateException()
     }
   }
 
@@ -141,6 +141,12 @@ object Surface {
 
     data class Var(
       val name: kotlin.String,
+      val level: kotlin.Int,
+      override val range: Range,
+    ) : Type
+
+    data class Run(
+      val name: DefinitionLocation,
       override val range: Range,
     ) : Type
 
@@ -255,11 +261,12 @@ object Surface {
 
     data class Var(
       val name: String,
+      val level: Int,
       override val range: Range,
     ) : Term
 
     data class Run(
-      val name: Ranged<String>,
+      val name: Ranged<DefinitionLocation>,
       val typeArgs: Ranged<List<Type>>,
       val arg: Term,
       override val range: Range,
@@ -317,6 +324,7 @@ object Surface {
 
     data class Var(
       val name: String,
+      val level: Int,
       override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern

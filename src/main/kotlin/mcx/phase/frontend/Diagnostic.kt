@@ -1,6 +1,5 @@
 package mcx.phase.frontend
 
-import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.phase.prettyKind
 import mcx.phase.prettyType
@@ -150,7 +149,7 @@ sealed class Diagnostic(
   )
 
   class DefinitionNotFound(
-    name: DefinitionLocation,
+    name: String,
     range: Range,
   ) : Diagnostic(
     range,
@@ -159,7 +158,7 @@ sealed class Diagnostic(
   )
 
   class AmbiguousDefinition(
-    name: DefinitionLocation,
+    name: String,
     range: Range,
   ) : Diagnostic(
     range,

@@ -74,6 +74,7 @@ class Zonk private constructor(
       is C.Type.Fun       -> C.Type.Fun(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
+      is C.Type.Run       -> type
       is C.Type.Meta      -> {
         unsolved += type
         type

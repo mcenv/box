@@ -230,6 +230,7 @@ object Normalize {
       is C.Type.Fun       -> C.Type.Fun(evalType(type.param), evalType(type.result))
       is C.Type.Code      -> C.Type.Code(evalType(type.element))
       is C.Type.Var       -> getOrNull(type.level) ?: type
+      is C.Type.Run       -> type // TODO
       is C.Type.Meta      -> type
       is C.Type.Hole      -> type
     }

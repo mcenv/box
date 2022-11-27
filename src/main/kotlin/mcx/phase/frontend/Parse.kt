@@ -5,6 +5,7 @@ import mcx.ast.ModuleLocation
 import mcx.ast.Registry
 import mcx.ast.Surface
 import mcx.phase.Context
+import mcx.util.Ranged
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
@@ -113,7 +114,7 @@ class Parse private constructor(
     }
 
   private fun parseJsonResource(
-    annotations: List<S.Ranged<Annotation>>,
+    annotations: List<Ranged<Annotation>>,
     registry: Registry,
   ): S.Definition.Resource =
     ranging {
@@ -125,8 +126,8 @@ class Parse private constructor(
       S.Definition.Resource(annotations, registry, name, body, until())
     }
 
-  private fun parseAnnotations(): List<S.Ranged<Annotation>> {
-    val annotations = mutableListOf<S.Ranged<Annotation>>()
+  private fun parseAnnotations(): List<Ranged<Annotation>> {
+    val annotations = mutableListOf<Ranged<Annotation>>()
     while (true) {
       skipTrivia()
       if (!canRead() || peek() != '@') {
@@ -142,16 +143,16 @@ class Parse private constructor(
     return annotations
   }
 
-  private fun parseAnnotation(): S.Ranged<Annotation> =
+  private fun parseAnnotation(): Ranged<Annotation> =
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "export"  -> S.Ranged(Annotation.Export, until())
-          "tick"    -> S.Ranged(Annotation.Tick, until())
-          "load"    -> S.Ranged(Annotation.Load, until())
-          "no_drop" -> S.Ranged(Annotation.NoDrop, until())
-          "inline"  -> S.Ranged(Annotation.Inline, until())
-          "builtin" -> S.Ranged(Annotation.Builtin, until())
+          "export"  -> Ranged(Annotation.Export, until())
+          "tick"    -> Ranged(Annotation.Tick, until())
+          "load"    -> Ranged(Annotation.Load, until())
+          "no_drop" -> Ranged(Annotation.NoDrop, until())
+          "inline"  -> Ranged(Annotation.Inline, until())
+          "builtin" -> Ranged(Annotation.Builtin, until())
           else      -> null
         }
       } else {
@@ -159,7 +160,7 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedAnnotation(range)
-        S.Ranged(Annotation.Hole, range)
+        Ranged(Annotation.Hole, range)
       }
     }
 
@@ -337,7 +338,9 @@ class Parse private constructor(
                     skipTrivia()
                     val arg = parseTerm()
                     expect(')')
-                    S.Term.Run(first, typeArgs, arg, until())
+                    (first as? S.Term.Var)?.let { operator ->
+                      S.Term.Run(Ranged(operator.name, operator.range), typeArgs, arg, until())
+                    }
                   }
                   else -> {
                     val second = parseTerm()
@@ -346,7 +349,9 @@ class Parse private constructor(
                       when (peek()) {
                         ')'  -> {
                           skip()
-                          S.Term.Run(first, S.Ranged(emptyList(), first.range), second, until())
+                          (first as? S.Term.Var)?.let { operator ->
+                            S.Term.Run(Ranged(operator.name, operator.range), Ranged(emptyList(), first.range), second, until())
+                          }
                         }
                         else -> {
                           val typeArgs =
@@ -362,11 +367,16 @@ class Parse private constructor(
                                 expect(')')
                                 S.Term.Is(first, third, until())
                               }
+                              "of" -> {
+                                val third = parseTerm()
+                                expect(')')
+                                S.Term.Apply(first, third, until())
+                              }
                               else -> {
                                 val third = parseTerm()
                                 expect(')')
                                 val range = until()
-                                S.Term.Run(operator, typeArgs ?: S.Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
+                                S.Term.Run(Ranged(operator.name, operator.range), typeArgs ?: Ranged(emptyList(), operator.range), S.Term.TupleOf(listOf(first, third), range), range)
                               }
                             }
                           }
@@ -626,9 +636,9 @@ class Parse private constructor(
 
   private fun <R> parseRanged(
     parse: () -> R,
-  ): S.Ranged<R> =
+  ): Ranged<R> =
     ranging {
-      S.Ranged(parse(), until())
+      Ranged(parse(), until())
     }
 
   private inline fun <R> parseList(

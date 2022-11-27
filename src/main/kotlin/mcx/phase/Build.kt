@@ -9,10 +9,7 @@ import mcx.phase.backend.Generate
 import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
 import mcx.phase.backend.Stage
-import mcx.phase.frontend.Diagnostic
-import mcx.phase.frontend.Elaborate
-import mcx.phase.frontend.Parse
-import mcx.phase.frontend.Zonk
+import mcx.phase.frontend.*
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -86,13 +83,28 @@ class Build(
       Parse(context, location, text)
     }
 
+  suspend fun fetchResolved(
+    context: Context,
+    location: ModuleLocation,
+  ): Resolve.Result? =
+    coroutineScope {
+      val surface = fetchSurface(context, location) ?: return@coroutineScope null
+      val dependencies =
+        surface.module.imports
+          .map { async { fetchResolved(context, it.value)?.module } }
+          .plus(async { if (location == PRELUDE) null else fetchResolved(context, PRELUDE)!!.module })
+          .awaitAll()
+          .filterNotNull()
+      Resolve(context, dependencies, surface)
+    }
+
   suspend fun fetchSignature(
     context: Context,
     location: ModuleLocation,
   ): Elaborate.Result? =
     coroutineScope {
-      val surface = fetchSurface(context, location) ?: return@coroutineScope null
-      Elaborate(context, emptyList(), surface, true)
+      val resolved = fetchResolved(context, location) ?: return@coroutineScope null
+      Elaborate(context, emptyList(), resolved, true)
     }
 
   suspend fun fetchCore(
@@ -101,14 +113,14 @@ class Build(
     position: Position? = null,
   ): Elaborate.Result =
     coroutineScope {
-      val surface = fetchSurface(context, location)!!
+      val resolved = fetchResolved(context, location)!!
       val dependencies =
-        surface.module.imports
+        resolved.module.imports
           .map { async { Elaborate.Dependency(it.value, fetchSignature(context, it.value)?.module, it.range) } }
           .plus(async { Elaborate.Dependency(PRELUDE, fetchSignature(context, PRELUDE)!!.module, null) })
           .plus(async { Elaborate.Dependency(location, fetchSignature(context, location)!!.module, null) })
           .awaitAll()
-      Elaborate(context, dependencies, surface, false, position)
+      Elaborate(context, dependencies, resolved, false, position)
     }
 
   suspend fun fetchZonked(
