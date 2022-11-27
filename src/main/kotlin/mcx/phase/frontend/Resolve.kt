@@ -1,5 +1,6 @@
 package mcx.phase.frontend
 
+import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.phase.Context
@@ -13,9 +14,21 @@ class Resolve private constructor(
   private val input: Parse.Result,
 ) {
   private val locations: List<DefinitionLocation> =
-    input.module.definitions.mapNotNull { if (it is S.Definition.Hole) null else input.module.name / it.name.value } +
+    input.module.definitions.mapNotNull { definition ->
+      if (definition is S.Definition.Hole) {
+        null
+      } else {
+        input.module.name / definition.name.value
+      }
+    } +
     dependencies.flatMap { dependency ->
-      dependency.definitions.mapNotNull { if (it is R.Definition.Hole) null else it.name.value }
+      dependency.definitions.mapNotNull { definition ->
+        if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.Export }) {
+          null
+        } else {
+          definition.name.value
+        }
+      }
     }
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
 

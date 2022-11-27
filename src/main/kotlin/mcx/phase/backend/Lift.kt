@@ -16,7 +16,7 @@ class Lift private constructor(
   private var freshFunctionId: Int = 0
 
   private fun lift(): List<L.Definition> {
-    val annotations = definition.annotations.map { liftAnnotation(it) }
+    val annotations = definition.annotations.mapNotNull { liftAnnotation(it) }
     when (definition) {
       is C.Definition.Resource -> {
         val body = emptyEnv().liftTerm(definition.body)
@@ -40,9 +40,9 @@ class Lift private constructor(
 
   private fun liftAnnotation(
     annotation: Annotation,
-  ): L.Annotation {
+  ): L.Annotation? {
     return when (annotation) {
-      is Annotation.Export  -> error("unexpected: export")
+      is Annotation.Export  -> null
       is Annotation.Tick    -> L.Annotation.Tick
       is Annotation.Load    -> L.Annotation.Load
       is Annotation.NoDrop  -> L.Annotation.NoDrop
@@ -163,7 +163,7 @@ class Lift private constructor(
   private fun Env.liftPattern(
     pattern: C.Pattern,
   ): L.Pattern {
-    val annotations = pattern.annotations.map { liftAnnotation(it) }
+    val annotations = pattern.annotations.mapNotNull { liftAnnotation(it) }
     val type = liftType(pattern.type)
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, annotations, type)
