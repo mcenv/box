@@ -32,7 +32,7 @@ sealed class Diagnostic(
     token: String,
     position: Position,
   ) : Diagnostic(
-    position..position,
+    position..Position(position.line, position.character + 1),
     "expected: '$token'",
     DiagnosticSeverity.Error,
   )

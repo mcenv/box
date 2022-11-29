@@ -35,16 +35,19 @@ class Parse private constructor(
       emptyList()
     }
 
-    val definitions = mutableListOf<S.Definition>()
-    while (true) {
-      skipTrivia()
-      if (!canRead()) {
-        break
-      }
-      val start = cursor
-      definitions += parseDefinition()
-      if (start == cursor) {
-        break
+    val definitions = mutableListOf<S.Definition>().also {
+      while (true) {
+        skipTrivia()
+        val start = cursor
+        it += parseDefinition()
+        if (start == cursor) {
+          break
+        }
+        expect(';')
+        skipTrivia()
+        if (!canRead()) {
+          break
+        }
       }
     }
 
@@ -69,7 +72,7 @@ class Parse private constructor(
           "/dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
           "/worldgen/biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
           "/dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
-          "function" -> {
+          "function"        -> {
             skipTrivia()
             val name = parseRanged { readWord() }
             skipTrivia()
@@ -94,7 +97,7 @@ class Parse private constructor(
               }
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
-          "type"     -> {
+          "type"            -> {
             skipTrivia()
             val name = parseRanged { readWord() }
             expect('=')
@@ -102,7 +105,7 @@ class Parse private constructor(
             val body = parseType()
             S.Definition.Type(annotations, name, body, until())
           }
-          else       -> null
+          else              -> null
         }
       } else {
         null
@@ -674,7 +677,7 @@ class Parse private constructor(
     }
 
     while (canRead() && peek() != postfix) {
-      skip()
+      skipTrivia(1)
     }
     expect(postfix)
 
@@ -739,12 +742,13 @@ class Parse private constructor(
   private fun expect(
     expected: Char,
   ): Boolean {
+    val position = here()
     skipTrivia()
     return if (canRead() && peek() == expected) {
       skip()
       true
     } else {
-      diagnostics += Diagnostic.ExpectedToken(expected.toString(), here())
+      diagnostics += Diagnostic.ExpectedToken(expected.toString(), position)
       false
     }
   }
@@ -765,7 +769,7 @@ class Parse private constructor(
   private inline fun <R> ranging(action: RangingContext.() -> R): R =
     RangingContext(here()).action()
 
-  private fun skipTrivia() {
+  private fun skipTrivia(size: Int = 0) {
     while (canRead()) {
       when (peek()) {
         ' '  -> skip()
@@ -786,7 +790,10 @@ class Parse private constructor(
             skip()
           }
         }
-        else -> break
+        else -> {
+          skip(size)
+          break
+        }
       }
     }
   }
