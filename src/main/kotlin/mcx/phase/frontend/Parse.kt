@@ -194,9 +194,9 @@ class Parse private constructor(
 
   private fun parseType(): S.Type =
     ranging {
-      if (canRead()) {
+      (if (canRead()) {
         when (peek()) {
-          '(' -> {
+          '('  -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ')') {
@@ -209,18 +209,11 @@ class Parse private constructor(
                 when (peek()) {
                   ')'  -> {
                     skip()
-                    S.Type.Tuple(listOf(first), until())
+                    first
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ')') { parseType() }
                     S.Type.Tuple(listOf(first) + tail, until())
-                  }
-                  '→'  -> {
-                    skip()
-                    skipTrivia()
-                    val result = parseType()
-                    expect(')')
-                    S.Type.Fun(first, result, until())
                   }
                   else -> null
                 }
@@ -332,6 +325,21 @@ class Parse private constructor(
         val range = until()
         diagnostics += Diagnostic.ExpectedType(range)
         S.Type.Hole(range)
+      }).let { left ->
+        skipTrivia()
+        if (canRead()) {
+          when (peek()) {
+            '→'  -> {
+              skip()
+              skipTrivia()
+              val result = parseType()
+              S.Type.Fun(left, result, until())
+            }
+            else -> null
+          }
+        } else {
+          null
+        } ?: left
       }
     }
 
@@ -353,7 +361,7 @@ class Parse private constructor(
                 when (peek()) {
                   ')'  -> {
                     skip()
-                    S.Term.TupleOf(listOf(first), until())
+                    first
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ')') {
@@ -585,7 +593,7 @@ class Parse private constructor(
   private fun parsePattern(): S.Pattern =
     ranging {
       val annotations = parseAnnotations()
-      if (canRead()) {
+      (if (canRead()) {
         when (peek()) {
           '('  -> {
             skip()
@@ -600,32 +608,13 @@ class Parse private constructor(
                 when (peek()) {
                   ')'  -> {
                     skip()
-                    S.Pattern.TupleOf(listOf(first), annotations, until())
+                    first
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ')') {
                       parsePattern()
                     }
                     S.Pattern.TupleOf(listOf(first) + tail, annotations, until())
-                  }
-                  '.'  -> {
-                    expect("..")
-                    (first as? S.Pattern.IntOf)?.let { min ->
-                      skipTrivia()
-                      readWord()
-                        .toIntOrNull()
-                        ?.let { max ->
-                          expect(')')
-                          S.Pattern.IntRangeOf(min.value, max, annotations, until())
-                        }
-                    }
-                  }
-                  ':'  -> {
-                    skip()
-                    skipTrivia()
-                    val type = parseType()
-                    expect(')')
-                    S.Pattern.Anno(first, type, annotations, until())
                   }
                   else -> null
                 }
@@ -659,6 +648,32 @@ class Parse private constructor(
         val range = until()
         diagnostics += Diagnostic.ExpectedPattern(range)
         S.Pattern.Hole(annotations, range)
+      }).let { left ->
+        skipTrivia()
+        if (canRead()) {
+          when (peek()) {
+            '.'  -> {
+              expect("..")
+              (left as? S.Pattern.IntOf)?.let { min ->
+                skipTrivia()
+                readWord()
+                  .toIntOrNull()
+                  ?.let { max ->
+                    S.Pattern.IntRangeOf(min.value, max, annotations, until())
+                  }
+              }
+            }
+            ':'  -> {
+              skip()
+              skipTrivia()
+              val type = parseType()
+              S.Pattern.Anno(left, type, annotations, until())
+            }
+            else -> null
+          }
+        } else {
+          null
+        } ?: left
       }
     }
 
