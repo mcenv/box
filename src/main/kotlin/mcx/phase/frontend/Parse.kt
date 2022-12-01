@@ -38,16 +38,15 @@ class Parse private constructor(
     val definitions = mutableListOf<S.Definition>().also {
       while (true) {
         skipTrivia()
+        if (!canRead()) {
+          break
+        }
         val start = cursor
         it += parseDefinition()
         if (start == cursor) {
           break
         }
         expect(';')
-        skipTrivia()
-        if (!canRead()) {
-          break
-        }
       }
     }
 
