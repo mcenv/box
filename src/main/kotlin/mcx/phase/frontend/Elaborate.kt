@@ -7,6 +7,7 @@ import mcx.phase.Context
 import mcx.phase.Normalize.TypeEnv
 import mcx.phase.Normalize.evalType
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
+import mcx.phase.prettyKind
 import mcx.phase.prettyPattern
 import mcx.phase.prettyType
 import mcx.util.Ranged
@@ -96,14 +97,19 @@ class Elaborate private constructor(
             }
           }
       }
-      is R.Definition.Type     -> {
+      is R.Definition.Type -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val meta = Annotation.Inline in annotations
         val env = emptyEnv(definitions, emptyList(), meta)
-        val body = env.elaborateType(definition.body)
-        C.Definition.Type(annotations, definition.name.value, body)
+        val kind = elaborateKind(definition.kind)
+        val body = env.elaborateType(definition.body, kind)
+        C.Definition
+          .Type(annotations, definition.name.value, body)
+          .also {
+            hover(definition.name.range) { createTypeDocumentation(it) }
+          }
       }
-      is R.Definition.Hole     -> null
+      is R.Definition.Hole -> null
     }
   }
 
@@ -112,6 +118,15 @@ class Elaborate private constructor(
   ): Annotation {
     // TODO: validate
     return annotation.value
+  }
+
+  private fun elaborateKind(
+    kind: R.Kind,
+  ): C.Kind {
+    return when (kind) {
+      is R.Kind.Type -> C.Kind.Type(kind.arity)
+      is R.Kind.Hole -> C.Kind.Hole
+    }
   }
 
   private fun Env.elaborateType(
@@ -180,6 +195,8 @@ class Elaborate private constructor(
         }
         actual
       }
+    }.also {
+      hoverKind(type.range, it.kind)
     }
   }
 
@@ -539,6 +556,10 @@ class Elaborate private constructor(
             bind(pattern.name, expected)
             C.Pattern.Var(pattern.name, pattern.level, annotations, expected)
           }
+          else           -> {
+            diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
+            C.Pattern.Hole(annotations, expected)
+          }
         }
       }
 
@@ -576,7 +597,19 @@ class Elaborate private constructor(
   private infix fun C.Kind.isSubkindOf(
     kind2: C.Kind,
   ): Boolean {
-    return metaEnv.unifyKinds(this, kind2)
+    val kind1 = this
+    return when {
+      kind1 is C.Kind.Type &&
+      kind2 is C.Kind.Type -> kind1.arity == kind2.arity
+
+      kind1 is C.Kind.Meta -> metaEnv.unifyKinds(kind1, kind2)
+      kind2 is C.Kind.Meta -> metaEnv.unifyKinds(kind1, kind2)
+
+      kind1 is C.Kind.Hole -> true
+      kind2 is C.Kind.Hole -> true
+
+      else                 -> false
+    }
   }
 
   private infix fun C.Type.isSubtypeOf(
@@ -682,6 +715,13 @@ class Elaborate private constructor(
     }
   }
 
+  private fun hoverKind(
+    range: Range,
+    kind: C.Kind,
+  ) {
+    hover(range) { prettyKind(kind) }
+  }
+
   private fun hoverType(
     range: Range,
     type: C.Type,
@@ -755,6 +795,14 @@ class Elaborate private constructor(
     val param = prettyPattern(definition.binder)
     val result = prettyType(definition.result)
     return "function $name$typeParams $param → $result"
+  }
+
+  private fun createTypeDocumentation(
+    definition: C.Definition.Type,
+  ): String {
+    val name = definition.name.name
+    val kind = prettyKind(definition.body.kind)
+    return "type $name: $kind"
   }
 
   private class Env private constructor(

@@ -100,10 +100,13 @@ class Parse private constructor(
           "type"            -> {
             skipTrivia()
             val name = parseRanged { readWord() }
+            expect(':')
+            skipTrivia()
+            val kind = parseKind()
             expect('=')
             skipTrivia()
             val body = parseType()
-            S.Definition.Type(annotations, name, body, until())
+            S.Definition.Type(annotations, name, kind, body, until())
           }
           else              -> null
         }
@@ -167,11 +170,34 @@ class Parse private constructor(
       }
     }
 
+  private fun parseKind(): S.Kind =
+    ranging {
+      if (canRead()) {
+        when (peek()) {
+          '*'  -> {
+            skip()
+            S.Kind.Type(1, until())
+          }
+          '('  -> {
+            val elements = parseList(',', '(', ')') { expect('*') }
+            S.Kind.Type(elements.size, until())
+          }
+          else -> null
+        }
+      } else {
+        null
+      } ?: run {
+        val range = until()
+        diagnostics += Diagnostic.ExpectedKind(range)
+        S.Kind.Hole(range)
+      }
+    }
+
   private fun parseType(): S.Type =
     ranging {
       if (canRead()) {
         when (peek()) {
-          '('  -> {
+          '(' -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ')') {
@@ -676,8 +702,15 @@ class Parse private constructor(
       }
     }
 
-    while (canRead() && peek() != postfix) {
-      skipTrivia(1)
+    while (true) {
+      skipTrivia()
+      if (!canRead()) {
+        break
+      }
+      when (peek()) {
+        postfix -> break
+        else    -> skip()
+      }
     }
     expect(postfix)
 
@@ -769,7 +802,7 @@ class Parse private constructor(
   private inline fun <R> ranging(action: RangingContext.() -> R): R =
     RangingContext(here()).action()
 
-  private fun skipTrivia(size: Int = 0) {
+  private fun skipTrivia() {
     while (canRead()) {
       when (peek()) {
         ' '  -> skip()
@@ -790,10 +823,7 @@ class Parse private constructor(
             skip()
           }
         }
-        else -> {
-          skip(size)
-          break
-        }
+        else -> break
       }
     }
   }

@@ -104,6 +104,9 @@ class MetaEnv {
           else -> unifyKinds(kind1, solution2)
         }
 
+      kind1 is C.Kind.Hole -> false
+      kind2 is C.Kind.Hole -> false
+
       else                 -> false
     }
   }

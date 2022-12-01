@@ -61,6 +61,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class ExpectedKind(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "expected: kind",
+    DiagnosticSeverity.Error,
+  )
+
   class ExpectedType(
     range: Range,
   ) : Diagnostic(

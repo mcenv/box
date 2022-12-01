@@ -8,8 +8,14 @@ fun prettyKind(
   kind: C.Kind,
 ): String =
   when (kind) {
-    is C.Kind.Type -> "type${kind.arity.toSubscript()}"
+    is C.Kind.Type ->
+      when (kind.arity) {
+        0    -> "()"
+        1    -> "*"
+        else -> "(${"*, ".repeat(kind.arity - 1)}*)"
+      }
     is C.Kind.Meta -> "?${kind.index.toSubscript()}"
+    is C.Kind.Hole -> " "
   }
 
 fun prettyType(

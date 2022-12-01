@@ -76,10 +76,20 @@ class Resolve private constructor(
       is S.Definition.Type     -> {
         val name = definition.name.map { input.module.name / it }
         val env = emptyEnv(emptyList())
+        val kind = resolveKind(definition.kind)
         val body = env.resolveType(definition.body)
-        R.Definition.Type(definition.annotations, name, body, definition.range)
+        R.Definition.Type(definition.annotations, name, kind, body, definition.range)
       }
       is S.Definition.Hole     -> R.Definition.Hole(definition.range)
+    }
+  }
+
+  private fun resolveKind(
+    kind: S.Kind,
+  ): R.Kind {
+    return when (kind) {
+      is S.Kind.Type -> R.Kind.Type(kind.arity, kind.range)
+      is S.Kind.Hole -> R.Kind.Hole(kind.range)
     }
   }
 

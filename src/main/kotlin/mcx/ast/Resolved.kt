@@ -36,6 +36,7 @@ object Resolved {
     data class Type(
       override val annotations: List<Ranged<Annotation>>,
       override val name: Ranged<DefinitionLocation>,
+      val kind: Kind,
       val body: Resolved.Type,
       override val range: Range,
     ) : Definition
@@ -46,6 +47,19 @@ object Resolved {
       override val annotations: List<Ranged<Annotation>> get() = throw IllegalStateException()
       override val name: Ranged<DefinitionLocation> get() = throw IllegalStateException()
     }
+  }
+
+  sealed interface Kind {
+    val range: Range
+
+    data class Type(
+      val arity: Int,
+      override val range: Range,
+    ) : Kind
+
+    data class Hole(
+      override val range: Range,
+    ) : Kind
   }
 
   sealed interface Type {

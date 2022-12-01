@@ -49,6 +49,8 @@ object Core {
     data class Meta(
       val index: Int,
     ) : Kind
+
+    object Hole : Kind
   }
 
   sealed interface Type {
