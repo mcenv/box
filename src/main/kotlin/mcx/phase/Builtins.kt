@@ -13,6 +13,7 @@ import mcx.ast.Packed.Objective
 import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.ScoreHolder
 import mcx.ast.Packed.SourceProvider
+import mcx.ast.Packed.Stack
 import mcx.ast.Value
 import mcx.data.ResourceLocation
 import mcx.util.nbt.Nbt
@@ -68,13 +69,20 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
 sealed class Builtin(
   val name: DefinitionLocation,
 ) {
-  abstract val commands: List<Command>
+  abstract fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command>
 
   abstract fun eval(arg: Value): Value?
 }
 
 object Command : Builtin(PRELUDE / "command") {
-  override val commands: List<Command> get() = emptyList()
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    emptyList()
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.StringOf) return null
@@ -83,17 +91,21 @@ object Command : Builtin(PRELUDE / "command") {
 }
 
 object IntAdd : Builtin(PRELUDE / "+") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, ADD, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, ADD, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -107,17 +119,21 @@ object IntAdd : Builtin(PRELUDE / "+") {
 }
 
 object IntSub : Builtin(PRELUDE / "-") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, SUB, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, SUB, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -131,17 +147,21 @@ object IntSub : Builtin(PRELUDE / "-") {
 }
 
 object IntMul : Builtin(PRELUDE / "*") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, MUL, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, MUL, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -155,17 +175,21 @@ object IntMul : Builtin(PRELUDE / "*") {
 }
 
 object IntDiv : Builtin(PRELUDE / "/") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, DIV, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, DIV, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -183,17 +207,21 @@ object IntDiv : Builtin(PRELUDE / "/") {
 }
 
 object IntMod : Builtin(PRELUDE / "%") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, MOD, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, MOD, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -211,17 +239,21 @@ object IntMod : Builtin(PRELUDE / "%") {
 }
 
 object IntMin : Builtin(PRELUDE / "min") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, MIN, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, MIN, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -235,17 +267,21 @@ object IntMin : Builtin(PRELUDE / "min") {
 }
 
 object IntMax : Builtin(PRELUDE / "max") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
                          Execute.Run(
-                           PerformOperation(REG_1, REG, MAX, REG_0, REG))),
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             PerformOperation(REG_1, REG, MAX, REG_0, REG))),
   )
 
   override fun eval(arg: Value): Value? {
@@ -259,17 +295,21 @@ object IntMax : Builtin(PRELUDE / "max") {
 }
 
 object IntEq : Builtin(PRELUDE / "=") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
   )
 
@@ -284,17 +324,21 @@ object IntEq : Builtin(PRELUDE / "=") {
 }
 
 object IntLt : Builtin(PRELUDE / "<") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.ConditionalScore(true, REG_1, REG, LT, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.ConditionalScore(true, REG_1, REG, LT, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
   )
 
@@ -309,17 +353,21 @@ object IntLt : Builtin(PRELUDE / "<") {
 }
 
 object IntLe : Builtin(PRELUDE / "<=") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.ConditionalScore(true, REG_1, REG, LE, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.ConditionalScore(true, REG_1, REG, LE, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
   )
 
@@ -334,17 +382,21 @@ object IntLe : Builtin(PRELUDE / "<=") {
 }
 
 object IntGt : Builtin(PRELUDE / ">") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.ConditionalScore(true, REG_1, REG, GT, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.ConditionalScore(true, REG_1, REG, GT, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
   )
 
@@ -359,17 +411,21 @@ object IntGt : Builtin(PRELUDE / ">") {
 }
 
 object IntGe : Builtin(PRELUDE / ">=") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.ConditionalScore(true, REG_1, REG, GE, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.ConditionalScore(true, REG_1, REG, GE, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
   )
 
@@ -384,17 +440,21 @@ object IntGe : Builtin(PRELUDE / ">=") {
 }
 
 object IntNe : Builtin(PRELUDE / "!=") {
-  override val commands: List<Command> = listOf(
-    Execute.StoreScore(RESULT, REG_0, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
-    Execute.StoreScore(RESULT, REG_1, REG,
-                       Execute.Run(
-                         GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(1)))),
-    Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
-                             Execute.Run(
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      Execute.StoreScore(RESULT, REG_0, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
+      Execute.StoreScore(RESULT, REG_1, REG,
+                         Execute.Run(
+                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(1)))),
+      Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
+                               Execute.Run(
                                ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(0)))))),
   )
 
@@ -409,12 +469,16 @@ object IntNe : Builtin(PRELUDE / "!=") {
 }
 
 object IntToByte : Builtin(PRELUDE / "int_to_byte") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), Type.BYTE, 1.0,
-                         Execute.Run(
-                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), Type.BYTE, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
@@ -423,12 +487,16 @@ object IntToByte : Builtin(PRELUDE / "int_to_byte") {
 }
 
 object IntToShort : Builtin(PRELUDE / "int_to_short") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(SHORT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Short(0)))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(SHORT)(-1) }), Type.SHORT, 1.0,
-                         Execute.Run(
-                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(SHORT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Short(0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(SHORT)(-1) }), Type.SHORT, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
@@ -437,7 +505,11 @@ object IntToShort : Builtin(PRELUDE / "int_to_short") {
 }
 
 object IntToInt : Builtin(PRELUDE / "int_to_int") {
-  override val commands: List<Command> = emptyList()
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    emptyList()
 
   override fun eval(arg: Value): Value {
     return arg
@@ -445,12 +517,16 @@ object IntToInt : Builtin(PRELUDE / "int_to_int") {
 }
 
 object IntToLong : Builtin(PRELUDE / "int_to_long") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LONG) }), DataManipulator.Append(SourceProvider.Value(Nbt.Long(0)))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }), Type.LONG, 1.0,
-                         Execute.Run(
-                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LONG) }), DataManipulator.Append(SourceProvider.Value(Nbt.Long(0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }), Type.LONG, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
@@ -459,12 +535,16 @@ object IntToLong : Builtin(PRELUDE / "int_to_long") {
 }
 
 object IntToFloat : Builtin(PRELUDE / "int_to_float") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(FLOAT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Float(0.0f)))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(FLOAT)(-1) }), Type.FLOAT, 1.0,
-                         Execute.Run(
-                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(FLOAT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Float(0.0f)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(FLOAT)(-1) }), Type.FLOAT, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
@@ -473,12 +553,16 @@ object IntToFloat : Builtin(PRELUDE / "int_to_float") {
 }
 
 object IntToDouble : Builtin(PRELUDE / "int_to_double") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(DOUBLE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Double(0.0)))),
-    Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(DOUBLE)(-1) }), Type.DOUBLE, 1.0,
-                         Execute.Run(
-                           GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(DOUBLE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Double(0.0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(DOUBLE)(-1) }), Type.DOUBLE, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
@@ -487,9 +571,13 @@ object IntToDouble : Builtin(PRELUDE / "int_to_double") {
 }
 
 object IntDup : Builtin(PRELUDE / "int_dup") {
-  override val commands: List<Command> = listOf(
-    ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
-  )
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+    )
 
   override fun eval(arg: Value): Value {
     return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))

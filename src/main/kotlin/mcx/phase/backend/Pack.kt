@@ -60,7 +60,11 @@ class Pack private constructor(
       is L.Definition.Builtin  -> {
         !{ Raw("# ${definition.name}") }
         val builtin = BUILTINS[definition.name]!!
-        builtin.commands.forEach { +it }
+        val paramTypes = eraseType(definition.param)
+        val resultTypes = eraseType(definition.result)
+        builtin
+          .pack(paramTypes, resultTypes)
+          .forEach { +it }
         P.Definition.Function(path, commands)
       }
     }

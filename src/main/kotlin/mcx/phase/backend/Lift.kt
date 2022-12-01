@@ -24,10 +24,12 @@ class Lift private constructor(
       }
       is C.Definition.Function -> {
         val env = emptyEnv()
-        val binder = env.liftPattern(definition.binder)
         if (L.Annotation.Builtin in annotations) {
-          liftedDefinitions += L.Definition.Builtin(annotations, definition.name)
+          val param = liftType(definition.binder.type)
+          val result = liftType(definition.result)
+          liftedDefinitions += L.Definition.Builtin(annotations, definition.name, param, result)
         } else {
+          val binder = env.liftPattern(definition.binder)
           val body = env.liftTerm(definition.body)
           liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
         }

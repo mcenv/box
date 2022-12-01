@@ -26,6 +26,8 @@ object Lifted {
     data class Builtin(
       override val annotations: List<Annotation>,
       override val name: DefinitionLocation,
+      val param: Type,
+      val result: Type,
     ) : Definition
   }
 
