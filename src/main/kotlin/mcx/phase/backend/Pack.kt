@@ -383,7 +383,7 @@ class Pack private constructor(
 
   @Suppress("NOTHING_TO_INLINE")
   private inline operator fun (() -> Command).not() {
-    if (context.debug) {
+    if (context.config.debug) {
       +this()
     }
   }

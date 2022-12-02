@@ -4,10 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.ModuleLocation
 import mcx.phase.Build
+import mcx.phase.Config
 import mcx.phase.Context
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -43,7 +45,7 @@ class McxService : TextDocumentService,
   fun setup(folder: WorkspaceFolder) {
     root = URI(folder.uri).toPath()
     build = Build(root)
-    updateConfig()
+    updateContext()
   }
 
   override fun didOpen(
@@ -74,7 +76,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val zonked = build.fetchZonked(fetchConfig(), uri.toModuleLocation())
+      val zonked = build.fetchZonked(fetchContext(), uri.toModuleLocation())
       val newHash = zonked.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -87,13 +89,13 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val zonked = build.fetchZonked(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
+      val zonked = build.fetchZonked(fetchContext(), params.textDocument.uri.toModuleLocation(), params.position)
       forLeft(zonked.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val zonked = build.fetchZonked(fetchConfig(), params.textDocument.uri.toModuleLocation(), params.position)
+      val zonked = build.fetchZonked(fetchContext(), params.textDocument.uri.toModuleLocation(), params.position)
       Hover(
         when (val hover = zonked.hover) {
           null -> throw CancellationException()
@@ -110,25 +112,30 @@ class McxService : TextDocumentService,
   override fun didChangeWatchedFiles(
     params: DidChangeWatchedFilesParams,
   ) {
-    updateConfig()
+    updateContext()
   }
 
-  private fun fetchConfig(): Context =
+  private fun fetchContext(): Context =
     context ?: throw CancellationException()
 
   @OptIn(ExperimentalSerializationApi::class)
-  private fun updateConfig() {
+  private fun updateContext() {
     val path = root.resolve("pack.json")
-    context = if (path.exists() && path.isRegularFile()) {
-      path
-        .inputStream()
-        .buffered()
-        .use {
-          Json.decodeFromStream(it)
+    context =
+      if (path.exists() && path.isRegularFile()) {
+        try {
+          val config =
+            path
+              .inputStream()
+              .buffered()
+              .use { Json.decodeFromStream<Config>(it) }
+          Context(config)
+        } catch (_: SerializationException) {
+          null
         }
-    } else {
-      null
-    }
+      } else {
+        null
+      }
   }
 
   private fun String.toModuleLocation(): ModuleLocation =

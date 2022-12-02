@@ -4,7 +4,10 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import mcx.ast.*
+import mcx.data.PackMetadata
+import mcx.data.PackMetadataSection
 import mcx.phase.backend.Generate
 import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
@@ -203,14 +206,12 @@ class Build(
         .resolve("datapacks")
         .also { it.createDirectories() }
 
-    val context =
+    val config =
       root
         .resolve("pack.json")
         .inputStream()
         .buffered()
-        .use {
-          Json.decodeFromStream<Context>(it)
-        }
+        .use { Json.decodeFromStream<Config>(it) }
 
     fun Path.toModuleLocation(): ModuleLocation =
       ModuleLocation(
@@ -222,11 +223,12 @@ class Build(
       )
 
     val datapackRoot = datapacks
-      .resolve(context.name)
+      .resolve(config.name)
       .also { it.createDirectories() }
 
     // TODO: generate dispatcher
     val outputModules = runBlocking {
+      val context = Context(config)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
       val inputs = Files
         .walk(src)
@@ -276,6 +278,22 @@ class Build(
         if (it !in outputModules) {
           it.deleteExisting()
         }
+      }
+
+    datapackRoot
+      .resolve("pack.mcmeta")
+      .outputStream()
+      .buffered()
+      .use {
+        Json.encodeToStream(
+          PackMetadata(
+            pack = PackMetadataSection(
+              description = config.description,
+              packFormat = 10,
+            )
+          ),
+          it,
+        )
       }
   }
 

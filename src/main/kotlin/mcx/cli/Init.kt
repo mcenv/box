@@ -5,7 +5,7 @@ import kotlinx.cli.Subcommand
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
-import mcx.phase.Context
+import mcx.phase.Config
 import java.nio.file.Paths
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
@@ -36,8 +36,9 @@ object Init : Subcommand(
       .buffered()
       .use {
         json.encodeToStream(
-          Context(
+          Config(
             name = name,
+            description = "",
           ),
           it,
         )
