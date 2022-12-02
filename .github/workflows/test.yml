@@ -26,11 +26,12 @@ jobs:
         with:
           arguments: installDist
       - name: Build std pack
-        run: ../../../../build/install/mcx/bin/mcx build
-        working-directory: src/main/resources/std
+        run: ../../../../build/install/mcx/bin/mcx.bat build
+        working-directory: ./src/main/resources/std
       - name: Upload std pack
         uses: actions/upload-artifact@v3
         with:
           name: std.zip
-          path: out/datapacks/std
+          path: ./out/datapacks/std
           if-no-files-found: error
+        working-directory: ./src/main/resources/std
