@@ -17,17 +17,20 @@ jobs:
           distribution: "temurin"
           java-version: "17"
       - uses: gradle/wrapper-validation-action@v1
-      - uses: gradle/gradle-build-action@v2
+      - name: Test
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: test
-      - uses: gradle/gradle-build-action@v2
+      - name: Install dist
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: installDist
       - name: Build std pack
-        run: |
-          cd src/main/resources/std
-          ../../../../build/install/mcx/bin/mcx build
-      - uses: actions/upload-artifact@v3
+        run: mcx build
+        working-directory: src/main/resources/std
+      - name: Upload std pack
+        uses: actions/upload-artifact@v3
         with:
           name: std.zip
           path: out/datapacks/std
+          if-no-files-found: error
