@@ -32,6 +32,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: std.zip
-          path: ./out/datapacks/std
+          path: ./src/main/resources/std/out/datapacks/std
           if-no-files-found: error
-        working-directory: ./src/main/resources/std
