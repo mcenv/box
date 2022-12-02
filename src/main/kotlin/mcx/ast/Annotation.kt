@@ -1,17 +1,11 @@
 package mcx.ast
 
-sealed interface Annotation {
-  object Export : Annotation
-
-  object Tick : Annotation
-
-  object Load : Annotation
-
-  object NoDrop : Annotation
-
-  object Inline : Annotation
-
-  object Builtin : Annotation
-
-  object Hole : Annotation
+enum class Annotation {
+  EXPORT,
+  TICK,
+  LOAD,
+  NO_DROP,
+  INLINE,
+  BUILTIN,
+  HOLE,
 }

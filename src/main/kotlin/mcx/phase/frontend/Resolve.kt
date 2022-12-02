@@ -30,7 +30,7 @@ class Resolve private constructor(
         }
         else -> {
           module.definitions.mapNotNull { definition ->
-            if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.Export }) {
+            if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.EXPORT }) {
               null
             } else {
               definition.name.value

@@ -87,7 +87,7 @@ class Parse private constructor(
             skipTrivia()
             val result = parseType()
             val body =
-              if (annotations.find { it.value is Annotation.Builtin } == null) {
+              if (annotations.find { it.value == Annotation.BUILTIN } == null) {
                 expect('=')
                 skipTrivia()
                 parseTerm()
@@ -152,12 +152,12 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "export"  -> Ranged(Annotation.Export, until())
-          "tick"    -> Ranged(Annotation.Tick, until())
-          "load"    -> Ranged(Annotation.Load, until())
-          "no_drop" -> Ranged(Annotation.NoDrop, until())
-          "inline"  -> Ranged(Annotation.Inline, until())
-          "builtin" -> Ranged(Annotation.Builtin, until())
+          "export"  -> Ranged(Annotation.EXPORT, until())
+          "tick"    -> Ranged(Annotation.TICK, until())
+          "load"    -> Ranged(Annotation.LOAD, until())
+          "no_drop" -> Ranged(Annotation.NO_DROP, until())
+          "inline"  -> Ranged(Annotation.INLINE, until())
+          "builtin" -> Ranged(Annotation.BUILTIN, until())
           else      -> null
         }
       } else {
@@ -165,7 +165,7 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedAnnotation(range)
-        Ranged(Annotation.Hole, range)
+        Ranged(Annotation.HOLE, range)
       }
     }
 

@@ -31,16 +31,12 @@ object Lifted {
     ) : Definition
   }
 
-  sealed interface Annotation {
-    object Tick : Annotation
-
-    object Load : Annotation
-
-    object NoDrop : Annotation
-
-    object Inline : Annotation
-
-    object Builtin : Annotation
+  enum class Annotation {
+    TICK,
+    LOAD,
+    NO_DROP,
+    INLINE,
+    BUILTIN,
   }
 
   sealed interface Type {

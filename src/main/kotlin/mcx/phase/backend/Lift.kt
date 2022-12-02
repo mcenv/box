@@ -24,7 +24,7 @@ class Lift private constructor(
       }
       is C.Definition.Function -> {
         val env = emptyEnv()
-        if (L.Annotation.Builtin in annotations) {
+        if (L.Annotation.BUILTIN in annotations) {
           val param = liftType(definition.binder.type)
           val result = liftType(definition.result)
           liftedDefinitions += L.Definition.Builtin(annotations, definition.name, param, result)
@@ -43,13 +43,13 @@ class Lift private constructor(
     annotation: Annotation,
   ): L.Annotation? {
     return when (annotation) {
-      is Annotation.Export  -> null
-      is Annotation.Tick    -> L.Annotation.Tick
-      is Annotation.Load    -> L.Annotation.Load
-      is Annotation.NoDrop  -> L.Annotation.NoDrop
-      is Annotation.Inline  -> L.Annotation.Inline
-      is Annotation.Builtin -> L.Annotation.Builtin
-      is Annotation.Hole    -> throw UnexpectedHole
+      Annotation.EXPORT  -> null
+      Annotation.TICK    -> L.Annotation.TICK
+      Annotation.LOAD    -> L.Annotation.LOAD
+      Annotation.NO_DROP -> L.Annotation.NO_DROP
+      Annotation.INLINE  -> L.Annotation.INLINE
+      Annotation.BUILTIN -> L.Annotation.BUILTIN
+      Annotation.HOLE    -> throw UnexpectedHole
     }
   }
 
@@ -239,7 +239,7 @@ class Lift private constructor(
       .Function(
         emptyList(),
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-        L.Pattern.TupleOf(params, listOf(L.Annotation.NoDrop), type),
+        L.Pattern.TupleOf(params, listOf(L.Annotation.NO_DROP), type),
         body,
         restore,
       )

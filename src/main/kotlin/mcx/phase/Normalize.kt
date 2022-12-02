@@ -72,7 +72,7 @@ object Normalize {
         when (val definition = definitions[term.name] as? C.Definition.Function) {
           null -> Value.Run(term.name, term.typeArgs, arg)
           else ->
-            if (Annotation.Builtin in definition.annotations) {
+            if (Annotation.BUILTIN in definition.annotations) {
               val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
               builtin.eval(arg) ?: Value.Run(term.name, term.typeArgs, arg)
             } else {

@@ -83,7 +83,7 @@ class Elaborate private constructor(
       is R.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-        val meta = Annotation.Inline in annotations
+        val meta = Annotation.INLINE in annotations
         val env = emptyEnv(definitions, types, meta)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
@@ -99,7 +99,7 @@ class Elaborate private constructor(
       }
       is R.Definition.Type -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        val meta = Annotation.Inline in annotations
+        val meta = Annotation.INLINE in annotations
         val env = emptyEnv(definitions, emptyList(), meta)
         val kind = elaborateKind(definition.kind)
         val body = env.elaborateType(definition.body, kind)
@@ -696,13 +696,13 @@ class Elaborate private constructor(
       type1 is C.Type.Run &&
       (
           type1.name.module == input.module.name ||
-          Annotation.Inline in definitions[type1.name]!!.annotations
+          Annotation.INLINE in definitions[type1.name]!!.annotations
       )                         -> TypeEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
       (
           type2.name.module == input.module.name ||
-          Annotation.Inline in definitions[type2.name]!!.annotations
+          Annotation.INLINE in definitions[type2.name]!!.annotations
       )                         -> type1 isSubtypeOf TypeEnv(definitions, emptyList(), true).evalType(type2)
 
       type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
