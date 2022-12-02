@@ -164,6 +164,10 @@ object Resolved {
       override val range: Range,
     ) : Type
 
+    data class Meta(
+      override val range: Range,
+    ) : Type
+
     data class Hole(
       override val range: Range,
     ) : Type

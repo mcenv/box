@@ -169,7 +169,7 @@ class Elaborate private constructor(
           C.Type.Union(listOf(head) + tail, head.kind)
         }
       type is R.Type.Fun && expected == null       -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
-      type is R.Type.Code && expected == null      -> {
+      type is R.Type.Code && expected == null -> {
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
         } else {
@@ -177,8 +177,8 @@ class Elaborate private constructor(
           C.Type.Hole
         }
       }
-      type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
-      type is R.Type.Run && expected == null       -> {
+      type is R.Type.Var && expected == null  -> C.Type.Var(type.name, type.level)
+      type is R.Type.Run && expected == null  -> {
         when (val definition = definitions[type.name]) {
           is C.Definition.Type -> C.Type.Run(type.name, definition.body.kind)
           else                 -> {
@@ -191,9 +191,17 @@ class Elaborate private constructor(
           }
         }
       }
-      type is R.Type.Hole                          -> C.Type.Hole
-      expected == null                             -> error("kind must be non-null")
-      else                                         -> {
+      type is R.Type.Meta                     -> {
+        if (signature) {
+          diagnostics += Diagnostic.UnexpectedMeta(type.range)
+          C.Type.Hole
+        } else {
+          metaEnv.freshType(type.range, expected)
+        }
+      }
+      type is R.Type.Hole                     -> C.Type.Hole
+      expected == null                        -> error("kind must be non-null")
+      else                                    -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
           diagnostics += Diagnostic.KindMismatch(expected, actual.kind, type.range)
@@ -798,7 +806,7 @@ class Elaborate private constructor(
     val name = definition.name.name
     val typeParams = if (definition.typeParams.isEmpty()) "" else definition.typeParams.joinToString(", ", "⟨", "⟩")
     val param = prettyPattern(definition.binder)
-    val result = prettyType(definition.result)
+    val result = prettyType(metaEnv.zonkType(definition.result))
     return "function $name$typeParams $param → $result"
   }
 

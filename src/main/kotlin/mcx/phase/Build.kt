@@ -114,14 +114,15 @@ class Build(
   ): Elaborate.Result =
     coroutineScope {
       val resolved = fetchResolved(context, location)!!
+      val signature = fetchSignature(context, location)!!
       val dependencies =
         resolved.module.imports
           .map { async { fetchSignature(context, it.value)?.module } }
           .plus(async { fetchSignature(context, PRELUDE)!!.module })
-          .plus(async { fetchSignature(context, location)!!.module })
           .awaitAll()
           .filterNotNull()
-      Elaborate(context, dependencies, resolved, false, position)
+          .plus(signature.module)
+      Elaborate(context, dependencies, Resolve.Result(resolved.module, signature.diagnostics), false, position)
     }
 
   suspend fun fetchZonked(

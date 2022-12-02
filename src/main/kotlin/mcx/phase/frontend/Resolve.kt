@@ -126,6 +126,7 @@ class Resolve private constructor(
           else -> R.Type.Var(type.name, level, type.range)
         }
       }
+      is S.Type.Meta      -> R.Type.Meta(type.range)
       is S.Type.Hole      -> R.Type.Hole(type.range)
     }
   }

@@ -267,6 +267,10 @@ class Parse private constructor(
             skipTrivia()
             S.Type.Code(parseType(), until())
           }
+          '?'  -> {
+            skip()
+            S.Type.Meta(until())
+          }
           else -> when (val word = readWord()) {
             ""       -> null
             "bool"   -> S.Type.Bool(null, until())

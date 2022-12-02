@@ -258,6 +258,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class UnexpectedMeta(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "unexpected meta",
+    DiagnosticSeverity.Error,
+  )
+
   class UnsolvedMeta(
     type: C.Type,
     range: Range,
