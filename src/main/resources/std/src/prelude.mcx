@@ -1,4 +1,4 @@
-@export @builtin @inline function command (_: string) → `⟨⟩;
+@export @builtin @static function command (_: string) → `⟨⟩;
 
 @export @builtin function + (_: (int, int)) → int;
 

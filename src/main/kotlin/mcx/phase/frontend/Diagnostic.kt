@@ -190,11 +190,11 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
-  class RequiredInline(
+  class RequiredStatic(
     range: Range,
   ) : Diagnostic(
     range,
-    "required: @inline",
+    "required: @static",
     DiagnosticSeverity.Error,
   )
 

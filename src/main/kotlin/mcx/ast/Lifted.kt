@@ -35,7 +35,6 @@ object Lifted {
     TICK,
     LOAD,
     NO_DROP,
-    INLINE,
     BUILTIN,
   }
 

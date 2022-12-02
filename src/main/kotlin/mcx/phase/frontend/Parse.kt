@@ -157,6 +157,7 @@ class Parse private constructor(
           "load"    -> Ranged(Annotation.LOAD, until())
           "no_drop" -> Ranged(Annotation.NO_DROP, until())
           "inline"  -> Ranged(Annotation.INLINE, until())
+          "static"  -> Ranged(Annotation.STATIC, until())
           "builtin" -> Ranged(Annotation.BUILTIN, until())
           else      -> null
         }

@@ -6,6 +6,7 @@ enum class Annotation {
   LOAD,
   NO_DROP,
   INLINE,
+  STATIC,
   BUILTIN,
   HOLE,
 }

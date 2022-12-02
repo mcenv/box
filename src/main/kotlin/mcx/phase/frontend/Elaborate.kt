@@ -83,8 +83,7 @@ class Elaborate private constructor(
       is R.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-        val meta = Annotation.INLINE in annotations
-        val env = emptyEnv(definitions, types, meta)
+        val env = emptyEnv(definitions, types, Annotation.STATIC in annotations)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
         C.Definition
@@ -97,10 +96,9 @@ class Elaborate private constructor(
             }
           }
       }
-      is R.Definition.Type -> {
+      is R.Definition.Type     -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        val meta = Annotation.INLINE in annotations
-        val env = emptyEnv(definitions, emptyList(), meta)
+        val env = emptyEnv(definitions, emptyList(), Annotation.STATIC in annotations)
         val kind = elaborateKind(definition.kind)
         val body = env.elaborateType(definition.body, kind)
         C.Definition
@@ -109,7 +107,7 @@ class Elaborate private constructor(
             hover(definition.name.range) { createTypeDocumentation(it) }
           }
       }
-      is R.Definition.Hole -> null
+      is R.Definition.Hole     -> null
     }
   }
 
@@ -171,7 +169,14 @@ class Elaborate private constructor(
           C.Type.Union(listOf(head) + tail, head.kind)
         }
       type is R.Type.Fun && expected == null       -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
-      type is R.Type.Code && expected == null      -> C.Type.Code(elaborateType(type.element))
+      type is R.Type.Code && expected == null      -> {
+        if (isMeta()) {
+          C.Type.Code(elaborateType(type.element))
+        } else {
+          diagnostics += Diagnostic.RequiredStatic(type.range)
+          C.Type.Hole
+        }
+      }
       type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
       type is R.Type.Run && expected == null       -> {
         when (val definition = definitions[type.name]) {
@@ -424,13 +429,13 @@ class Elaborate private constructor(
 
       term is R.Term.CodeOf &&
       expected is C.Type.Code?      -> {
-        if (meta || stage > 0) {
+        if (isMeta()) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
           }
           C.Term.CodeOf(element, C.Type.Code(element.type))
         } else {
-          diagnostics += Diagnostic.RequiredInline(term.range)
+          diagnostics += Diagnostic.RequiredStatic(term.range)
           C.Term.Hole(expected ?: C.Type.Hole)
         }
       }
@@ -809,12 +814,15 @@ class Elaborate private constructor(
     private val definitions: Map<DefinitionLocation, C.Definition>,
     private val types: List<Pair<String, C.Type>>,
     private val _entries: MutableList<Entry>,
-    val meta: Boolean,
+    private val static: Boolean,
   ) {
     val entries: List<Entry> get() = _entries
     private var savedSize: Int = 0
     var stage: Int = 0
       private set
+
+    fun isMeta(): Boolean =
+      static || stage > 0
 
     fun bind(
       name: String,
@@ -859,7 +867,7 @@ class Elaborate private constructor(
         _entries
           .map { it.copy() }
           .toMutableList(),
-        meta,
+        static,
       )
 
     data class Entry(

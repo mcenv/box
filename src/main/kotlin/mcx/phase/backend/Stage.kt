@@ -29,7 +29,8 @@ class Stage private constructor(
       is C.Definition.Function -> {
         if (
           definition.typeParams.isEmpty() &&
-          Annotation.INLINE !in definition.annotations
+          Annotation.INLINE !in definition.annotations &&
+          Annotation.STATIC !in definition.annotations
         ) {
           val binder = stagePattern(definition.binder)
           val result = evalType(definition.result)

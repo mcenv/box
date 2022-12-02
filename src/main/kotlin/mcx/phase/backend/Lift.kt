@@ -47,7 +47,8 @@ class Lift private constructor(
       Annotation.TICK    -> L.Annotation.TICK
       Annotation.LOAD    -> L.Annotation.LOAD
       Annotation.NO_DROP -> L.Annotation.NO_DROP
-      Annotation.INLINE  -> L.Annotation.INLINE
+      Annotation.INLINE  -> error("unexpected: $annotation")
+      Annotation.STATIC  -> error("unexpected: $annotation")
       Annotation.BUILTIN -> L.Annotation.BUILTIN
       Annotation.HOLE    -> throw UnexpectedHole
     }
