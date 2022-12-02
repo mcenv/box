@@ -234,7 +234,9 @@ class Build(
         .map { path ->
           async {
             val zonked = fetchZonked(context, path.toModuleLocation())
-            diagnosticsByPath += path to zonked.diagnostics
+            if (zonked.diagnostics.isNotEmpty()) {
+              diagnosticsByPath += path to zonked.diagnostics
+            }
             zonked.module.definitions
               .map { async { fetchGenerated(context, it.name) } }
               .awaitAll()
