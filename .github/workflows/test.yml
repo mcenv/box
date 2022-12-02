@@ -26,7 +26,7 @@ jobs:
         with:
           arguments: installDist
       - name: Build std pack
-        run: mcx build
+        run: ../../../../build/install/mcx/bin/mcx build
         working-directory: src/main/resources/std
       - name: Upload std pack
         uses: actions/upload-artifact@v3
