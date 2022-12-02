@@ -27,3 +27,7 @@ jobs:
         run: |
           cd src/main/resources/std
           ../../../../build/install/mcx/bin/mcx build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: std.zip
+          path: out/datapacks/std
