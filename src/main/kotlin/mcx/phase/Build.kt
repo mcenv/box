@@ -19,6 +19,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.*
+import kotlin.system.exitProcess
 
 // TODO: redesign
 class Build(
@@ -186,7 +187,7 @@ class Build(
     }
 
   @OptIn(ExperimentalSerializationApi::class)
-  suspend operator fun invoke(): List<Pair<Path, List<Diagnostic>>> {
+  suspend operator fun invoke() {
     val serverProperties = Properties().apply {
       load(
         root
@@ -220,15 +221,14 @@ class Build(
           .split('/')
       )
 
-    val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
-
     val datapackRoot = datapacks
       .resolve(context.name)
       .also { it.createDirectories() }
 
     // TODO: generate dispatcher
     val outputModules = runBlocking {
-      Files
+      val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
+      val inputs = Files
         .walk(src)
         .filter { it.extension == "mcx" }
         .map { path ->
@@ -242,6 +242,17 @@ class Build(
         }
         .toList()
         .awaitAll()
+
+      if (diagnosticsByPath.isNotEmpty()) {
+        diagnosticsByPath.forEach { (path, diagnostics) ->
+          diagnostics.forEach {
+            println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString}:${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
+          }
+        }
+        exitProcess(1)
+      }
+
+      inputs
         .asSequence()
         .flatten()
         .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
@@ -264,14 +275,7 @@ class Build(
           it.deleteExisting()
         }
       }
-
-    return diagnosticsByPath
   }
-
-  private data class Trace<V>(
-    val value: V,
-    val hash: Int,
-  )
 
   companion object {
     private val STD_SRC: Path
