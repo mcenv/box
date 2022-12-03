@@ -42,6 +42,7 @@ const val COMPOUND: String = "compound"
 
 val PRELUDE: ModuleLocation = ModuleLocation("prelude")
 private val INT_MODULE: ModuleLocation = ModuleLocation(INT)
+private val STRING_MODULE: ModuleLocation = ModuleLocation(STRING)
 private val BYTE_ARRAY_MODULE: ModuleLocation = ModuleLocation(BYTE_ARRAY)
 private val INT_ARRAY_MODULE: ModuleLocation = ModuleLocation(INT_ARRAY)
 private val LONG_ARRAY_MODULE: ModuleLocation = ModuleLocation(LONG_ARRAY)
@@ -68,6 +69,7 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   IntToFloat,
   IntToDouble,
   IntDup,
+  StringSize,
   ByteArraySize,
   IntArraySize,
   LongArraySize,
@@ -588,6 +590,24 @@ object IntDup : Builtin(INT_MODULE / "dup") {
 
   override fun eval(arg: Value): Value {
     return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))
+  }
+}
+
+object StringSize : Builtin(STRING_MODULE / "size") {
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Int(0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.Run(
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(STRING)(-1) }))))
+    )
+
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.StringOf) return null
+    return Value.IntOf(arg.value.length)
   }
 }
 
