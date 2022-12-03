@@ -41,7 +41,10 @@ const val LIST: String = "list"
 const val COMPOUND: String = "compound"
 
 val PRELUDE: ModuleLocation = ModuleLocation("prelude")
-private val INT_MODULE: ModuleLocation = ModuleLocation("int")
+private val INT_MODULE: ModuleLocation = ModuleLocation(INT)
+private val BYTE_ARRAY_MODULE: ModuleLocation = ModuleLocation(BYTE_ARRAY)
+private val INT_ARRAY_MODULE: ModuleLocation = ModuleLocation(INT_ARRAY)
+private val LONG_ARRAY_MODULE: ModuleLocation = ModuleLocation(LONG_ARRAY)
 
 val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   Command,
@@ -65,6 +68,9 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   IntToFloat,
   IntToDouble,
   IntDup,
+  ByteArraySize,
+  IntArraySize,
+  LongArraySize,
 ).associateBy { it.name }
 
 sealed class Builtin(
@@ -582,5 +588,41 @@ object IntDup : Builtin(INT_MODULE / "dup") {
 
   override fun eval(arg: Value): Value {
     return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))
+  }
+}
+
+sealed class Size(
+  module: ModuleLocation,
+  private val stack: String,
+) : Builtin(module / "size") {
+  override fun pack(
+    param: List<Stack>,
+    result: List<Stack>,
+  ): List<Command> =
+    listOf(
+      ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Int(0)))),
+      Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
+                           Execute.CheckMatchingData(true, DataAccessor.Storage(MCX, nbtPath { it(stack)(-1)() })))
+    )
+}
+
+object ByteArraySize : Size(BYTE_ARRAY_MODULE, BYTE_ARRAY) {
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.ByteArrayOf) return null
+    return Value.IntOf(arg.elements.size)
+  }
+}
+
+object IntArraySize : Size(INT_ARRAY_MODULE, INT_ARRAY) {
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntArrayOf) return null
+    return Value.IntOf(arg.elements.size)
+  }
+}
+
+object LongArraySize : Size(LONG_ARRAY_MODULE, LONG_ARRAY) {
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.LongArrayOf) return null
+    return Value.IntOf(arg.elements.size)
   }
 }

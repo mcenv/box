@@ -145,6 +145,10 @@ class Generate private constructor(
         space()
         generateCommandExecute(execute.redirect)
       }
+      is P.Command.Execute.CheckMatchingData       -> {
+        append(if (execute.conditional) "if data " else "unless data ")
+        generateDataAccessor(execute.source)
+      }
     }
   }
 

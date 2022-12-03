@@ -78,6 +78,11 @@ object Packed {
         val redirect: Execute,
       ) : Execute
 
+      data class CheckMatchingData(
+        val conditional: Boolean,
+        val source: DataAccessor,
+      ) : Execute
+
       enum class Mode {
         RESULT,
         SUCCESS,
