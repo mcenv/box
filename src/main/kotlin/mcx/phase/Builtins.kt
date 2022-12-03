@@ -40,7 +40,8 @@ const val LONG_ARRAY: String = "long_array"
 const val LIST: String = "list"
 const val COMPOUND: String = "compound"
 
-val PRELUDE = ModuleLocation("prelude")
+val PRELUDE: ModuleLocation = ModuleLocation("prelude")
+private val INT_MODULE: ModuleLocation = ModuleLocation("int")
 
 val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   Command,
@@ -90,7 +91,7 @@ object Command : Builtin(PRELUDE / "command") {
   }
 }
 
-object IntAdd : Builtin(PRELUDE / "+") {
+object IntAdd : Builtin(INT_MODULE / "+") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -106,7 +107,7 @@ object IntAdd : Builtin(PRELUDE / "+") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, ADD, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -118,7 +119,7 @@ object IntAdd : Builtin(PRELUDE / "+") {
   }
 }
 
-object IntSub : Builtin(PRELUDE / "-") {
+object IntSub : Builtin(INT_MODULE / "-") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -134,7 +135,7 @@ object IntSub : Builtin(PRELUDE / "-") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, SUB, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -146,7 +147,7 @@ object IntSub : Builtin(PRELUDE / "-") {
   }
 }
 
-object IntMul : Builtin(PRELUDE / "*") {
+object IntMul : Builtin(INT_MODULE / "*") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -162,7 +163,7 @@ object IntMul : Builtin(PRELUDE / "*") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, MUL, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -174,7 +175,7 @@ object IntMul : Builtin(PRELUDE / "*") {
   }
 }
 
-object IntDiv : Builtin(PRELUDE / "/") {
+object IntDiv : Builtin(INT_MODULE / "/") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -190,7 +191,7 @@ object IntDiv : Builtin(PRELUDE / "/") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, DIV, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -206,7 +207,7 @@ object IntDiv : Builtin(PRELUDE / "/") {
   }
 }
 
-object IntMod : Builtin(PRELUDE / "%") {
+object IntMod : Builtin(INT_MODULE / "%") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -222,7 +223,7 @@ object IntMod : Builtin(PRELUDE / "%") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, MOD, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -238,7 +239,7 @@ object IntMod : Builtin(PRELUDE / "%") {
   }
 }
 
-object IntMin : Builtin(PRELUDE / "min") {
+object IntMin : Builtin(INT_MODULE / "min") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -254,7 +255,7 @@ object IntMin : Builtin(PRELUDE / "min") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, MIN, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -266,7 +267,7 @@ object IntMin : Builtin(PRELUDE / "min") {
   }
 }
 
-object IntMax : Builtin(PRELUDE / "max") {
+object IntMax : Builtin(INT_MODULE / "max") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -282,7 +283,7 @@ object IntMax : Builtin(PRELUDE / "max") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
                              PerformOperation(REG_1, REG, MAX, REG_0, REG))),
-  )
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -294,7 +295,7 @@ object IntMax : Builtin(PRELUDE / "max") {
   }
 }
 
-object IntEq : Builtin(PRELUDE / "=") {
+object IntEq : Builtin(INT_MODULE / "=") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -310,8 +311,8 @@ object IntEq : Builtin(PRELUDE / "=") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
       Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -323,7 +324,7 @@ object IntEq : Builtin(PRELUDE / "=") {
   }
 }
 
-object IntLt : Builtin(PRELUDE / "<") {
+object IntLt : Builtin(INT_MODULE / "<") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -339,8 +340,8 @@ object IntLt : Builtin(PRELUDE / "<") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
       Execute.ConditionalScore(true, REG_1, REG, LT, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -352,7 +353,7 @@ object IntLt : Builtin(PRELUDE / "<") {
   }
 }
 
-object IntLe : Builtin(PRELUDE / "<=") {
+object IntLe : Builtin(INT_MODULE / "<=") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -368,8 +369,8 @@ object IntLe : Builtin(PRELUDE / "<=") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
       Execute.ConditionalScore(true, REG_1, REG, LE, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -381,7 +382,7 @@ object IntLe : Builtin(PRELUDE / "<=") {
   }
 }
 
-object IntGt : Builtin(PRELUDE / ">") {
+object IntGt : Builtin(INT_MODULE / ">") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -397,8 +398,8 @@ object IntGt : Builtin(PRELUDE / ">") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
       Execute.ConditionalScore(true, REG_1, REG, GT, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -410,7 +411,7 @@ object IntGt : Builtin(PRELUDE / ">") {
   }
 }
 
-object IntGe : Builtin(PRELUDE / ">=") {
+object IntGe : Builtin(INT_MODULE / ">=") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -426,8 +427,8 @@ object IntGe : Builtin(PRELUDE / ">=") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(0)))),
       Execute.ConditionalScore(true, REG_1, REG, GE, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(1)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -439,7 +440,7 @@ object IntGe : Builtin(PRELUDE / ">=") {
   }
 }
 
-object IntNe : Builtin(PRELUDE / "!=") {
+object IntNe : Builtin(INT_MODULE / "!=") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -455,8 +456,8 @@ object IntNe : Builtin(PRELUDE / "!=") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE) }), DataManipulator.Append(SourceProvider.Value(Nbt.Byte(1)))),
       Execute.ConditionalScore(true, REG_1, REG, EQ, REG_0, REG,
                                Execute.Run(
-                               ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(0)))))),
-  )
+                                 ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), DataManipulator.Set(SourceProvider.Value(Nbt.Byte(0)))))),
+    )
 
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
@@ -468,7 +469,7 @@ object IntNe : Builtin(PRELUDE / "!=") {
   }
 }
 
-object IntToByte : Builtin(PRELUDE / "int_to_byte") {
+object IntToByte : Builtin(INT_MODULE / "to_byte") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -486,7 +487,7 @@ object IntToByte : Builtin(PRELUDE / "int_to_byte") {
   }
 }
 
-object IntToShort : Builtin(PRELUDE / "int_to_short") {
+object IntToShort : Builtin(INT_MODULE / "to_short") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -504,7 +505,7 @@ object IntToShort : Builtin(PRELUDE / "int_to_short") {
   }
 }
 
-object IntToInt : Builtin(PRELUDE / "int_to_int") {
+object IntToInt : Builtin(INT_MODULE / "to_int") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -516,7 +517,7 @@ object IntToInt : Builtin(PRELUDE / "int_to_int") {
   }
 }
 
-object IntToLong : Builtin(PRELUDE / "int_to_long") {
+object IntToLong : Builtin(INT_MODULE / "to_long") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -534,7 +535,7 @@ object IntToLong : Builtin(PRELUDE / "int_to_long") {
   }
 }
 
-object IntToFloat : Builtin(PRELUDE / "int_to_float") {
+object IntToFloat : Builtin(INT_MODULE / "to_float") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -552,7 +553,7 @@ object IntToFloat : Builtin(PRELUDE / "int_to_float") {
   }
 }
 
-object IntToDouble : Builtin(PRELUDE / "int_to_double") {
+object IntToDouble : Builtin(INT_MODULE / "to_double") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
@@ -570,7 +571,7 @@ object IntToDouble : Builtin(PRELUDE / "int_to_double") {
   }
 }
 
-object IntDup : Builtin(PRELUDE / "int_dup") {
+object IntDup : Builtin(INT_MODULE / "dup") {
   override fun pack(
     param: List<Stack>,
     result: List<Stack>,
