@@ -487,6 +487,7 @@ object IntToByte : Builtin(INT_MODULE / "to_byte") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }), Type.BYTE, 1.0,
                            Execute.Run(
                              GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -505,6 +506,7 @@ object IntToShort : Builtin(INT_MODULE / "to_short") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(SHORT)(-1) }), Type.SHORT, 1.0,
                            Execute.Run(
                              GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -535,6 +537,7 @@ object IntToLong : Builtin(INT_MODULE / "to_long") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }), Type.LONG, 1.0,
                            Execute.Run(
                              GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -553,6 +556,7 @@ object IntToFloat : Builtin(INT_MODULE / "to_float") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(FLOAT)(-1) }), Type.FLOAT, 1.0,
                            Execute.Run(
                              GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -571,6 +575,7 @@ object IntToDouble : Builtin(INT_MODULE / "to_double") {
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(DOUBLE)(-1) }), Type.DOUBLE, 1.0,
                            Execute.Run(
                              GetData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -602,7 +607,8 @@ object StringSize : Builtin(STRING_MODULE / "size") {
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Int(0)))),
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
                            Execute.Run(
-                             GetData(DataAccessor.Storage(MCX, nbtPath { it(STRING)(-1) }))))
+                             GetData(DataAccessor.Storage(MCX, nbtPath { it(STRING)(-1) })))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(STRING)(-1) })),
     )
 
   override fun eval(arg: Value): Value? {
@@ -622,7 +628,8 @@ sealed class Size(
     listOf(
       ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT) }), DataManipulator.Append(SourceProvider.Value(Nbt.Int(0)))),
       Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }), Type.INT, 1.0,
-                           Execute.CheckMatchingData(true, DataAccessor.Storage(MCX, nbtPath { it(stack)(-1)() })))
+                           Execute.CheckMatchingData(true, DataAccessor.Storage(MCX, nbtPath { it(stack)(-1)() }))),
+      RemoveData(DataAccessor.Storage(MCX, nbtPath { it(stack)(-1) })),
     )
 }
 
