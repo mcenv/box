@@ -71,13 +71,13 @@ class Build(
       val location: DefinitionLocation,
     ) : Key<List<Lifted.Definition>>
 
-    data class PackResult(
-      val locations: List<DefinitionLocation>,
-    ) : Key<List<Packed.Definition>>
+    object PackResult : Key<List<Packed.Definition>> {
+      lateinit var locations: List<DefinitionLocation>
+    }
 
-    data class GenerateResult(
-      val locations: List<DefinitionLocation>,
-    ) : Key<Map<String, String>>
+    object GenerateResult : Key<Map<String, String>> {
+      lateinit var locations: List<DefinitionLocation>
+    }
   }
 
   data class Value<V>(
@@ -99,7 +99,7 @@ class Build(
       .withLock { values[key] = Value(text, 0) }
   }
 
-  suspend fun closeText(
+  suspend fun Context.closeText(
     location: ModuleLocation,
   ) {
     suspend fun close(key: Key<*>) {
@@ -109,6 +109,7 @@ class Build(
       }
     }
 
+    val definitions = fetch(Key.ResolveResult(location)).value!!.module.definitions.map { it.name.value }
     return coroutineScope {
       close(Key.Text(location))
       close(Key.ParseResult(location))
@@ -116,6 +117,10 @@ class Build(
       close(Key.Signature(location))
       close(Key.ElaborateResult(location))
       close(Key.ZonkResult(location))
+      definitions.forEach {
+        close(Key.StageResult(it))
+        close(Key.LiftResult(it))
+      }
     }
   }
 
@@ -124,10 +129,10 @@ class Build(
     key: Key<V>,
   ): Value<V> =
     coroutineScope {
-      val value = values[key]
       mutexes
         .computeIfAbsent(key) { Mutex() }
         .withLock {
+          val value = values[key]
           when (key) {
             is Key.Text            -> {
               value ?: withContext(Dispatchers.IO) {
@@ -220,11 +225,9 @@ class Build(
             }
 
             is Key.ZonkResult      -> {
-              val core = fetch(
-                Key
-                  .ElaborateResult(key.location)
-                  .apply { position = key.position }
-              )
+              val core = fetch(Key
+                                 .ElaborateResult(key.location)
+                                 .apply { position = key.position })
               val hash = core.hash
               if (value == null || value.hash != hash || key.position != null) {
                 Value(Zonk(this@fetch, core.value), hash)
@@ -237,16 +240,14 @@ class Build(
               val location = key.location
               val zonked = fetch(Key.ZonkResult(location.module))
               val definition = zonked.value.module.definitions.find { it.name == location }!!
-              val results =
-                fetch(Key.ParseResult(location.module)).value!!.module.imports
-                  .map { async { fetch(Key.ZonkResult(it.value)) } }
-                  .plus(async { fetch(Key.ZonkResult(PRELUDE)) })
-                  .awaitAll()
-              val dependencies =
-                results
-                  .flatMap { it.value.module.definitions }
-                  .plus(zonked.value.module.definitions)
-                  .associateBy { it.name }
+              val results = fetch(Key.ParseResult(location.module)).value!!.module.imports
+                .map { async { fetch(Key.ZonkResult(it.value)) } }
+                .plus(async { fetch(Key.ZonkResult(PRELUDE)) })
+                .awaitAll()
+              val dependencies = results
+                .flatMap { it.value.module.definitions }
+                .plus(zonked.value.module.definitions)
+                .associateBy { it.name }
               val hash = Objects.hash(zonked.hash, results.map { it.hash })
               if (value == null || value.hash != hash) {
                 Value(Stage(this@fetch, dependencies, definition), hash)
@@ -283,7 +284,7 @@ class Build(
             }
 
             is Key.GenerateResult  -> {
-              val packed = fetch(Key.PackResult(key.locations))
+              val packed = fetch(Key.PackResult.apply { locations = key.locations })
               val hash = packed.hash
               if (value == null || value.hash != hash) {
                 val definitions = packed.value
@@ -304,35 +305,27 @@ class Build(
   @OptIn(ExperimentalSerializationApi::class)
   suspend operator fun invoke() {
     val serverProperties = Properties().apply {
-      load(
-        root
-          .resolve("server.properties")
-          .inputStream()
-          .buffered()
-      )
+      load(root
+             .resolve("server.properties")
+             .inputStream()
+             .buffered())
     }
     val levelName = serverProperties.getProperty("level-name")
-    val datapacks =
-      root
-        .resolve(levelName)
-        .resolve("datapacks")
-        .also { it.createDirectories() }
+    val datapacks = root
+      .resolve(levelName)
+      .resolve("datapacks")
+      .also { it.createDirectories() }
 
-    val config =
-      root
-        .resolve("pack.json")
-        .inputStream()
-        .buffered()
-        .use { Json.decodeFromStream<Config>(it) }
+    val config = root
+      .resolve("pack.json")
+      .inputStream()
+      .buffered()
+      .use { Json.decodeFromStream<Config>(it) }
 
     fun Path.toModuleLocation(): ModuleLocation =
-      ModuleLocation(
-        src
-          .relativize(this)
-          .invariantSeparatorsPathString
-          .dropLast(".mcx".length)
-          .split('/')
-      )
+      ModuleLocation(src.relativize(this).invariantSeparatorsPathString
+                       .dropLast(".mcx".length)
+                       .split('/'))
 
     val datapackRoot = datapacks
       .resolve(config.name)
@@ -366,7 +359,7 @@ class Build(
         exitProcess(1)
       }
 
-      context.fetch(Key.GenerateResult(locations)).value
+      context.fetch(Key.GenerateResult.apply { this.locations = locations }).value
         .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
         .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
@@ -392,12 +385,10 @@ class Build(
       .buffered()
       .use {
         Json.encodeToStream(
-          PackMetadata(
-            pack = PackMetadataSection(
-              description = config.description,
-              packFormat = 10,
-            )
-          ),
+          PackMetadata(pack = PackMetadataSection(
+            description = config.description,
+            packFormat = 10,
+          )),
           it,
         )
       }
@@ -407,10 +398,9 @@ class Build(
     private val STD_SRC: Path
 
     init {
-      val uri =
-        Build::class.java
-          .getResource("/std/src")!!
-          .toURI()
+      val uri = Build::class.java
+        .getResource("/std/src")!!
+        .toURI()
       FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
       STD_SRC = Paths.get(uri)
     }

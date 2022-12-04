@@ -67,7 +67,7 @@ class McxService : TextDocumentService,
     params: DidCloseTextDocumentParams,
   ): Unit =
     runBlocking {
-      build.closeText(params.textDocument.uri.toModuleLocation())
+      with(build) { fetchContext().closeText(params.textDocument.uri.toModuleLocation()) }
     }
 
   override fun didSave(
