@@ -338,11 +338,10 @@ class Build(
       .resolve(config.name)
       .also { it.createDirectories() }
 
-    // TODO: generate dispatcher
     val outputModules = runBlocking {
       val context = Context(config)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
-      val inputs = Files
+      val locations = Files
         .walk(src)
         .filter { it.extension == "mcx" }
         .map { path ->
@@ -351,11 +350,12 @@ class Build(
             if (zonked.value.diagnostics.isNotEmpty()) {
               diagnosticsByPath += path to zonked.value.diagnostics
             }
-            context.fetch(Key.GenerateResult(zonked.value.module.definitions.map { it.name })).value
+            zonked.value.module.definitions.map { it.name }
           }
         }
         .toList()
         .awaitAll()
+        .flatten()
 
       if (diagnosticsByPath.isNotEmpty()) {
         diagnosticsByPath.forEach { (path, diagnostics) ->
@@ -366,18 +366,15 @@ class Build(
         exitProcess(1)
       }
 
-      inputs
-        .asSequence()
+      context.fetch(Key.GenerateResult(locations)).value
         .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
-        .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
-        .reduce { acc, map -> acc + map }
+        .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
           name
             .also { it.parent.createDirectories() }
             .bufferedWriter()
             .use { it.write(definition) }
         }
-        .toMap()
     }
 
     Files
