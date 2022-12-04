@@ -1,6 +1,8 @@
 package mcx.phase
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -29,130 +31,211 @@ class Build(
   private val root: Path,
 ) {
   private val src: Path = root.resolve("src")
-  private val texts: ConcurrentMap<ModuleLocation, String> = ConcurrentHashMap()
+  private val values: ConcurrentMap<Key<*>, Value<*>> = ConcurrentHashMap()
+  private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
 
-  fun changeText(
+  sealed interface Key<V> {
+    data class Text(
+      val location: ModuleLocation,
+    ) : Key<String?>
+
+    data class ParseResult(
+      val location: ModuleLocation,
+    ) : Key<Parse.Result?>
+
+    data class ResolveResult(
+      val location: ModuleLocation,
+    ) : Key<Resolve.Result?>
+
+    data class Signature(
+      val location: ModuleLocation,
+    ) : Key<Elaborate.Result?>
+
+    data class ElaborateResult(
+      val location: ModuleLocation,
+    ) : Key<Elaborate.Result> {
+      var position: Position? = null
+    }
+
+    data class ZonkResult(
+      val location: ModuleLocation,
+    ) : Key<Zonk.Result> {
+      var position: Position? = null
+    }
+  }
+
+  data class Value<V>(
+    val value: V,
+    val hash: Int,
+  ) {
+    companion object {
+      val NULL: Value<*> = Value(null, 0)
+    }
+  }
+
+  suspend fun changeText(
     location: ModuleLocation,
     text: String,
   ) {
-    texts[location] = text
+    val key = Key.Text(location)
+    mutexes
+      .computeIfAbsent(key) { Mutex() }
+      .withLock { values[key] = Value(text, 0) }
   }
 
-  fun closeText(
+  suspend fun closeText(
     location: ModuleLocation,
   ) {
-    texts -= location
-  }
-
-  // TODO: track external modification?
-  suspend fun fetchText(
-    location: ModuleLocation,
-  ): String? {
-    return when (val text = texts[location]) {
-      null -> withContext(Dispatchers.IO) {
-        src
-          .resolve(location.parts.joinToString("/", postfix = ".mcx"))
-          .let { path ->
-            if (path.exists()) {
-              return@withContext path
-                .readText()
-                .also {
-                  texts[location] = it
-                }
-            }
-          }
-        STD_SRC
-          .resolve(location.parts.joinToString("/", postfix = ".mcx"))
-          .let { path ->
-            if (path.exists()) {
-              return@withContext path
-                .readText()
-                .also {
-                  texts[location] = it
-                }
-            }
-          }
-        null
+    suspend fun close(key: Key<*>) {
+      mutexes[key]?.withLock {
+        values -= key
+        mutexes -= key
       }
-      else -> text
+    }
+
+    return coroutineScope {
+      close(Key.Text(location))
+      close(Key.ParseResult(location))
+      close(Key.ResolveResult(location))
+      close(Key.Signature(location))
+      close(Key.ElaborateResult(location))
+      close(Key.ZonkResult(location))
     }
   }
 
-  suspend fun fetchSurface(
-    context: Context,
-    location: ModuleLocation,
-  ): Parse.Result? =
+  @Suppress("UNCHECKED_CAST")
+  suspend fun <V> Context.fetch(
+    key: Key<V>,
+  ): Value<V> =
     coroutineScope {
-      val text = fetchText(location) ?: return@coroutineScope null
-      Parse(context, location, text)
-    }
+      val value = values[key]
+      mutexes
+        .computeIfAbsent(key) { Mutex() }
+        .withLock {
+          when (key) {
+            is Key.Text            -> {
+              value ?: withContext(Dispatchers.IO) {
+                src
+                  .resolve(key.location.parts.joinToString("/", postfix = ".mcx"))
+                  .let { path ->
+                    if (path.exists() && path.isRegularFile()) {
+                      return@withContext Value(path.readText(), 0)
+                    }
+                  }
+                STD_SRC
+                  .resolve(key.location.parts.joinToString("/", postfix = ".mcx"))
+                  .let { path ->
+                    if (path.exists()) {
+                      return@withContext Value(path.readText(), 0)
+                    }
+                  }
+                Value.NULL
+              }
+            }
 
-  suspend fun fetchResolved(
-    context: Context,
-    location: ModuleLocation,
-  ): Resolve.Result? =
-    coroutineScope {
-      val surface = fetchSurface(context, location) ?: return@coroutineScope null
-      val dependencies =
-        surface.module.imports
-          .map { async { Resolve.Dependency(it.value, fetchResolved(context, it.value)?.module, it.range) } }
-          .plus(async { if (location == PRELUDE) null else Resolve.Dependency(PRELUDE, fetchResolved(context, PRELUDE)!!.module, null) })
-          .awaitAll()
-          .filterNotNull()
-      Resolve(context, dependencies, surface)
-    }
+            is Key.ParseResult     -> {
+              val text = fetch(Key.Text(key.location))
+              if (text.value == null) {
+                return@coroutineScope Value.NULL
+              }
+              val hash = text.value.hashCode()
+              if (value == null || value.hash != hash) {
+                Value(Parse(this@fetch, key.location, text.value), hash)
+              } else {
+                value
+              }
+            }
 
-  suspend fun fetchSignature(
-    context: Context,
-    location: ModuleLocation,
-  ): Elaborate.Result? =
-    coroutineScope {
-      val resolved = fetchResolved(context, location) ?: return@coroutineScope null
-      Elaborate(context, emptyList(), resolved, true)
-    }
+            is Key.ResolveResult   -> {
+              val location = key.location
+              val surface = fetch(Key.ParseResult(location))
+              if (surface.value == null) {
+                return@coroutineScope Value.NULL
+              }
+              val dependencyHashes = surface.value.module.imports
+                .map { async { fetch(Key.ResolveResult(it.value)) } }
+                .plus(async { if (location == PRELUDE) null else fetch(Key.ResolveResult(PRELUDE)) })
+                .awaitAll()
+                .filterNotNull()
+                .map { it.hash }
+              val dependencies = surface.value.module.imports
+                .map { async { Resolve.Dependency(it.value, fetch(Key.ResolveResult(it.value)).value?.module, it.range) } }
+                .plus(async { if (location == PRELUDE) null else Resolve.Dependency(PRELUDE, fetch(Key.ResolveResult(PRELUDE)).value!!.module, null) })
+                .awaitAll()
+                .filterNotNull()
+              val hash = Objects.hash(surface.hash, dependencyHashes)
+              if (value == null || value.hash != hash) {
+                Value(Resolve(this@fetch, dependencies, surface.value), hash)
+              } else {
+                value
+              }
+            }
 
-  suspend fun fetchCore(
-    context: Context,
-    location: ModuleLocation,
-    position: Position? = null,
-  ): Elaborate.Result =
-    coroutineScope {
-      val resolved = fetchResolved(context, location)!!
-      val signature = fetchSignature(context, location)!!
-      val dependencies =
-        resolved.module.imports
-          .map { async { fetchSignature(context, it.value)?.module } }
-          .plus(async { fetchSignature(context, PRELUDE)!!.module })
-          .awaitAll()
-          .filterNotNull()
-          .plus(signature.module)
-      Elaborate(context, dependencies, Resolve.Result(resolved.module, signature.diagnostics), false, position)
-    }
+            is Key.Signature       -> {
+              val resolved = fetch(Key.ResolveResult(key.location))
+              if (resolved.value == null) {
+                return@coroutineScope Value.NULL
+              }
+              val hash = resolved.hash
+              if (value == null || value.hash != hash) {
+                Value(Elaborate(this@fetch, emptyList(), resolved.value, true), hash)
+              } else {
+                value
+              }
+            }
 
-  suspend fun fetchZonked(
-    context: Context,
-    location: ModuleLocation,
-    position: Position? = null,
-  ): Zonk.Result =
-    coroutineScope {
-      val core = fetchCore(context, location, position)
-      Zonk(context, core)
-    }
+            is Key.ElaborateResult -> {
+              val location = key.location
+              val resolved = fetch(Key.ResolveResult(location)) as Value<Resolve.Result>
+              val signature = fetch(Key.Signature(location)) as Value<Elaborate.Result>
+              val results = resolved.value.module.imports
+                .map { async { fetch(Key.Signature(it.value)) } }
+                .plus(async { fetch(Key.Signature(PRELUDE)) })
+                .awaitAll()
+              val dependencies = results
+                .mapNotNull { it.value?.module }
+                .plus(signature.value.module)
+              val hash = Objects.hash(resolved.hash, signature.hash, results.map { it.hash })
+              if (value == null || value.hash != hash || key.position != null) {
+                Value(Elaborate(this@fetch, dependencies, Resolve.Result(resolved.value.module, signature.value.diagnostics), false, key.position), hash)
+              } else {
+                value
+              }
+            }
+
+            is Key.ZonkResult      -> {
+              val core = fetch(
+                Key
+                  .ElaborateResult(key.location)
+                  .apply { position = key.position }
+              )
+              val hash = core.hash
+              if (value == null || value.hash != hash || key.position != null) {
+                Value(Zonk(this@fetch, core.value), hash)
+              } else {
+                value
+              }
+            }
+          }.also {
+            values[key] = it as Value<V>
+          }
+        }
+    } as Value<V>
 
   suspend fun fetchStaged(
     context: Context,
     location: DefinitionLocation,
   ): List<Core.Definition> =
     coroutineScope {
-      val zonked = fetchZonked(context, location.module)
-      val definition = zonked.module.definitions.find { it.name == location }!!
+      val zonked = context.fetch(Key.ZonkResult(location.module))
+      val definition = zonked.value.module.definitions.find { it.name == location }!!
       val dependencies =
-        fetchSurface(context, location.module)!!.module.imports
-          .map { async { fetchZonked(context, it.value).module.definitions } }
-          .plus(async { fetchZonked(context, PRELUDE).module.definitions })
+        context.fetch(Key.ParseResult(location.module)).value!!.module.imports
+          .map { async { context.fetch(Key.ZonkResult(it.value)).value.module.definitions } }
+          .plus(async { context.fetch(Key.ZonkResult(PRELUDE)).value.module.definitions })
           .awaitAll()
           .flatten()
-          .plus(zonked.module.definitions)
+          .plus(zonked.value.module.definitions)
           .associateBy { it.name }
       Stage(context, dependencies, definition)
     }
@@ -235,11 +318,11 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val zonked = fetchZonked(context, path.toModuleLocation())
-            if (zonked.diagnostics.isNotEmpty()) {
-              diagnosticsByPath += path to zonked.diagnostics
+            val zonked = context.fetch(Key.ZonkResult(path.toModuleLocation()))
+            if (zonked.value.diagnostics.isNotEmpty()) {
+              diagnosticsByPath += path to zonked.value.diagnostics
             }
-            zonked.module.definitions
+            zonked.value.module.definitions
               .map { async { fetchGenerated(context, it.name) } }
               .awaitAll()
           }

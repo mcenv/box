@@ -3,6 +3,7 @@ package mcx.lsp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -50,21 +51,24 @@ class McxService : TextDocumentService,
 
   override fun didOpen(
     params: DidOpenTextDocumentParams,
-  ) {
-    build.changeText(params.textDocument.uri.toModuleLocation(), params.textDocument.text)
-  }
+  ): Unit =
+    runBlocking {
+      build.changeText(params.textDocument.uri.toModuleLocation(), params.textDocument.text)
+    }
 
   override fun didChange(
     params: DidChangeTextDocumentParams,
-  ) {
-    build.changeText(params.textDocument.uri.toModuleLocation(), params.contentChanges.last().text)
-  }
+  ): Unit =
+    runBlocking {
+      build.changeText(params.textDocument.uri.toModuleLocation(), params.contentChanges.last().text)
+    }
 
   override fun didClose(
     params: DidCloseTextDocumentParams,
-  ) {
-    build.closeText(params.textDocument.uri.toModuleLocation())
-  }
+  ): Unit =
+    runBlocking {
+      build.closeText(params.textDocument.uri.toModuleLocation())
+    }
 
   override fun didSave(
     params: DidSaveTextDocumentParams,
@@ -76,12 +80,12 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val zonked = build.fetchZonked(fetchContext(), uri.toModuleLocation())
-      val newHash = zonked.diagnostics.hashCode()
+      val zonked = with(build) { fetchContext().fetch(Build.Key.ZonkResult(uri.toModuleLocation())) }
+      val newHash = zonked.value.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
         diagnosticsHashes[uri] = newHash
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(zonked.diagnostics))
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(zonked.value.diagnostics))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
@@ -89,15 +93,27 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
     CoroutineScope(Dispatchers.Default).future {
-      val zonked = build.fetchZonked(fetchContext(), params.textDocument.uri.toModuleLocation(), params.position)
-      forLeft(zonked.completionItems + GLOBAL_COMPLETION_ITEMS)
+      val zonked = with(build) {
+        fetchContext().fetch(
+          Build.Key
+            .ZonkResult(params.textDocument.uri.toModuleLocation())
+            .apply { position = params.position }
+        )
+      }
+      forLeft(zonked.value.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> =
     CoroutineScope(Dispatchers.Default).future {
-      val zonked = build.fetchZonked(fetchContext(), params.textDocument.uri.toModuleLocation(), params.position)
+      val zonked = with(build) {
+        fetchContext().fetch(
+          Build.Key
+            .ZonkResult(params.textDocument.uri.toModuleLocation())
+            .apply { position = params.position }
+        )
+      }
       Hover(
-        when (val hover = zonked.hover) {
+        when (val hover = zonked.value.hover) {
           null -> throw CancellationException()
           else -> highlight(hover())
         }
