@@ -62,6 +62,22 @@ class Build(
     ) : Key<Zonk.Result> {
       var position: Position? = null
     }
+
+    data class StageResult(
+      val location: DefinitionLocation,
+    ) : Key<List<Core.Definition>>
+
+    data class LiftResult(
+      val location: DefinitionLocation,
+    ) : Key<List<Lifted.Definition>>
+
+    data class PackResult(
+      val locations: List<DefinitionLocation>,
+    ) : Key<List<Packed.Definition>>
+
+    data class GenerateResult(
+      val locations: List<DefinitionLocation>,
+    ) : Key<Map<String, String>>
   }
 
   data class Value<V>(
@@ -216,61 +232,74 @@ class Build(
                 value
               }
             }
+
+            is Key.StageResult     -> {
+              val location = key.location
+              val zonked = fetch(Key.ZonkResult(location.module))
+              val definition = zonked.value.module.definitions.find { it.name == location }!!
+              val results =
+                fetch(Key.ParseResult(location.module)).value!!.module.imports
+                  .map { async { fetch(Key.ZonkResult(it.value)) } }
+                  .plus(async { fetch(Key.ZonkResult(PRELUDE)) })
+                  .awaitAll()
+              val dependencies =
+                results
+                  .flatMap { it.value.module.definitions }
+                  .plus(zonked.value.module.definitions)
+                  .associateBy { it.name }
+              val hash = Objects.hash(zonked.hash, results.map { it.hash })
+              if (value == null || value.hash != hash) {
+                Value(Stage(this@fetch, dependencies, definition), hash)
+              } else {
+                value
+              }
+            }
+
+            is Key.LiftResult      -> {
+              val staged = fetch(Key.StageResult(key.location))
+              val hash = staged.hash
+              if (value == null || value.hash != hash) {
+                Value(staged.value.flatMap { Lift(this@fetch, it) }, hash)
+              } else {
+                value
+              }
+            }
+
+            is Key.PackResult      -> {
+              val results = key.locations.map { fetch(Key.LiftResult(it)) }
+              val hash = results
+                .map { it.hash }
+                .hashCode()
+              if (value == null || value.hash != hash) {
+                val definitions = results
+                  .flatMap { result ->
+                    result.value.map { async { Pack(this@fetch, it) } }
+                  }
+                  .awaitAll()
+                Value(definitions, hash)
+              } else {
+                value
+              }
+            }
+
+            is Key.GenerateResult  -> {
+              val packed = fetch(Key.PackResult(key.locations))
+              val hash = packed.hash
+              if (value == null || value.hash != hash) {
+                val definitions = packed.value
+                  .map { async { Generate(this@fetch, it) } }
+                  .awaitAll()
+                  .toMap()
+                Value(definitions, hash)
+              } else {
+                value
+              }
+            }
           }.also {
             values[key] = it as Value<V>
           }
         }
     } as Value<V>
-
-  suspend fun fetchStaged(
-    context: Context,
-    location: DefinitionLocation,
-  ): List<Core.Definition> =
-    coroutineScope {
-      val zonked = context.fetch(Key.ZonkResult(location.module))
-      val definition = zonked.value.module.definitions.find { it.name == location }!!
-      val dependencies =
-        context.fetch(Key.ParseResult(location.module)).value!!.module.imports
-          .map { async { context.fetch(Key.ZonkResult(it.value)).value.module.definitions } }
-          .plus(async { context.fetch(Key.ZonkResult(PRELUDE)).value.module.definitions })
-          .awaitAll()
-          .flatten()
-          .plus(zonked.value.module.definitions)
-          .associateBy { it.name }
-      Stage(context, dependencies, definition)
-    }
-
-  suspend fun fetchLifted(
-    context: Context,
-    location: DefinitionLocation,
-  ): List<Lifted.Definition> =
-    coroutineScope {
-      val staged = fetchStaged(context, location)
-      staged.flatMap { Lift(context, it) }
-    }
-
-  suspend fun fetchPacked(
-    context: Context,
-    location: DefinitionLocation,
-  ): List<Packed.Definition> =
-    coroutineScope {
-      val lifted = fetchLifted(context, location)
-      lifted
-        .map { async { Pack(context, it) } }
-        .awaitAll()
-    }
-
-  suspend fun fetchGenerated(
-    context: Context,
-    location: DefinitionLocation,
-  ): Map<String, String> =
-    coroutineScope {
-      val packed = fetchPacked(context, location)
-      packed
-        .map { async { Generate(context, it) } }
-        .awaitAll()
-        .toMap()
-    }
 
   @OptIn(ExperimentalSerializationApi::class)
   suspend operator fun invoke() {
@@ -322,9 +351,7 @@ class Build(
             if (zonked.value.diagnostics.isNotEmpty()) {
               diagnosticsByPath += path to zonked.value.diagnostics
             }
-            zonked.value.module.definitions
-              .map { async { fetchGenerated(context, it.name) } }
-              .awaitAll()
+            context.fetch(Key.GenerateResult(zonked.value.module.definitions.map { it.name })).value
           }
         }
         .toList()
@@ -341,7 +368,6 @@ class Build(
 
       inputs
         .asSequence()
-        .flatten()
         .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
         .map { it.mapKeys { (name, _) -> datapackRoot.resolve(name) } }
         .reduce { acc, map -> acc + map }
