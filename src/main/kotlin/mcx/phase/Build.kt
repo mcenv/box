@@ -69,7 +69,7 @@ class Build(
 
     data class LiftResult(
       val location: DefinitionLocation,
-    ) : Key<List<Lifted.Definition>>
+    ) : Key<List<Lift.Result>>
 
     object PackResult : Key<List<Packed.Definition>> {
       lateinit var locations: List<DefinitionLocation>
@@ -260,7 +260,7 @@ class Build(
               val staged = fetch(Key.StageResult(key.location))
               val hash = staged.hash
               if (value == null || value.hash != hash) {
-                Value(staged.value.flatMap { Lift(this@fetch, it) }, hash)
+                Value(staged.value.map { Lift(this@fetch, it) }, hash)
               } else {
                 value
               }
@@ -273,9 +273,8 @@ class Build(
                 .hashCode()
               if (value == null || value.hash != hash) {
                 val definitions = results
-                  .flatMap { result ->
-                    result.value.map { async { Pack(this@fetch, it) } }
-                  }
+                  .flatMap { result -> result.value.flatMap { it.liftedDefinitions.map { async { Pack(this@fetch, it) } } } }
+                  .plus(async { Pack.packDispatch(results.flatMap { result -> result.value.flatMap { it.dispatchedDefinitions } }) })
                   .awaitAll()
                 Value(definitions, hash)
               } else {
@@ -360,7 +359,6 @@ class Build(
       }
 
       context.fetch(Key.GenerateResult.apply { this.locations = locations }).value
-        .plus(mapOf(Generate(context, Pack.packDispatch(context.liftedFunctions))))
         .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
           name

@@ -1,23 +1,16 @@
 package mcx.phase
 
-import kotlinx.serialization.Transient
 import mcx.ast.DefinitionLocation
-import mcx.ast.Lifted
 import mcx.ast.ModuleLocation
-import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
-data class Context(
+class Context(
   val config: Config,
 ) {
-  @Transient
-  private val _liftedFunctions: MutableList<Lifted.Definition.Function> = Collections.synchronizedList(mutableListOf())
-  val liftedFunctions: List<Lifted.Definition.Function> get() = _liftedFunctions
+  private val id: AtomicInteger = AtomicInteger(0)
 
-  fun liftFunction(
-    function: Lifted.Definition.Function,
-  ) {
-    _liftedFunctions += function
-  }
+  fun freshId(): Int =
+    id.getAndIncrement()
 
   companion object {
     val DISPATCH: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch")

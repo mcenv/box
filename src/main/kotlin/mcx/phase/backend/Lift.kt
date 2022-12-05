@@ -12,9 +12,10 @@ class Lift private constructor(
   private val definition: C.Definition,
 ) {
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
+  private val dispatchedDefinitions: MutableList<L.Definition.Function> = mutableListOf()
   private var freshFunctionId: Int = 0
 
-  private fun lift(): List<L.Definition> {
+  private fun lift(): Result {
     val annotations = definition.annotations.mapNotNull { liftAnnotation(it) }
     when (definition) {
       is C.Definition.Resource -> {
@@ -35,7 +36,7 @@ class Lift private constructor(
       }
       is C.Definition.Type     -> Unit
     }
-    return liftedDefinitions
+    return Result(liftedDefinitions, dispatchedDefinitions)
   }
 
   private fun liftAnnotation(
@@ -116,7 +117,7 @@ class Lift private constructor(
             L.Type.Compound(freeVars.mapValues { it.value.second }),
           )
           val body = liftTerm(term.body)
-          val tag = context.liftedFunctions.size
+          val tag = context.freshId()
           val bodyFunction = L.Definition
             .Function(
               emptyList(),
@@ -126,7 +127,7 @@ class Lift private constructor(
               tag,
             )
             .also { liftedDefinitions += it }
-          context.liftFunction(bodyFunction)
+          dispatchedDefinitions += bodyFunction
           L.Term.FunOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
       is C.Term.Apply       -> {
@@ -281,11 +282,16 @@ class Lift private constructor(
     }
   }
 
+  data class Result(
+    val liftedDefinitions: List<L.Definition>,
+    val dispatchedDefinitions: List<L.Definition.Function>,
+  )
+
   companion object {
     operator fun invoke(
       context: Context,
       definition: C.Definition,
-    ): List<L.Definition> =
+    ): Result =
       Lift(context, definition).lift()
   }
 }
