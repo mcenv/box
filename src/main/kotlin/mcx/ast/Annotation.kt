@@ -1,12 +1,13 @@
 package mcx.ast
 
 enum class Annotation {
-  EXPORT,
   TICK,
   LOAD,
   NO_DROP,
+  LEAF,
+  BUILTIN,
+  EXPORT,
   INLINE,
   STATIC,
-  BUILTIN,
   HOLE,
 }

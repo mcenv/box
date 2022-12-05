@@ -152,13 +152,14 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (readWord()) {
-          "export"  -> Ranged(Annotation.EXPORT, until())
           "tick"    -> Ranged(Annotation.TICK, until())
           "load"    -> Ranged(Annotation.LOAD, until())
           "no_drop" -> Ranged(Annotation.NO_DROP, until())
+          "leaf"    -> Ranged(Annotation.LEAF, until())
+          "builtin" -> Ranged(Annotation.BUILTIN, until())
+          "export"  -> Ranged(Annotation.EXPORT, until())
           "inline"  -> Ranged(Annotation.INLINE, until())
           "static"  -> Ranged(Annotation.STATIC, until())
-          "builtin" -> Ranged(Annotation.BUILTIN, until())
           else      -> null
         }
       } else {

@@ -74,7 +74,7 @@ class Elaborate private constructor(
           .Resource(annotations, definition.registry, definition.name.value)
           .also {
             if (!signature) {
-              val env = emptyEnv(definitions, emptyList(), true)
+              val env = emptyEnv(definitions, emptyList(), leaf = false, static = true)
               val body = env.elaborateTerm(definition.body /* TODO */)
               it.body = body
             }
@@ -83,7 +83,7 @@ class Elaborate private constructor(
       is R.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-        val env = emptyEnv(definitions, types, Annotation.STATIC in annotations)
+        val env = emptyEnv(definitions, types, Annotation.LEAF in annotations, Annotation.STATIC in annotations)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
         C.Definition
@@ -98,7 +98,7 @@ class Elaborate private constructor(
       }
       is R.Definition.Type     -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        val env = emptyEnv(definitions, emptyList(), Annotation.STATIC in annotations)
+        val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
         val kind = elaborateKind(definition.kind)
         val body = env.elaborateType(definition.body, kind)
         C.Definition
@@ -169,7 +169,7 @@ class Elaborate private constructor(
           C.Type.Union(listOf(head) + tail, head.kind)
         }
       type is R.Type.Fun && expected == null       -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
-      type is R.Type.Code && expected == null -> {
+      type is R.Type.Code && expected == null      -> {
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
         } else {
@@ -177,8 +177,8 @@ class Elaborate private constructor(
           C.Type.Hole
         }
       }
-      type is R.Type.Var && expected == null  -> C.Type.Var(type.name, type.level)
-      type is R.Type.Run && expected == null  -> {
+      type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
+      type is R.Type.Run && expected == null       -> {
         when (val definition = definitions[type.name]) {
           is C.Definition.Type -> C.Type.Run(type.name, definition.body.kind)
           else                 -> {
@@ -191,7 +191,7 @@ class Elaborate private constructor(
           }
         }
       }
-      type is R.Type.Meta                     -> {
+      type is R.Type.Meta                          -> {
         if (signature) {
           diagnostics += Diagnostic.UnexpectedMeta(type.range)
           C.Type.Hole
@@ -199,9 +199,9 @@ class Elaborate private constructor(
           metaEnv.freshType(type.range, expected)
         }
       }
-      type is R.Type.Hole                     -> C.Type.Hole
-      expected == null                        -> error("kind must be non-null")
-      else                                    -> {
+      type is R.Type.Hole                          -> C.Type.Hole
+      expected == null                             -> error("kind must be non-null")
+      else                                         -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
           diagnostics += Diagnostic.KindMismatch(expected, actual.kind, type.range)
@@ -401,27 +401,32 @@ class Elaborate private constructor(
 
       term is R.Term.Run &&
       expected == null              -> {
-        when (val definition = definitions[term.name.value]) {
-          is C.Definition.Function -> {
-            hover(term.name.range) { createFunctionDocumentation(definition) }
-            val typeArgs =
-              if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
-                definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
-              } else {
-                if (definition.typeParams.size != term.typeArgs.value.size) {
-                  diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+        if (isLeaf()) {
+          diagnostics += Diagnostic.LeafFunctionCannotRunOtherFunctions(term.range)
+          C.Term.Hole(C.Type.Hole)
+        } else {
+          when (val definition = definitions[term.name.value]) {
+            is C.Definition.Function -> {
+              hover(term.name.range) { createFunctionDocumentation(definition) }
+              val typeArgs =
+                if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
+                  definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
+                } else {
+                  if (definition.typeParams.size != term.typeArgs.value.size) {
+                    diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+                  }
+                  term.typeArgs.value.map { elaborateType(it) }
                 }
-                term.typeArgs.value.map { elaborateType(it) }
-              }
-            val typeEnv = TypeEnv(definitions, typeArgs, false)
-            val param = typeEnv.evalType(definition.binder.type)
-            val arg = elaborateTerm(term.arg, param)
-            val result = typeEnv.evalType(definition.result)
-            C.Term.Run(definition.name, typeArgs, arg, result)
-          }
-          else                     -> {
-            diagnostics += Diagnostic.ExpectedFunctionDefinition(term.name.range)
-            C.Term.Hole(C.Type.Hole)
+              val typeEnv = TypeEnv(definitions, typeArgs, false)
+              val param = typeEnv.evalType(definition.binder.type)
+              val arg = elaborateTerm(term.arg, param)
+              val result = typeEnv.evalType(definition.result)
+              C.Term.Run(definition.name, typeArgs, arg, result)
+            }
+            else                     -> {
+              diagnostics += Diagnostic.ExpectedFunctionDefinition(term.name.range)
+              C.Term.Hole(C.Type.Hole)
+            }
           }
         }
       }
@@ -822,12 +827,16 @@ class Elaborate private constructor(
     private val definitions: Map<DefinitionLocation, C.Definition>,
     private val types: List<Pair<String, C.Type>>,
     private val _entries: MutableList<Entry>,
+    private val leaf: Boolean,
     private val static: Boolean,
   ) {
     val entries: List<Entry> get() = _entries
     private var savedSize: Int = 0
     var stage: Int = 0
       private set
+
+    fun isLeaf(): Boolean =
+      leaf
 
     fun isMeta(): Boolean =
       static || stage > 0
@@ -875,6 +884,7 @@ class Elaborate private constructor(
         _entries
           .map { it.copy() }
           .toMutableList(),
+        leaf,
         static,
       )
 
@@ -889,9 +899,10 @@ class Elaborate private constructor(
       fun emptyEnv(
         definitions: Map<DefinitionLocation, C.Definition>,
         types: List<Pair<String, C.Type>>,
-        meta: Boolean,
+        leaf: Boolean,
+        static: Boolean,
       ): Env =
-        Env(definitions, types, mutableListOf(), meta)
+        Env(definitions, types, mutableListOf(), leaf, static)
     }
   }
 

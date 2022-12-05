@@ -2,7 +2,6 @@ package mcx.phase.backend
 
 import mcx.ast.Annotation
 import mcx.phase.Context
-import mcx.phase.UnexpectedHole
 import mcx.phase.backend.Lift.Env.Companion.emptyEnv
 import mcx.phase.prettyType
 import mcx.ast.Core as C
@@ -43,14 +42,15 @@ class Lift private constructor(
     annotation: Annotation,
   ): L.Annotation? {
     return when (annotation) {
-      Annotation.EXPORT  -> null
       Annotation.TICK    -> L.Annotation.TICK
       Annotation.LOAD    -> L.Annotation.LOAD
       Annotation.NO_DROP -> L.Annotation.NO_DROP
+      Annotation.LEAF    -> L.Annotation.LEAF
+      Annotation.BUILTIN -> L.Annotation.BUILTIN
+      Annotation.EXPORT  -> null
       Annotation.INLINE  -> error("unexpected: $annotation")
       Annotation.STATIC  -> error("unexpected: $annotation")
-      Annotation.BUILTIN -> L.Annotation.BUILTIN
-      Annotation.HOLE    -> throw UnexpectedHole
+      Annotation.HOLE    -> error("unexpected: $annotation")
     }
   }
 
@@ -79,7 +79,7 @@ class Lift private constructor(
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
       is C.Type.Run       -> error("unexpected: ${prettyType(type)}")
       is C.Type.Meta      -> error("unexpected: ${prettyType(type)}")
-      is C.Type.Hole      -> throw UnexpectedHole
+      is C.Type.Hole      -> error("unexpected: ${prettyType(type)}")
     }
   }
 
@@ -140,7 +140,7 @@ class Lift private constructor(
         val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let         -> {
+      is C.Term.Let     -> {
         val init = liftTerm(term.init)
         val (binder, body) = restoring {
           val binder = liftPattern(term.binder)
@@ -149,16 +149,16 @@ class Lift private constructor(
         }
         L.Term.Let(binder, init, body, type)
       }
-      is C.Term.Var         -> L.Term.Var(this[term.name], type)
-      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Is          ->
+      is C.Term.Var     -> L.Term.Var(this[term.name], type)
+      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is      ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Command     -> L.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> error("unexpected: code_of")
-      is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.Hole        -> throw UnexpectedHole
+      is C.Term.Command -> L.Term.Command(term.value, type)
+      is C.Term.CodeOf  -> error("unexpected: code_of")
+      is C.Term.Splice  -> error("unexpected: splice")
+      is C.Term.Hole    -> error("unexpected: hole")
     }
   }
 
@@ -177,7 +177,7 @@ class Lift private constructor(
         L.Pattern.Var(types.lastIndex, annotations, type)
       }
       is C.Pattern.Drop       -> L.Pattern.Drop(annotations, type)
-      is C.Pattern.Hole       -> throw UnexpectedHole
+      is C.Pattern.Hole       -> error("unexpected: hole")
     }
   }
 
@@ -199,18 +199,18 @@ class Lift private constructor(
       is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.RefOf       -> freeVars(term.element)
-      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.FunOf       -> freeVars(term.body).also { it -= boundVars(term.binder) }
-      is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
-      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
-      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Run         -> freeVars(term.arg)
-      is C.Term.Is          -> freeVars(term.scrutinee)
-      is C.Term.Command     -> linkedMapOf()
-      is C.Term.CodeOf      -> error("unexpected: code_of")
-      is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.Hole        -> throw UnexpectedHole
+      is C.Term.TupleOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.FunOf   -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.Apply   -> freeVars(term.operator).also { it += freeVars(term.arg) }
+      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
+      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var     -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Run     -> freeVars(term.arg)
+      is C.Term.Is      -> freeVars(term.scrutinee)
+      is C.Term.Command -> linkedMapOf()
+      is C.Term.CodeOf  -> error("unexpected: code_of")
+      is C.Term.Splice  -> error("unexpected: splice")
+      is C.Term.Hole    -> error("unexpected: hole")
     }
   }
 
@@ -224,7 +224,7 @@ class Lift private constructor(
       is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
-      is C.Pattern.Hole       -> throw UnexpectedHole
+      is C.Pattern.Hole       -> error("unexpected: hole")
     }
   }
 

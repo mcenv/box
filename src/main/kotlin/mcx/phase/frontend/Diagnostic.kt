@@ -190,6 +190,14 @@ sealed class Diagnostic(
     DiagnosticSeverity.Error,
   )
 
+  class LeafFunctionCannotRunOtherFunctions(
+    range: Range,
+  ) : Diagnostic(
+    range,
+    "@leaf function cannot run other functions",
+    DiagnosticSeverity.Error,
+  )
+
   class RequiredStatic(
     range: Range,
   ) : Diagnostic(

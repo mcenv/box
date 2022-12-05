@@ -20,12 +20,14 @@ private val DEFINITION_COMPLETION_ITEMS: List<CompletionItem> = listOf(
 }
 
 private val ANNOTATION_COMPLETION_ITEMS: List<CompletionItem> = listOf(
-  "@export",
   "@tick",
   "@load",
   "@no_drop",
-  "@inline",
+  "@leaf",
   "@builtin",
+  "@export",
+  "@inline",
+  "@static",
 ).map {
   CompletionItem(it).apply {
     kind = CompletionItemKind.Keyword
