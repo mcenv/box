@@ -575,10 +575,10 @@ class Elaborate private constructor(
 
       pattern is R.Pattern.Var &&
       expected != null            -> {
+        bind(pattern.name, expected)
         when (val kind = metaEnv.forceKind(expected.kind)) {
           is C.Kind.Type ->
             if (kind.arity == 1) {
-              bind(pattern.name, expected)
               C.Pattern.Var(pattern.name, pattern.level, annotations, expected)
             } else {
               diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
@@ -586,7 +586,6 @@ class Elaborate private constructor(
             }
           is C.Kind.Meta -> {
             metaEnv.unifyKinds(kind, C.Kind.Type.ONE)
-            bind(pattern.name, expected)
             C.Pattern.Var(pattern.name, pattern.level, annotations, expected)
           }
           else           -> {
