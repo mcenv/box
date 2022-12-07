@@ -211,6 +211,7 @@ class Resolve private constructor(
     return when (pattern) {
       is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.annotations, pattern.range)
       is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.min, pattern.max, pattern.annotations, pattern.range)
+      is S.Pattern.ListOf     -> R.Pattern.ListOf(pattern.elements.map { resolvePattern(it) }, pattern.annotations, pattern.range)
       is S.Pattern.CompoundOf -> R.Pattern.CompoundOf(pattern.elements.map { (key, element) -> key to resolvePattern(element) }, pattern.annotations, pattern.range)
       is S.Pattern.TupleOf    -> R.Pattern.TupleOf(pattern.elements.map { resolvePattern(it) }, pattern.annotations, pattern.range)
       is S.Pattern.Var        -> {

@@ -118,6 +118,7 @@ class Stage private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> pattern
       is C.Pattern.IntRangeOf -> pattern
+      is C.Pattern.ListOf     -> C.Pattern.ListOf(pattern.elements.map { stagePattern(it) }, pattern.annotations, type)
       is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { stagePattern(it.value) }, pattern.annotations, type)
       is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { stagePattern(it) }, pattern.annotations, type)
       is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, pattern.annotations, type)

@@ -629,6 +629,10 @@ class Parse private constructor(
               }
             }
           }
+          '['  -> {
+            val elements = parseList(',', '[', ']') { parsePattern() }
+            S.Pattern.ListOf(elements, annotations, until())
+          }
           '{'  -> {
             val elements = parseList(',', '{', '}') {
               val key = parseRanged { readString() }

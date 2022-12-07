@@ -104,7 +104,7 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf       ->
+      is C.Term.FunOf   ->
         // remap levels
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
@@ -130,12 +130,12 @@ class Lift private constructor(
           dispatchedDefinitions += bodyFunction
           L.Term.FunOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
-      is C.Term.Apply       -> {
+      is C.Term.Apply   -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
       }
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
@@ -171,6 +171,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, annotations, type)
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
+      is C.Pattern.ListOf     -> L.Pattern.ListOf(pattern.elements.map { liftPattern(it) }, annotations, type)
       is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, annotations, type)
       is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
       is C.Pattern.Var        -> {
@@ -200,18 +201,18 @@ class Lift private constructor(
       is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.RefOf       -> freeVars(term.element)
-      is C.Term.TupleOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.FunOf   -> freeVars(term.body).also { it -= boundVars(term.binder) }
-      is C.Term.Apply   -> freeVars(term.operator).also { it += freeVars(term.arg) }
-      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
-      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var     -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Run     -> freeVars(term.arg)
-      is C.Term.Is      -> freeVars(term.scrutinee)
-      is C.Term.Command -> linkedMapOf()
-      is C.Term.CodeOf  -> error("unexpected: code_of")
-      is C.Term.Splice  -> error("unexpected: splice")
-      is C.Term.Hole    -> error("unexpected: hole")
+      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.FunOf       -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
+      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
+      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Run         -> freeVars(term.arg)
+      is C.Term.Is          -> freeVars(term.scrutinee)
+      is C.Term.Command     -> linkedMapOf()
+      is C.Term.CodeOf      -> error("unexpected: code_of")
+      is C.Term.Splice      -> error("unexpected: splice")
+      is C.Term.Hole        -> error("unexpected: hole")
     }
   }
 
@@ -221,6 +222,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.IntRangeOf -> emptySet()
+      is C.Pattern.ListOf     -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.CompoundOf -> pattern.elements.values.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.Var        -> setOf(pattern.name)

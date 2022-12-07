@@ -105,21 +105,29 @@ object Normalize {
     binder: C.Pattern,
   ): List<Value> {
     return when {
+      value is Value.ListOf &&
+      binder is C.Pattern.ListOf &&
+      value.elements.size == binder.elements.size -> {
+        (value.elements zip binder.elements).fold(mutableListOf()) { acc, (value, binder) ->
+          acc.also { it += bindValue(value.value, binder) }
+        }
+      }
+
       value is Value.CompoundOf &&
-      binder is C.Pattern.CompoundOf ->
+      binder is C.Pattern.CompoundOf              ->
         value.elements.entries.fold(mutableListOf()) { acc, (name, value) ->
           acc.also { it += bindValue(value.value, binder.elements[name]!!) }
         }
 
       value is Value.TupleOf &&
-      binder is C.Pattern.TupleOf    ->
+      binder is C.Pattern.TupleOf                 ->
         (value.elements zip binder.elements).fold(mutableListOf()) { acc, (value, binder) ->
           acc.also { it += bindValue(value.value, binder) }
         }
 
-      binder is C.Pattern.Var        -> listOf(value)
+      binder is C.Pattern.Var                     -> listOf(value)
 
-      else                           -> emptyList()
+      else                                        -> emptyList()
     }
   }
 
@@ -129,24 +137,28 @@ object Normalize {
   ): Boolean? {
     return when {
       value is Value.IntOf &&
-      pattern is C.Pattern.IntOf      -> value.value == pattern.value
+      pattern is C.Pattern.IntOf                   -> value.value == pattern.value
 
       value is Value.IntOf &&
-      pattern is C.Pattern.IntRangeOf -> value.value in pattern.min..pattern.max
+      pattern is C.Pattern.IntRangeOf              -> value.value in pattern.min..pattern.max
+
+      value is Value.ListOf &&
+      pattern is C.Pattern.ListOf &&
+      value.elements.size == pattern.elements.size -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
 
       value is Value.CompoundOf &&
-      pattern is C.Pattern.CompoundOf -> value.elements.all { (name, value) -> matchValue(value.value, pattern.elements[name]!!) == true }
+      pattern is C.Pattern.CompoundOf              -> value.elements.all { (name, value) -> matchValue(value.value, pattern.elements[name]!!) == true }
 
       value is Value.TupleOf &&
-      pattern is C.Pattern.TupleOf    -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
+      pattern is C.Pattern.TupleOf                 -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
 
-      pattern is C.Pattern.Var        -> true
+      pattern is C.Pattern.Var                     -> true
 
-      pattern is C.Pattern.Drop       -> true
+      pattern is C.Pattern.Drop                    -> true
 
-      pattern is C.Pattern.Hole       -> null
+      pattern is C.Pattern.Hole                    -> null
 
-      else                            -> null
+      else                                         -> null
     }
   }
 

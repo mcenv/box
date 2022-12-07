@@ -502,6 +502,21 @@ class Elaborate private constructor(
         C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int.SET)
       }
 
+      pattern is R.Pattern.ListOf &&
+      pattern.elements.isEmpty() &&
+      expected is C.Type.List?    -> C.Pattern.ListOf(emptyList(), annotations, C.Type.List(C.Type.Union.END))
+
+      pattern is R.Pattern.ListOf &&
+      expected is C.Type.List?    -> {
+        val head = elaboratePattern(pattern.elements.first(), expected?.element)
+        val element = expected?.element ?: head.type
+        val tail =
+          pattern.elements
+            .drop(1)
+            .map { elaboratePattern(it, element) }
+        C.Pattern.ListOf(listOf(head) + tail, annotations, C.Type.List(element))
+      }
+
       pattern is R.Pattern.CompoundOf &&
       expected == null            -> {
         val elements = pattern.elements.associate { (key, element) ->
