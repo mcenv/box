@@ -83,27 +83,36 @@ class Pack private constructor(
       is L.Term.DoubleOf    -> push(P.Stack.DOUBLE, SourceProvider.Value(Nbt.Double(term.value)))
       is L.Term.StringOf    -> push(P.Stack.STRING, SourceProvider.Value(Nbt.String(term.value)))
       is L.Term.ByteArrayOf -> {
-        push(P.Stack.BYTE_ARRAY, SourceProvider.Value(Nbt.ByteArray(List(term.elements.size) { 0 })))
+        val elements = term.elements.map { (it as? L.Term.ByteOf)?.value ?: 0 }
+        push(P.Stack.BYTE_ARRAY, SourceProvider.Value(Nbt.ByteArray(elements)))
         term.elements.forEachIndexed { index, element ->
-          packTerm(element)
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }))))
-          drop(P.Stack.BYTE)
+          if (element !is L.Term.ByteOf) {
+            packTerm(element)
+            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(BYTE_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(BYTE)(-1) }))))
+            drop(P.Stack.BYTE)
+          }
         }
       }
       is L.Term.IntArrayOf  -> {
-        push(P.Stack.INT_ARRAY, SourceProvider.Value(Nbt.IntArray(List(term.elements.size) { 0 })))
+        val elements = term.elements.map { (it as? L.Term.IntOf)?.value ?: 0 }
+        push(P.Stack.INT_ARRAY, SourceProvider.Value(Nbt.IntArray(elements)))
         term.elements.forEachIndexed { index, element ->
-          packTerm(element)
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }))))
-          drop(P.Stack.INT)
+          if (element !is L.Term.IntOf) {
+            packTerm(element)
+            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(INT_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(INT)(-1) }))))
+            drop(P.Stack.INT)
+          }
         }
       }
       is L.Term.LongArrayOf -> {
-        push(P.Stack.LONG_ARRAY, SourceProvider.Value(Nbt.LongArray(List(term.elements.size) { 0 })))
+        val elements = term.elements.map { (it as? L.Term.LongOf)?.value ?: 0 }
+        push(P.Stack.LONG_ARRAY, SourceProvider.Value(Nbt.LongArray(elements)))
         term.elements.forEachIndexed { index, element ->
-          packTerm(element)
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LONG_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }))))
-          drop(P.Stack.LONG)
+          if (element !is L.Term.LongOf) {
+            packTerm(element)
+            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LONG_ARRAY)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(LONG)(-1) }))))
+            drop(P.Stack.LONG)
+          }
         }
       }
       is L.Term.ListOf      -> {
