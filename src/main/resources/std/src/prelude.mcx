@@ -1,3 +1,3 @@
-@export @builtin @static function command (_: string) → `⟨⟩;
+@export @builtin @static function command (command: string) → `⟨⟩ = (command command);
 
 @export function identity⟨a⟩ (a: a) → a = a;

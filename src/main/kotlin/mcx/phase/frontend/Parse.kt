@@ -86,14 +86,9 @@ class Parse private constructor(
             expect("→")
             skipTrivia()
             val result = parseType()
-            val body =
-              if (annotations.find { it.value == Annotation.BUILTIN } == null) {
-                expect('=')
-                skipTrivia()
-                parseTerm()
-              } else {
-                S.Term.Hole(until())
-              }
+            expect('=')
+            skipTrivia()
+            val body = parseTerm()
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
           "type"            -> {

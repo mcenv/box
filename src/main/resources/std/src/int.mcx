@@ -1,39 +1,109 @@
-@export @builtin function + (_: (int, int)) → int;
+@export @builtin function + (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx");
 
-@export @builtin function - (_: (int, int)) → int;
+@export @builtin function - (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx");
 
-@export @builtin function * (_: (int, int)) → int;
+@export @builtin function * (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx");
 
-@export @builtin function / (_: (int, int)) → int;
+@export @builtin function / (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx");
 
-@export @builtin function % (_: (int, int)) → int;
+@export @builtin function % (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx");
 
-@export @builtin function min (_: (int, int)) → int;
+@export @builtin function min (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx");
 
-@export @builtin function max (_: (int, int)) → int;
+@export @builtin function max (@no_drop _: (int, int)) → int =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  $(command "execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx");
 
-@export @builtin function = (_: (int, int)) → bool;
+@export @builtin function = (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b");
 
-@export @builtin function < (_: (int, int)) → bool;
+@export @builtin function < (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b");
 
-@export @builtin function <= (_: (int, int)) → bool;
+@export @builtin function <= (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b");
 
-@export @builtin function > (_: (int, int)) → bool;
+@export @builtin function > (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b");
 
-@export @builtin function >= (_: (int, int)) → bool;
+@export @builtin function >= (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b");
 
-@export @builtin function != (_: (int, int)) → bool;
+@export @builtin function != (@no_drop _: (int, int)) → bool =
+  let _ = $(command "execute store result score #0 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data remove storage mcx: int[-1]")
+  let _ = $(command "execute store result score #1 mcx run data get storage mcx: int[-1]")
+  let _ = $(command "data modify storage mcx: byte append value 1b")
+  $(command "execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b");
 
-@export @builtin function to_byte (_: int) → byte;
+@export @builtin function to_byte (_: int) → byte =
+  let _ = $(command "data modify storage mcx: byte append value 0b")
+  $(command "execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]");
 
-@export @builtin function to_short (_: int) → short;
+@export @builtin function to_short (_: int) → short =
+  let _ = $(command "data modify storage mcx: short append value 0s")
+  $(command "execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]");
 
-@export @builtin function to_int (_: int) → int;
+@export @builtin function to_int (a: int) → int =
+  (identity a);
 
-@export @builtin function to_long (_: int) → long;
+@export @builtin function to_long (_: int) → long =
+  let _ = $(command "data modify storage mcx: long append value 0l")
+  $(command "execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]");
 
-@export @builtin function to_float (_: int) → float;
+@export @builtin function to_float (_: int) → float =
+  let _ = $(command "data modify storage mcx: float append value 0.0f")
+  $(command "execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]");
 
-@export @builtin function to_double (_: int) → double;
+@export @builtin function to_double (_: int) → double =
+  let _ = $(command "data modify storage mcx: double append value 0.0")
+  $(command "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]");
 
-@export @builtin function dup (_: int) → (int, int);
+@export @builtin function dup (@no_drop _: int) → (int, int) =
+  $(command "data modify storage mcx: int append from storage mcx: int[-1]");

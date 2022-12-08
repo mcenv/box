@@ -24,15 +24,9 @@ class Lift private constructor(
       }
       is C.Definition.Function -> {
         val env = emptyEnv()
-        if (L.Annotation.BUILTIN in annotations) {
-          val param = liftType(definition.binder.type)
-          val result = liftType(definition.result)
-          liftedDefinitions += L.Definition.Builtin(annotations, definition.name, param, result)
-        } else {
-          val binder = env.liftPattern(definition.binder)
-          val body = env.liftTerm(definition.body)
-          liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
-        }
+        val binder = env.liftPattern(definition.binder)
+        val body = env.liftTerm(definition.body)
+        liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
       }
       is C.Definition.Type     -> Unit
     }
@@ -104,7 +98,7 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf   ->
+      is C.Term.FunOf       ->
         // remap levels
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
@@ -130,18 +124,18 @@ class Lift private constructor(
           dispatchedDefinitions += bodyFunction
           L.Term.FunOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
-      is C.Term.Apply   -> {
+      is C.Term.Apply       -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
       }
-      is C.Term.If      -> {
+      is C.Term.If          -> {
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let     -> {
+      is C.Term.Let         -> {
         val init = liftTerm(term.init)
         val (binder, body) = restoring {
           val binder = liftPattern(term.binder)
@@ -150,16 +144,16 @@ class Lift private constructor(
         }
         L.Term.Let(binder, init, body, type)
       }
-      is C.Term.Var     -> L.Term.Var(this[term.name], type)
-      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Is      ->
+      is C.Term.Var         -> L.Term.Var(this[term.name], type)
+      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is          ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Command -> L.Term.Command(term.value, type)
-      is C.Term.CodeOf  -> error("unexpected: code_of")
-      is C.Term.Splice  -> error("unexpected: splice")
-      is C.Term.Hole    -> error("unexpected: hole")
+      is C.Term.Command     -> L.Term.Command(term.value, type)
+      is C.Term.CodeOf      -> error("unexpected: code_of")
+      is C.Term.Splice      -> error("unexpected: splice")
+      is C.Term.Hole        -> error("unexpected: hole")
     }
   }
 
