@@ -85,7 +85,7 @@
     },
     {
       "name": "entity.name.function.mcx",
-      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+(?:\\.[^ \n\r:;,()\\[\\]{}⟨⟩]+)+"
+      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩.]+(?=⟨)"
     },
     {
       "name": "variable.mcx",

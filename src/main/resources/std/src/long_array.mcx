@@ -1,3 +1,3 @@
 @export @builtin function size (_: [long;]) → int =
-  let _ = $(command "data modify storage mcx: int append value 0")
-  $(command "execute store result storage mcx: int[-1] int 1 if data storage mcx: long_array[-1][]");
+  let _ = $command⟨⟩ "data modify storage mcx: int append value 0";
+  $command⟨⟩ "execute store result storage mcx: int[-1] int 1 if data storage mcx: long_array[-1][]";
