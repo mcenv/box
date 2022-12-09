@@ -22,19 +22,17 @@ class Resolve private constructor(
         input.module.name / definition.name.value
       }
     } +
-    dependencies.flatMap { dependency ->
-      when (val module = dependency.module) {
+    dependencies.mapNotNull { dependency ->
+      when (val definition = dependency.module) {
         null -> {
-          diagnostics += Diagnostic.ModuleNotFound(dependency.location, dependency.range!!)
-          emptyList()
+          diagnostics += Diagnostic.DefinitionNotFound(dependency.location.toString(), dependency.range!!)
+          null
         }
         else -> {
-          module.definitions.mapNotNull { definition ->
-            if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.EXPORT }) {
-              null
-            } else {
-              definition.name.value
-            }
+          if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.EXPORT }) {
+            null
+          } else {
+            definition.name.value
           }
         }
       }
@@ -51,7 +49,9 @@ class Resolve private constructor(
   private fun resolveModule(
     module: S.Module,
   ): R.Module {
-    val definitions = module.definitions.map { resolveDefinition(it) }
+    val definitions = module.definitions
+      .map { resolveDefinition(it) }
+      .associateBy { it.name.value }
     return R.Module(module.name, module.imports, definitions)
   }
 
@@ -293,8 +293,8 @@ class Resolve private constructor(
   }
 
   data class Dependency(
-    val location: ModuleLocation,
-    val module: R.Module?,
+    val location: DefinitionLocation,
+    val module: R.Definition?,
     val range: Range?,
   )
 

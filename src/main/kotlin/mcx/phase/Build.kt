@@ -109,7 +109,7 @@ class Build(
       }
     }
 
-    val definitions = fetch(Key.ResolveResult(location)).value!!.module.definitions.map { it.name.value }
+    val definitions = fetch(Key.ResolveResult(location)).value!!.module.definitions
     return coroutineScope {
       close(Key.Text(location))
       close(Key.ParseResult(location))
@@ -117,9 +117,9 @@ class Build(
       close(Key.Signature(location))
       close(Key.ElaborateResult(location))
       close(Key.ZonkResult(location))
-      definitions.forEach {
-        close(Key.StageResult(it))
-        close(Key.LiftResult(it))
+      definitions.forEach { (location, _) ->
+        close(Key.StageResult(location))
+        close(Key.LiftResult(location))
       }
     }
   }
@@ -174,16 +174,19 @@ class Build(
                 return@coroutineScope Value.NULL
               }
               val dependencyHashes = surface.value.module.imports
-                .map { async { fetch(Key.ResolveResult(it.value)) } }
+                .map { async { fetch(Key.ResolveResult(it.value.module)) } }
                 .plus(async { if (location == PRELUDE) null else fetch(Key.ResolveResult(PRELUDE)) })
                 .awaitAll()
                 .filterNotNull()
                 .map { it.hash }
               val dependencies = surface.value.module.imports
-                .map { async { Resolve.Dependency(it.value, fetch(Key.ResolveResult(it.value)).value?.module, it.range) } }
-                .plus(async { if (location == PRELUDE) null else Resolve.Dependency(PRELUDE, fetch(Key.ResolveResult(PRELUDE)).value!!.module, null) })
+                .map { async { Resolve.Dependency(it.value, fetch(Key.ResolveResult(it.value.module)).value?.module?.definitions?.get(it.value), it.range) } }
+                .plus(
+                  if (location == PRELUDE) emptyList() else fetch(Key.ResolveResult(PRELUDE)).value!!.module.definitions.map {
+                    async { Resolve.Dependency(it.key, it.value, null) }
+                  }
+                )
                 .awaitAll()
-                .filterNotNull()
               val hash = Objects.hash(surface.hash, dependencyHashes)
               if (value == null || value.hash != hash) {
                 Value(Resolve(this@fetch, dependencies, surface.value), hash)
@@ -210,7 +213,7 @@ class Build(
               val resolved = fetch(Key.ResolveResult(location)) as Value<Resolve.Result>
               val signature = fetch(Key.Signature(location)) as Value<Elaborate.Result>
               val results = resolved.value.module.imports
-                .map { async { fetch(Key.Signature(it.value)) } }
+                .map { async { fetch(Key.Signature(it.value.module)) } }
                 .plus(async { fetch(Key.Signature(PRELUDE)) })
                 .awaitAll()
               val dependencies = results
@@ -241,7 +244,7 @@ class Build(
               val zonked = fetch(Key.ZonkResult(location.module))
               val definition = zonked.value.module.definitions.find { it.name == location }!!
               val results = fetch(Key.ParseResult(location.module)).value!!.module.imports
-                .map { async { fetch(Key.ZonkResult(it.value)) } }
+                .map { async { fetch(Key.ZonkResult(it.value.module)) } }
                 .plus(async { fetch(Key.ZonkResult(PRELUDE)) })
                 .awaitAll()
               val dependencies = results

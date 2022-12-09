@@ -60,7 +60,7 @@ class Elaborate private constructor(
     module: R.Module,
   ): C.Module {
     completionDefinitions()
-    val definitions = module.definitions.mapNotNull { elaborateDefinition(it) }
+    val definitions = module.definitions.values.mapNotNull { elaborateDefinition(it) }
     return C.Module(module.name, definitions)
   }
 

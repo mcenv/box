@@ -6,7 +6,7 @@ import org.eclipse.lsp4j.Range
 object Surface {
   data class Module(
     val name: ModuleLocation,
-    val imports: List<Ranged<ModuleLocation>>,
+    val imports: List<Ranged<DefinitionLocation>>,
     val definitions: List<Definition>,
   )
 

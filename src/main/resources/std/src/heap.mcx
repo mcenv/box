@@ -1,5 +1,9 @@
 import {
-  int,
+  int.+,
+  int./,
+  int.%,
+  int.dup,
+  int.to_double,
 }
 
 function set_pos (addr: int) → () =

@@ -6,8 +6,8 @@ import org.eclipse.lsp4j.Range
 object Resolved {
   data class Module(
     val name: ModuleLocation,
-    val imports: List<Ranged<ModuleLocation>>,
-    val definitions: List<Definition>,
+    val imports: List<Ranged<DefinitionLocation>>,
+    val definitions: Map<DefinitionLocation, Definition>,
   )
 
   sealed interface Definition {

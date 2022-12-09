@@ -29,7 +29,10 @@ class Parse private constructor(
       skip("import".length)
       skipTrivia()
       parseList(',', '{', '}') {
-        parseRanged { ModuleLocation(readWord().split('.')) }
+        parseRanged {
+          val parts = readWord().split('.')
+          ModuleLocation(parts.dropLast(1)) / parts.last()
+        }
       }
     } else {
       emptyList()
