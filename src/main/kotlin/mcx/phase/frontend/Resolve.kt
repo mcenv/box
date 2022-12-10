@@ -50,7 +50,7 @@ class Resolve private constructor(
     module: S.Module,
   ): R.Module {
     val definitions = module.definitions
-      .map { resolveDefinition(it) }
+      .mapNotNull { definition -> resolveDefinition(definition).takeUnless { it is R.Definition.Hole } }
       .associateBy { it.name.value }
     return R.Module(module.name, module.imports, definitions)
   }
