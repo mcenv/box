@@ -16,7 +16,9 @@ private val intArray: ModuleLocation = ModuleLocation(Stack.INT_ARRAY.id)
 private val longArray: ModuleLocation = ModuleLocation(Stack.LONG_ARRAY.id)
 
 val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
-  Command,
+  MagicCommand,
+  MagicErase,
+  MagicLift,
   IntAdd,
   IntSub,
   IntMul,
@@ -51,10 +53,22 @@ sealed class Builtin(
   abstract fun eval(arg: Value): Value?
 }
 
-private object Command : Builtin(magic / "command") {
+private object MagicCommand : Builtin(magic / "command") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.StringOf) return null
     return Value.CodeOf(lazyOf(Value.Command(arg.value)))
+  }
+}
+
+private object MagicErase : Builtin(magic / "erase") {
+  override fun eval(arg: Value): Value? {
+    TODO()
+  }
+}
+
+private object MagicLift : Builtin(magic / "lift") {
+  override fun eval(arg: Value): Value {
+    return Value.CodeOf(lazyOf(arg))
   }
 }
 

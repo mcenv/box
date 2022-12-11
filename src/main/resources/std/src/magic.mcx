@@ -1,5 +1,11 @@
+@export function unreachable () → ⟨⟩ =
+  $command⟨⟩ "";
+
 @export @builtin @static function command (command: string) → `⟨⟩ =
   unreachable⟨⟩ ();
 
-@export function unreachable () → ⟨⟩ =
-  $command⟨⟩ "";
+@export @builtin @static function erase⟨a⟩ () → string =
+  unreachable⟨⟩ ();
+
+@export @builtin @static function lift⟨a⟩ (a: a) → `a =
+  unreachable⟨⟩ ();
