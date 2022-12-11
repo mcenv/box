@@ -3,13 +3,9 @@ package mcx.phase.frontend
 import mcx.ast.*
 import mcx.ast.Annotation
 import mcx.lsp.highlight
-import mcx.phase.Context
-import mcx.phase.Normalize.TypeEnv
+import mcx.phase.*
 import mcx.phase.Normalize.evalType
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
-import mcx.phase.prettyKind
-import mcx.phase.prettyPattern
-import mcx.phase.prettyType
 import mcx.util.Ranged
 import mcx.util.contains
 import mcx.util.rangeTo
@@ -417,7 +413,7 @@ class Elaborate private constructor(
                   }
                   term.typeArgs.value.map { elaborateType(it) }
                 }
-              val typeEnv = TypeEnv(definitions, typeArgs, false)
+              val typeEnv = Normalize.Env.emptyEnv(definitions, typeArgs, false)
               val param = typeEnv.evalType(definition.binder.type)
               val arg = elaborateTerm(term.arg, param)
               val result = typeEnv.evalType(definition.result)
@@ -737,13 +733,13 @@ class Elaborate private constructor(
       (
           type1.name.module == input.module.name ||
           Annotation.INLINE in definitions[type1.name]!!.annotations
-      )                         -> TypeEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
+      ) -> Normalize.Env.emptyEnv(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
       (
           type2.name.module == input.module.name ||
           Annotation.INLINE in definitions[type2.name]!!.annotations
-      )                         -> type1 isSubtypeOf TypeEnv(definitions, emptyList(), true).evalType(type2)
+      ) -> type1 isSubtypeOf Normalize.Env.emptyEnv(definitions, emptyList(), true).evalType(type2)
 
       type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
       type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)

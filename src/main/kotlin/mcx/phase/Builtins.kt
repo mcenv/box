@@ -1,5 +1,6 @@
 package mcx.phase
 
+import mcx.ast.Core.Type
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.ast.Packed.Stack
@@ -50,30 +51,68 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
 sealed class Builtin(
   val name: DefinitionLocation,
 ) {
-  abstract fun eval(arg: Value): Value?
+  abstract fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value?
 }
 
 private object MagicCommand : Builtin(magic / "command") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.StringOf) return null
     return Value.CodeOf(lazyOf(Value.Command(arg.value)))
   }
 }
 
 private object MagicErase : Builtin(magic / "erase") {
-  override fun eval(arg: Value): Value? {
-    TODO()
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
+    return when (val a = typeArgs.first()) {
+      is Type.Bool      -> Value.StringOf(Stack.BYTE.id)
+      is Type.Byte      -> Value.StringOf(Stack.BYTE.id)
+      is Type.Short     -> Value.StringOf(Stack.SHORT.id)
+      is Type.Int       -> Value.StringOf(Stack.INT.id)
+      is Type.Long      -> Value.StringOf(Stack.LONG.id)
+      is Type.Float     -> Value.StringOf(Stack.FLOAT.id)
+      is Type.Double    -> Value.StringOf(Stack.DOUBLE.id)
+      is Type.String    -> Value.StringOf(Stack.STRING.id)
+      is Type.ByteArray -> Value.StringOf(Stack.BYTE_ARRAY.id)
+      is Type.IntArray  -> Value.StringOf(Stack.INT_ARRAY.id)
+      is Type.LongArray -> Value.StringOf(Stack.LONG_ARRAY.id)
+      is Type.List      -> Value.StringOf(Stack.LIST.id)
+      is Type.Compound  -> Value.StringOf(Stack.COMPOUND.id)
+      is Type.Ref       -> Value.StringOf(Stack.INT.id)
+      is Type.Tuple     -> error("unexpected type: ${prettyType(a)}")
+      is Type.Union     -> null // TODO
+      is Type.Fun       -> Value.StringOf(Stack.COMPOUND.id)
+      is Type.Code      -> error("unexpected type: ${prettyType(a)}")
+      is Type.Var       -> error("unexpected type: ${prettyType(a)}")
+      is Type.Run       -> error("unexpected type: ${prettyType(a)}")
+      is Type.Meta      -> error("unexpected type: ${prettyType(a)}")
+      is Type.Hole      -> error("unexpected type: ${prettyType(a)}")
+    }
   }
 }
 
 private object MagicLift : Builtin(magic / "lift") {
-  override fun eval(arg: Value): Value {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value {
     return Value.CodeOf(lazyOf(arg))
   }
 }
 
 private object IntAdd : Builtin(int / "+") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -84,7 +123,10 @@ private object IntAdd : Builtin(int / "+") {
 }
 
 private object IntSub : Builtin(int / "-") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -95,7 +137,10 @@ private object IntSub : Builtin(int / "-") {
 }
 
 private object IntMul : Builtin(int / "*") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -106,7 +151,10 @@ private object IntMul : Builtin(int / "*") {
 }
 
 private object IntDiv : Builtin(int / "/") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -121,7 +169,10 @@ private object IntDiv : Builtin(int / "/") {
 }
 
 private object IntMod : Builtin(int / "%") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -136,7 +187,10 @@ private object IntMod : Builtin(int / "%") {
 }
 
 private object IntMin : Builtin(int / "min") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -147,7 +201,10 @@ private object IntMin : Builtin(int / "min") {
 }
 
 private object IntMax : Builtin(int / "max") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -158,7 +215,10 @@ private object IntMax : Builtin(int / "max") {
 }
 
 private object IntEq : Builtin(int / "=") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -169,7 +229,10 @@ private object IntEq : Builtin(int / "=") {
 }
 
 private object IntLt : Builtin(int / "<") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -180,7 +243,10 @@ private object IntLt : Builtin(int / "<") {
 }
 
 private object IntLe : Builtin(int / "<=") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -191,7 +257,10 @@ private object IntLe : Builtin(int / "<=") {
 }
 
 private object IntGt : Builtin(int / ">") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -202,7 +271,10 @@ private object IntGt : Builtin(int / ">") {
 }
 
 private object IntGe : Builtin(int / ">=") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -213,7 +285,10 @@ private object IntGe : Builtin(int / ">=") {
 }
 
 private object IntNe : Builtin(int / "!=") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.IntOf) return null
@@ -224,68 +299,98 @@ private object IntNe : Builtin(int / "!=") {
 }
 
 private object IntToByte : Builtin(int / "to_byte") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.ByteOf(arg.value.toByte())
   }
 }
 
 private object IntToShort : Builtin(int / "to_short") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.ShortOf(arg.value.toShort())
   }
 }
 
 private object IntToInt : Builtin(int / "to_int") {
-  override fun eval(arg: Value): Value {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value {
     return arg
   }
 }
 
 private object IntToLong : Builtin(int / "to_long") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.LongOf(arg.value.toLong())
   }
 }
 
 private object IntToFloat : Builtin(int / "to_float") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.FloatOf(arg.value.toFloat())
   }
 }
 
 private object IntToDouble : Builtin(int / "to_double") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.DoubleOf(arg.value.toDouble())
   }
 }
 
 private object IntToString : Builtin(int / "to_string") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntOf) return null
     return Value.StringOf(arg.value.toString())
   }
 }
 
 private object IntDup : Builtin(int / "dup") {
-  override fun eval(arg: Value): Value {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value {
     return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))
   }
 }
 
 private object StringSize : Builtin(string / "size") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.StringOf) return null
     return Value.IntOf(arg.value.length)
   }
 }
 
 private object StringConcat : Builtin(string / "++") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
     if (a !is Value.StringOf) return null
@@ -296,21 +401,30 @@ private object StringConcat : Builtin(string / "++") {
 }
 
 private object ByteArraySize : Builtin(byteArray / "size") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.ByteArrayOf) return null
     return Value.IntOf(arg.elements.size)
   }
 }
 
 private object IntArraySize : Builtin(intArray / "size") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.IntArrayOf) return null
     return Value.IntOf(arg.elements.size)
   }
 }
 
 private object LongArraySize : Builtin(longArray / "size") {
-  override fun eval(arg: Value): Value? {
+  override fun eval(
+    arg: Value,
+    typeArgs: List<Type>,
+  ): Value? {
     if (arg !is Value.LongArrayOf) return null
     return Value.IntOf(arg.elements.size)
   }

@@ -3,7 +3,7 @@ package mcx.phase.backend
 import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
 import mcx.phase.Context
-import mcx.phase.Normalize.TypeEnv
+import mcx.phase.Normalize.Env
 import mcx.phase.Normalize.evalType
 import mcx.phase.Normalize.normalizeTerm
 import mcx.phase.prettyType
@@ -17,11 +17,11 @@ class Stage private constructor(
   private fun stage(
     definition: C.Definition,
   ): List<C.Definition> {
-    TypeEnv(dependencies, emptyList(), true).stageDefinition(definition)
+    Env.emptyEnv(dependencies, emptyList(), true).stageDefinition(definition)
     return stagedDefinitions
   }
 
-  private fun TypeEnv.stageDefinition(
+  private fun Env.stageDefinition(
     definition: C.Definition,
   ) {
     when (definition) {
@@ -50,7 +50,7 @@ class Stage private constructor(
     }
   }
 
-  private fun TypeEnv.stageTerm(
+  private fun Env.stageTerm(
     term: C.Term,
   ): C.Term {
     val type = evalType(term.type)
@@ -75,10 +75,10 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run     -> {
+      is C.Term.Run         -> {
         val definition = dependencies[term.name] as C.Definition.Function
         if (Annotation.INLINE in definition.annotations) {
-          stageTerm(normalizeTerm(dependencies, term))
+          stageTerm(normalizeTerm(dependencies, term.typeArgs, term))
         } else if (term.typeArgs.isEmpty()) {
           val arg = stageTerm(term.arg)
           C.Term.Run(term.name, emptyList(), arg, type)
@@ -86,7 +86,7 @@ class Stage private constructor(
           val typeArgs = term.typeArgs.map { evalType(it) }
           val mangledName = mangle(term.name, typeArgs)
           val arg = stageTerm(term.arg)
-          val typeEnv = TypeEnv(dependencies, typeArgs, true)
+          val typeEnv = Env.emptyEnv(dependencies, typeArgs, true)
           typeEnv.stageDefinition(
             C.Definition
               .Function(
@@ -103,16 +103,16 @@ class Stage private constructor(
           C.Term.Run(mangledName, emptyList(), arg, type)
         }
       }
-      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Index   -> C.Term.Index(stageTerm(term.target), stageTerm(term.index), type)
-      is C.Term.Command -> C.Term.Command(term.value, type)
-      is C.Term.CodeOf  -> C.Term.CodeOf(stageTerm(term.element), type)
-      is C.Term.Splice  -> stageTerm(normalizeTerm(dependencies, term))
-      is C.Term.Hole    -> C.Term.Hole(type)
+      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Index       -> C.Term.Index(stageTerm(term.target), stageTerm(term.index), type)
+      is C.Term.Command     -> C.Term.Command(term.value, type)
+      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, emptyList(), term))
+      is C.Term.Hole        -> C.Term.Hole(type)
     }
   }
 
-  private fun TypeEnv.stagePattern(
+  private fun Env.stagePattern(
     pattern: C.Pattern,
   ): C.Pattern {
     val type = evalType(pattern.type)
