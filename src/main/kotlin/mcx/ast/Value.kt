@@ -110,6 +110,12 @@ sealed interface Value {
     val scrutineeType: Core.Type,
   ) : Value
 
+  class Index(
+    val target: Lazy<Value>,
+    val index: Lazy<Value>,
+    val type: Core.Type,
+  ) : Value
+
   class Command(
     val value: String,
   ) : Value

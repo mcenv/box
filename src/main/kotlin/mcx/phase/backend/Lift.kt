@@ -129,13 +129,13 @@ class Lift private constructor(
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
       }
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
-      is C.Term.Let         -> {
+      is C.Term.Let     -> {
         val init = liftTerm(term.init)
         val (binder, body) = restoring {
           val binder = liftPattern(term.binder)
@@ -144,16 +144,21 @@ class Lift private constructor(
         }
         L.Term.Let(binder, init, body, type)
       }
-      is C.Term.Var         -> L.Term.Var(this[term.name], type)
-      is C.Term.Run         -> L.Term.Run(term.name, liftTerm(term.arg), type)
-      is C.Term.Is          ->
+      is C.Term.Var     -> L.Term.Var(this[term.name], type)
+      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
+      is C.Term.Is      ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Command     -> L.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> error("unexpected: code_of")
-      is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.Hole        -> error("unexpected: hole")
+      is C.Term.Index   -> {
+        val target = liftTerm(term.target)
+        val index = liftTerm(term.index) as L.Term.IntOf
+        L.Term.Index(target, index.value, type)
+      }
+      is C.Term.Command -> L.Term.Command(term.value, type)
+      is C.Term.CodeOf  -> error("unexpected: code_of")
+      is C.Term.Splice  -> error("unexpected: splice")
+      is C.Term.Hole    -> error("unexpected: hole")
     }
   }
 
@@ -192,21 +197,22 @@ class Lift private constructor(
       is C.Term.ByteArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.IntArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.RefOf       -> freeVars(term.element)
-      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.FunOf       -> freeVars(term.body).also { it -= boundVars(term.binder) }
-      is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
-      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
-      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Run         -> freeVars(term.arg)
-      is C.Term.Is          -> freeVars(term.scrutinee)
-      is C.Term.Command     -> linkedMapOf()
-      is C.Term.CodeOf      -> error("unexpected: code_of")
-      is C.Term.Splice      -> error("unexpected: splice")
-      is C.Term.Hole        -> error("unexpected: hole")
+      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.RefOf      -> freeVars(term.element)
+      is C.Term.TupleOf    -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.FunOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.Apply      -> freeVars(term.operator).also { it += freeVars(term.arg) }
+      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var        -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Run        -> freeVars(term.arg)
+      is C.Term.Is         -> freeVars(term.scrutinee)
+      is C.Term.Index      -> freeVars(term.target)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.CodeOf     -> error("unexpected: code_of")
+      is C.Term.Splice     -> error("unexpected: splice")
+      is C.Term.Hole       -> error("unexpected: hole")
     }
   }
 

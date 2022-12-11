@@ -400,7 +400,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Run &&
-      expected == null              -> {
+      expected == null         -> {
         if (isLeaf()) {
           diagnostics += Diagnostic.LeafFunctionCannotRunOtherFunctions(term.range)
           C.Term.Hole(C.Type.Hole)
@@ -432,7 +432,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Is &&
-      expected is C.Type.Bool?      -> {
+      expected is C.Type.Bool? -> {
         val scrutinee = elaborateTerm(term.scrutinee)
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
@@ -440,8 +440,16 @@ class Elaborate private constructor(
         C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
       }
 
+      term is R.Term.Index &&
+      expected == null         -> {
+        val elementType = metaEnv.freshType(term.target.range, C.Kind.Type.ONE)
+        val target = elaborateTerm(term.target, C.Type.Code(C.Type.List(elementType))) // TODO: use collection type
+        val index = elaborateTerm(term.index, C.Type.Int.SET)
+        C.Term.Index(target, index, C.Type.Code(elementType))
+      }
+
       term is R.Term.CodeOf &&
-      expected is C.Type.Code?      -> {
+      expected is C.Type.Code? -> {
         if (isMeta()) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
@@ -453,7 +461,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Splice         -> {
+      term is R.Term.Splice    -> {
         val element = splicing {
           elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
         }

@@ -296,6 +296,12 @@ object Resolved {
       override val range: Range,
     ) : Term
 
+    data class Index(
+      val target: Term,
+      val index: Term,
+      override val range: Range,
+    ) : Term
+
     data class CodeOf(
       val element: Term,
       override val range: Range,

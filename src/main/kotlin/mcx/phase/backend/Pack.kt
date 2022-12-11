@@ -105,25 +105,25 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.ListOf      -> {
+      is L.Term.ListOf     -> {
         push(P.Stack.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
           val elementType = eraseType(term.elements.first().type).first()
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == P.Stack.LIST) -2 else -1
-            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LIST)(index) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(elementType.key)(-1) }))))
+            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(LIST)(index) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(elementType.id)(-1) }))))
             drop(elementType)
           }
         }
       }
-      is L.Term.CompoundOf  -> {
+      is L.Term.CompoundOf -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
           val valueType = eraseType(element.type).first()
           val index = if (valueType == P.Stack.COMPOUND) -2 else -1
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.key)(-1) }))))
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.id)(-1) }))))
           drop(valueType)
         }
       }
@@ -137,12 +137,12 @@ class Pack private constructor(
           packTerm(element)
         }
       }
-      is L.Term.FunOf       -> {
+      is L.Term.FunOf      -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.vars.forEach { (name, level, type) ->
           val stack = eraseType(type).first()
           val index = this[level, stack]
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.key)(index) }))))
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(COMPOUND)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) }))))
         }
       }
       is L.Term.If          -> {
@@ -157,7 +157,7 @@ class Pack private constructor(
                                            RunFunction(packDefinitionLocation(term.elseName))))
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let         -> {
+      is L.Term.Let        -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -167,12 +167,12 @@ class Pack private constructor(
           dropPattern(term.binder, bodyTypes)
         }
       }
-      is L.Term.Var         -> {
+      is L.Term.Var        -> {
         val type = eraseType(term.type).first()
         val index = this[term.level, type]
-        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.key)(index) })))
+        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
       }
-      is L.Term.Run         -> {
+      is L.Term.Run        -> {
         packTerm(term.arg)
 
         +RunFunction(packDefinitionLocation(term.name))
@@ -181,11 +181,17 @@ class Pack private constructor(
         }
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Is          -> {
+      is L.Term.Is         -> {
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
-      is L.Term.Command     -> {
+      is L.Term.Index      -> {
+        val type = eraseType(term.type).first()
+        packTerm(term.target)
+        +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(type.id) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(LIST)(-1)(term.index) }))))
+        drop(P.Stack.LIST, listOf(type))
+      }
+      is L.Term.Command    -> {
         !{ Raw("# command") }
         +Raw(term.value)
         eraseType(term.type).forEach { push(it, null) }
@@ -338,8 +344,8 @@ class Pack private constructor(
     source: SourceProvider?,
   ) {
     if (source != null && stack != P.Stack.END) {
-      !{ Raw("# push ${stack.key}") }
-      +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(stack.key) }), DataManipulator.Append(source))
+      !{ Raw("# push ${stack.id}") }
+      +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(stack.id) }), DataManipulator.Append(source))
     }
     entry(stack) += null
   }
@@ -351,8 +357,8 @@ class Pack private constructor(
   ) {
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != P.Stack.END) {
-      !{ Raw("# drop ${drop.key} under ${keeps.joinToString(", ", "[", "]") { it.key }}") }
-      +RemoveData(DataAccessor.Storage(MCX, nbtPath { it(drop.key)(index) }))
+      !{ Raw("# drop ${drop.id} under ${keeps.joinToString(", ", "[", "]") { it.id }}") }
+      +RemoveData(DataAccessor.Storage(MCX, nbtPath { it(drop.id)(index) }))
     }
     val entry = entry(drop)
     entry.removeAt(entry.size + index)

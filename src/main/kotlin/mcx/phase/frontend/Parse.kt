@@ -541,23 +541,35 @@ class Parse private constructor(
     ranging {
       var term = parseTermAtom()
       skipTrivia()
-      while (canRead() && peek().isWordPart()) {
-        val name = parseRanged { readWord() }
-        skipTrivia()
-        term = when (name.value) {
-          "is" -> {
-            val right = parsePattern()
-            S.Term.Is(term, right, until())
+      while (canRead()) {
+        val char = peek()
+        when {
+          char == '['       -> {
+            skip()
+            val index = parseTerm()
+            expect(']')
+            term = S.Term.Index(term, index, until())
           }
-          "of" -> {
-            val right = parseTerm()
-            S.Term.Apply(term, right, until())
+          char.isWordPart() -> {
+            val name = parseRanged { readWord() }
+            skipTrivia()
+            term = when (name.value) {
+              "is" -> {
+                val right = parsePattern()
+                S.Term.Is(term, right, until())
+              }
+              "of" -> {
+                val right = parseTerm()
+                S.Term.Apply(term, right, until())
+              }
+              else -> {
+                val right = parseTermAtom()
+                val range = until()
+                S.Term.Run(name, Ranged(emptyList(), range), S.Term.TupleOf(listOf(term, right), range), range)
+              }
+            }
           }
-          else -> {
-            val right = parseTermAtom()
-            val range = until()
-            S.Term.Run(name, Ranged(emptyList(), range), S.Term.TupleOf(listOf(term, right), range), range)
-          }
+          else              -> break
         }
         skipTrivia()
       }

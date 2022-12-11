@@ -75,7 +75,7 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val definition = dependencies[term.name] as C.Definition.Function
         if (Annotation.INLINE in definition.annotations) {
           stageTerm(normalizeTerm(dependencies, term))
@@ -103,11 +103,12 @@ class Stage private constructor(
           C.Term.Run(mangledName, emptyList(), arg, type)
         }
       }
-      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Command     -> C.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
-      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, term))
-      is C.Term.Hole        -> C.Term.Hole(type)
+      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Index   -> C.Term.Index(stageTerm(term.target), stageTerm(term.index), type)
+      is C.Term.Command -> C.Term.Command(term.value, type)
+      is C.Term.CodeOf  -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice  -> stageTerm(normalizeTerm(dependencies, term))
+      is C.Term.Hole    -> C.Term.Hole(type)
     }
   }
 

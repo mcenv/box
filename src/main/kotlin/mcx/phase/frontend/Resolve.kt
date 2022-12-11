@@ -174,7 +174,7 @@ class Resolve private constructor(
         }
         R.Term.Let(binder, init, body, term.range)
       }
-      is S.Term.Var         -> {
+      is S.Term.Var    -> {
         when (val level = getVar(term.name)) {
           -1   -> {
             diagnostics += Diagnostic.VarNotFound(term.name, term.range)
@@ -183,7 +183,7 @@ class Resolve private constructor(
           else -> R.Term.Var(term.name, level, term.range)
         }
       }
-      is S.Term.Run         -> {
+      is S.Term.Run    -> {
         when (val location = resolveName(term.name.value, term.name.range)) {
           null -> R.Term.Hole(term.range)
           else -> {
@@ -194,14 +194,19 @@ class Resolve private constructor(
           }
         }
       }
-      is S.Term.Is          -> {
+      is S.Term.Index  -> {
+        val target = resolveTerm(term.target)
+        val index = resolveTerm(term.index)
+        R.Term.Index(target, index, term.range)
+      }
+      is S.Term.Is     -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = restoring { resolvePattern(term.scrutineer) }
         R.Term.Is(scrutinee, scrutineer, term.range)
       }
-      is S.Term.CodeOf      -> R.Term.CodeOf(resolveTerm(term.element), term.range)
-      is S.Term.Splice      -> R.Term.Splice(resolveTerm(term.element), term.range)
-      is S.Term.Hole        -> R.Term.Hole(term.range)
+      is S.Term.CodeOf -> R.Term.CodeOf(resolveTerm(term.element), term.range)
+      is S.Term.Splice -> R.Term.Splice(resolveTerm(term.element), term.range)
+      is S.Term.Hole   -> R.Term.Hole(term.range)
     }
   }
 

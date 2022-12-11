@@ -185,7 +185,7 @@ object Packed {
   }
 
   enum class Stack(
-    val key: String,
+    val id: String,
   ) {
     END(mcx.phase.END),
     BYTE(mcx.phase.BYTE),
