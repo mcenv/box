@@ -186,10 +186,11 @@ class Pack private constructor(
         matchPattern(term.scrutineer)
       }
       is L.Term.Index      -> {
-        val type = eraseType(term.type).first()
         packTerm(term.target)
-        +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(type.id) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(LIST)(-1)(term.index) }))))
-        drop(P.Stack.LIST, listOf(type))
+        val type = eraseType(term.type).first()
+        val targetType = eraseType(term.target.type).first()
+        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(targetType.id)(-1)(term.index) })))
+        drop(targetType, listOf(type))
       }
       is L.Term.Command    -> {
         !{ Raw("# command") }
