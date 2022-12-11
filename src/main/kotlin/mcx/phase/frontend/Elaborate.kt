@@ -486,13 +486,6 @@ class Elaborate private constructor(
         }
         actual
       }
-    }.let { // coerce (a: `a) into ($a: a)
-      val type = it.type
-      if (!isMeta() && type is C.Type.Code) {
-        elaborateTerm(R.Term.Splice(term, term.range), type.element) // TODO: avoid 2-pass elaboration?
-      } else {
-        it
-      }
     }.also {
       hoverType(term.range, it.type)
       completionVars(term.range)
