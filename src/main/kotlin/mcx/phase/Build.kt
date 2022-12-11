@@ -175,14 +175,14 @@ class Build(
               }
               val dependencyHashes = surface.value.module.imports
                 .map { async { fetch(Key.ResolveResult(it.value.module)) } }
-                .plus(async { if (location == PRELUDE) null else fetch(Key.ResolveResult(PRELUDE)) })
+                .plus(async { if (location == prelude) null else fetch(Key.ResolveResult(prelude)) })
                 .awaitAll()
                 .filterNotNull()
                 .map { it.hash }
               val dependencies = surface.value.module.imports
                 .map { async { Resolve.Dependency(it.value, fetch(Key.ResolveResult(it.value.module)).value?.module?.definitions?.get(it.value), it.range) } }
                 .plus(
-                  if (location == PRELUDE) emptyList() else fetch(Key.ResolveResult(PRELUDE)).value!!.module.definitions.map {
+                  if (location == prelude) emptyList() else fetch(Key.ResolveResult(prelude)).value!!.module.definitions.map {
                     async { Resolve.Dependency(it.key, it.value, null) }
                   }
                 )
@@ -214,7 +214,7 @@ class Build(
               val signature = fetch(Key.Signature(location)) as Value<Elaborate.Result>
               val results = resolved.value.module.imports
                 .map { async { fetch(Key.Signature(it.value.module)) } }
-                .plus(async { fetch(Key.Signature(PRELUDE)) })
+                .plus(async { fetch(Key.Signature(prelude)) })
                 .awaitAll()
               val dependencies = results
                 .mapNotNull { it.value?.module }
@@ -245,7 +245,7 @@ class Build(
               val definition = zonked.value.module.definitions.find { it.name == location }!!
               val results = fetch(Key.ParseResult(location.module)).value!!.module.imports
                 .map { async { fetch(Key.ZonkResult(it.value.module)) } }
-                .plus(async { fetch(Key.ZonkResult(PRELUDE)) })
+                .plus(async { fetch(Key.ZonkResult(prelude)) })
                 .awaitAll()
               val dependencies = results
                 .flatMap { it.value.module.definitions }

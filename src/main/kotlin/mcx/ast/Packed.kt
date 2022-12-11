@@ -187,18 +187,18 @@ object Packed {
   enum class Stack(
     val id: String,
   ) {
-    END(mcx.phase.END),
-    BYTE(mcx.phase.BYTE),
-    SHORT(mcx.phase.SHORT),
-    INT(mcx.phase.INT),
-    LONG(mcx.phase.LONG),
-    FLOAT(mcx.phase.FLOAT),
-    DOUBLE(mcx.phase.DOUBLE),
-    STRING(mcx.phase.STRING),
-    BYTE_ARRAY(mcx.phase.BYTE_ARRAY),
-    INT_ARRAY(mcx.phase.INT_ARRAY),
-    LONG_ARRAY(mcx.phase.LONG_ARRAY),
-    LIST(mcx.phase.LIST),
-    COMPOUND(mcx.phase.COMPOUND);
+    END("end"),
+    BYTE("byte"),
+    SHORT("short"),
+    INT("int"),
+    LONG("long"),
+    FLOAT("float"),
+    DOUBLE("double"),
+    STRING("string"),
+    BYTE_ARRAY("byte_array"),
+    INT_ARRAY("int_array"),
+    LONG_ARRAY("long_array"),
+    LIST("list"),
+    COMPOUND("compound");
   }
 }

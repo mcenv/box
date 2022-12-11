@@ -2,38 +2,17 @@ package mcx.phase
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
-import mcx.ast.Packed.Objective
-import mcx.ast.Packed.ScoreHolder
+import mcx.ast.Packed.Stack
 import mcx.ast.Value
-import mcx.data.ResourceLocation
 import kotlin.math.max
 import kotlin.math.min
 
-val REG_0: ScoreHolder = ScoreHolder("#0")
-val REG_1: ScoreHolder = ScoreHolder("#1")
-val REG: Objective = Objective("mcx")
-val MCX: ResourceLocation = ResourceLocation("mcx", "")
-
-const val END: String = "end"
-const val BYTE: String = "byte"
-const val SHORT: String = "short"
-const val INT: String = "int"
-const val LONG: String = "long"
-const val FLOAT: String = "float"
-const val DOUBLE: String = "double"
-const val STRING: String = "string"
-const val BYTE_ARRAY: String = "byte_array"
-const val INT_ARRAY: String = "int_array"
-const val LONG_ARRAY: String = "long_array"
-const val LIST: String = "list"
-const val COMPOUND: String = "compound"
-
-val PRELUDE: ModuleLocation = ModuleLocation("prelude")
-private val INT_MODULE: ModuleLocation = ModuleLocation(INT)
-private val STRING_MODULE: ModuleLocation = ModuleLocation(STRING)
-private val BYTE_ARRAY_MODULE: ModuleLocation = ModuleLocation(BYTE_ARRAY)
-private val INT_ARRAY_MODULE: ModuleLocation = ModuleLocation(INT_ARRAY)
-private val LONG_ARRAY_MODULE: ModuleLocation = ModuleLocation(LONG_ARRAY)
+val prelude: ModuleLocation = ModuleLocation("prelude")
+private val int: ModuleLocation = ModuleLocation(Stack.INT.id)
+private val string: ModuleLocation = ModuleLocation(Stack.STRING.id)
+private val byteArray: ModuleLocation = ModuleLocation(Stack.BYTE_ARRAY.id)
+private val intArray: ModuleLocation = ModuleLocation(Stack.INT_ARRAY.id)
+private val longArray: ModuleLocation = ModuleLocation(Stack.LONG_ARRAY.id)
 
 val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   Command,
@@ -69,14 +48,14 @@ sealed class Builtin(
   abstract fun eval(arg: Value): Value?
 }
 
-object Command : Builtin(PRELUDE / "command") {
+object Command : Builtin(prelude / "command") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.StringOf) return null
     return Value.CodeOf(lazyOf(Value.Command(arg.value)))
   }
 }
 
-object IntAdd : Builtin(INT_MODULE / "+") {
+object IntAdd : Builtin(int / "+") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -87,7 +66,7 @@ object IntAdd : Builtin(INT_MODULE / "+") {
   }
 }
 
-object IntSub : Builtin(INT_MODULE / "-") {
+object IntSub : Builtin(int / "-") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -98,7 +77,7 @@ object IntSub : Builtin(INT_MODULE / "-") {
   }
 }
 
-object IntMul : Builtin(INT_MODULE / "*") {
+object IntMul : Builtin(int / "*") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -109,7 +88,7 @@ object IntMul : Builtin(INT_MODULE / "*") {
   }
 }
 
-object IntDiv : Builtin(INT_MODULE / "/") {
+object IntDiv : Builtin(int / "/") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -124,7 +103,7 @@ object IntDiv : Builtin(INT_MODULE / "/") {
   }
 }
 
-object IntMod : Builtin(INT_MODULE / "%") {
+object IntMod : Builtin(int / "%") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -139,7 +118,7 @@ object IntMod : Builtin(INT_MODULE / "%") {
   }
 }
 
-object IntMin : Builtin(INT_MODULE / "min") {
+object IntMin : Builtin(int / "min") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -150,7 +129,7 @@ object IntMin : Builtin(INT_MODULE / "min") {
   }
 }
 
-object IntMax : Builtin(INT_MODULE / "max") {
+object IntMax : Builtin(int / "max") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -161,7 +140,7 @@ object IntMax : Builtin(INT_MODULE / "max") {
   }
 }
 
-object IntEq : Builtin(INT_MODULE / "=") {
+object IntEq : Builtin(int / "=") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -172,7 +151,7 @@ object IntEq : Builtin(INT_MODULE / "=") {
   }
 }
 
-object IntLt : Builtin(INT_MODULE / "<") {
+object IntLt : Builtin(int / "<") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -183,7 +162,7 @@ object IntLt : Builtin(INT_MODULE / "<") {
   }
 }
 
-object IntLe : Builtin(INT_MODULE / "<=") {
+object IntLe : Builtin(int / "<=") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -194,7 +173,7 @@ object IntLe : Builtin(INT_MODULE / "<=") {
   }
 }
 
-object IntGt : Builtin(INT_MODULE / ">") {
+object IntGt : Builtin(int / ">") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -205,7 +184,7 @@ object IntGt : Builtin(INT_MODULE / ">") {
   }
 }
 
-object IntGe : Builtin(INT_MODULE / ">=") {
+object IntGe : Builtin(int / ">=") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -216,7 +195,7 @@ object IntGe : Builtin(INT_MODULE / ">=") {
   }
 }
 
-object IntNe : Builtin(INT_MODULE / "!=") {
+object IntNe : Builtin(int / "!=") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.TupleOf) return null
     val a = arg.elements[0].value
@@ -227,75 +206,75 @@ object IntNe : Builtin(INT_MODULE / "!=") {
   }
 }
 
-object IntToByte : Builtin(INT_MODULE / "to_byte") {
+object IntToByte : Builtin(int / "to_byte") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.ByteOf(arg.value.toByte())
   }
 }
 
-object IntToShort : Builtin(INT_MODULE / "to_short") {
+object IntToShort : Builtin(int / "to_short") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.ShortOf(arg.value.toShort())
   }
 }
 
-object IntToInt : Builtin(INT_MODULE / "to_int") {
+object IntToInt : Builtin(int / "to_int") {
   override fun eval(arg: Value): Value {
     return arg
   }
 }
 
-object IntToLong : Builtin(INT_MODULE / "to_long") {
+object IntToLong : Builtin(int / "to_long") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.LongOf(arg.value.toLong())
   }
 }
 
-object IntToFloat : Builtin(INT_MODULE / "to_float") {
+object IntToFloat : Builtin(int / "to_float") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.FloatOf(arg.value.toFloat())
   }
 }
 
-object IntToDouble : Builtin(INT_MODULE / "to_double") {
+object IntToDouble : Builtin(int / "to_double") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.DoubleOf(arg.value.toDouble())
   }
 }
 
-object IntDup : Builtin(INT_MODULE / "dup") {
+object IntDup : Builtin(int / "dup") {
   override fun eval(arg: Value): Value {
     return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))
   }
 }
 
-object StringSize : Builtin(STRING_MODULE / "size") {
+object StringSize : Builtin(string / "size") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.StringOf) return null
     return Value.IntOf(arg.value.length)
   }
 }
 
-object ByteArraySize : Builtin(BYTE_ARRAY_MODULE / "size") {
+object ByteArraySize : Builtin(byteArray / "size") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.ByteArrayOf) return null
     return Value.IntOf(arg.elements.size)
   }
 }
 
-object IntArraySize : Builtin(INT_ARRAY_MODULE / "size") {
+object IntArraySize : Builtin(intArray / "size") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntArrayOf) return null
     return Value.IntOf(arg.elements.size)
   }
 }
 
-object LongArraySize : Builtin(LONG_ARRAY_MODULE / "size") {
+object LongArraySize : Builtin(longArray / "size") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.LongArrayOf) return null
     return Value.IntOf(arg.elements.size)
