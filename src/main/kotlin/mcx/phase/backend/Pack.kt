@@ -186,13 +186,6 @@ class Pack private constructor(
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
-      is L.Term.Index      -> {
-        packTerm(term.target)
-        val type = eraseType(term.type).first()
-        val targetType = eraseType(term.target.type).first()
-        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(targetType.id)(-1)(term.index) })))
-        drop(targetType, listOf(type))
-      }
       is L.Term.Command    -> {
         !{ Raw("# command") }
         +Raw(term.value)

@@ -194,11 +194,6 @@ class Resolve private constructor(
           }
         }
       }
-      is S.Term.Index  -> {
-        val target = resolveTerm(term.target)
-        val index = resolveTerm(term.index)
-        R.Term.Index(target, index, term.range)
-      }
       is S.Term.Is     -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = restoring { resolvePattern(term.scrutineer) }

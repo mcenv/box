@@ -544,12 +544,6 @@ class Parse private constructor(
       while (canRead()) {
         val char = peek()
         when {
-          char == '['       -> {
-            skip()
-            val index = parseTerm()
-            expect(']')
-            term = S.Term.Index(term, index, until())
-          }
           char.isWordPart() -> {
             val name = parseRanged { readWord() }
             skipTrivia()

@@ -436,14 +436,6 @@ class Elaborate private constructor(
         C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
       }
 
-      term is R.Term.Index &&
-      expected == null         -> {
-        val elementType = metaEnv.freshType(term.target.range, C.Kind.Type.ONE)
-        val target = elaborateTerm(term.target, C.Type.Code(C.Type.List(elementType))) // TODO: use collection type
-        val index = elaborateTerm(term.index, C.Type.Int.SET)
-        C.Term.Index(target, index, C.Type.Code(elementType))
-      }
-
       term is R.Term.CodeOf &&
       expected is C.Type.Code? -> {
         if (isMeta()) {

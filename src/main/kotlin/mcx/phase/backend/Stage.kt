@@ -104,7 +104,6 @@ class Stage private constructor(
         }
       }
       is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Index       -> C.Term.Index(stageTerm(term.target), stageTerm(term.index), type)
       is C.Term.Command     -> C.Term.Command(term.value, type)
       is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
       is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, emptyList(), term))

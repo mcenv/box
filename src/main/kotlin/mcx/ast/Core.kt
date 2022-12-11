@@ -339,12 +339,6 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class Index(
-      val target: Term,
-      val index: Term,
-      override val type: Type,
-    ) : Term
-
     data class Command(
       val value: String,
       override val type: Type,

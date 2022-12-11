@@ -95,12 +95,6 @@ object Normalize {
           else -> Value.BoolOf(matched)
         }
       }
-      is C.Term.Index   -> {
-        // convert ((`as)[i]: `a) into (`(as[i]): `a)
-        val target = (evalTerm(term.target) as Value.CodeOf).element
-        val type = (term.type as C.Type.Code).element
-        Value.CodeOf(lazy { Value.Index(target, lazy { evalTerm(term.index) }, type) })
-      }
       is C.Term.Command -> error("unexpected: command") // TODO
       is C.Term.CodeOf  -> Value.CodeOf(lazy { evalTerm(term.element) })
       is C.Term.Splice  ->
@@ -221,7 +215,6 @@ object Normalize {
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
       is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Index       -> C.Term.Index(quoteValue(value.target.value, C.Type.List(value.type)), quoteValue(value.index.value, C.Type.Int.SET), value.type)
       is Value.Command     -> C.Term.Command(value.value, C.Type.Union.END)
       is Value.CodeOf      -> {
         type as C.Type.Code

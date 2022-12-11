@@ -150,11 +150,6 @@ class Lift private constructor(
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
-      is C.Term.Index   -> {
-        val target = liftTerm(term.target)
-        val index = liftTerm(term.index) as L.Term.IntOf
-        L.Term.Index(target, index.value, type)
-      }
       is C.Term.Command -> L.Term.Command(term.value, type)
       is C.Term.CodeOf  -> error("unexpected: code_of")
       is C.Term.Splice  -> error("unexpected: splice")
@@ -208,7 +203,6 @@ class Lift private constructor(
       is C.Term.Var        -> linkedMapOf(term.name to (term.level to liftType(term.type)))
       is C.Term.Run        -> freeVars(term.arg)
       is C.Term.Is         -> freeVars(term.scrutinee)
-      is C.Term.Index      -> freeVars(term.target)
       is C.Term.Command    -> linkedMapOf()
       is C.Term.CodeOf     -> error("unexpected: code_of")
       is C.Term.Splice     -> error("unexpected: splice")

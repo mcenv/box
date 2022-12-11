@@ -109,7 +109,6 @@ class Zonk private constructor(
       is C.Term.Var        -> C.Term.Var(term.name, term.level, type)
       is C.Term.Run        -> C.Term.Run(term.name, term.typeArgs.map { zonkType(it) }, zonkTerm(term.arg), type)
       is C.Term.Is         -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
-      is C.Term.Index      -> C.Term.Index(zonkTerm(term.target), zonkTerm(term.index), type)
       is C.Term.Command    -> C.Term.Command(term.value, type)
       is C.Term.CodeOf     -> C.Term.CodeOf(zonkTerm(term.element), type)
       is C.Term.Splice     -> C.Term.Splice(zonkTerm(term.element), type)
