@@ -36,6 +36,7 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
   IntToLong,
   IntToFloat,
   IntToDouble,
+  IntToString,
   IntDup,
   StringSize,
   StringConcat,
@@ -246,6 +247,13 @@ private object IntToDouble : Builtin(int / "to_double") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.IntOf) return null
     return Value.DoubleOf(arg.value.toDouble())
+  }
+}
+
+private object IntToString : Builtin(int / "to_string") {
+  override fun eval(arg: Value): Value? {
+    if (arg !is Value.IntOf) return null
+    return Value.StringOf(arg.value.toString())
   }
 }
 
