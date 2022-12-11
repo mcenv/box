@@ -4,6 +4,7 @@ import {
   int.%,
   int.dup,
   int.to_double,
+  magic.command,
 }
 
 function set_pos (addr: int) → () =

@@ -8,6 +8,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 val prelude: ModuleLocation = ModuleLocation("prelude")
+private val magic: ModuleLocation = ModuleLocation("magic")
 private val int: ModuleLocation = ModuleLocation(Stack.INT.id)
 private val string: ModuleLocation = ModuleLocation(Stack.STRING.id)
 private val byteArray: ModuleLocation = ModuleLocation(Stack.BYTE_ARRAY.id)
@@ -49,7 +50,7 @@ sealed class Builtin(
   abstract fun eval(arg: Value): Value?
 }
 
-private object Command : Builtin(prelude / "command") {
+private object Command : Builtin(magic / "command") {
   override fun eval(arg: Value): Value? {
     if (arg !is Value.StringOf) return null
     return Value.CodeOf(lazyOf(Value.Command(arg.value)))

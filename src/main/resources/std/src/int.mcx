@@ -1,3 +1,7 @@
+import {
+  magic.command,
+}
+
 @export @builtin function + (@no_drop _: (int, int)) → int =
   let _ = $command⟨⟩ "execute store result score #0 mcx run data get storage mcx: int[-1]";
   let _ = $command⟨⟩ "data remove storage mcx: int[-1]";
