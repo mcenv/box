@@ -17,7 +17,7 @@ class Stage private constructor(
   private fun stage(
     definition: C.Definition,
   ): List<C.Definition> {
-    Env.emptyEnv(dependencies, emptyList(), true).stageDefinition(definition)
+    Env.emptyEnv(dependencies, emptyList(), unfold = true, static = false).stageDefinition(definition)
     return stagedDefinitions
   }
 
@@ -75,18 +75,18 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val definition = dependencies[term.name] as C.Definition.Function
+        val typeArgs = term.typeArgs.map { evalType(it) }
         if (Annotation.INLINE in definition.annotations) {
-          stageTerm(normalizeTerm(dependencies, term.typeArgs, term))
-        } else if (term.typeArgs.isEmpty()) {
+          stageTerm(normalizeTerm(dependencies, typeArgs, term))
+        } else if (typeArgs.isEmpty()) {
           val arg = stageTerm(term.arg)
           C.Term.Run(term.name, emptyList(), arg, type)
         } else {
-          val typeArgs = term.typeArgs.map { evalType(it) }
           val mangledName = mangle(term.name, typeArgs)
           val arg = stageTerm(term.arg)
-          val typeEnv = Env.emptyEnv(dependencies, typeArgs, true)
+          val typeEnv = Env.emptyEnv(dependencies, typeArgs, unfold, static)
           typeEnv.stageDefinition(
             C.Definition
               .Function(
@@ -103,11 +103,11 @@ class Stage private constructor(
           C.Term.Run(mangledName, emptyList(), arg, type)
         }
       }
-      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Command     -> C.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
-      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, emptyList(), term))
-      is C.Term.Hole        -> C.Term.Hole(type)
+      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Command -> C.Term.Command(term.value, type)
+      is C.Term.CodeOf  -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice  -> stageTerm(normalizeTerm(dependencies, types, term))
+      is C.Term.Hole    -> C.Term.Hole(type)
     }
   }
 

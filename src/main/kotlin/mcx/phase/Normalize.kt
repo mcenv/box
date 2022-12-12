@@ -15,28 +15,36 @@ object Normalize {
     private val values: PersistentList<Lazy<Value>>,
     val types: List<C.Type>,
     val unfold: Boolean,
+    val static: Boolean,
   ) : List<Lazy<Value>> by values {
     fun bind(
       values: List<Value>,
     ): Env =
-      Env(definitions, this.values + values.map { lazyOf(it) }, types, unfold)
+      Env(definitions, this.values + values.map { lazyOf(it) }, types, unfold, static)
+
+    fun withStatic(
+      static: Boolean,
+    ): Env =
+      Env(definitions, values, types, unfold, static)
 
     companion object {
       fun emptyEnv(
         definitions: Map<DefinitionLocation, C.Definition>,
         types: List<C.Type>,
         unfold: Boolean,
+        static: Boolean,
       ): Env =
-        Env(definitions, persistentListOf(), types, unfold)
+        Env(definitions, persistentListOf(), types, unfold, static)
     }
   }
 
+  // TODO: move this to stage phase
   fun normalizeTerm(
     definitions: Map<DefinitionLocation, C.Definition>,
     types: List<C.Type>,
     term: C.Term,
   ): C.Term =
-    with(emptyEnv(definitions, types, true)) {
+    with(emptyEnv(definitions, types, unfold = true, static = false)) {
       quoteValue(evalTerm(term), term.type)
     }
 
@@ -60,53 +68,85 @@ object Normalize {
       is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.FunOf       -> Value.FunOf(term.binder, term.body)
-      is C.Term.Apply   ->
-        when (val operator = evalTerm(term.operator)) {
-          is Value.FunOf -> bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
-          else           -> Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
+      is C.Term.Apply       -> {
+        val operator = evalTerm(term.operator)
+        if (static && operator is Value.FunOf) {
+          bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
+        } else {
+          Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
         }
-      is C.Term.If      ->
-        when (val condition = evalTerm(term.condition)) {
-          is Value.BoolOf -> if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
-          else            -> Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
+      }
+      is C.Term.If          -> {
+        val condition = evalTerm(term.condition)
+        if (static && condition is Value.BoolOf) {
+          if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
+        } else {
+          Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
         }
-      is C.Term.Let     -> bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
-      is C.Term.Var     -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run     -> {
+      }
+      is C.Term.Let         -> {
+        if (static) {
+          bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
+        } else {
+          Value.Let(evalPattern(term.binder), lazy { evalTerm(term.init) }, lazy { evalTerm(term.body) }, evalType(term.body.type))
+        }
+      }
+      is C.Term.Var         -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
+      is C.Term.Run         -> {
         val arg = evalTerm(term.arg)
         val typeArgs = term.typeArgs.map { evalType(it) }
-        when (val definition = definitions[term.name] as? C.Definition.Function) {
-          null -> Value.Run(term.name, typeArgs, arg)
-          else ->
-            if (Annotation.BUILTIN in definition.annotations) {
-              val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
-              builtin.eval(arg, typeArgs) ?: Value.Run(term.name, typeArgs, arg)
-            } else {
-              emptyEnv(definitions, typeArgs, true)
-                .bind(bindValue(arg, definition.binder))
-                .evalTerm(definition.body)
-            }
+        val definition = definitions[term.name] as? C.Definition.Function
+        if (static && definition != null) {
+          if (Annotation.BUILTIN in definition.annotations) {
+            val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
+            builtin.eval(arg, typeArgs) ?: Value.Run(term.name, typeArgs, arg)
+          } else {
+            emptyEnv(definitions, typeArgs, unfold = true, static = true)
+              .bind(bindValue(arg, definition.binder))
+              .evalTerm(definition.body)
+          }
+        } else {
+          Value.Run(term.name, typeArgs, arg)
         }
       }
-      is C.Term.Is      -> {
+      is C.Term.Is          -> {
         val scrutinee = evalTerm(term.scrutinee)
-        when (val matched = matchValue(scrutinee, term.scrutineer)) {
-          null -> Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
-          else -> Value.BoolOf(matched)
+        val matched = matchValue(scrutinee, term.scrutineer)
+        if (static && matched != null) {
+          Value.BoolOf(matched)
+        } else {
+          Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
         }
       }
-      is C.Term.Command -> error("unexpected: command") // TODO
-      is C.Term.CodeOf  -> Value.CodeOf(lazy { evalTerm(term.element) })
-      is C.Term.Splice  ->
-        when (val element = evalTerm(term.element)) {
+      is C.Term.Command     -> error("unexpected: command") // TODO
+      is C.Term.CodeOf      -> Value.CodeOf(lazy { withStatic(false).evalTerm(term.element) })
+      is C.Term.Splice      -> {
+        when (val element = withStatic(true).evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
-      is C.Term.Hole    -> Value.Hole(term.type)
+      }
+      is C.Term.Hole        -> Value.Hole(term.type)
     }
   }
 
-  fun bindValue(
+  private fun Env.evalPattern(
+    pattern: C.Pattern,
+  ): C.Pattern {
+    val type = evalType(pattern.type)
+    return when (pattern) {
+      is C.Pattern.IntOf      -> pattern
+      is C.Pattern.IntRangeOf -> pattern
+      is C.Pattern.ListOf     -> C.Pattern.ListOf(pattern.elements.map { evalPattern(it) }, pattern.annotations, type)
+      is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { evalPattern(it.value) }, pattern.annotations, type)
+      is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { evalPattern(it) }, pattern.annotations, type)
+      is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, pattern.annotations, type)
+      is C.Pattern.Drop       -> C.Pattern.Drop(pattern.annotations, type)
+      is C.Pattern.Hole       -> C.Pattern.Hole(pattern.annotations, type)
+    }
+  }
+
+  private fun bindValue(
     value: Value,
     binder: C.Pattern,
   ): List<Value> {
@@ -137,7 +177,7 @@ object Normalize {
     }
   }
 
-  fun matchValue(
+  private fun matchValue(
     value: Value,
     pattern: C.Pattern,
   ): Boolean? {
@@ -168,7 +208,7 @@ object Normalize {
     }
   }
 
-  fun Env.quoteValue(
+  private fun Env.quoteValue(
     value: Value,
     type: C.Type,
   ): C.Term {
@@ -209,6 +249,7 @@ object Normalize {
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
       }
       is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Let         -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
       is Value.Var         -> C.Term.Var(value.name, value.level, type)
       is Value.Run         -> {
         val definition = definitions[value.name] as C.Definition.Function
@@ -247,7 +288,7 @@ object Normalize {
       is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
       is C.Type.Fun       -> C.Type.Fun(evalType(type.param), evalType(type.result))
       is C.Type.Code      -> C.Type.Code(evalType(type.element))
-      is C.Type.Var       -> types.getOrNull(type.level) ?: type
+      is C.Type.Var       -> types[type.level]
       is C.Type.Run       -> {
         if (unfold) {
           val definition = definitions[type.name] as C.Definition.Type

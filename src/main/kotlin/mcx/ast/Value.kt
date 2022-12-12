@@ -93,6 +93,13 @@ sealed interface Value {
     val elseClause: Lazy<Value>,
   ) : Value
 
+  class Let(
+    val binder: Core.Pattern,
+    val init: Lazy<Value>,
+    val body: Lazy<Value>,
+    val type: Core.Type,
+  ) : Value
+
   class Var(
     val name: String,
     val level: Int,
