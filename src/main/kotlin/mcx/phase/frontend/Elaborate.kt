@@ -403,21 +403,26 @@ class Elaborate private constructor(
         } else {
           when (val definition = definitions[term.name.value]) {
             is C.Definition.Function -> {
-              hover(term.name.range) { createFunctionDocumentation(definition) }
-              val typeArgs =
-                if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
-                  definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
-                } else {
-                  if (definition.typeParams.size != term.typeArgs.value.size) {
-                    diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+              if (!isMeta() && Annotation.STATIC in definition.annotations) {
+                diagnostics += Diagnostic.RequiredStatic(term.name.range)
+                C.Term.Hole(C.Type.Hole)
+              } else {
+                hover(term.name.range) { createFunctionDocumentation(definition) }
+                val typeArgs =
+                  if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
+                    definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
+                  } else {
+                    if (definition.typeParams.size != term.typeArgs.value.size) {
+                      diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+                    }
+                    term.typeArgs.value.map { elaborateType(it) }
                   }
-                  term.typeArgs.value.map { elaborateType(it) }
-                }
-              val typeEnv = Normalize.Env.emptyEnv(definitions, typeArgs, unfold = false, static = /* TODO: remove */ false)
-              val param = typeEnv.evalType(definition.binder.type)
-              val arg = elaborateTerm(term.arg, param)
-              val result = typeEnv.evalType(definition.result)
-              C.Term.Run(definition.name, typeArgs, arg, result)
+                val typeEnv = Normalize.Env.emptyEnv(definitions, typeArgs, unfold = false, static = /* TODO: remove */ false)
+                val param = typeEnv.evalType(definition.binder.type)
+                val arg = elaborateTerm(term.arg, param)
+                val result = typeEnv.evalType(definition.result)
+                C.Term.Run(definition.name, typeArgs, arg, result)
+              }
             }
             else                     -> {
               diagnostics += Diagnostic.ExpectedFunctionDefinition(term.name.range)
