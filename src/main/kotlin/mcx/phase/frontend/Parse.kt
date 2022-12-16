@@ -89,9 +89,10 @@ class Parse private constructor(
             expect("→")
             skipTrivia()
             val result = parseType()
-            expect('=')
+            expect('{')
             skipTrivia()
             val body = parseTerm()
+            expect('}')
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
           "type"            -> {
@@ -446,19 +447,24 @@ class Parse private constructor(
                 skipTrivia()
                 val binder = parsePattern()
                 expect('→')
+                expect('{')
                 skipTrivia()
                 val body = parseTerm()
+                expect('}')
                 S.Term.FunOf(binder, body, until())
               }
               "if"    -> {
                 skipTrivia()
                 val condition = parseTerm()
-                expect("then")
+                expect('{')
                 skipTrivia()
                 val thenClause = parseTerm()
+                expect('}')
                 expect("else")
+                expect('{')
                 skipTrivia()
                 val elseClause = parseTerm()
+                expect('}')
                 S.Term.If(condition, thenClause, elseClause, until())
               }
               "let"   -> {

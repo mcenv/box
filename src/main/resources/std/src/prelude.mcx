@@ -1,1 +1,3 @@
-@export function identity⟨a⟩ (a: a) → a = a;
+@export function identity⟨a⟩ (a: a) → a {
+  a
+};
