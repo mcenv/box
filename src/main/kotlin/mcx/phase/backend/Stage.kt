@@ -25,7 +25,6 @@ class Stage private constructor(
     definition: C.Definition,
   ) {
     when (definition) {
-      is C.Definition.Resource -> definition
       is C.Definition.Function -> {
         if (
           definition.typeParams.isEmpty() &&

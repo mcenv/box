@@ -64,18 +64,6 @@ class Elaborate private constructor(
     definition: R.Definition,
   ): C.Definition? {
     return when (definition) {
-      is R.Definition.Resource -> {
-        val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        C.Definition
-          .Resource(annotations, definition.registry, definition.name.value)
-          .also {
-            if (!signature) {
-              val env = emptyEnv(definitions, emptyList(), leaf = false, static = true)
-              val body = env.elaborateTerm(definition.body /* TODO */)
-              it.body = body
-            }
-          }
-      }
       is R.Definition.Function -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
@@ -777,10 +765,6 @@ class Elaborate private constructor(
         CompletionItem(location.name).apply {
           val labelDetails = CompletionItemLabelDetails()
           kind = when (definition) {
-            is C.Definition.Resource -> {
-              labelDetails.detail = ": ${definition.registry.string}"
-              CompletionItemKind.Struct
-            }
             is C.Definition.Function -> {
               documentation = forRight(highlight(createFunctionDocumentation(definition)))
               labelDetails.detail = ": ${prettyType(definition.binder.type)} -> ${prettyType(definition.result)}"

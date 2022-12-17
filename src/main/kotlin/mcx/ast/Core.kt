@@ -12,14 +12,6 @@ object Core {
     val annotations: List<Annotation>
     val name: DefinitionLocation
 
-    data class Resource(
-      override val annotations: List<Annotation>,
-      val registry: Registry,
-      override val name: DefinitionLocation,
-    ) : Definition {
-      lateinit var body: Term
-    }
-
     data class Function(
       override val annotations: List<Annotation>,
       override val name: DefinitionLocation,

@@ -39,11 +39,3 @@ function int_ref (value: int) → &int {
   let @no_drop _ = allocate⟨⟩ ();
   $command⟨⟩ "execute at 0-0-0-0-0 run item modify block ~ ~ ~ hotbar.0 heap/int_ref"
 };
-
-/item_modifiers int_ref = {
-  function: "copy_nbt",
-  source: { type: "storage", source: "mcx:" },
-  ops: [&{ op: "replace", source: "int[-2]", target: "value" }],
-};
-
-# todo: implement *_ref

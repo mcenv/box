@@ -15,14 +15,6 @@ object Resolved {
     val name: Ranged<DefinitionLocation>
     val range: Range
 
-    data class Resource(
-      override val annotations: List<Ranged<Annotation>>,
-      val registry: Registry,
-      override val name: Ranged<DefinitionLocation>,
-      val body: Term,
-      override val range: Range,
-    ) : Definition
-
     data class Function(
       override val annotations: List<Ranged<Annotation>>,
       override val name: Ranged<DefinitionLocation>,

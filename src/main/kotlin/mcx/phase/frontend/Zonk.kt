@@ -32,7 +32,6 @@ class Zonk private constructor(
     definition: C.Definition,
   ): C.Definition {
     return when (definition) {
-      is C.Definition.Resource -> definition
       is C.Definition.Function -> {
         val binder = zonkPattern(definition.binder)
         val result = zonkType(definition.result)

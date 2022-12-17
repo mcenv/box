@@ -2,7 +2,6 @@ package mcx.phase.frontend
 
 import mcx.ast.Annotation
 import mcx.ast.ModuleLocation
-import mcx.ast.Registry
 import mcx.ast.Surface
 import mcx.phase.Context
 import mcx.util.Ranged
@@ -66,14 +65,6 @@ class Parse private constructor(
       val annotations = parseAnnotations()
       if (canRead()) {
         when (readWord()) {
-          "/predicates"     -> parseJsonResource(annotations, Registry.PREDICATES)
-          "/recipes"        -> parseJsonResource(annotations, Registry.RECIPES)
-          "/loot_tables"    -> parseJsonResource(annotations, Registry.LOOT_TABLES)
-          "/item_modifiers" -> parseJsonResource(annotations, Registry.ITEM_MODIFIERS)
-          "/advancements"   -> parseJsonResource(annotations, Registry.ADVANCEMENTS)
-          "/dimension_type" -> parseJsonResource(annotations, Registry.DIMENSION_TYPE)
-          "/worldgen/biome" -> parseJsonResource(annotations, Registry.WORLDGEN_BIOME)
-          "/dimension"      -> parseJsonResource(annotations, Registry.DIMENSION)
           "function"        -> {
             skipTrivia()
             val name = parseRanged { readWord() }
@@ -115,19 +106,6 @@ class Parse private constructor(
         diagnostics += Diagnostic.ExpectedDefinition(range)
         S.Definition.Hole(range)
       }
-    }
-
-  private fun parseJsonResource(
-    annotations: List<Ranged<Annotation>>,
-    registry: Registry,
-  ): S.Definition.Resource =
-    ranging {
-      skipTrivia()
-      val name = parseRanged { readWord() }
-      expect('=')
-      skipTrivia()
-      val body = parseTerm()
-      S.Definition.Resource(annotations, registry, name, body, until())
     }
 
   private fun parseAnnotations(): List<Ranged<Annotation>> {

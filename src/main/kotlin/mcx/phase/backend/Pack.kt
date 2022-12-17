@@ -1,7 +1,6 @@
 package mcx.phase.backend
 
 import mcx.ast.DefinitionLocation
-import mcx.ast.Json
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
@@ -34,10 +33,6 @@ class Pack private constructor(
   ): P.Definition {
     val path = packDefinitionLocation(definition.name)
     return when (definition) {
-      is L.Definition.Resource -> {
-        val body = packJson(definition.body)
-        P.Definition.Resource(definition.registry, path, body)
-      }
       is L.Definition.Function -> {
         !{ Raw("# ${definition.name}") }
 
@@ -309,28 +304,6 @@ class Pack private constructor(
       is L.Type.Union     -> type.elements
                                .firstOrNull()
                                ?.let { eraseType(it) } ?: listOf(P.Stack.END)
-    }
-  }
-
-  private fun packJson(
-    term: L.Term,
-  ): Json {
-    return when (term) {
-      is L.Term.BoolOf      -> Json.BoolOf(term.value)
-      is L.Term.ByteOf      -> Json.ByteOf(term.value)
-      is L.Term.ShortOf     -> Json.ShortOf(term.value)
-      is L.Term.IntOf       -> Json.IntOf(term.value)
-      is L.Term.LongOf      -> Json.LongOf(term.value)
-      is L.Term.FloatOf     -> Json.FloatOf(term.value)
-      is L.Term.DoubleOf    -> Json.DoubleOf(term.value)
-      is L.Term.StringOf    -> Json.StringOf(term.value)
-      is L.Term.ByteArrayOf -> Json.ArrayOf(term.elements.map { packJson(it) })
-      is L.Term.IntArrayOf  -> Json.ArrayOf(term.elements.map { packJson(it) })
-      is L.Term.LongArrayOf -> Json.ArrayOf(term.elements.map { packJson(it) })
-      is L.Term.ListOf      -> Json.ArrayOf(term.elements.map { packJson(it) })
-      is L.Term.CompoundOf  -> Json.ObjectOf(term.elements.mapValues { packJson(it.value) })
-      is L.Term.RefOf       -> packJson(term.element)
-      else                  -> TODO()
     }
   }
 

@@ -18,10 +18,6 @@ class Lift private constructor(
   private fun lift(): Result {
     val annotations = definition.annotations.mapNotNull { liftAnnotation(it) }
     when (definition) {
-      is C.Definition.Resource -> {
-        val body = emptyEnv().liftTerm(definition.body)
-        liftedDefinitions += L.Definition.Resource(annotations, definition.registry, definition.name, body)
-      }
       is C.Definition.Function -> {
         val env = emptyEnv()
         val binder = env.liftPattern(definition.binder)

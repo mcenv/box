@@ -54,11 +54,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|function|type)\\b"
-    },
-    {
-      "name": "keyword.mcx",
-      "match": "/(?:predicates|recipes|loot_tables|item_modifiers|advancements|dimension_type|worldgen/biome|dimension)\\b"
+      "match": "\\b(?:import|function|type|resource)\\b"
     },
     {
       "name": "support.type.mcx",

@@ -1,6 +1,5 @@
 package mcx.phase.backend
 
-import mcx.ast.Json
 import mcx.ast.Packed
 import mcx.data.ResourceLocation
 import mcx.phase.Context
@@ -20,8 +19,6 @@ class Generate private constructor(
     definition: P.Definition,
   ): String {
     return when (definition) {
-      is P.Definition.Resource      ->
-        StringBuilder().apply { generateJson(definition.body) }
       is Packed.Definition.Function ->
         StringBuilder()
           .apply {
@@ -382,43 +379,6 @@ class Generate private constructor(
       append(':')
     }
     append(location.path)
-  }
-
-  private fun StringBuilder.generateJson(
-    json: Json,
-  ) {
-    when (json) {
-      is Json.ObjectOf -> {
-        append('{')
-        json.members.entries.forEachIndexed { index, (key, value) ->
-          if (index != 0) {
-            append(',')
-          }
-          append(key.quoted('"'))
-          append(':')
-          generateJson(value)
-        }
-        append('}')
-      }
-      is Json.ArrayOf  -> {
-        append('[')
-        json.elements.forEachIndexed { index, element ->
-          if (index != 0) {
-            append(',')
-          }
-          generateJson(element)
-        }
-        append(']')
-      }
-      is Json.StringOf -> append(json.value.quoted('"'))
-      is Json.ByteOf   -> append(json.value.toString())
-      is Json.ShortOf  -> append(json.value.toString())
-      is Json.IntOf    -> append(json.value.toString())
-      is Json.LongOf   -> append(json.value.toString())
-      is Json.FloatOf  -> append(json.value.toString())
-      is Json.DoubleOf -> append(json.value.toString())
-      is Json.BoolOf   -> append(json.value.toString())
-    }
   }
 
   private fun StringBuilder.generateIntRange(

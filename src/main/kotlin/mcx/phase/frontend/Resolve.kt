@@ -59,12 +59,6 @@ class Resolve private constructor(
     definition: S.Definition,
   ): R.Definition {
     return when (definition) {
-      is S.Definition.Resource -> {
-        val name = definition.name.map { input.module.name / it }
-        val env = emptyEnv(emptyList())
-        val body = env.resolveTerm(definition.body)
-        R.Definition.Resource(definition.annotations, definition.registry, name, body, definition.range)
-      }
       is S.Definition.Function -> {
         val name = definition.name.map { input.module.name / it }
         val env = emptyEnv(definition.typeParams)

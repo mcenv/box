@@ -8,12 +8,6 @@ object Packed {
     val registry: Registry
     val location: ResourceLocation
 
-    data class Resource(
-      override val registry: Registry,
-      override val location: ResourceLocation,
-      val body: Json,
-    ) : Definition
-
     data class Function(
       override val location: ResourceLocation,
       val commands: List<Command>,
