@@ -5,37 +5,37 @@ import {
 }
 
 @export function reload () → () {
-  $command⟨⟩ "reload"
+  $command("reload")
 };
 
 @export @static function save_all (flush: bool) → `() {
   if flush {
-    $command⟨⟩ "save-all flush"
+    $command("save-all flush")
   } else {
-    $command⟨⟩ "save-all"
+    $command("save-all")
   }
 };
 
 @export @static function auto_save (enabled: bool) → `() {
   if enabled {
-    command⟨⟩ "save-on"
+    command("save-on")
   } else {
-    command⟨⟩ "save-off"
+    command("save-off")
   }
 };
 
 @export function seed () → int {
   let @no_drop _ = 0;
-  $command⟨⟩ "execute store result storage mcx: int[-1] int 1 run seed"
+  $command("execute store result storage mcx: int[-1] int 1 run seed")
 };
 
 @export @static function set_idle_timeout (minutes: int) → `int {
   `(
     let @no_drop _ = 0;
-    $command⟨⟩ ("execute store result storage mcx: int[-1] int 1 run setidletimeout " ++ (to_string⟨⟩ minutes))
+    $command("execute store result storage mcx: int[-1] int 1 run setidletimeout " ++ to_string(minutes))
   )
 };
 
 @export function halt () → ⟨⟩ {
-  $command⟨⟩ "stop"
+  $command("stop")
 };

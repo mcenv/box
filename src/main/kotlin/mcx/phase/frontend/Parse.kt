@@ -504,9 +504,19 @@ class Parse private constructor(
                     when (peek()) {
                       '⟨'  -> {
                         val typeArgs = parseRanged { parseList(',', '⟨', '⟩') { parseType() } }
+                        expect('(')
                         skipTrivia()
                         val arg = parseTerm()
+                        expect(')')
                         S.Term.Run(word, typeArgs, arg, until())
+                      }
+                      '('  -> {
+                        skip()
+                        skipTrivia()
+                        val arg = parseTerm()
+                        expect(')')
+                        val range = until()
+                        S.Term.Run(word, Ranged(emptyList(), range), arg, range)
                       }
                       else -> null
                     }
