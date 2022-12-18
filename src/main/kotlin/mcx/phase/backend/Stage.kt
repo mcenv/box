@@ -186,8 +186,8 @@ class Stage private constructor(
       is C.Term.Run         -> {
         val arg = evalTerm(term.arg)
         val typeArgs = term.typeArgs.map { evalType(it) }
-        val definition = definitions[term.name] as? C.Definition.Function
-        if (static && definition != null) {
+        val definition = requireNotNull(definitions[term.name] as? C.Definition.Function) { "definition not found: '${term.name}'" }
+        if (static) {
           if (Annotation.BUILTIN in definition.annotations) {
             val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
             builtin.eval(arg, typeArgs) ?: Value.Run(term.name, typeArgs, arg)
