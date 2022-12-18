@@ -21,7 +21,7 @@ object Surface {
       val typeParams: List<String>,
       val binder: Pattern,
       val result: Surface.Type,
-      val body: Term,
+      val body: Term?,
       override val range: Range,
     ) : Definition
 

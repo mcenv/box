@@ -70,15 +70,14 @@ class Elaborate private constructor(
         val env = emptyEnv(definitions, types, Annotation.LEAF in annotations, Annotation.STATIC in annotations)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
-        C.Definition
-          .Function(annotations, definition.name.value, definition.typeParams, binder, result)
-          .also {
-            if (!signature) {
-              hover(definition.name.range) { createFunctionDocumentation(it) }
-              val body = env.elaborateTerm(definition.body, result)
-              it.body = body
-            }
-          }
+        val body = if (signature) {
+          null
+        } else {
+          definition.body?.let { env.elaborateTerm(it, result) }
+        }
+        C.Definition.Function(annotations, definition.name.value, definition.typeParams, binder, result, body).also {
+          hover(definition.name.range) { createFunctionDocumentation(it) }
+        }
       }
       is R.Definition.Type     -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }

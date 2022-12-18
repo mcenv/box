@@ -21,7 +21,7 @@ class Lift private constructor(
       is C.Definition.Function -> {
         val env = emptyEnv()
         val binder = env.liftPattern(definition.binder)
-        val body = env.liftTerm(definition.body)
+        val body = env.liftTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
         liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
       }
       is C.Definition.Type     -> Unit
@@ -94,7 +94,7 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.FunOf       ->
+      is C.Term.FunOf   ->
         // remap levels
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
@@ -120,7 +120,7 @@ class Lift private constructor(
           dispatchedDefinitions += bodyFunction
           L.Term.FunOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
-      is C.Term.Apply       -> {
+      is C.Term.Apply   -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
@@ -188,21 +188,21 @@ class Lift private constructor(
       is C.Term.ByteArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.IntArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.RefOf      -> freeVars(term.element)
-      is C.Term.TupleOf    -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.FunOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }
-      is C.Term.Apply      -> freeVars(term.operator).also { it += freeVars(term.arg) }
-      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Run        -> freeVars(term.arg)
-      is C.Term.Is         -> freeVars(term.scrutinee)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.CodeOf     -> error("unexpected: code_of")
-      is C.Term.Splice     -> error("unexpected: splice")
-      is C.Term.Hole       -> error("unexpected: hole")
+      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.RefOf       -> freeVars(term.element)
+      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.FunOf       -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
+      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
+      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Run         -> freeVars(term.arg)
+      is C.Term.Is          -> freeVars(term.scrutinee)
+      is C.Term.Command     -> linkedMapOf()
+      is C.Term.CodeOf      -> error("unexpected: code_of")
+      is C.Term.Splice      -> error("unexpected: splice")
+      is C.Term.Hole        -> error("unexpected: hole")
     }
   }
 

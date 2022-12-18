@@ -64,7 +64,7 @@ class Resolve private constructor(
         val env = emptyEnv(definition.typeParams)
         val binder = env.resolvePattern(definition.binder)
         val result = env.resolveType(definition.result)
-        val body = env.resolveTerm(definition.body)
+        val body = definition.body?.let { env.resolveTerm(it) }
         R.Definition.Function(definition.annotations, name, definition.typeParams, binder, result, body, definition.range)
       }
       is S.Definition.Type     -> {

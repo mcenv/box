@@ -35,12 +35,8 @@ class Zonk private constructor(
       is C.Definition.Function -> {
         val binder = zonkPattern(definition.binder)
         val result = zonkType(definition.result)
-        val body = zonkTerm(definition.body)
-        C.Definition
-          .Function(definition.annotations, definition.name, definition.typeParams, binder, result)
-          .also {
-            it.body = body
-          }
+        val body = definition.body?.let { zonkTerm(it) }
+        C.Definition.Function(definition.annotations, definition.name, definition.typeParams, binder, result, body)
       }
       is C.Definition.Type     -> {
         val body = zonkType(definition.body)
@@ -97,21 +93,21 @@ class Zonk private constructor(
       is C.Term.ByteArrayOf -> C.Term.ByteArrayOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.ListOf     -> C.Term.ListOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.CompoundOf -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
-      is C.Term.RefOf      -> C.Term.RefOf(zonkTerm(term.element), type)
-      is C.Term.TupleOf    -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.FunOf      -> C.Term.FunOf(zonkPattern(term.binder), zonkTerm(term.body), type)
-      is C.Term.Apply      -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
-      is C.Term.If         -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
-      is C.Term.Let        -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
-      is C.Term.Var        -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run        -> C.Term.Run(term.name, term.typeArgs.map { zonkType(it) }, zonkTerm(term.arg), type)
-      is C.Term.Is         -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
-      is C.Term.Command    -> C.Term.Command(term.value, type)
-      is C.Term.CodeOf     -> C.Term.CodeOf(zonkTerm(term.element), type)
-      is C.Term.Splice     -> C.Term.Splice(zonkTerm(term.element), type)
-      is C.Term.Hole       -> C.Term.Hole(type)
+      is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { zonkTerm(it) }, type)
+      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
+      is C.Term.RefOf       -> C.Term.RefOf(zonkTerm(term.element), type)
+      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
+      is C.Term.FunOf       -> C.Term.FunOf(zonkPattern(term.binder), zonkTerm(term.body), type)
+      is C.Term.Apply       -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
+      is C.Term.If          -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
+      is C.Term.Let         -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
+      is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
+      is C.Term.Run         -> C.Term.Run(term.name, term.typeArgs.map { zonkType(it) }, zonkTerm(term.arg), type)
+      is C.Term.Is          -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
+      is C.Term.Command     -> C.Term.Command(term.value, type)
+      is C.Term.CodeOf      -> C.Term.CodeOf(zonkTerm(term.element), type)
+      is C.Term.Splice      -> C.Term.Splice(zonkTerm(term.element), type)
+      is C.Term.Hole        -> C.Term.Hole(type)
     }
   }
 

@@ -1,6 +1,5 @@
 import {
   magic.command,
-  magic.unreachable,
 }
 
 @export @builtin function + (@no_drop _: (int, int)) → int {
@@ -129,9 +128,7 @@ import {
   $command⟨⟩ "execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]"
 };
 
-@export @builtin @static function to_string (_: int) → string {
-  unreachable⟨⟩ ()
-};
+@export @builtin @static function to_string (_: int) → string;
 
 @export @builtin function dup (@no_drop _: int) → (int, int) {
   $command⟨⟩ "data modify storage mcx: int append from storage mcx: int[-1]"

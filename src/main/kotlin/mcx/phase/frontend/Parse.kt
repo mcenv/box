@@ -80,10 +80,15 @@ class Parse private constructor(
             expect("→")
             skipTrivia()
             val result = parseType()
-            expect('{')
-            skipTrivia()
-            val body = parseTerm()
-            expect('}')
+            val body = if (annotations.find { it.value == Annotation.BUILTIN } != null && annotations.find { it.value == Annotation.STATIC } != null) {
+              null
+            } else {
+              expect('{')
+              skipTrivia()
+              val body = parseTerm()
+              expect('}')
+              body
+            }
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
           "type"            -> {

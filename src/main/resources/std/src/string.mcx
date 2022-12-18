@@ -1,6 +1,5 @@
 import {
   magic.command,
-  magic.unreachable,
 }
 
 @export @builtin function size (_: string) → int {
@@ -8,6 +7,4 @@ import {
   $command⟨⟩ "execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]"
 };
 
-@export @builtin @static function ++ (_: (string, string)) → string {
-  unreachable⟨⟩ ()
-};
+@export @builtin @static function ++ (_: (string, string)) → string;

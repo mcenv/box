@@ -21,7 +21,7 @@ object Resolved {
       val typeParams: List<String>,
       val binder: Pattern,
       val result: Resolved.Type,
-      val body: Term,
+      val body: Term?,
       override val range: Range,
     ) : Definition
 

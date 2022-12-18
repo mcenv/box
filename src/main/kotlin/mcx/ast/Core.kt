@@ -18,9 +18,8 @@ object Core {
       val typeParams: List<String>,
       val binder: Pattern,
       val result: Core.Type,
-    ) : Definition {
-      lateinit var body: Term
-    }
+      val body: Term?,
+    ) : Definition
 
     data class Type(
       override val annotations: List<Annotation>,

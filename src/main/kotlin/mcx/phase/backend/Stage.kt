@@ -38,12 +38,8 @@ class Stage private constructor(
         ) {
           val binder = stagePattern(definition.binder)
           val result = evalType(definition.result)
-          val body = stageTerm(definition.body)
-          C.Definition
-            .Function(definition.annotations, definition.name, emptyList(), binder, result)
-            .also {
-              it.body = body
-            }
+          val body = stageTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
+          C.Definition.Function(definition.annotations, definition.name, emptyList(), binder, result, body)
         } else {
           null
         }
@@ -98,10 +94,8 @@ class Stage private constructor(
                 emptyList(),
                 definition.binder,
                 definition.result,
+                definition.body,
               )
-              .also {
-                it.body = definition.body
-              }
           )
           C.Term.Run(mangledName, emptyList(), arg, type)
         }
@@ -194,7 +188,7 @@ class Stage private constructor(
           } else {
             Env(definitions, typeArgs, true, persistentListOf(), true)
               .bind(bindValue(arg, definition.binder))
-              .evalTerm(definition.body)
+              .evalTerm(requireNotNull(definition.body) { "non-static function '${term.name}' without body" })
           }
         } else {
           Value.Run(term.name, typeArgs, arg)
