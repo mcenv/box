@@ -9,6 +9,7 @@ fun main(args: Array<String>) {
   parser.subcommands(
     Build,
     Init,
+    Launch,
     Lsp,
     Version,
   )
