@@ -23,16 +23,15 @@ fun fetchVersionManifest(): VersionManifest {
     }
 }
 
-fun fetchLatestPackage(
+fun resolveVersion(
   type: VersionManifest.Version.Type,
   manifest: VersionManifest,
-): Package {
-  val id = when (type) {
+): String {
+  return when (type) {
     VersionManifest.Version.Type.RELEASE  -> manifest.latest.release
     VersionManifest.Version.Type.SNAPSHOT -> manifest.latest.snapshot
-    else                                  -> error("unexpected type: $type")
+    else                                  -> error("unexpected type: '$type'")
   }
-  return fetchPackage(id, manifest)
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -40,7 +39,7 @@ fun fetchPackage(
   id: String,
   manifest: VersionManifest,
 ): Package {
-  val version = manifest.versions.find { it.id == id } ?: error("unknown version: $id")
+  val version = manifest.versions.find { it.id == id } ?: error("unknown version: '$id'")
   return fetch(version.url.openStream(), version.sha1) {
     json.decodeFromStream(it)
   }
