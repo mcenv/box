@@ -34,7 +34,7 @@ class Pack private constructor(
     val path = packDefinitionLocation(definition.name)
     return when (definition) {
       is L.Definition.Function -> {
-        !{ Raw("# ${definition.name}") }
+        !{ Raw("# function ${definition.name}") }
 
         val binderTypes = eraseType(definition.binder.type)
         binderTypes.forEach { push(it, null) }
@@ -50,6 +50,14 @@ class Pack private constructor(
         if (definition.restore != null) {
           +SetScore(REG_0, REG, definition.restore)
         }
+
+        P.Definition.Function(path, commands)
+      }
+      is L.Definition.Test     -> {
+        !{ Raw("# test ${definition.name}") }
+
+        packTerm(definition.body)
+        +Raw("# todo")
 
         P.Definition.Function(path, commands)
       }

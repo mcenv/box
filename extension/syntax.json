@@ -49,12 +49,23 @@
       }
     },
     {
+      "match": "\\b(test) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
+      "captures": {
+        "1": {
+          "name": "keyword.mcx"
+        },
+        "2": {
+          "name": "entity.name.function.test.mcx"
+        }
+      }
+    },
+    {
       "name": "keyword.mcx",
       "match": "@[^ \n\r:;,()\\[\\]{}⟨⟩]+"
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|function|type|resource)\\b"
+      "match": "\\b(?:import|function|type|test|resource)\\b"
     },
     {
       "name": "support.type.mcx",

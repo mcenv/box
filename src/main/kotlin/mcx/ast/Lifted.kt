@@ -1,5 +1,7 @@
 package mcx.ast
 
+import mcx.ast.Annotation
+
 /**
  * A lifted AST, where all code blocks are lifted to top-level.
  */
@@ -14,6 +16,12 @@ object Lifted {
       val binder: Pattern,
       val body: Term,
       val restore: Int?,
+    ) : Definition
+
+    data class Test(
+      override val annotations: List<Annotation>,
+      override val name: DefinitionLocation,
+      val body: Term,
     ) : Definition
   }
 

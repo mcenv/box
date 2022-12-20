@@ -45,6 +45,14 @@ class Stage private constructor(
         }
       }
       is C.Definition.Type     -> null
+      is C.Definition.Test     -> {
+        if (Annotation.STATIC !in definition.annotations) {
+          val body = stageTerm(definition.body)
+          C.Definition.Test(definition.annotations, definition.name, body)
+        } else {
+          null
+        }
+      }
     }?.also {
       stagedDefinitions += it
     }

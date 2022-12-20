@@ -25,6 +25,11 @@ class Lift private constructor(
         liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
       }
       is C.Definition.Type     -> Unit
+      is C.Definition.Test     -> {
+        val env = emptyEnv()
+        val body = env.liftTerm(definition.body)
+        liftedDefinitions += L.Definition.Test(annotations, definition.name, body)
+      }
     }
     return Result(liftedDefinitions, dispatchedDefinitions)
   }

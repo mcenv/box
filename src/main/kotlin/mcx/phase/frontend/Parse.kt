@@ -65,7 +65,7 @@ class Parse private constructor(
       val annotations = parseAnnotations()
       if (canRead()) {
         when (readWord()) {
-          "function"        -> {
+          "function" -> {
             skipTrivia()
             val name = parseRanged { readWord() }
             skipTrivia()
@@ -91,7 +91,7 @@ class Parse private constructor(
             }
             S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
           }
-          "type"            -> {
+          "type"     -> {
             skipTrivia()
             val name = parseRanged { readWord() }
             expect(':')
@@ -102,7 +102,16 @@ class Parse private constructor(
             val body = parseType()
             S.Definition.Type(annotations, name, kind, body, until())
           }
-          else              -> null
+          "test"     -> {
+            skipTrivia()
+            val name = parseRanged { readWord() }
+            expect('{')
+            skipTrivia()
+            val body = parseTerm()
+            expect('}')
+            S.Definition.Test(annotations, name, body, until())
+          }
+          else       -> null
         }
       } else {
         null
