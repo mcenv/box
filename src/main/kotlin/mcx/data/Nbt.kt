@@ -1,7 +1,6 @@
-package mcx.util.nbt
+package mcx.data
 
 import kotlinx.serialization.Serializable
-import java.io.DataOutput
 
 @Serializable
 sealed interface Nbt {
@@ -109,16 +108,4 @@ sealed interface Nbt {
   @Serializable
   @JvmInline
   value class Compound(val elements: Map<kotlin.String, Nbt>) : Nbt
-
-  companion object {
-    inline fun <reified T> encode(
-      value: T,
-      output: DataOutput,
-    ): Unit =
-      NbtEncoder(output).run {
-        encodeNbtType(NbtType.COMPOUND)
-        encodeString("")
-        encodeSerializableValue(kotlinx.serialization.serializer(), value)
-      }
-  }
 }

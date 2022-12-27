@@ -1,7 +1,7 @@
 package mcx.ast
 
+import mcx.data.Nbt
 import mcx.data.ResourceLocation
-import mcx.util.nbt.Nbt
 
 object Packed {
   sealed interface Definition {

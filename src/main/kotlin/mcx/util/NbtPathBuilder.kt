@@ -2,7 +2,7 @@ package mcx.util
 
 import mcx.ast.Packed.NbtNode
 import mcx.ast.Packed.NbtPath
-import mcx.util.nbt.Nbt
+import mcx.data.Nbt
 
 inline fun nbtPath(
   root: NbtNode.MatchRootObject? = null,

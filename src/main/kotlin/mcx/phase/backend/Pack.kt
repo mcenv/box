@@ -11,10 +11,10 @@ import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
+import mcx.data.Nbt
 import mcx.data.ResourceLocation
 import mcx.phase.*
 import mcx.phase.Context.Companion.DISPATCH
-import mcx.util.nbt.Nbt
 import mcx.util.nbtPath
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
