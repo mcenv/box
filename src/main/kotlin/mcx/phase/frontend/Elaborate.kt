@@ -761,6 +761,7 @@ class Elaborate private constructor(
       is C.Type.Float  -> true
       is C.Type.Double -> true
       is C.Type.String -> true
+      is C.Type.Code   -> true
       else             -> false
     }
   }
