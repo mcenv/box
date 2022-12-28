@@ -1,6 +1,4 @@
 import {
-  int.-,
-  int.=,
   string.++,
   string.repeat,
   magic.command,

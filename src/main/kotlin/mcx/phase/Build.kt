@@ -243,8 +243,8 @@ class Build(
               val location = key.location
               val zonked = fetch(Key.ZonkResult(location.module))
               val definition = zonked.value.module.definitions.find { it.name == location }!!
-              val results = fetch(Key.ParseResult(location.module)).value!!.module.imports
-                .map { async { fetch(Key.ZonkResult(it.value.module)) } }
+              val results = transitiveImports(fetch(Key.ParseResult(location.module)).value!!.module.name)
+                .map { async { fetch(Key.ZonkResult(it.module)) } }
                 .plus(async { fetch(Key.ZonkResult(prelude)) })
                 .awaitAll()
               val dependencies = results
@@ -304,13 +304,27 @@ class Build(
         }
     } as Value<V>
 
+  private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
+    val imports = mutableListOf<DefinitionLocation>()
+    suspend fun visit(location: ModuleLocation) {
+      fetch(Key.ParseResult(location)).value!!.module.imports.forEach { (import) ->
+        imports += import
+        visit(import.module)
+      }
+    }
+    visit(location)
+    return imports
+  }
+
   @OptIn(ExperimentalSerializationApi::class)
   suspend operator fun invoke() {
     val serverProperties = Properties().apply {
-      load(root
-             .resolve("server.properties")
-             .inputStream()
-             .buffered())
+      load(
+        root
+          .resolve("server.properties")
+          .inputStream()
+          .buffered()
+      )
     }
     val levelName = serverProperties.getProperty("level-name")
     val datapacks = root
