@@ -75,9 +75,11 @@ class Elaborate private constructor(
         } else {
           definition.body?.let { env.elaborateTerm(it, result) }
         }
-        C.Definition.Function(annotations, definition.name.value, definition.typeParams, binder, result, body).also {
-          hover(definition.name.range) { createFunctionDocumentation(it) }
-        }
+        C.Definition
+          .Function(annotations, definition.name.value, definition.typeParams, binder, result, body)
+          .also {
+            hover(definition.name.range) { createFunctionDocumentation(it) }
+          }
       }
       is R.Definition.Type     -> {
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
@@ -94,9 +96,11 @@ class Elaborate private constructor(
         val annotations = definition.annotations.map { elaborateAnnotation(it) }
         val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
         val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
-        C.Definition.Test(annotations, definition.name.value, body).also {
-          hover(definition.name.range) { createTestDocumentation(it) }
-        }
+        C.Definition
+          .Test(annotations, definition.name.value, body)
+          .also {
+            hover(definition.name.range) { createTestDocumentation(it) }
+          }
       }
       is R.Definition.Hole     -> null
     }
@@ -173,12 +177,10 @@ class Elaborate private constructor(
         when (val definition = definitions[type.name]) {
           is C.Definition.Type -> C.Type.Run(type.name, definition.body.kind)
           else                 -> {
-            if (signature) {
-              C.Type.Run(type.name, metaEnv.freshKind())
-            } else {
+            if (!signature) {
               diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
-              C.Type.Hole
             }
+            C.Type.Hole
           }
         }
       }
@@ -725,23 +727,27 @@ class Elaborate private constructor(
 
       type1 is C.Type.Run &&
       (
-          type1.name.module == input.module.name ||
-          Annotation.INLINE in definitions[type1.name]!!.annotations
-      ) -> Normalize.Env(definitions, emptyList(), true).evalType(type1) isSubtypeOf type2
+        type1.name.module == input.module.name ||
+        Annotation.INLINE in definitions[type1.name]!!.annotations
+      )                         -> Normalize
+        .Env(definitions, emptyList(), true)
+        .evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
       (
-          type2.name.module == input.module.name ||
-          Annotation.INLINE in definitions[type2.name]!!.annotations
-      ) -> type1 isSubtypeOf Normalize.Env(definitions, emptyList(), true).evalType(type2)
+        type2.name.module == input.module.name ||
+        Annotation.INLINE in definitions[type2.name]!!.annotations
+      )                         -> type1 isSubtypeOf Normalize
+        .Env(definitions, emptyList(), true)
+        .evalType(type2)
 
-      type1 is C.Type.Meta -> metaEnv.unifyTypes(type1, type2)
-      type2 is C.Type.Meta -> metaEnv.unifyTypes(type1, type2)
+      type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
 
-      type1 is C.Type.Hole -> true
-      type2 is C.Type.Hole -> true
+      type1 is C.Type.Hole      -> true
+      type2 is C.Type.Hole      -> true
 
-      else -> false
+      else                      -> false
     }
   }
 
