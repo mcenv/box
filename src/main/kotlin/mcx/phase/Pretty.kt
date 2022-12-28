@@ -37,7 +37,7 @@ fun prettyType(
     is C.Type.Compound  -> type.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key: ${prettyType(element)}" }
     is C.Type.Ref       -> "&${prettyType(type.element)}"
     is C.Type.Tuple     -> type.elements.joinToString(", ", "(", ")") { prettyType(it) }
-    is C.Type.Union     -> type.elements.joinToString(", ", "⟨", "⟩") { prettyType(it) }
+    is C.Type.Union     -> type.elements.joinToString(", ", "union {", "}") { prettyType(it) }
     is C.Type.Fun       -> "(${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
