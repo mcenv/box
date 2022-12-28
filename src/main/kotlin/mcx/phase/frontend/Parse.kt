@@ -812,11 +812,16 @@ class Parse private constructor(
     while (canRead()) {
       when (peek()) {
         ' '  -> skip()
-        '\n' -> skipNewline()
+        '\n' -> {
+          ++line
+          character = 0
+        }
         '\r' -> {
-          skipNewline()
+          skip()
+          ++line
+          character = 0
           if (canRead() && peek() == '\n') {
-            skip()
+            ++cursor
           }
         }
         '#'  -> {
@@ -832,12 +837,6 @@ class Parse private constructor(
         else -> break
       }
     }
-  }
-
-  private inline fun skipNewline() {
-    skip()
-    ++line
-    character = 0
   }
 
   private inline fun skip() {
