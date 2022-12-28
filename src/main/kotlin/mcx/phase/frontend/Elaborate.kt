@@ -386,7 +386,9 @@ class Elaborate private constructor(
         if (stage != entry.stage) {
           diagnostics += Diagnostic.StageMismatch(stage, entry.stage, term.range)
         }
-        entry.used = true
+        if (!entry.type.isValueType()) {
+          entry.used = true
+        }
         C.Term.Var(term.name, term.level, entry.type)
       }
 
@@ -733,13 +735,27 @@ class Elaborate private constructor(
           Annotation.INLINE in definitions[type2.name]!!.annotations
       ) -> type1 isSubtypeOf Normalize.Env(definitions, emptyList(), true).evalType(type2)
 
-      type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
-      type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
+      type1 is C.Type.Meta -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Meta -> metaEnv.unifyTypes(type1, type2)
 
-      type1 is C.Type.Hole      -> true
-      type2 is C.Type.Hole      -> true
+      type1 is C.Type.Hole -> true
+      type2 is C.Type.Hole -> true
 
-      else                      -> false
+      else -> false
+    }
+  }
+
+  private fun C.Type.isValueType(): Boolean {
+    return when (this) {
+      is C.Type.Bool   -> true
+      is C.Type.Byte   -> true
+      is C.Type.Short  -> true
+      is C.Type.Int    -> true
+      is C.Type.Long   -> true
+      is C.Type.Float  -> true
+      is C.Type.Double -> true
+      is C.Type.String -> true
+      else             -> false
     }
   }
 

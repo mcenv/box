@@ -129,7 +129,3 @@ import {
 };
 
 @export @builtin @static function to_string(_: int) → string;
-
-@export @builtin function dup(@no_drop _: int) → (int, int) {
-  $command("data modify storage mcx: int append from storage mcx: int[-1]")
-};
