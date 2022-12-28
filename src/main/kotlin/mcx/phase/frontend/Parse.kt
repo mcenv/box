@@ -417,17 +417,17 @@ class Parse private constructor(
           '&'  -> {
             skip()
             skipTrivia()
-            S.Term.RefOf(parseTerm(), until())
+            S.Term.RefOf(parseTermAtom(), until())
           }
           '`'  -> {
             skip()
             skipTrivia()
-            S.Term.CodeOf(parseTerm(), until())
+            S.Term.CodeOf(parseTermAtom(), until())
           }
           '$'  -> {
             skip()
             skipTrivia()
-            S.Term.Splice(parseTerm(), until())
+            S.Term.Splice(parseTermAtom(), until())
           }
           else -> {
             val word = parseRanged { readWord() }
