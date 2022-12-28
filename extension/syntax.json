@@ -69,7 +69,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|function|type|test|resource)\\b"
+      "match": "\\b(?:import|function|type|test|resource|union)\\b"
     },
     {
       "name": "support.type.mcx",

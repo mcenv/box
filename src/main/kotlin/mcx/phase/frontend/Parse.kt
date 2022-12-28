@@ -250,10 +250,6 @@ class Parse private constructor(
             skipTrivia()
             S.Type.Ref(parseType(), until())
           }
-          '⟨'  -> {
-            val elements = parseList(',', '⟨', '⟩') { parseType() }
-            S.Type.Union(elements, until())
-          }
           '`'  -> {
             skip()
             skipTrivia()
@@ -275,6 +271,10 @@ class Parse private constructor(
             "string" -> S.Type.String(null, until())
             "false"  -> S.Type.Bool(false, until())
             "true"   -> S.Type.Bool(true, until())
+            "union"  -> {
+              val elements = parseList(',', '{', '}') { parseType() }
+              S.Type.Union(elements, until())
+            }
             else     ->
               word
                 .lastOrNull()
