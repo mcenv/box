@@ -93,14 +93,18 @@ class Elaborate private constructor(
           }
       }
       is R.Definition.Test     -> {
-        val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
-        val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
-        C.Definition
-          .Test(annotations, definition.name.value, body)
-          .also {
-            hover(definition.name.range) { createTestDocumentation(it) }
-          }
+        if (signature) {
+          null
+        } else {
+          val annotations = definition.annotations.map { elaborateAnnotation(it) }
+          val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
+          val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
+          C.Definition
+            .Test(annotations, definition.name.value, body)
+            .also {
+              hover(definition.name.range) { createTestDocumentation(it) }
+            }
+        }
       }
       is R.Definition.Hole     -> null
     }
