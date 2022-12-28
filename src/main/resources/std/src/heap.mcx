@@ -1,0 +1,76 @@
+import {
+  int.-,
+  int.=,
+  string.++,
+  string.repeat,
+  magic.command,
+}
+
+@load function init() → () {
+  # todo
+  ()
+};
+
+@static @inline function shift(depth: int) → `() {
+  let path = repeat(("[-2]", depth));
+  `(
+    let _ = $command("execute store result score #1 mcx if data storage mcx: heap" ++ path ++ "[]");
+    let _ = $command("execute if score #0 mcx matches 0.. if score #1 mcx matches 3.. run data remove storage mcx: heap" ++ path ++ "[2]");
+    let _ = $command("execute if score #0 mcx matches ..-1 if score #1 mcx matches ..2 run data modify storage mcx: heap" ++ path ++ " append value []");
+    ()
+  )
+};
+
+function touch(index: int) → () {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
+  let _ = $command("scoreboard players set #1 mcx 65536");
+  let _ = $command("scoreboard players operation #0 mcx *= #1 mcx");
+  let _ = $shift(0);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(1);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(2);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(3);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(4);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(5);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(6);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(7);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(8);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(9);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(10);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(11);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(12);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(13);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(14);
+
+  let _ = $command("scoreboard players operation #0 mcx += #0 mcx");
+  let _ = $shift(15);
+
+  ()
+};
