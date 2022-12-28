@@ -1,7 +1,7 @@
 import {
-  int.to_string,
-  string.++,
-  magic.command,
+  int∷to_string,
+  string∷++,
+  magic∷command,
 }
 
 @export @builtin function size(_: [long;]) → int {

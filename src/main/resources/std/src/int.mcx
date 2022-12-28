@@ -1,5 +1,5 @@
 import {
-  magic.command,
+  magic∷command,
 }
 
 @export @builtin function +(@no_drop _: (int, int)) → int {

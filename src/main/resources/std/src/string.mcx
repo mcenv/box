@@ -1,7 +1,7 @@
 import {
-  int.-,
-  int.=,
-  magic.command,
+  int∷-,
+  int∷=,
+  magic∷command,
 }
 
 @export @builtin @static function ++(_: (string, string)) → string;

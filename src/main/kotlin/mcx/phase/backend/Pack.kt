@@ -109,7 +109,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.ListOf     -> {
+      is L.Term.ListOf      -> {
         push(P.Stack.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
           val elementType = eraseType(term.elements.first().type).first()
@@ -121,7 +121,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.CompoundOf -> {
+      is L.Term.CompoundOf  -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -141,7 +141,7 @@ class Pack private constructor(
           packTerm(element)
         }
       }
-      is L.Term.FunOf      -> {
+      is L.Term.FunOf       -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.vars.forEach { (name, level, type) ->
           val stack = eraseType(type).first()
@@ -153,15 +153,21 @@ class Pack private constructor(
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.BYTE.id)(-1) }))))
         drop(P.Stack.BYTE)
-        +Execute.ConditionalScoreMatches(true, REG_0, REG, 1..Int.MAX_VALUE,
-                                         Execute.Run(
-                                           RunFunction(packDefinitionLocation(term.thenName))))
-        +Execute.ConditionalScoreMatches(true, REG_0, REG, Int.MIN_VALUE..0,
-                                         Execute.Run(
-                                           RunFunction(packDefinitionLocation(term.elseName))))
+        +Execute.ConditionalScoreMatches(
+          true, REG_0, REG, 1..Int.MAX_VALUE,
+          Execute.Run(
+            RunFunction(packDefinitionLocation(term.thenName))
+          )
+        )
+        +Execute.ConditionalScoreMatches(
+          true, REG_0, REG, Int.MIN_VALUE..0,
+          Execute.Run(
+            RunFunction(packDefinitionLocation(term.elseName))
+          )
+        )
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let        -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -171,12 +177,12 @@ class Pack private constructor(
           dropPattern(term.binder, bodyTypes)
         }
       }
-      is L.Term.Var        -> {
+      is L.Term.Var         -> {
         val type = eraseType(term.type).first()
         val index = this[term.level, type]
         push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
       }
-      is L.Term.Run        -> {
+      is L.Term.Run         -> {
         packTerm(term.arg)
 
         +RunFunction(packDefinitionLocation(term.name))
@@ -185,11 +191,11 @@ class Pack private constructor(
         }
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Is         -> {
+      is L.Term.Is          -> {
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
-      is L.Term.Command    -> {
+      is L.Term.Command     -> {
         !{ Raw("# command") }
         +Raw(term.value)
         eraseType(term.type).forEach { push(it, null) }
@@ -255,22 +261,34 @@ class Pack private constructor(
     ) {
       when (scrutineer) {
         is L.Pattern.IntOf      -> {
-          +Execute.StoreScore(RESULT, REG_1, REG,
-                              Execute.Run(
-                                GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.INT.id)(-1) }))))
+          +Execute.StoreScore(
+            RESULT, REG_1, REG,
+            Execute.Run(
+              GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.INT.id)(-1) }))
+            )
+          )
           drop(P.Stack.INT)
-          +Execute.ConditionalScoreMatches(false, REG_1, REG, scrutineer.value..scrutineer.value,
-                                           Execute.Run(
-                                             SetScore(REG_0, REG, 0)))
+          +Execute.ConditionalScoreMatches(
+            false, REG_1, REG, scrutineer.value..scrutineer.value,
+            Execute.Run(
+              SetScore(REG_0, REG, 0)
+            )
+          )
         }
         is L.Pattern.IntRangeOf -> {
-          +Execute.StoreScore(RESULT, REG_1, REG,
-                              Execute.Run(
-                                GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.INT.id)(-1) }))))
+          +Execute.StoreScore(
+            RESULT, REG_1, REG,
+            Execute.Run(
+              GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.INT.id)(-1) }))
+            )
+          )
           drop(P.Stack.INT)
-          +Execute.ConditionalScoreMatches(false, REG_1, REG, scrutineer.min..scrutineer.max,
-                                           Execute.Run(
-                                             SetScore(REG_0, REG, 0)))
+          +Execute.ConditionalScoreMatches(
+            false, REG_1, REG, scrutineer.min..scrutineer.max,
+            Execute.Run(
+              SetScore(REG_0, REG, 0)
+            )
+          )
         }
         is L.Pattern.ListOf     -> TODO()
         is L.Pattern.CompoundOf -> TODO()
@@ -284,9 +302,12 @@ class Pack private constructor(
     }
     visit(scrutineer)
     push(P.Stack.BYTE, SourceProvider.Value(Nbt.Byte(0)))
-    +Execute.StoreStorage(RESULT, DataAccessor.Storage(MCX, nbtPath { it(P.Stack.BYTE.id)(-1) }), Type.BYTE, 1.0,
-                          Execute.Run(
-                            GetScore(REG_0, REG)))
+    +Execute.StoreStorage(
+      RESULT, DataAccessor.Storage(MCX, nbtPath { it(P.Stack.BYTE.id)(-1) }), Type.BYTE, 1.0,
+      Execute.Run(
+        GetScore(REG_0, REG)
+      )
+    )
   }
 
   private fun eraseType(
@@ -394,10 +415,9 @@ class Pack private constructor(
         .encodeToByteArray()
         .joinToString("") {
           when (
-            val char =
-              it
-                .toInt()
-                .toChar()
+            val char = it
+              .toInt()
+              .toChar()
           ) {
             in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
             else                               -> ".${
