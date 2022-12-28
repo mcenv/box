@@ -1,10 +1,11 @@
 import {
+  int.=,
   magic.command,
 }
 
-@export @builtin function size (_: string) → int {
+@export @builtin @static function ++(_: (string, string)) → string;
+
+@export @builtin function size(_: string) → int {
   let _ = $command("data modify storage mcx: int append value 0");
   $command("execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]")
 };
-
-@export @builtin @static function ++ (_: (string, string)) → string;

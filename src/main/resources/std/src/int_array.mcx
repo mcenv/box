@@ -4,12 +4,12 @@ import {
   magic.command,
 }
 
-@export @builtin function size (_: [int;]) → int {
+@export @builtin function size(_: [int;]) → int {
   let _ = $command("data modify storage mcx: int append value 0");
   $command("execute store result storage mcx: int[-1] int 1 if data storage mcx: int_array[-1][]")
 };
 
-@export @static function get (array: `[int;], index: int) → `int {
+@export @static function get(array: `[int;], index: int) → `int {
   `(
     let _ = $array;
     $command("data modify storage mcx: int_array append from storage mcx: int_array[-1][" ++ to_string(index) ++ "]")
