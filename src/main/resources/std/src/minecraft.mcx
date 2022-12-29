@@ -25,13 +25,13 @@ import {
 };
 
 @export function seed() → int {
-  let @no_drop _ = 0;
+  let _ = $command("data modify storage mcx: int append value 0");
   $command("execute store result storage mcx: int[-1] int 1 run seed")
 };
 
 @export @static function set_idle_timeout(minutes: int) → `int {
   `(
-    let @no_drop _ = 0;
+    let _ = $command("data modify storage mcx: int append value 0");
     $command("execute store result storage mcx: int[-1] int 1 run setidletimeout " ++ to_string(minutes))
   )
 };

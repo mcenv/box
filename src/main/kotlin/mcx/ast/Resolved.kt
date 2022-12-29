@@ -311,61 +311,51 @@ object Resolved {
   }
 
   sealed interface Pattern {
-    val annotations: List<Ranged<Annotation>>
     val range: Range
 
     data class IntOf(
       val value: Int,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class IntRangeOf(
       val min: Int,
       val max: Int,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class ListOf(
       val elements: List<Pattern>,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class TupleOf(
       val elements: List<Pattern>,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Var(
       val name: String,
       val level: Int,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Drop(
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Anno(
       val element: Pattern,
       val type: Type,
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
 
     data class Hole(
-      override val annotations: List<Ranged<Annotation>>,
       override val range: Range,
     ) : Pattern
   }

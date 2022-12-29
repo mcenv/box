@@ -357,54 +357,45 @@ object Core {
   }
 
   sealed interface Pattern {
-    val annotations: List<Annotation>
     val type: Type
 
     data class IntOf(
       val value: Int,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class IntRangeOf(
       val min: Int,
       val max: Int,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class ListOf(
       val elements: List<Pattern>,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class CompoundOf(
       val elements: Map<String, Pattern>,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class TupleOf(
       val elements: List<Pattern>,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Var(
       val name: String,
       val level: Int,
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Drop(
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
 
     data class Hole(
-      override val annotations: List<Annotation>,
       override val type: Type,
     ) : Pattern
   }

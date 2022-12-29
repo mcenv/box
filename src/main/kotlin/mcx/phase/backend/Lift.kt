@@ -107,8 +107,7 @@ class Lift private constructor(
           val freeVars = freeVars(term)
           freeVars.forEach { (name, type) -> bind(name, type.second) }
           val capture = L.Pattern.CompoundOf(
-            freeVars.entries.mapIndexed { index, (name, type) -> name to L.Pattern.Var(binderSize + index, emptyList(), type.second) },
-            emptyList(),
+            freeVars.entries.mapIndexed { index, (name, type) -> name to L.Pattern.Var(binderSize + index, type.second) },
             L.Type.Compound(freeVars.mapValues { it.value.second }),
           )
           val body = liftTerm(term.body)
@@ -117,7 +116,7 @@ class Lift private constructor(
             .Function(
               emptyList(),
               definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-              L.Pattern.TupleOf(listOf(binder, capture), emptyList(), L.Type.Tuple(listOf(binder.type, capture.type))),
+              L.Pattern.TupleOf(listOf(binder, capture), L.Type.Tuple(listOf(binder.type, capture.type))),
               body,
               tag,
             )
@@ -161,19 +160,18 @@ class Lift private constructor(
   private fun Env.liftPattern(
     pattern: C.Pattern,
   ): L.Pattern {
-    val annotations = pattern.annotations.mapNotNull { liftAnnotation(it) }
     val type = liftType(pattern.type)
     return when (pattern) {
-      is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, annotations, type)
-      is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, type)
-      is C.Pattern.ListOf     -> L.Pattern.ListOf(pattern.elements.map { liftPattern(it) }, annotations, type)
-      is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, annotations, type)
-      is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, annotations, type)
+      is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, type)
+      is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, type)
+      is C.Pattern.ListOf     -> L.Pattern.ListOf(pattern.elements.map { liftPattern(it) }, type)
+      is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, type)
+      is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, type)
       is C.Pattern.Var        -> {
         bind(pattern.name, type)
-        L.Pattern.Var(types.lastIndex, annotations, type)
+        L.Pattern.Var(types.lastIndex, type)
       }
-      is C.Pattern.Drop       -> L.Pattern.Drop(annotations, type)
+      is C.Pattern.Drop       -> L.Pattern.Drop(type)
       is C.Pattern.Hole       -> error("unexpected: hole")
     }
   }
@@ -232,13 +230,13 @@ class Lift private constructor(
   ): L.Definition.Function {
     val type = L.Type.Tuple(types.map { (_, type) -> type })
     val params = types.mapIndexed { level, (_, type) ->
-      L.Pattern.Var(level, emptyList(), type)
+      L.Pattern.Var(level, type)
     }
     return L.Definition
       .Function(
-        emptyList(),
+        listOf(L.Annotation.NO_DROP),
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-        L.Pattern.TupleOf(params, listOf(L.Annotation.NO_DROP), type),
+        L.Pattern.TupleOf(params, type),
         body,
         restore,
       )

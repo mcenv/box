@@ -493,22 +493,21 @@ class Elaborate private constructor(
     expected: C.Type? = null,
   ): C.Pattern {
     val expected = expected?.let { metaEnv.forceType(it) }
-    val annotations = pattern.annotations.map { elaborateAnnotation(it) }
     return when {
       pattern is R.Pattern.IntOf &&
-      expected is C.Type.Int?     -> C.Pattern.IntOf(pattern.value, annotations, C.Type.Int.SET)
+      expected is C.Type.Int?           -> C.Pattern.IntOf(pattern.value, C.Type.Int.SET)
 
       pattern is R.Pattern.IntRangeOf &&
       expected is C.Type.Int?     -> {
         if (pattern.min > pattern.max) {
           diagnostics += Diagnostic.EmptyRange(pattern.range)
         }
-        C.Pattern.IntRangeOf(pattern.min, pattern.max, annotations, C.Type.Int.SET)
+        C.Pattern.IntRangeOf(pattern.min, pattern.max, C.Type.Int.SET)
       }
 
       pattern is R.Pattern.ListOf &&
       pattern.elements.isEmpty() &&
-      expected is C.Type.List?    -> C.Pattern.ListOf(emptyList(), annotations, C.Type.List(C.Type.Union.END))
+      expected is C.Type.List?          -> C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
 
       pattern is R.Pattern.ListOf &&
       expected is C.Type.List?    -> {
@@ -518,7 +517,7 @@ class Elaborate private constructor(
           pattern.elements
             .drop(1)
             .map { elaboratePattern(it, element) }
-        C.Pattern.ListOf(listOf(head) + tail, annotations, C.Type.List(element))
+        C.Pattern.ListOf(listOf(head) + tail, C.Type.List(element))
       }
 
       pattern is R.Pattern.CompoundOf &&
@@ -528,7 +527,7 @@ class Elaborate private constructor(
           hoverType(key.range, element.type)
           key.value to element
         }
-        C.Pattern.CompoundOf(elements, annotations, C.Type.Compound(elements.mapValues { it.value.type }))
+        C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
       pattern is R.Pattern.CompoundOf &&
@@ -555,7 +554,7 @@ class Elaborate private constructor(
               .toSet()
           )
           .forEach { diagnostics += Diagnostic.KeyNotFound(it, pattern.range) }
-        C.Pattern.CompoundOf(elements, annotations, C.Type.Compound(elements.mapValues { it.value.type }))
+        C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
       pattern is R.Pattern.TupleOf &&
@@ -566,7 +565,7 @@ class Elaborate private constructor(
         val elements = pattern.elements.mapIndexed { index, element ->
           elaboratePattern(element, expected.elements.getOrNull(index))
         }
-        C.Pattern.TupleOf(elements, annotations, expected)
+        C.Pattern.TupleOf(elements, expected)
       }
 
       pattern is R.Pattern.TupleOf &&
@@ -574,7 +573,7 @@ class Elaborate private constructor(
         val elements = pattern.elements.map { element ->
           elaboratePattern(element)
         }
-        C.Pattern.TupleOf(elements, annotations, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
+        C.Pattern.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
       }
 
       pattern is R.Pattern.Var &&
@@ -583,18 +582,18 @@ class Elaborate private constructor(
         when (val kind = metaEnv.forceKind(expected.kind)) {
           is C.Kind.Type ->
             if (kind.arity == 1) {
-              C.Pattern.Var(pattern.name, pattern.level, annotations, expected)
+              C.Pattern.Var(pattern.name, pattern.level, expected)
             } else {
               diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
-              C.Pattern.Hole(annotations, expected)
+              C.Pattern.Hole(expected)
             }
           is C.Kind.Meta -> {
             metaEnv.unifyKinds(kind, C.Kind.Type.ONE)
-            C.Pattern.Var(pattern.name, pattern.level, annotations, expected)
+            C.Pattern.Var(pattern.name, pattern.level, expected)
           }
           else           -> {
             diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
-            C.Pattern.Hole(annotations, expected)
+            C.Pattern.Hole(expected)
           }
         }
       }
@@ -603,10 +602,10 @@ class Elaborate private constructor(
       expected == null            -> {
         val type = metaEnv.freshType(pattern.range, C.Kind.Type(1))
         bind(pattern.name, type)
-        C.Pattern.Var(pattern.name, pattern.level, annotations, type)
+        C.Pattern.Var(pattern.name, pattern.level, type)
       }
 
-      pattern is R.Pattern.Drop   -> C.Pattern.Drop(annotations, expected ?: metaEnv.freshType(pattern.range))
+      pattern is R.Pattern.Drop         -> C.Pattern.Drop(expected ?: metaEnv.freshType(pattern.range))
 
       pattern is R.Pattern.Anno &&
       expected == null            -> {
@@ -614,7 +613,7 @@ class Elaborate private constructor(
         elaboratePattern(pattern.element, type)
       }
 
-      pattern is R.Pattern.Hole   -> C.Pattern.Hole(annotations, expected ?: C.Type.Hole)
+      pattern is R.Pattern.Hole         -> C.Pattern.Hole(expected ?: C.Type.Hole)
 
       expected == null            -> error("type must be non-null")
 

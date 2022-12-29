@@ -2,98 +2,92 @@ import {
   magic∷command,
 }
 
-@export @builtin function +(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function +(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx")
 };
 
-@export @builtin function -(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function -(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx")
 };
 
-@export @builtin function *(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function *(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx")
 };
 
-@export @builtin function /(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function /(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx")
 };
 
-@export @builtin function %(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function %(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx")
 };
 
-@export @builtin function min(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function min(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx")
 };
 
-@export @builtin function max(@no_drop _: (int, int)) → int {
+@export @builtin @no_drop function max(_: (int, int)) → int {
   let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
   let _ = $command("data remove storage mcx: int[-1]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   $command("execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx")
 };
 
-@export @builtin function =(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function =(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 0b");
   $command("execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b")
 };
 
-@export @builtin function <(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function <(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 0b");
   $command("execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b")
 };
 
-@export @builtin function <=(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function <=(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 0b");
   $command("execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b")
 };
 
-@export @builtin function >(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function >(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 0b");
   $command("execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b")
 };
 
-@export @builtin function >=(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function >=(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 0b");
   $command("execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b")
 };
 
-@export @builtin function !=(@no_drop _: (int, int)) → bool {
-  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-1]");
-  let _ = $command("data remove storage mcx: int[-1]");
+@export @builtin function !=(_: (int, int)) → bool {
+  let _ = $command("execute store result score #0 mcx run data get storage mcx: int[-2]");
   let _ = $command("execute store result score #1 mcx run data get storage mcx: int[-1]");
   let _ = $command("data modify storage mcx: byte append value 1b");
   $command("execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b")

@@ -150,7 +150,7 @@ class Resolve private constructor(
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
       is S.Term.RefOf       -> R.Term.RefOf(resolveTerm(term.element), term.range)
       is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.FunOf       -> {
+      is S.Term.FunOf  -> {
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)
@@ -158,14 +158,14 @@ class Resolve private constructor(
         }
         R.Term.FunOf(binder, body, term.range)
       }
-      is S.Term.Apply       -> R.Term.Apply(resolveTerm(term.operator), resolveTerm(term.operand), term.range)
-      is S.Term.If          -> {
+      is S.Term.Apply  -> R.Term.Apply(resolveTerm(term.operator), resolveTerm(term.operand), term.range)
+      is S.Term.If     -> {
         val condition = resolveTerm(term.condition)
         val thenClause = resolveTerm(term.thenClause)
         val elseClause = resolveTerm(term.elseClause)
         R.Term.If(condition, thenClause, elseClause, term.range)
       }
-      is S.Term.Let         -> {
+      is S.Term.Let    -> {
         val init = resolveTerm(term.init)
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
@@ -209,18 +209,18 @@ class Resolve private constructor(
     pattern: S.Pattern,
   ): R.Pattern {
     return when (pattern) {
-      is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.annotations, pattern.range)
-      is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.min, pattern.max, pattern.annotations, pattern.range)
-      is S.Pattern.ListOf     -> R.Pattern.ListOf(pattern.elements.map { resolvePattern(it) }, pattern.annotations, pattern.range)
-      is S.Pattern.CompoundOf -> R.Pattern.CompoundOf(pattern.elements.map { (key, element) -> key to resolvePattern(element) }, pattern.annotations, pattern.range)
-      is S.Pattern.TupleOf    -> R.Pattern.TupleOf(pattern.elements.map { resolvePattern(it) }, pattern.annotations, pattern.range)
+      is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
+      is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.min, pattern.max, pattern.range)
+      is S.Pattern.ListOf     -> R.Pattern.ListOf(pattern.elements.map { resolvePattern(it) }, pattern.range)
+      is S.Pattern.CompoundOf -> R.Pattern.CompoundOf(pattern.elements.map { (key, element) -> key to resolvePattern(element) }, pattern.range)
+      is S.Pattern.TupleOf    -> R.Pattern.TupleOf(pattern.elements.map { resolvePattern(it) }, pattern.range)
       is S.Pattern.Var        -> {
         bind(pattern.name)
-        R.Pattern.Var(pattern.name, lastIndex, pattern.annotations, pattern.range)
+        R.Pattern.Var(pattern.name, lastIndex, pattern.range)
       }
-      is S.Pattern.Drop       -> R.Pattern.Drop(pattern.annotations, pattern.range)
-      is S.Pattern.Anno       -> R.Pattern.Anno(resolvePattern(pattern.element), resolveType(pattern.type), pattern.annotations, pattern.range)
-      is S.Pattern.Hole       -> R.Pattern.Hole(pattern.annotations, pattern.range)
+      is S.Pattern.Drop       -> R.Pattern.Drop(pattern.range)
+      is S.Pattern.Anno       -> R.Pattern.Anno(resolvePattern(pattern.element), resolveType(pattern.type), pattern.range)
+      is S.Pattern.Hole       -> R.Pattern.Hole(pattern.range)
     }
   }
 
@@ -228,10 +228,9 @@ class Resolve private constructor(
     name: String,
     range: Range,
   ): DefinitionLocation? {
-    val expected =
-      name
-        .split('∷')
-        .let { ModuleLocation(it.dropLast(1)) / it.last() }
+    val expected = name
+      .split('∷')
+      .let { ModuleLocation(it.dropLast(1)) / it.last() }
     val candidates = locations.filter { actual ->
       expected.module.parts.size <= actual.module.parts.size &&
       (expected.name == actual.name) &&

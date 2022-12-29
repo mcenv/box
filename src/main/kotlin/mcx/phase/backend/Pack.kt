@@ -42,7 +42,7 @@ class Pack private constructor(
 
         packTerm(definition.body)
 
-        if (L.Annotation.NO_DROP !in definition.binder.annotations) {
+        if (L.Annotation.NO_DROP !in definition.annotations) {
           val resultTypes = eraseType(definition.body.type)
           dropPattern(definition.binder, resultTypes)
         }
@@ -172,10 +172,8 @@ class Pack private constructor(
         packPattern(term.binder)
         packTerm(term.body)
 
-        if (L.Annotation.NO_DROP !in term.binder.annotations) {
-          val bodyTypes = eraseType(term.body.type)
-          dropPattern(term.binder, bodyTypes)
-        }
+        val bodyTypes = eraseType(term.body.type)
+        dropPattern(term.binder, bodyTypes)
       }
       is L.Term.Var         -> {
         val type = eraseType(term.type).first()

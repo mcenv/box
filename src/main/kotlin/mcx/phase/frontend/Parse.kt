@@ -580,7 +580,6 @@ class Parse private constructor(
 
   private fun parsePattern(): S.Pattern =
     ranging {
-      val annotations = parseAnnotations()
       (if (canRead()) {
         when (peek()) {
           '(' -> {
@@ -588,7 +587,7 @@ class Parse private constructor(
             skipTrivia()
             if (canRead() && peek() == ')') {
               skip()
-              S.Pattern.TupleOf(emptyList(), annotations, until())
+              S.Pattern.TupleOf(emptyList(), until())
             } else {
               val first = parsePattern()
               skipTrivia()
@@ -602,7 +601,7 @@ class Parse private constructor(
                     val tail = parseList(',', ',', ')') {
                       parsePattern()
                     }
-                    S.Pattern.TupleOf(listOf(first) + tail, annotations, until())
+                    S.Pattern.TupleOf(listOf(first) + tail, until())
                   }
                   else -> null
                 }
@@ -613,7 +612,7 @@ class Parse private constructor(
           }
           '['  -> {
             val elements = parseList(',', '[', ']') { parsePattern() }
-            S.Pattern.ListOf(elements, annotations, until())
+            S.Pattern.ListOf(elements, until())
           }
           '{'  -> {
             val elements = parseList(',', '{', '}') {
@@ -623,15 +622,15 @@ class Parse private constructor(
               val element = parsePattern()
               key to element
             }
-            S.Pattern.CompoundOf(elements, annotations, until())
+            S.Pattern.CompoundOf(elements, until())
           }
           else -> when (val word = readWord()) {
-            "_"  -> S.Pattern.Drop(annotations, until())
+            "_"  -> S.Pattern.Drop(until())
             else ->
               word
                 .toIntOrNull()
-                ?.let { S.Pattern.IntOf(it, annotations, until()) }
-              ?: S.Pattern.Var(word, annotations, until())
+                ?.let { S.Pattern.IntOf(it, until()) }
+              ?: S.Pattern.Var(word, until())
           }
         }
       } else {
@@ -639,7 +638,7 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedPattern(range)
-        S.Pattern.Hole(annotations, range)
+        S.Pattern.Hole(range)
       }).let { left ->
         skipTrivia()
         if (canRead()) {
@@ -651,7 +650,7 @@ class Parse private constructor(
                 readWord()
                   .toIntOrNull()
                   ?.let { max ->
-                    S.Pattern.IntRangeOf(min.value, max, annotations, until())
+                    S.Pattern.IntRangeOf(min.value, max, until())
                   }
               }
             }
@@ -659,7 +658,7 @@ class Parse private constructor(
               skip()
               skipTrivia()
               val type = parseType()
-              S.Pattern.Anno(left, type, annotations, until())
+              S.Pattern.Anno(left, type, until())
             }
             else -> null
           }
