@@ -36,6 +36,6 @@ import {
   )
 };
 
-@export function halt() → union {} {
+@export function halt() → () {
   $command("stop")
 };
