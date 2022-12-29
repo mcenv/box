@@ -5,7 +5,7 @@ import {
   int∷<=,
 }
 
-@static function ^(x: `int, n: int) → `int {
+static function ^(x: `int, n: int) → `int {
   if n <= 0 {
     `1
   } else {
