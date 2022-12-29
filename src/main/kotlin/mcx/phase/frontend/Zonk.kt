@@ -36,15 +36,15 @@ class Zonk private constructor(
         val binder = zonkPattern(definition.binder)
         val result = zonkType(definition.result)
         val body = definition.body?.let { zonkTerm(it) }
-        C.Definition.Function(definition.annotations, definition.name, definition.typeParams, binder, result, body)
+        C.Definition.Function(definition.modifiers, definition.name, definition.typeParams, binder, result, body)
       }
       is C.Definition.Type     -> {
         val body = zonkType(definition.body)
-        C.Definition.Type(definition.annotations, definition.name, body)
+        C.Definition.Type(definition.modifiers, definition.name, body)
       }
       is C.Definition.Test     -> {
         val body = zonkTerm(definition.body)
-        C.Definition.Test(definition.annotations, definition.name, body)
+        C.Definition.Test(definition.modifiers, definition.name, body)
       }
     }
   }

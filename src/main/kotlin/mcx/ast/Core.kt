@@ -9,11 +9,11 @@ object Core {
   )
 
   sealed interface Definition {
-    val annotations: List<Annotation>
+    val modifiers: List<Modifier>
     val name: DefinitionLocation
 
     data class Function(
-      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val typeParams: List<String>,
       val binder: Pattern,
@@ -22,13 +22,13 @@ object Core {
     ) : Definition
 
     data class Type(
-      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val body: Core.Type,
     ) : Definition
 
     data class Test(
-      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val body: Term,
     ) : Definition

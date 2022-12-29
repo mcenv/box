@@ -1,27 +1,15 @@
 package mcx.phase.frontend
 
 import mcx.ast.*
-import mcx.ast.Annotation
 import mcx.lsp.highlight
 import mcx.phase.*
 import mcx.phase.Normalize.evalType
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
-import mcx.util.Ranged
 import mcx.util.contains
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
-import kotlin.Boolean
-import kotlin.Int
-import kotlin.Pair
-import kotlin.String
-import kotlin.Suppress
 import kotlin.also
-import kotlin.apply
-import kotlin.error
-import kotlin.let
-import kotlin.repeat
-import kotlin.to
 import mcx.ast.Core as C
 import mcx.ast.Resolved as R
 
@@ -65,9 +53,9 @@ class Elaborate private constructor(
   ): C.Definition? {
     return when (definition) {
       is R.Definition.Function -> {
-        val annotations = definition.annotations.map { elaborateAnnotation(it) }
+        val modifiers = definition.modifiers.map { it.value }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-        val env = emptyEnv(definitions, types, Annotation.LEAF in annotations, Annotation.STATIC in annotations)
+        val env = emptyEnv(definitions, types, Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
         val binder = env.elaboratePattern(definition.binder)
         val result = env.elaborateType(definition.result)
         val body = if (signature) {
@@ -76,18 +64,18 @@ class Elaborate private constructor(
           definition.body?.let { env.elaborateTerm(it, result) }
         }
         C.Definition
-          .Function(annotations, definition.name.value, definition.typeParams, binder, result, body)
+          .Function(modifiers, definition.name.value, definition.typeParams, binder, result, body)
           .also {
             hover(definition.name.range) { createFunctionDocumentation(it) }
           }
       }
       is R.Definition.Type     -> {
-        val annotations = definition.annotations.map { elaborateAnnotation(it) }
-        val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
+        val modifiers = definition.modifiers.map { it.value }
+        val env = emptyEnv(definitions, emptyList(), Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
         val kind = elaborateKind(definition.kind)
         val body = env.elaborateType(definition.body, kind)
         C.Definition
-          .Type(annotations, definition.name.value, body)
+          .Type(modifiers, definition.name.value, body)
           .also {
             hover(definition.name.range) { createTypeDocumentation(it) }
           }
@@ -96,11 +84,11 @@ class Elaborate private constructor(
         if (signature) {
           null
         } else {
-          val annotations = definition.annotations.map { elaborateAnnotation(it) }
-          val env = emptyEnv(definitions, emptyList(), Annotation.LEAF in annotations, Annotation.STATIC in annotations)
+          val modifiers = definition.modifiers.map { it.value }
+          val env = emptyEnv(definitions, emptyList(), Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
           val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
           C.Definition
-            .Test(annotations, definition.name.value, body)
+            .Test(modifiers, definition.name.value, body)
             .also {
               hover(definition.name.range) { createTestDocumentation(it) }
             }
@@ -108,13 +96,6 @@ class Elaborate private constructor(
       }
       is R.Definition.Hole     -> null
     }
-  }
-
-  private fun elaborateAnnotation(
-    annotation: Ranged<Annotation>,
-  ): Annotation {
-    // TODO: validate
-    return annotation.value
   }
 
   private fun elaborateKind(
@@ -406,7 +387,7 @@ class Elaborate private constructor(
         } else {
           when (val definition = definitions[term.name.value]) {
             is C.Definition.Function -> {
-              if (!isMeta() && Annotation.STATIC in definition.annotations) {
+              if (!isMeta() && Modifier.STATIC in definition.modifiers) {
                 diagnostics += Diagnostic.RequiredStatic(term.name.range)
                 C.Term.Hole(C.Type.Hole)
               } else {
@@ -731,7 +712,7 @@ class Elaborate private constructor(
       type1 is C.Type.Run &&
       (
         type1.name.module == input.module.name ||
-        Annotation.INLINE in definitions[type1.name]!!.annotations
+        Modifier.INLINE in definitions[type1.name]!!.modifiers
       )                         -> Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type1) isSubtypeOf type2
@@ -739,7 +720,7 @@ class Elaborate private constructor(
       type2 is C.Type.Run &&
       (
         type2.name.module == input.module.name ||
-        Annotation.INLINE in definitions[type2.name]!!.annotations
+        Modifier.INLINE in definitions[type2.name]!!.modifiers
       )                         -> type1 isSubtypeOf Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type2)

@@ -1,5 +1,5 @@
-@export @builtin @static function command(command: string) → `union {};
+export builtin static function command(command: string) → `union {};
 
-@export @builtin @static function erase⟨a⟩() → string;
+export builtin static function erase⟨a⟩() → string;
 
-@export @builtin @static function lift⟨a⟩(a: a) → `a;
+export builtin static function lift⟨a⟩(a: a) → `a;

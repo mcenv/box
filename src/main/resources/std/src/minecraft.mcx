@@ -4,11 +4,11 @@ import {
   magic∷command,
 }
 
-@export function reload() → () {
+export function reload() → () {
   $command("reload")
 };
 
-@export @static function save_all(flush: bool) → `() {
+export static function save_all(flush: bool) → `() {
   if flush {
     command("save-all flush")
   } else {
@@ -16,7 +16,7 @@ import {
   }
 };
 
-@export @static function auto_save(enabled: bool) → `() {
+export static function auto_save(enabled: bool) → `() {
   if enabled {
     command("save-on")
   } else {
@@ -24,18 +24,18 @@ import {
   }
 };
 
-@export function seed() → int {
+export function seed() → int {
   let _ = $command("data modify storage mcx: int append value 0");
   $command("execute store result storage mcx: int[-1] int 1 run seed")
 };
 
-@export @static function set_idle_timeout(minutes: int) → `int {
+export static function set_idle_timeout(minutes: int) → `int {
   `(
     let _ = $command("data modify storage mcx: int append value 0");
     $command("execute store result storage mcx: int[-1] int 1 run setidletimeout " ++ to_string(minutes))
   )
 };
 
-@export function halt() → () {
+export function halt() → () {
   $command("stop")
 };

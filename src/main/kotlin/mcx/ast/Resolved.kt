@@ -11,12 +11,12 @@ object Resolved {
   )
 
   sealed interface Definition {
-    val annotations: List<Ranged<Annotation>>
+    val modifiers: List<Ranged<Modifier>>
     val name: Ranged<DefinitionLocation>
     val range: Range
 
     data class Function(
-      override val annotations: List<Ranged<Annotation>>,
+      override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
       val typeParams: List<String>,
       val binder: Pattern,
@@ -26,7 +26,7 @@ object Resolved {
     ) : Definition
 
     data class Type(
-      override val annotations: List<Ranged<Annotation>>,
+      override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
       val kind: Kind,
       val body: Resolved.Type,
@@ -34,7 +34,7 @@ object Resolved {
     ) : Definition
 
     data class Test(
-      override val annotations: List<Ranged<Annotation>>,
+      override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
       val body: Term,
       override val range: Range,
@@ -43,7 +43,7 @@ object Resolved {
     data class Hole(
       override val range: Range,
     ) : Definition {
-      override val annotations: List<Ranged<Annotation>> get() = throw IllegalStateException()
+      override val modifiers: List<Ranged<Modifier>> get() = throw IllegalStateException()
       override val name: Ranged<DefinitionLocation> get() = throw IllegalStateException()
     }
   }

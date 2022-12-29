@@ -1,17 +1,15 @@
 package mcx.ast
 
-import mcx.ast.Annotation
-
 /**
  * A lifted AST, where all code blocks are lifted to top-level.
  */
 object Lifted {
   sealed interface Definition {
-    val annotations: List<Annotation>
+    val modifiers: List<Modifier>
     val name: DefinitionLocation
 
     data class Function(
-      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val binder: Pattern,
       val body: Term,
@@ -19,13 +17,13 @@ object Lifted {
     ) : Definition
 
     data class Test(
-      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val body: Term,
     ) : Definition
   }
 
-  enum class Annotation {
+  enum class Modifier {
     TICK,
     LOAD,
     NO_DROP,

@@ -1,6 +1,6 @@
 package mcx.phase.backend
 
-import mcx.ast.Annotation
+import mcx.ast.Modifier
 import mcx.phase.Context
 import mcx.phase.backend.Lift.Env.Companion.emptyEnv
 import mcx.phase.prettyType
@@ -16,37 +16,36 @@ class Lift private constructor(
   private var freshFunctionId: Int = 0
 
   private fun lift(): Result {
-    val annotations = definition.annotations.mapNotNull { liftAnnotation(it) }
+    val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     when (definition) {
       is C.Definition.Function -> {
         val env = emptyEnv()
         val binder = env.liftPattern(definition.binder)
         val body = env.liftTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
-        liftedDefinitions += L.Definition.Function(annotations, definition.name, binder, body, null)
+        liftedDefinitions += L.Definition.Function(modifiers, definition.name, binder, body, null)
       }
       is C.Definition.Type     -> Unit
       is C.Definition.Test     -> {
         val env = emptyEnv()
         val body = env.liftTerm(definition.body)
-        liftedDefinitions += L.Definition.Test(annotations, definition.name, body)
+        liftedDefinitions += L.Definition.Test(modifiers, definition.name, body)
       }
     }
     return Result(liftedDefinitions, dispatchedDefinitions)
   }
 
-  private fun liftAnnotation(
-    annotation: Annotation,
-  ): L.Annotation? {
-    return when (annotation) {
-      Annotation.TICK    -> L.Annotation.TICK
-      Annotation.LOAD    -> L.Annotation.LOAD
-      Annotation.NO_DROP -> L.Annotation.NO_DROP
-      Annotation.LEAF    -> L.Annotation.LEAF
-      Annotation.BUILTIN -> L.Annotation.BUILTIN
-      Annotation.EXPORT  -> null
-      Annotation.INLINE  -> error("unexpected: $annotation")
-      Annotation.STATIC  -> error("unexpected: $annotation")
-      Annotation.HOLE    -> error("unexpected: $annotation")
+  private fun liftModifier(
+    modifier: Modifier,
+  ): L.Modifier? {
+    return when (modifier) {
+      Modifier.TICK    -> L.Modifier.TICK
+      Modifier.LOAD    -> L.Modifier.LOAD
+      Modifier.NO_DROP -> L.Modifier.NO_DROP
+      Modifier.LEAF    -> L.Modifier.LEAF
+      Modifier.BUILTIN -> L.Modifier.BUILTIN
+      Modifier.EXPORT  -> null
+      Modifier.INLINE  -> error("unexpected: $modifier")
+      Modifier.STATIC  -> error("unexpected: $modifier")
     }
   }
 
@@ -234,7 +233,7 @@ class Lift private constructor(
     }
     return L.Definition
       .Function(
-        listOf(L.Annotation.NO_DROP),
+        listOf(L.Modifier.NO_DROP),
         definition.name.module / "${definition.name.name}:${freshFunctionId++}",
         L.Pattern.TupleOf(params, type),
         body,

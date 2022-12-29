@@ -4,12 +4,12 @@ import {
   magic∷command,
 }
 
-@load function init() → () {
+load function init() → () {
   # todo
   ()
 };
 
-@static @inline function shift(depth: int) → `() {
+static inline function shift(depth: int) → `() {
   let path = repeat(("[-2]", depth));
   `(
     let _ = $command("execute store result score #1 mcx if data storage mcx: heap" ++ path ++ "[]");

@@ -1,6 +1,6 @@
 package mcx.ast
 
-enum class Annotation {
+enum class Modifier {
   TICK,
   LOAD,
   NO_DROP,
@@ -9,5 +9,4 @@ enum class Annotation {
   EXPORT,
   INLINE,
   STATIC,
-  HOLE,
 }

@@ -3,13 +3,12 @@ package mcx.phase.backend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
-import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
+import mcx.ast.Modifier
 import mcx.ast.Value
 import mcx.phase.BUILTINS
 import mcx.phase.Context
 import mcx.phase.Normalize
-import mcx.phase.Normalize.Env
 import mcx.phase.Normalize.evalType
 import mcx.phase.prettyType
 import mcx.ast.Core as C
@@ -33,22 +32,22 @@ class Stage private constructor(
       is C.Definition.Function -> {
         if (
           definition.typeParams.isEmpty() &&
-          Annotation.INLINE !in definition.annotations &&
-          Annotation.STATIC !in definition.annotations
+          Modifier.INLINE !in definition.modifiers &&
+          Modifier.STATIC !in definition.modifiers
         ) {
           val binder = stagePattern(definition.binder)
           val result = evalType(definition.result)
           val body = stageTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
-          C.Definition.Function(definition.annotations, definition.name, emptyList(), binder, result, body)
+          C.Definition.Function(definition.modifiers, definition.name, emptyList(), binder, result, body)
         } else {
           null
         }
       }
       is C.Definition.Type     -> null
       is C.Definition.Test     -> {
-        if (Annotation.STATIC !in definition.annotations) {
+        if (Modifier.STATIC !in definition.modifiers) {
           val body = stageTerm(definition.body)
-          C.Definition.Test(definition.annotations, definition.name, body)
+          C.Definition.Test(definition.modifiers, definition.name, body)
         } else {
           null
         }
@@ -86,7 +85,7 @@ class Stage private constructor(
       is C.Term.Run         -> {
         val definition = dependencies[term.name] as C.Definition.Function
         val typeArgs = term.typeArgs.map { evalType(it) }
-        if (Annotation.INLINE in definition.annotations) {
+        if (Modifier.INLINE in definition.modifiers) {
           stageTerm(normalizeTerm(dependencies, typeArgs, term))
         } else if (typeArgs.isEmpty()) {
           val arg = stageTerm(term.arg)
@@ -97,7 +96,7 @@ class Stage private constructor(
           Env(dependencies, typeArgs, unfold, persistentListOf(), static).stageDefinition(
             C.Definition
               .Function(
-                definition.annotations,
+                definition.modifiers,
                 mangledName,
                 emptyList(),
                 definition.binder,
@@ -190,7 +189,7 @@ class Stage private constructor(
         val typeArgs = term.typeArgs.map { evalType(it) }
         val definition = requireNotNull(definitions[term.name] as? C.Definition.Function) { "definition not found: '${term.name}'" }
         if (static) {
-          if (Annotation.BUILTIN in definition.annotations) {
+          if (Modifier.BUILTIN in definition.modifiers) {
             val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
             builtin.eval(arg, typeArgs) ?: Value.Run(term.name, typeArgs, arg)
           } else {

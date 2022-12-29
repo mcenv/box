@@ -65,11 +65,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "@[^ \n\r:;,()\\[\\]{}⟨⟩]+"
-    },
-    {
-      "name": "keyword.mcx",
-      "match": "\\b(?:import|function|type|test|resource|union)\\b"
+      "match": "\\b(?:import|tick|load|no_drop|leaf|builtin|export|inline|static|function|type|test|resource|union)\\b"
     },
     {
       "name": "support.type.mcx",

@@ -1,7 +1,7 @@
 package mcx.phase.frontend
 
-import mcx.ast.Annotation
 import mcx.ast.DefinitionLocation
+import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
@@ -29,7 +29,7 @@ class Resolve private constructor(
           null
         }
         else -> {
-          if (definition is R.Definition.Hole || !definition.annotations.any { it.value == Annotation.EXPORT }) {
+          if (definition is R.Definition.Hole || !definition.modifiers.any { it.value == Modifier.EXPORT }) {
             null
           } else {
             definition.name.value
@@ -65,20 +65,20 @@ class Resolve private constructor(
         val binder = env.resolvePattern(definition.binder)
         val result = env.resolveType(definition.result)
         val body = definition.body?.let { env.resolveTerm(it) }
-        R.Definition.Function(definition.annotations, name, definition.typeParams, binder, result, body, definition.range)
+        R.Definition.Function(definition.modifiers, name, definition.typeParams, binder, result, body, definition.range)
       }
       is S.Definition.Type     -> {
         val name = definition.name.map { input.module.name / it }
         val env = emptyEnv(emptyList())
         val kind = resolveKind(definition.kind)
         val body = env.resolveType(definition.body)
-        R.Definition.Type(definition.annotations, name, kind, body, definition.range)
+        R.Definition.Type(definition.modifiers, name, kind, body, definition.range)
       }
       is S.Definition.Test     -> {
         val name = definition.name.map { input.module.name / it }
         val env = emptyEnv(emptyList())
         val body = env.resolveTerm(definition.body)
-        R.Definition.Test(definition.annotations, name, body, definition.range)
+        R.Definition.Test(definition.modifiers, name, body, definition.range)
       }
       is S.Definition.Hole     -> R.Definition.Hole(definition.range)
     }

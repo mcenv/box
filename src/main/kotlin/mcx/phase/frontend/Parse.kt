@@ -1,6 +1,6 @@
 package mcx.phase.frontend
 
-import mcx.ast.Annotation
+import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.ast.Surface
 import mcx.phase.Context
@@ -62,105 +62,90 @@ class Parse private constructor(
 
   private fun parseDefinition(): S.Definition =
     ranging {
-      val annotations = parseAnnotations()
-      if (canRead()) {
-        when (readWord()) {
-          "function" -> {
-            skipTrivia()
-            val name = parseRanged { readWord() }
-            skipTrivia()
-            val typeParams =
-              if (canRead() && peek() == '⟨') {
-                parseList(',', '⟨', '⟩') { readWord() }
-              } else {
-                emptyList()
-              }
-            skipTrivia()
-            val binder = parsePattern()
-            expect("→")
-            skipTrivia()
-            val result = parseType()
-            val body = if (annotations.find { it.value == Annotation.BUILTIN } != null && annotations.find { it.value == Annotation.STATIC } != null) {
-              null
+      val (modifiers, keyword) = parseModifiers()
+      when (keyword) {
+        "function" -> {
+          skipTrivia()
+          val name = parseRanged { readWord() }
+          skipTrivia()
+          val typeParams =
+            if (canRead() && peek() == '⟨') {
+              parseList(',', '⟨', '⟩') { readWord() }
             } else {
-              expect('{')
-              skipTrivia()
-              val body = parseTerm()
-              expect('}')
-              body
+              emptyList()
             }
-            S.Definition.Function(annotations, name, typeParams, binder, result, body, until())
-          }
-          "type"     -> {
-            skipTrivia()
-            val name = parseRanged { readWord() }
-            expect(':')
-            skipTrivia()
-            val kind = parseKind()
-            expect('=')
-            skipTrivia()
-            val body = parseType()
-            S.Definition.Type(annotations, name, kind, body, until())
-          }
-          "test"     -> {
-            skipTrivia()
-            val name = parseRanged { readWord() }
+          skipTrivia()
+          val binder = parsePattern()
+          expect("→")
+          skipTrivia()
+          val result = parseType()
+          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.STATIC } != null) {
+            null
+          } else {
             expect('{')
             skipTrivia()
             val body = parseTerm()
             expect('}')
-            S.Definition.Test(annotations, name, body, until())
+            body
           }
-          else       -> null
+          S.Definition.Function(modifiers, name, typeParams, binder, result, body, until())
         }
-      } else {
-        null
-      } ?: run {
+        "type"     -> {
+          skipTrivia()
+          val name = parseRanged { readWord() }
+          expect(':')
+          skipTrivia()
+          val kind = parseKind()
+          expect('=')
+          skipTrivia()
+          val body = parseType()
+          S.Definition.Type(modifiers, name, kind, body, until())
+        }
+        "test"     -> {
+          skipTrivia()
+          val name = parseRanged { readWord() }
+          expect('{')
+          skipTrivia()
+          val body = parseTerm()
+          expect('}')
+          S.Definition.Test(modifiers, name, body, until())
+        }
+        else       -> null
+      }
+      ?: run {
         val range = until()
         diagnostics += Diagnostic.ExpectedDefinition(range)
         S.Definition.Hole(range)
       }
     }
 
-  private fun parseAnnotations(): List<Ranged<Annotation>> {
-    val annotations = mutableListOf<Ranged<Annotation>>()
+  private fun parseModifiers(): Pair<List<Ranged<Modifier>>, String?> {
+    val modifiers = mutableListOf<Ranged<Modifier>>()
     while (true) {
       skipTrivia()
-      if (!canRead() || peek() != '@') {
+      if (!canRead()) {
         break
       }
-      skip()
       val start = cursor
-      annotations += parseAnnotation()
+      modifiers += ranging {
+        when (val word = readWord()) {
+          "tick"    -> Ranged(Modifier.TICK, until())
+          "load"    -> Ranged(Modifier.LOAD, until())
+          "no_drop" -> Ranged(Modifier.NO_DROP, until())
+          "leaf"    -> Ranged(Modifier.LEAF, until())
+          "builtin" -> Ranged(Modifier.BUILTIN, until())
+          "export"  -> Ranged(Modifier.EXPORT, until())
+          "inline"  -> Ranged(Modifier.INLINE, until())
+          "static"  -> Ranged(Modifier.STATIC, until())
+          else      -> return modifiers to word
+        }
+      }
       if (start == cursor) {
         break
       }
     }
-    return annotations
+    return modifiers to null
   }
-
-  private fun parseAnnotation(): Ranged<Annotation> =
-    ranging {
-      if (canRead()) {
-        when (readWord()) {
-          "tick"    -> Ranged(Annotation.TICK, until())
-          "load"    -> Ranged(Annotation.LOAD, until())
-          "no_drop" -> Ranged(Annotation.NO_DROP, until())
-          "leaf"    -> Ranged(Annotation.LEAF, until())
-          "builtin" -> Ranged(Annotation.BUILTIN, until())
-          "export"  -> Ranged(Annotation.EXPORT, until())
-          "inline"  -> Ranged(Annotation.INLINE, until())
-          "static"  -> Ranged(Annotation.STATIC, until())
-          else      -> null
-        }
-      } else {
-        null
-      } ?: run {
-        val range = until()
-        diagnostics += Diagnostic.ExpectedAnnotation(range)
-        Ranged(Annotation.HOLE, range)
-      }
-    }
 
   private fun parseKind(): S.Kind =
     ranging {

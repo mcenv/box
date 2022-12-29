@@ -42,7 +42,7 @@ class Pack private constructor(
 
         packTerm(definition.body)
 
-        if (L.Annotation.NO_DROP !in definition.annotations) {
+        if (L.Modifier.NO_DROP !in definition.modifiers) {
           val resultTypes = eraseType(definition.body.type)
           dropPattern(definition.binder, resultTypes)
         }
