@@ -10,9 +10,9 @@ import {
 
 @export @static function save_all(flush: bool) → `() {
   if flush {
-    $command("save-all flush")
+    command("save-all flush")
   } else {
-    $command("save-all")
+    command("save-all")
   }
 };
 
