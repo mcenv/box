@@ -357,7 +357,10 @@ class Elaborate private constructor(
       term is R.Term.Let            -> {
         val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, init.type)
+          val binder = elaboratePattern(term.binder)
+          if (!(init.type isSubtypeOf binder.type)) {
+            diagnostics += Diagnostic.TypeMismatch(binder.type, init.type, term.init.range)
+          }
           val body = elaborateTerm(term.body, expected)
           binder to body
         }
@@ -615,11 +618,11 @@ class Elaborate private constructor(
   ): Boolean {
     val kind1 = this
     return when {
-      kind1 is C.Kind.Type &&
-      kind2 is C.Kind.Type -> kind1.arity == kind2.arity
-
       kind1 is C.Kind.Meta -> metaEnv.unifyKinds(kind1, kind2)
       kind2 is C.Kind.Meta -> metaEnv.unifyKinds(kind1, kind2)
+
+      kind1 is C.Kind.Type &&
+      kind2 is C.Kind.Type -> kind1.arity == kind2.arity
 
       kind1 is C.Kind.Hole -> true
       kind2 is C.Kind.Hole -> true
@@ -634,6 +637,9 @@ class Elaborate private constructor(
     val type1 = metaEnv.forceType(this)
     val type2 = metaEnv.forceType(type2)
     return when {
+      type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
+      type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
+
       type1 is C.Type.Bool &&
       type2 is C.Type.Bool      -> type2.value == null || type1.value == type2.value
 
@@ -725,9 +731,6 @@ class Elaborate private constructor(
         .Env(definitions, emptyList(), true)
         .evalType(type2)
 
-      type1 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
-      type2 is C.Type.Meta      -> metaEnv.unifyTypes(type1, type2)
-
       type1 is C.Type.Hole      -> true
       type2 is C.Type.Hole      -> true
 
@@ -736,7 +739,7 @@ class Elaborate private constructor(
   }
 
   private fun C.Type.isValueType(): Boolean {
-    return when (this) {
+    return when (metaEnv.forceType(this)) {
       is C.Type.Bool   -> true
       is C.Type.Byte   -> true
       is C.Type.Short  -> true
