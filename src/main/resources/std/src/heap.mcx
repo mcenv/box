@@ -6,17 +6,17 @@ import {
 
 load function init() → () {
   # todo
+  let _ = $command("scoreboard players set #free mcx 0");
   ()
 };
 
-static inline function shift(depth: int) → `() {
-  let path = repeat(("[-2]", depth));
-  `(
-    let _ = $command("execute store result score #1 mcx if data storage mcx: heap" ++ path ++ "[]");
-    let _ = $command("execute if score #0 mcx matches 0.. if score #1 mcx matches 3.. run data remove storage mcx: heap" ++ path ++ "[2]");
-    let _ = $command("execute if score #0 mcx matches ..-1 if score #1 mcx matches ..2 run data modify storage mcx: heap" ++ path ++ " append value []");
-    ()
-  )
+function deallocate() → () {
+  let index = 0;
+  let _ = $command("execute store result storage mcx: int[-1] int 1 run scoreboard players remove #free mcx 1");
+
+  let _ = touch(index);
+  let _ = $command("data remove storage mcx: heap[-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][-2][0]");
+  ()
 };
 
 function touch(index: int) → () {
@@ -71,4 +71,14 @@ function touch(index: int) → () {
   let _ = $shift(15);
 
   ()
+};
+
+static inline function shift(depth: int) → `() {
+  let path = repeat(("[-2]", depth));
+  `(
+    let _ = $command("execute store result score #1 mcx if data storage mcx: heap" ++ path ++ "[]");
+    let _ = $command("execute if score #0 mcx matches 0.. if score #1 mcx matches 3.. run data remove storage mcx: heap" ++ path ++ "[2]");
+    let _ = $command("execute if score #0 mcx matches ..-1 if score #1 mcx matches ..2 run data modify storage mcx: heap" ++ path ++ " append value []");
+    ()
+  )
 };

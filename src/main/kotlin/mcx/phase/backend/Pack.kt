@@ -1,6 +1,7 @@
 package mcx.phase.backend
 
 import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
@@ -134,7 +135,7 @@ class Pack private constructor(
       is L.Term.RefOf       -> {
         packTerm(term.element)
         !{ Raw("# todo: $term") }
-        push(P.Stack.INT, null)
+        push(P.Stack.INT, SourceProvider.Value(Nbt.Int(0)))
       }
       is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
@@ -396,10 +397,15 @@ class Pack private constructor(
   }
 
   companion object {
+    private val FREE: Packed.ScoreHolder = Packed.ScoreHolder("#free")
     private val REG_0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
     private val REG: Packed.Objective = Packed.Objective("mcx")
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
+    private val HEAP_SET: DataAccessor = DataAccessor.Storage(MCX, nbtPath { it("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)() })
+    private val HEAP_GET: DataAccessor = DataAccessor.Storage(MCX, nbtPath { it("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(0) })
+    private val DEALLOCATE: DefinitionLocation = ModuleLocation("heap") / "deallocate"
+    private val TOUCH: DefinitionLocation = ModuleLocation("heap") / "touch"
 
     private fun packDefinitionLocation(
       location: DefinitionLocation,
@@ -412,17 +418,9 @@ class Pack private constructor(
       string
         .encodeToByteArray()
         .joinToString("") {
-          when (
-            val char = it
-              .toInt()
-              .toChar()
-          ) {
+          when (val char = it.toInt().toChar()) {
             in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
-            else                               -> ".${
-              it
-                .toUByte()
-                .toString(Character.MAX_RADIX)
-            }"
+            else                               -> ".${it.toUByte().toString(Character.MAX_RADIX)}"
           }
         }
 
