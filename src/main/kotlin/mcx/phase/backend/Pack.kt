@@ -332,6 +332,7 @@ class Pack private constructor(
       is L.Type.Union     -> type.elements
                                .firstOrNull()
                                ?.let { eraseType(it) } ?: listOf(P.Stack.END)
+      is L.Type.Run       -> eraseType(type.body.value)
     }
   }
 

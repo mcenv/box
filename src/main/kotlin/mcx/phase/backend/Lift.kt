@@ -72,7 +72,7 @@ class Lift private constructor(
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
-      is C.Type.Run       -> error("unexpected: ${prettyType(type)}")
+      is C.Type.Run       -> L.Type.Run(type.name, lazy { liftType(type.body) })
       is C.Type.Meta      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Hole      -> error("unexpected: ${prettyType(type)}")
     }

@@ -94,6 +94,11 @@ object Lifted {
     data class Union(
       val elements: kotlin.collections.List<Type>,
     ) : Type
+
+    data class Run(
+      val name: DefinitionLocation,
+      val body: Lazy<Type>,
+    ) : Type
   }
 
   sealed interface Term {

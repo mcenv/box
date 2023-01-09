@@ -199,6 +199,7 @@ object Core {
 
     data class Run(
       val name: DefinitionLocation,
+      val body: Type,
       override val kind: Kind,
     ) : Type
 

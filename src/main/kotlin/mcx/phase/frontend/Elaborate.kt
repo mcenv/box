@@ -160,7 +160,7 @@ class Elaborate private constructor(
       type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
       type is R.Type.Run && expected == null       -> {
         when (val definition = definitions[type.name]) {
-          is C.Definition.Type -> C.Type.Run(type.name, definition.body.kind)
+          is C.Definition.Type -> C.Type.Run(type.name, definition.body, definition.body.kind)
           else                 -> {
             if (!signature) {
               diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
