@@ -797,11 +797,12 @@ class Parse private constructor(
       when (peek()) {
         ' '  -> skip()
         '\n' -> {
+          ++cursor
           ++line
           character = 0
         }
         '\r' -> {
-          skip()
+          ++cursor
           ++line
           character = 0
           if (canRead() && peek() == '\n') {
