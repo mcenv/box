@@ -35,11 +35,11 @@ jobs:
           path: ./src/main/resources/std/out/datapacks/std
           if-no-files-found: error
       - name: Build examples pack
-        run: ../build/install/mcx/bin/mcx build
-        working-directory: ./examples
+        run: ../../../../build/install/mcx/bin/mcx build
+        working-directory: ./src/test/resources/examples
       - name: Upload examples pack
         uses: actions/upload-artifact@v3
         with:
           name: examples
-          path: ./examples/out/datapacks/examples
+          path: ./src/test/resources/examples/out/datapacks/examples
           if-no-files-found: error
