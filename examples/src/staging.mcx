@@ -1,8 +1,8 @@
 import {
-  int∷-,
-  int∷*,
-  int∷=,
-  int∷<=,
+  int::-,
+  int::*,
+  int::=,
+  int::<=,
 }
 
 static function ^(x: `int, n: int) → `int {

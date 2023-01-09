@@ -229,7 +229,7 @@ class Resolve private constructor(
     range: Range,
   ): DefinitionLocation? {
     val expected = name
-      .split('∷')
+      .split("::")
       .let { ModuleLocation(it.dropLast(1)) / it.last() }
     val candidates = locations.filter { actual ->
       expected.module.parts.size <= actual.module.parts.size &&

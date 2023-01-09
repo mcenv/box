@@ -1,8 +1,8 @@
 import {
-  int∷to_string,
-  string∷++,
-  magic∷command,
-  magic∷erase,
+  int::to_string,
+  string::++,
+  magic::command,
+  magic::erase,
 }
 
 export static function get⟨a⟩(list: `[a], index: int) → `a {

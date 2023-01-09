@@ -29,7 +29,7 @@ class Parse private constructor(
       skipTrivia()
       parseList(',', '{', '}') {
         parseRanged {
-          val parts = readWord().split('∷')
+          val parts = readLocation().split("::")
           ModuleLocation(parts.dropLast(1)) / parts.last()
         }
       }
@@ -748,6 +748,14 @@ class Parse private constructor(
     return builder.toString()
   }
 
+  private fun readLocation(): String {
+    val start = cursor
+    while (canRead() && peek().isLocationPart()) {
+      skip()
+    }
+    return text.substring(start, cursor)
+  }
+
   private fun readWord(): String {
     val start = cursor
     while (canRead() && peek().isWordPart()) {
@@ -756,10 +764,16 @@ class Parse private constructor(
     return text.substring(start, cursor)
   }
 
+  private inline fun Char.isLocationPart(): Boolean =
+    when (this) {
+      ' ', '\n', '\r', ';', ',', '(', ')', '[', ']', '{', '}', '⟨', '⟩' -> false
+      else                                                              -> true
+    }
+
   private inline fun Char.isWordPart(): Boolean =
     when (this) {
-      ' ', '\n', '\r', ':', ';', ',', '(', ')', '[', ']', '{', '}', '⟨', '⟩' -> false
-      else                                                                   -> true
+      ':'  -> false
+      else -> isLocationPart()
     }
 
   private fun expect(

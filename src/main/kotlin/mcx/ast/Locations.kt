@@ -11,7 +11,7 @@ data class ModuleLocation(
     DefinitionLocation(this, name)
 
   override fun toString(): String =
-    parts.joinToString("∷")
+    parts.joinToString("::")
 }
 
 data class DefinitionLocation(
@@ -19,5 +19,5 @@ data class DefinitionLocation(
   val name: String,
 ) {
   override fun toString(): String =
-    "$module∷$name"
+    "$module::$name"
 }
