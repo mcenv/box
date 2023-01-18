@@ -15,6 +15,7 @@ import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
 import mcx.phase.backend.Stage
 import mcx.phase.frontend.*
+import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Files

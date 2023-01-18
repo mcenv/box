@@ -5,6 +5,9 @@ import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
+import mcx.util.diagnostic
+import org.eclipse.lsp4j.Diagnostic
+import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Range
 import mcx.ast.Resolved as R
 import mcx.ast.Surface as S
@@ -25,7 +28,7 @@ class Resolve private constructor(
     dependencies.mapNotNull { dependency ->
       when (val definition = dependency.module) {
         null -> {
-          diagnostics += Diagnostic.DefinitionNotFound(dependency.location.toString(), dependency.range!!)
+          diagnostics += definitionNotFound(dependency.location.toString(), dependency.range!!)
           null
         }
         else -> {
@@ -177,7 +180,7 @@ class Resolve private constructor(
       is S.Term.Var    -> {
         when (val level = getVar(term.name)) {
           -1   -> {
-            diagnostics += Diagnostic.VarNotFound(term.name, term.range)
+            diagnostics += varNotFound(term.name, term.range)
             R.Term.Hole(term.range)
           }
           else -> R.Term.Var(term.name, level, term.range)
@@ -238,12 +241,12 @@ class Resolve private constructor(
     }
     return when (candidates.size) {
       0    -> {
-        diagnostics += Diagnostic.DefinitionNotFound(name, range)
+        diagnostics += definitionNotFound(name, range)
         null
       }
       1    -> candidates.first()
       else -> {
-        diagnostics += Diagnostic.AmbiguousDefinition(name, range)
+        diagnostics += ambiguousDefinition(name, range)
         null
       }
     }
@@ -289,6 +292,39 @@ class Resolve private constructor(
       ): Env =
         Env(mutableListOf(), types.toMutableList())
     }
+  }
+
+  private fun definitionNotFound(
+    name: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "definition not found: '$name'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun ambiguousDefinition(
+    name: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "ambiguous definition: '$name'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun varNotFound(
+    name: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "variable not found: '$name'",
+      DiagnosticSeverity.Error,
+    )
   }
 
   data class Dependency(

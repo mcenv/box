@@ -6,6 +6,7 @@ import mcx.phase.*
 import mcx.phase.Normalize.evalType
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
 import mcx.util.contains
+import mcx.util.diagnostic
 import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
@@ -142,7 +143,7 @@ class Elaborate private constructor(
               .map {
                 val element = elaborateType(it, head.kind)
                 if (element::class != head::class) {
-                  diagnostics += Diagnostic.TypeMismatch(head, element, it.range)
+                  diagnostics += typeMismatch(head, element, it.range)
                 }
                 element
               }
@@ -153,7 +154,7 @@ class Elaborate private constructor(
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
         } else {
-          diagnostics += Diagnostic.RequiredStatic(type.range)
+          diagnostics += requiredStatic(type.range)
           C.Type.Hole
         }
       }
@@ -163,7 +164,7 @@ class Elaborate private constructor(
           is C.Definition.Type -> C.Type.Run(type.name, definition.body, definition.body.kind)
           else                 -> {
             if (!signature) {
-              diagnostics += Diagnostic.ExpectedTypeDefinition(type.range)
+              diagnostics += expectedTypeDefinition(type.range)
             }
             C.Type.Hole
           }
@@ -171,7 +172,7 @@ class Elaborate private constructor(
       }
       type is R.Type.Meta                          -> {
         if (signature) {
-          diagnostics += Diagnostic.UnexpectedMeta(type.range)
+          diagnostics += unexpectedMeta(type.range)
           C.Type.Hole
         } else {
           metaEnv.freshType(type.range, expected)
@@ -182,7 +183,7 @@ class Elaborate private constructor(
       else                                         -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
-          diagnostics += Diagnostic.KindMismatch(expected, actual.kind, type.range)
+          diagnostics += kindMismatch(expected, actual.kind, type.range)
         }
         actual
       }
@@ -271,12 +272,12 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CompoundOf &&
-      expected is C.Type.Compound   -> {
+      expected is C.Type.Compound    -> {
         val elements = mutableMapOf<String, C.Term>()
         term.elements.forEach { (key, element) ->
           when (val type = expected.elements[key.value]) {
             null -> {
-              diagnostics += Diagnostic.ExtraKey(key.value, key.range)
+              diagnostics += extraKey(key.value, key.range)
               val element = elaborateTerm(element)
               hoverType(key.range, element.type)
               elements[key.value] = element
@@ -293,7 +294,7 @@ class Elaborate private constructor(
               .map { it.first.value }
               .toSet()
           )
-          .forEach { diagnostics += Diagnostic.KeyNotFound(it, term.range) }
+          .forEach { diagnostics += keyNotFound(it, term.range) }
         C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
@@ -312,9 +313,9 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected is C.Type.Tuple      -> {
+      expected is C.Type.Tuple -> {
         if (expected.elements.size != term.elements.size) {
-          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
+          diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
         }
         val elements = term.elements.mapIndexed { index, element ->
           elaborateTerm(element, expected.elements.getOrNull(index))
@@ -332,7 +333,7 @@ class Elaborate private constructor(
         C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
       }
 
-      term is R.Term.Apply          -> {
+      term is R.Term.Apply           -> {
         val operator = elaborateTerm(term.operator)
         when (val operatorType = metaEnv.forceType(operator.type)) {
           is C.Type.Fun -> {
@@ -340,7 +341,7 @@ class Elaborate private constructor(
             C.Term.Apply(operator, operand, operatorType.result)
           }
           else          -> {
-            diagnostics += Diagnostic.TypeMismatch(C.Type.Fun(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
+            diagnostics += typeMismatch(C.Type.Fun(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
@@ -354,12 +355,12 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is R.Term.Let            -> {
+      term is R.Term.Let             -> {
         val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder)
           if (!(init.type isSubtypeOf binder.type)) {
-            diagnostics += Diagnostic.TypeMismatch(binder.type, init.type, term.init.range)
+            diagnostics += typeMismatch(binder.type, init.type, term.init.range)
           }
           val body = elaborateTerm(term.body, expected)
           binder to body
@@ -368,13 +369,13 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Var &&
-      expected == null              -> {
+      expected == null         -> {
         val entry = entries[term.level]
         if (entry.used) {
-          diagnostics += Diagnostic.VarAlreadyUsed(term.name, term.range)
+          diagnostics += varAlreadyUsed(term.name, term.range)
         }
         if (stage != entry.stage) {
-          diagnostics += Diagnostic.StageMismatch(stage, entry.stage, term.range)
+          diagnostics += stageMismatch(stage, entry.stage, term.range)
         }
         if (!entry.type.isValueType()) {
           entry.used = true
@@ -383,15 +384,15 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Run &&
-      expected == null         -> {
+      expected == null               -> {
         if (isLeaf()) {
-          diagnostics += Diagnostic.LeafFunctionCannotRunOtherFunctions(term.range)
+          diagnostics += leafFunctionCannotRunOtherFunctions(term.range)
           C.Term.Hole(C.Type.Hole)
         } else {
           when (val definition = definitions[term.name.value]) {
             is C.Definition.Function -> {
               if (!isMeta() && Modifier.STATIC in definition.modifiers) {
-                diagnostics += Diagnostic.RequiredStatic(term.name.range)
+                diagnostics += requiredStatic(term.name.range)
                 C.Term.Hole(C.Type.Hole)
               } else {
                 hover(term.name.range) { createFunctionDocumentation(definition) }
@@ -400,7 +401,7 @@ class Elaborate private constructor(
                     definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
                   } else {
                     if (definition.typeParams.size != term.typeArgs.value.size) {
-                      diagnostics += Diagnostic.ArityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+                      diagnostics += arityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
                     }
                     term.typeArgs.value.map { elaborateType(it) }
                   }
@@ -412,7 +413,7 @@ class Elaborate private constructor(
               }
             }
             else                     -> {
-              diagnostics += Diagnostic.ExpectedFunctionDefinition(term.name.range)
+              diagnostics += expectedFunctionDefinition(term.name.range)
               C.Term.Hole(C.Type.Hole)
             }
           }
@@ -420,7 +421,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Is &&
-      expected is C.Type.Bool? -> {
+      expected is C.Type.Bool?       -> {
         val scrutinee = elaborateTerm(term.scrutinee)
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
@@ -429,26 +430,26 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CodeOf &&
-      expected is C.Type.Code? -> {
+      expected is C.Type.Code?       -> {
         if (isMeta()) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
           }
           C.Term.CodeOf(element, C.Type.Code(element.type))
         } else {
-          diagnostics += Diagnostic.RequiredStatic(term.range)
+          diagnostics += requiredStatic(term.range)
           C.Term.Hole(expected ?: C.Type.Hole)
         }
       }
 
-      term is R.Term.Splice    -> {
+      term is R.Term.Splice          -> {
         val element = splicing {
           elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
         }
         when (val elementType = element.type) {
           is C.Type.Code -> C.Term.Splice(element, elementType.element)
           else           -> {
-            diagnostics += Diagnostic.TypeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
+            diagnostics += typeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
             C.Term.Hole(expected ?: C.Type.Hole)
           }
         }
@@ -459,10 +460,10 @@ class Elaborate private constructor(
 
       expected == null              -> error("type must be non-null")
 
-      else                          -> {
+      else                           -> {
         val actual = elaborateTerm(term)
         if (!(actual.type isSubtypeOf expected)) {
-          diagnostics += Diagnostic.TypeMismatch(expected, actual.type, term.range)
+          diagnostics += typeMismatch(expected, actual.type, term.range)
         }
         actual
       }
@@ -484,7 +485,7 @@ class Elaborate private constructor(
       pattern is R.Pattern.IntRangeOf &&
       expected is C.Type.Int?     -> {
         if (pattern.min > pattern.max) {
-          diagnostics += Diagnostic.EmptyRange(pattern.range)
+          diagnostics += emptyRange(pattern.range)
         }
         C.Pattern.IntRangeOf(pattern.min, pattern.max, C.Type.Int.SET)
       }
@@ -520,7 +521,7 @@ class Elaborate private constructor(
         pattern.elements.forEach { (key, element) ->
           when (val type = expected.elements[key.value]) {
             null -> {
-              diagnostics += Diagnostic.ExtraKey(key.value, key.range)
+              diagnostics += extraKey(key.value, key.range)
               val element = elaboratePattern(element)
               hoverType(key.range, element.type)
               elements[key.value] = element
@@ -537,14 +538,14 @@ class Elaborate private constructor(
               .map { it.first.value }
               .toSet()
           )
-          .forEach { diagnostics += Diagnostic.KeyNotFound(it, pattern.range) }
+          .forEach { diagnostics += keyNotFound(it, pattern.range) }
         C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
       }
 
       pattern is R.Pattern.TupleOf &&
       expected is C.Type.Tuple    -> {
         if (expected.elements.size != pattern.elements.size) {
-          diagnostics += Diagnostic.ArityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
+          diagnostics += arityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
         }
         val elements = pattern.elements.mapIndexed { index, element ->
           elaboratePattern(element, expected.elements.getOrNull(index))
@@ -568,7 +569,7 @@ class Elaborate private constructor(
             if (kind.arity == 1) {
               C.Pattern.Var(pattern.name, pattern.level, expected)
             } else {
-              diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
+              diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
               C.Pattern.Hole(expected)
             }
           is C.Kind.Meta -> {
@@ -576,7 +577,7 @@ class Elaborate private constructor(
             C.Pattern.Var(pattern.name, pattern.level, expected)
           }
           else           -> {
-            diagnostics += Diagnostic.KindMismatch(C.Kind.Type.ONE, kind, pattern.range)
+            diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
             C.Pattern.Hole(expected)
           }
         }
@@ -601,10 +602,10 @@ class Elaborate private constructor(
 
       expected == null            -> error("type must be non-null")
 
-      else                        -> {
+      else                              -> {
         val actual = elaboratePattern(pattern)
         if (!(actual.type isSubtypeOf expected)) {
-          diagnostics += Diagnostic.TypeMismatch(expected, actual.type, pattern.range)
+          diagnostics += typeMismatch(expected, actual.type, pattern.range)
         }
         actual
       }
@@ -717,16 +718,16 @@ class Elaborate private constructor(
 
       type1 is C.Type.Run &&
       (
-        type1.name.module == input.module.name ||
-        Modifier.INLINE in definitions[type1.name]!!.modifiers
+          type1.name.module == input.module.name ||
+          Modifier.INLINE in definitions[type1.name]!!.modifiers
       )                         -> Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type1) isSubtypeOf type2
 
       type2 is C.Type.Run &&
       (
-        type2.name.module == input.module.name ||
-        Modifier.INLINE in definitions[type2.name]!!.modifiers
+          type2.name.module == input.module.name ||
+          Modifier.INLINE in definitions[type2.name]!!.modifiers
       )                         -> type1 isSubtypeOf Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type2)
@@ -930,6 +931,159 @@ class Elaborate private constructor(
       ): Env =
         Env(definitions, types, mutableListOf(), leaf, static)
     }
+  }
+
+  private fun typeMismatch(
+    expected: C.Type,
+    actual: C.Type,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      """type mismatch:
+        |  expected: ${prettyType(expected)}
+        |  actual  : ${prettyType(actual)}
+      """.trimMargin(),
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun requiredStatic(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "required: @static",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedTypeDefinition(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: type definition",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun unexpectedMeta(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "unexpected meta",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun kindMismatch(
+    expected: C.Kind,
+    actual: C.Kind,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      """kind mismatch:
+      |  expected: ${prettyKind(expected)}
+      |  actual  : ${prettyKind(actual)}
+    """.trimMargin(),
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun extraKey(
+    key: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "extra key: '$key'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun keyNotFound(
+    key: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "key not found: '$key'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun arityMismatch(
+    expected: Int,
+    actual: Int,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      """arity mismatch:
+        |  expected: $expected
+        |  actual  : $actual
+      """.trimMargin(),
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun varAlreadyUsed(
+    name: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "variable already used: '$name'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun stageMismatch(
+    expected: Int,
+    actual: Int,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      """stage mismatch:
+        |  expected: $expected
+        |  actual  : $actual
+      """.trimMargin(),
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun leafFunctionCannotRunOtherFunctions(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "leaf function cannot run other functions",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedFunctionDefinition(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: function definition",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun emptyRange(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "empty range",
+      DiagnosticSeverity.Error,
+    )
   }
 
   data class Result(

@@ -1,7 +1,12 @@
 package mcx.phase.frontend
 
 import mcx.phase.Context
+import mcx.phase.prettyType
+import mcx.util.diagnostic
 import org.eclipse.lsp4j.CompletionItem
+import org.eclipse.lsp4j.Diagnostic
+import org.eclipse.lsp4j.DiagnosticSeverity
+import org.eclipse.lsp4j.Range
 import mcx.ast.Core as C
 
 @Suppress("NAME_SHADOWING")
@@ -15,7 +20,7 @@ class Zonk private constructor(
     val module = zonkModule(input.module)
     return Result(
       module,
-      input.diagnostics + unsolved.map { Diagnostic.UnsolvedMeta(it, it.source) },
+      input.diagnostics + unsolved.map { unsolvedMeta(it, it.source) },
       input.completionItems,
       input.hover,
     )
@@ -129,6 +134,17 @@ class Zonk private constructor(
       is C.Pattern.Drop       -> C.Pattern.Drop(type)
       is C.Pattern.Hole       -> C.Pattern.Hole(type)
     }
+  }
+
+  private fun unsolvedMeta(
+    type: C.Type,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "unsolved meta: ${prettyType(type)}",
+      DiagnosticSeverity.Error,
+    )
   }
 
   data class Result(

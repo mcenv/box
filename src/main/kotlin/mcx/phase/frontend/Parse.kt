@@ -5,7 +5,10 @@ import mcx.ast.ModuleLocation
 import mcx.ast.Surface
 import mcx.phase.Context
 import mcx.util.Ranged
+import mcx.util.diagnostic
 import mcx.util.rangeTo
+import org.eclipse.lsp4j.Diagnostic
+import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import mcx.ast.Surface as S
@@ -54,7 +57,7 @@ class Parse private constructor(
 
     skipTrivia()
     if (canRead()) {
-      diagnostics += Diagnostic.ExpectedEndOfFile(here())
+      diagnostics += expectedEndOfFile(here())
     }
 
     return S.Module(module, imports, definitions)
@@ -114,7 +117,7 @@ class Parse private constructor(
       }
       ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedDefinition(range)
+        diagnostics += expectedDefinition(range)
         S.Definition.Hole(range)
       }
     }
@@ -165,7 +168,7 @@ class Parse private constructor(
         null
       } ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedKind(range)
+        diagnostics += expectedKind(range)
         S.Kind.Hole(range)
       }
     }
@@ -305,7 +308,7 @@ class Parse private constructor(
         null
       } ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedType(range)
+        diagnostics += expectedType(range)
         S.Type.Hole(range)
       }).let { left ->
         skipTrivia()
@@ -525,7 +528,7 @@ class Parse private constructor(
         null
       } ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedTerm(range)
+        diagnostics += expectedTerm(range)
         S.Term.Hole(range)
       }
     }
@@ -622,7 +625,7 @@ class Parse private constructor(
         null
       } ?: run {
         val range = until()
-        diagnostics += Diagnostic.ExpectedPattern(range)
+        diagnostics += expectedPattern(range)
         S.Pattern.Hole(range)
       }).let { left ->
         skipTrivia()
@@ -731,7 +734,7 @@ class Parse private constructor(
           '"', '\\' -> {
             builder.append(char)
           }
-          else      -> diagnostics += Diagnostic.InvalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+          else      -> diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
         }
         escaped = false
       } else {
@@ -785,7 +788,7 @@ class Parse private constructor(
       skip()
       true
     } else {
-      diagnostics += Diagnostic.ExpectedToken(expected.toString(), position)
+      diagnostics += expectedToken(expected.toString(), position)
       false
     }
   }
@@ -798,7 +801,7 @@ class Parse private constructor(
       skip(expected.length)
       true
     } else {
-      diagnostics += Diagnostic.ExpectedToken(expected, here())
+      diagnostics += expectedToken(expected, here())
       false
     }
   }
@@ -862,6 +865,88 @@ class Parse private constructor(
       line,
       character,
     )
+
+  private fun invalidEscape(
+    escape: Char,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "invalid escape: \\$escape",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedToken(
+    token: String,
+    position: Position,
+  ): Diagnostic {
+    return diagnostic(
+      position..Position(position.line, position.character + 1),
+      "expected: '$token'",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedEndOfFile(
+    position: Position,
+  ): Diagnostic {
+    return diagnostic(
+      position..position,
+      "expected: end of file",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedDefinition(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: definition",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedKind(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: kind",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedType(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: type",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedTerm(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: term",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun expectedPattern(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "expected: pattern",
+      DiagnosticSeverity.Error,
+    )
+  }
 
   private inner class RangingContext(
     private val start: Position,
