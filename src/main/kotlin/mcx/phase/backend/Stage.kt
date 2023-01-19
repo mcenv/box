@@ -336,25 +336,25 @@ class Stage private constructor(
         type as C.Type.Fun
         C.Term.FunOf(value.binder, value.body, type)
       }
-      is Value.Apply       -> {
+      is Value.Apply   -> {
         value.operatorType as C.Type.Fun
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
       }
-      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Let         -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
-      is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run         -> {
+      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Let     -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
+      is Value.Var     -> C.Term.Var(value.name, value.level, type)
+      is Value.Run     -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
-      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command     -> C.Term.Command(value.value, C.Type.Union.END)
-      is Value.CodeOf      -> {
+      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command -> C.Term.Command(value.value, type)
+      is Value.CodeOf  -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole        -> C.Term.Hole(value.type)
+      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole    -> C.Term.Hole(value.type)
     }
   }
 
