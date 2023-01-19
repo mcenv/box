@@ -418,7 +418,7 @@ class Parse private constructor(
             S.Term.Splice(parseTermAtom(), until())
           }
           else -> {
-            val word = parseRanged { readWord() }
+            val word = parseRanged { readLocation() }
             when (word.value) {
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
