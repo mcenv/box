@@ -122,4 +122,6 @@ export builtin function to_double(_: int) → double {
   $command("execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]")
 };
 
-export builtin static function to_string(_: int) → string;
+export builtin function to_string(_: int) → string {
+  $command("data modify storage mcx: string append string storage mcx: int[-1]")
+};
