@@ -10,7 +10,12 @@ import kotlin.math.min
 
 val prelude: ModuleLocation = ModuleLocation("prelude")
 private val magic: ModuleLocation = ModuleLocation("magic")
+private val byte: ModuleLocation = ModuleLocation(Stack.BYTE.id)
+private val short: ModuleLocation = ModuleLocation(Stack.SHORT.id)
 private val int: ModuleLocation = ModuleLocation(Stack.INT.id)
+private val long: ModuleLocation = ModuleLocation(Stack.LONG.id)
+private val float: ModuleLocation = ModuleLocation(Stack.FLOAT.id)
+private val double: ModuleLocation = ModuleLocation(Stack.DOUBLE.id)
 private val string: ModuleLocation = ModuleLocation(Stack.STRING.id)
 private val byteArray: ModuleLocation = ModuleLocation(Stack.BYTE_ARRAY.id)
 private val intArray: ModuleLocation = ModuleLocation(Stack.INT_ARRAY.id)
@@ -65,6 +70,26 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
       typeArgs: List<Type>,
     ): Value {
       return Value.CodeOf(lazyOf(arg))
+    }
+  },
+
+  object : Builtin(byte / "to_string") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.ByteOf) return null
+      return Value.StringOf(arg.value.toString())
+    }
+  },
+
+  object : Builtin(short / "to_string") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.ShortOf) return null
+      return Value.StringOf(arg.value.toString())
     }
   },
 
@@ -333,6 +358,36 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
       typeArgs: List<Type>,
     ): Value {
       return Value.TupleOf(listOf(lazyOf(arg), lazyOf(arg)))
+    }
+  },
+
+  object : Builtin(long / "to_string") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.LongOf) return null
+      return Value.StringOf(arg.value.toString())
+    }
+  },
+
+  object : Builtin(float / "to_string") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.FloatOf) return null
+      return Value.StringOf(arg.value.toString())
+    }
+  },
+
+  object : Builtin(double / "to_string") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.DoubleOf) return null
+      return Value.StringOf(arg.value.toString())
     }
   },
 

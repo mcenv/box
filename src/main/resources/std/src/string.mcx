@@ -18,3 +18,7 @@ export static function repeat(string: string, count: int) → string {
     string ++ repeat((string, count - 1))
   }
 };
+
+export function to_string(a: string) → string {
+  a
+};

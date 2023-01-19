@@ -1,0 +1,7 @@
+import {
+  magic::command,
+}
+
+export builtin function to_string(_: short) → string {
+  $command("data modify storage mcx: string append string storage mcx: short[-1]")
+};
