@@ -1,4 +1,4 @@
-export builtin static function command(command: string) → `union {};
+export builtin static function command⟨a⟩(command: string) → `a;
 
 export builtin static function erase⟨a⟩() → string;
 

@@ -1,0 +1,13 @@
+import {
+  magic::command,
+}
+
+test bind_end {
+  let x: int = $command("");
+  true
+};
+
+test drop_end {
+  let _: int = $command("");
+  true
+};
