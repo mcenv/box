@@ -103,7 +103,7 @@ export builtin function to_short(_: int) → short {
   $command("execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]")
 };
 
-export builtin function to_int(a: int) → int {
+export function to_int(a: int) → int {
   a
 };
 
