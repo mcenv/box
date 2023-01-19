@@ -20,6 +20,22 @@ export static function repeat(string: string, count: int) → string {
   }
 };
 
+# todo: unsafe
+export static function substring_from(string: `string, start: int) → `string {
+  `(
+    let _ = $string;
+    $command("data modify storage mcx: string append string storage mcx: string[-1] " ++ int::to_string(start))
+  )
+};
+
+# todo: unsafe
+export static function substring_between(string: `string, start: int, end: int) → `string {
+  `(
+    let _ = $string;
+    $command("data modify storage mcx: string append string storage mcx: string[-1] " ++ int::to_string(start) ++ " " ++ int::to_string(end))
+  )
+};
+
 export function to_string(a: string) → string {
   a
 };
