@@ -415,6 +415,36 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
+  object : Builtin(string / "substring_from'") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.TupleOf) return null
+      val string = arg.elements[0].value
+      if (string !is Value.StringOf) return null
+      val start = arg.elements[1].value
+      if (start !is Value.IntOf) return null
+      return Value.StringOf(string.value.substring(start.value))
+    }
+  },
+
+  object : Builtin(string / "substring_between'") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.TupleOf) return null
+      val string = arg.elements[0].value
+      if (string !is Value.StringOf) return null
+      val start = arg.elements[1].value
+      if (start !is Value.IntOf) return null
+      val end = arg.elements[2].value
+      if (end !is Value.IntOf) return null
+      return Value.StringOf(string.value.substring(start.value, end.value))
+    }
+  },
+
   object : Builtin(byteArray / "size") {
     override fun eval(
       arg: Value,
