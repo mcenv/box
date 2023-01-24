@@ -22,6 +22,20 @@ private val intArray: ModuleLocation = ModuleLocation(Stack.INT_ARRAY.id)
 private val longArray: ModuleLocation = ModuleLocation(Stack.LONG_ARRAY.id)
 
 val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
+  object : Builtin(prelude / "++") {
+    override fun eval(
+      arg: Value,
+      typeArgs: List<Type>,
+    ): Value? {
+      if (arg !is Value.TupleOf) return null
+      val a = arg.elements[0].value
+      if (a !is Value.StringOf) return null
+      val b = arg.elements[1].value
+      if (b !is Value.StringOf) return null
+      return Value.StringOf(a.value + b.value)
+    }
+  },
+
   object : Builtin(magic / "command") {
     override fun eval(
       arg: Value,
@@ -398,20 +412,6 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
     ): Value? {
       if (arg !is Value.StringOf) return null
       return Value.IntOf(arg.value.length)
-    }
-  },
-
-  object : Builtin(string / "++") {
-    override fun eval(
-      arg: Value,
-      typeArgs: List<Type>,
-    ): Value? {
-      if (arg !is Value.TupleOf) return null
-      val a = arg.elements[0].value
-      if (a !is Value.StringOf) return null
-      val b = arg.elements[1].value
-      if (b !is Value.StringOf) return null
-      return Value.StringOf(a.value + b.value)
     }
   },
 
