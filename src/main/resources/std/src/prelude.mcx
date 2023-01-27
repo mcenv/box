@@ -1,6 +1,7 @@
+export type end: * = union {};
+
 export builtin static function ++(_: (string, string)) → string;
 
 export function identity⟨a⟩(a: a) → a {
   a
 };
-

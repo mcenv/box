@@ -166,7 +166,8 @@ class Elaborate private constructor(
             if (!signature) {
               diagnostics += expectedTypeDefinition(type.range)
             }
-            C.Type.Hole
+            val kind = metaEnv.freshKind()
+            C.Type.Run(type.name, metaEnv.freshType(type.range, kind), kind)
           }
         }
       }
