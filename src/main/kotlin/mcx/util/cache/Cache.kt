@@ -2,23 +2,16 @@ package mcx.util.cache
 
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 
-private val root: Path = Paths
+val root: Path = Paths
   .get(System.getProperty("user.home"), ".mcx")
   .also { it.createDirectories() }
 
 private val versions: Path = root.resolve("versions")
 
-val JAVA: String = ProcessHandle
-  .current()
-  .info()
-  .command()
-  .orElseThrow()
-
-val BUNDLER_REPO_DIR: String = "-DbundlerRepoDir=\"${root.absolutePathString()}\""
+const val BUNDLER_REPO_DIR: String = "bundlerRepoDir"
 
 fun installServer(
   `package`: Package,
