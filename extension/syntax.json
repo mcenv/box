@@ -103,7 +103,7 @@
     "string": {
       "begin": "\"",
       "end": "\"",
-      "name": "string.quoted.double.json",
+      "name": "string.quoted.double.mcx",
       "patterns": [
         {
           "include": "#stringcontent"
