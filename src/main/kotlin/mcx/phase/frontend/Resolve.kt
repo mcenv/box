@@ -145,7 +145,15 @@ class Resolve private constructor(
       is S.Term.LongOf      -> R.Term.LongOf(term.value, term.range)
       is S.Term.FloatOf     -> R.Term.FloatOf(term.value, term.range)
       is S.Term.DoubleOf    -> R.Term.DoubleOf(term.value, term.range)
-      is S.Term.StringOf    -> R.Term.StringOf(term.value, term.range)
+      is S.Term.StringOf    -> {
+        val parts = term.parts.map {
+          when (it) {
+            is S.Term.StringOf.Part.Raw         -> R.Term.StringOf.Part.Raw(it.value)
+            is S.Term.StringOf.Part.Interpolate -> R.Term.StringOf.Part.Interpolate(resolveTerm(it.element))
+          }
+        }
+        R.Term.StringOf(parts, term.range)
+      }
       is S.Term.ByteArrayOf -> R.Term.ByteArrayOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.IntArrayOf  -> R.Term.IntArrayOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.LongArrayOf -> R.Term.LongArrayOf(term.elements.map { resolveTerm(it) }, term.range)
@@ -153,7 +161,7 @@ class Resolve private constructor(
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
       is S.Term.RefOf       -> R.Term.RefOf(resolveTerm(term.element), term.range)
       is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.FunOf  -> {
+      is S.Term.FunOf       -> {
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)

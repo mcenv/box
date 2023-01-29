@@ -332,7 +332,7 @@ class Parse private constructor(
     ranging {
       if (canRead()) {
         when (peek()) {
-          '('  -> {
+          '(' -> {
             val elements = parseList(',', '(', ')') { parseTerm() }
             if (elements.size == 1) {
               elements.first()
@@ -340,8 +340,55 @@ class Parse private constructor(
               S.Term.TupleOf(elements, until())
             }
           }
-          '"'  -> S.Term.StringOf(readQuotedString(), until())
-          '['  -> {
+          '"' -> {
+            if (!canRead()) {
+              return S.Term.StringOf(listOf(S.Term.StringOf.Part.Raw("")), until())
+            }
+            skip()
+
+            val parts = mutableListOf<S.Term.StringOf.Part>()
+            var builder = StringBuilder()
+            var escaped = false
+            while (canRead()) {
+              if (escaped) {
+                when (val char = peek()) {
+                  '"', '\\' -> {
+                    builder.append(char)
+                  }
+                  else      -> diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+                }
+                escaped = false
+              } else {
+                when (val char = peek()) {
+                  '\\' -> escaped = true
+                  '"'  -> break
+                  '$'  -> {
+                    if (builder.isNotEmpty()) {
+                      parts += S.Term.StringOf.Part.Raw(builder.toString())
+                      builder = StringBuilder()
+                    }
+                    skip()
+                    expect('{')
+                    parts += S.Term.StringOf.Part.Interpolate(parseTerm())
+                    expect('}')
+                    continue
+                  }
+                  else -> builder.append(char)
+                }
+              }
+              skip()
+            }
+
+            expect('"')
+            if (builder.isNotEmpty()) {
+              parts += S.Term.StringOf.Part.Raw(builder.toString())
+            }
+            if (parts.isEmpty()) {
+              parts += S.Term.StringOf.Part.Raw("")
+            }
+            S.Term.StringOf(parts, until())
+          }
+          '[' -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ']') {

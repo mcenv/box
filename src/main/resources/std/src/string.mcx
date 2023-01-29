@@ -22,7 +22,7 @@ export static function repeat(string: string, count: int) → string {
 export static function substring_from(string: `string, start: int) → `string {
   `(
     let _ = $string;
-    $command("data modify storage mcx: string append string storage mcx: string[-1] " ++ int::to_string(start))
+    $command("data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)}")
   )
 };
 
@@ -34,7 +34,7 @@ export builtin static function substring_from'(string: string, start: int) → s
 export static function substring_between(string: `string, start: int, end: int) → `string {
   `(
     let _ = $string;
-    $command("data modify storage mcx: string append string storage mcx: string[-1] " ++ int::to_string(start) ++ " " ++ int::to_string(end))
+    $command("data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)} ${int::to_string(end)}")
   )
 };
 

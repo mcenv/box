@@ -75,9 +75,9 @@ function touch(index: int) → () {
 static inline function shift(depth: int) → `() {
   let path = repeat(("[-2]", depth));
   `(
-    let _: end = $command("execute store result score #1 mcx if data storage mcx: heap" ++ path ++ "[]");
-    let _: end = $command("execute if score #0 mcx matches 0.. if score #1 mcx matches 3.. run data remove storage mcx: heap" ++ path ++ "[2]");
-    let _: end = $command("execute if score #0 mcx matches ..-1 if score #1 mcx matches ..2 run data modify storage mcx: heap" ++ path ++ " append value []");
+    let _: end = $command("execute store result score #1 mcx if data storage mcx: heap${path}[]");
+    let _: end = $command("execute if score #0 mcx matches 0.. if score #1 mcx matches 3.. run data remove storage mcx: heap${path}[2]");
+    let _: end = $command("execute if score #0 mcx matches ..-1 if score #1 mcx matches ..2 run data modify storage mcx: heap${path} append value []");
     ()
   )
 };

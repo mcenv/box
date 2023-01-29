@@ -4,12 +4,10 @@
   "scopeName": "source.mcx",
   "patterns": [
     {
-      "name": "comment.line.mcx",
-      "match": "#.*"
+      "include": "#comment"
     },
     {
-      "name": "keyword.operator.mcx",
-      "match": "[:*→=,;&`$_]|(?:\\.\\.)"
+      "include": "#keyword"
     },
     {
       "begin": "\\b(import)\\b\\s*{",
@@ -72,38 +70,68 @@
       "match": "\\b(?:bool|byte|short|int|long|float|double|string)\\b"
     },
     {
-      "name": "keyword.control.mcx",
-      "match": "\\b(?:fun|of|if|else|let|is)\\b"
-    },
-    {
-      "name": "constant.language.mcx",
-      "match": "\\b(?:true|false)\\b"
-    },
-    {
-      "name": "constant.numeric.mcx",
-      "match": "\\b(?:[-+]?(?:0|[1-9][0-9]*)[bsl]?)\\b"
-    },
-    {
-      "name": "constant.numeric.mcx",
-      "match": "\\b(?:[-+]?(?:[0-9]+\\.?|[0-9]*\\.[0-9]+)(?:e[-+]?[0-9]+)?[fd]?)\\b"
-    },
-    {
-      "include": "#string"
-    },
-    {
-      "name": "entity.name.function.mcx",
-      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+(?=[(⟨])"
-    },
-    {
-      "name": "variable.mcx",
-      "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+"
+      "include": "#term"
     }
   ],
   "repository": {
+    "comment": {
+      "name": "comment.line.mcx",
+      "match": "#.*"
+    },
+    "keyword": {
+      "name": "keyword.operator.mcx",
+      "match": "[:*→=,;&`$_]|(?:\\.\\.)"
+    },
+    "term": {
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#keyword"
+        },
+        {
+          "name": "keyword.control.mcx",
+          "match": "\\b(?:fun|of|if|else|let|is)\\b"
+        },
+        {
+          "name": "constant.language.mcx",
+          "match": "\\b(?:true|false)\\b"
+        },
+        {
+          "name": "constant.numeric.mcx",
+          "match": "\\b(?:[-+]?(?:0|[1-9][0-9]*)[bsl]?)\\b"
+        },
+        {
+          "name": "constant.numeric.mcx",
+          "match": "\\b(?:[-+]?(?:[0-9]+\\.?|[0-9]*\\.[0-9]+)(?:e[-+]?[0-9]+)?[fd]?)\\b"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "name": "entity.name.function.mcx",
+          "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+(?=[(⟨])"
+        },
+        {
+          "name": "variable.mcx",
+          "match": "[^ \n\r:;,()\\[\\]{}⟨⟩]+"
+        }
+      ]
+    },
     "string": {
       "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "string.quoted.double.mcx"
+        }
+      },
       "end": "\"",
-      "name": "string.quoted.double.mcx",
+      "endCaptures": {
+        "0": {
+          "name": "string.quoted.double.mcx"
+        }
+      },
       "patterns": [
         {
           "include": "#stringcontent"
@@ -115,6 +143,29 @@
         {
           "match": "\\\\(?:[\"\\\\])",
           "name": "constant.character.escape.mcx"
+        },
+        {
+          "begin": "\\$\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.mcx"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.mcx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#term"
+            }
+          ]
+        },
+        {
+          "match": "[^\"\\\\$]+",
+          "name": "string.quoted.double.mcx"
         },
         {
           "match": "\\\\.",

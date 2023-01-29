@@ -211,9 +211,14 @@ object Resolved {
     ) : Term
 
     data class StringOf(
-      val value: String,
+      val parts: List<Part>,
       override val range: Range,
-    ) : Term
+    ) : Term {
+      sealed interface Part {
+        data class Raw(val value: String) : Part
+        data class Interpolate(val element: Term) : Part
+      }
+    }
 
     data class ByteArrayOf(
       val elements: List<Term>,

@@ -11,6 +11,6 @@ export builtin function size(_: [int;]) → int {
 export static function get(array: `[int;], index: int) → `int {
   `(
     let _ = $array;
-    $command("data modify storage mcx: int_array append from storage mcx: int_array[-1][" ++ to_string(index) ++ "]")
+    $command("data modify storage mcx: int_array append from storage mcx: int_array[-1][${to_string(index)}]")
   )
 };

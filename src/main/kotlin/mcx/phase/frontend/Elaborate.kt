@@ -154,7 +154,7 @@ class Elaborate private constructor(
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
         } else {
-          diagnostics += requiredStatic(type.range)
+          diagnostics += levelMismatch(type.range)
           C.Type.Hole
         }
       }
@@ -221,7 +221,29 @@ class Elaborate private constructor(
       expected == null              -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
 
       term is R.Term.StringOf &&
-      expected == null              -> C.Term.StringOf(term.value, C.Type.String(term.value))
+      expected == null            -> {
+        val head = term.parts.first()
+        if (head is R.Term.StringOf.Part.Raw && term.parts.size == 1) {
+          C.Term.StringOf(head.value, C.Type.String(head.value))
+        } else if (isMeta()) {
+          term.parts.fold<R.Term.StringOf.Part, C.Term>(C.Term.StringOf("", C.Type.String.SET)) { acc, part ->
+            val part = when (part) {
+              is R.Term.StringOf.Part.Raw         -> C.Term.StringOf(part.value, C.Type.String.SET)
+              is R.Term.StringOf.Part.Interpolate -> elaborateTerm(part.element, C.Type.String.SET)
+            }
+            val type = C.Type.Tuple(listOf(C.Type.String.SET, C.Type.String.SET), C.Kind.Type(2))
+            C.Term.Run(
+              prelude / "++",
+              emptyList(),
+              C.Term.TupleOf(listOf(acc, part), type),
+              C.Type.String.SET,
+            )
+          }
+        } else {
+          diagnostics += levelMismatch(term.range)
+          C.Term.Hole(C.Type.String.SET)
+        }
+      }
 
       term is R.Term.ByteArrayOf &&
       expected is C.Type.ByteArray? -> {
@@ -273,7 +295,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CompoundOf &&
-      expected is C.Type.Compound    -> {
+      expected is C.Type.Compound -> {
         val elements = mutableMapOf<String, C.Term>()
         term.elements.forEach { (key, element) ->
           when (val type = expected.elements[key.value]) {
@@ -314,7 +336,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected is C.Type.Tuple -> {
+      expected is C.Type.Tuple    -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
         }
@@ -334,7 +356,7 @@ class Elaborate private constructor(
         C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
       }
 
-      term is R.Term.Apply           -> {
+      term is R.Term.Apply        -> {
         val operator = elaborateTerm(term.operator)
         when (val operatorType = metaEnv.forceType(operator.type)) {
           is C.Type.Fun -> {
@@ -356,7 +378,7 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is R.Term.Let             -> {
+      term is R.Term.Let          -> {
         val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder)
@@ -370,7 +392,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Var &&
-      expected == null         -> {
+      expected == null            -> {
         val entry = entries[term.level]
         if (entry.used) {
           diagnostics += varAlreadyUsed(term.name, term.range)
@@ -385,7 +407,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Run &&
-      expected == null               -> {
+      expected == null            -> {
         if (isLeaf()) {
           diagnostics += leafFunctionCannotRunOtherFunctions(term.range)
           C.Term.Hole(C.Type.Hole)
@@ -393,7 +415,7 @@ class Elaborate private constructor(
           when (val definition = definitions[term.name.value]) {
             is C.Definition.Function -> {
               if (!isMeta() && Modifier.STATIC in definition.modifiers) {
-                diagnostics += requiredStatic(term.name.range)
+                diagnostics += levelMismatch(term.name.range)
                 C.Term.Hole(C.Type.Hole)
               } else {
                 hover(term.name.range) { createFunctionDocumentation(definition) }
@@ -422,7 +444,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Is &&
-      expected is C.Type.Bool?       -> {
+      expected is C.Type.Bool?    -> {
         val scrutinee = elaborateTerm(term.scrutinee)
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
@@ -431,19 +453,19 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CodeOf &&
-      expected is C.Type.Code?       -> {
+      expected is C.Type.Code?    -> {
         if (isMeta()) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
           }
           C.Term.CodeOf(element, C.Type.Code(element.type))
         } else {
-          diagnostics += requiredStatic(term.range)
+          diagnostics += levelMismatch(term.range)
           C.Term.Hole(expected ?: C.Type.Hole)
         }
       }
 
-      term is R.Term.Splice          -> {
+      term is R.Term.Splice       -> {
         val element = splicing {
           elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
         }
@@ -461,7 +483,7 @@ class Elaborate private constructor(
 
       expected == null              -> error("type must be non-null")
 
-      else                           -> {
+      else                        -> {
         val actual = elaborateTerm(term)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += typeMismatch(expected, actual.type, term.range)
@@ -481,7 +503,7 @@ class Elaborate private constructor(
     val expected = expected?.let { metaEnv.forceType(it) }
     return when {
       pattern is R.Pattern.IntOf &&
-      expected is C.Type.Int?           -> C.Pattern.IntOf(pattern.value, C.Type.Int.SET)
+      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, C.Type.Int.SET)
 
       pattern is R.Pattern.IntRangeOf &&
       expected is C.Type.Int?     -> {
@@ -493,7 +515,7 @@ class Elaborate private constructor(
 
       pattern is R.Pattern.ListOf &&
       pattern.elements.isEmpty() &&
-      expected is C.Type.List?          -> C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
+      expected is C.Type.List?  -> C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
 
       pattern is R.Pattern.ListOf &&
       expected is C.Type.List?    -> {
@@ -591,7 +613,7 @@ class Elaborate private constructor(
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
 
-      pattern is R.Pattern.Drop         -> C.Pattern.Drop(expected ?: metaEnv.freshType(pattern.range))
+      pattern is R.Pattern.Drop -> C.Pattern.Drop(expected ?: metaEnv.freshType(pattern.range))
 
       pattern is R.Pattern.Anno &&
       expected == null            -> {
@@ -599,11 +621,11 @@ class Elaborate private constructor(
         elaboratePattern(pattern.element, type)
       }
 
-      pattern is R.Pattern.Hole         -> C.Pattern.Hole(expected ?: C.Type.Hole)
+      pattern is R.Pattern.Hole -> C.Pattern.Hole(expected ?: C.Type.Hole)
 
       expected == null            -> error("type must be non-null")
 
-      else                              -> {
+      else                      -> {
         val actual = elaboratePattern(pattern)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += typeMismatch(expected, actual.type, pattern.range)
@@ -949,12 +971,12 @@ class Elaborate private constructor(
     )
   }
 
-  private fun requiredStatic(
+  private fun levelMismatch(
     range: Range,
   ): Diagnostic {
     return diagnostic(
       range,
-      "required: @static",
+      "level mismatch",
       DiagnosticSeverity.Error,
     )
   }
