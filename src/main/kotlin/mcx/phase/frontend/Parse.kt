@@ -318,7 +318,7 @@ class Parse private constructor(
               skip()
               skipTrivia()
               val result = parseType()
-              S.Type.Fun(left, result, until())
+              S.Type.Func(left, result, until())
             }
             else -> null
           }
@@ -470,7 +470,7 @@ class Parse private constructor(
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
               "true"  -> S.Term.BoolOf(true, until())
-              "fun"   -> {
+              "func"  -> {
                 skipTrivia()
                 val binder = parsePattern()
                 expect('→')
@@ -478,7 +478,7 @@ class Parse private constructor(
                 skipTrivia()
                 val body = parseTerm()
                 expect('}')
-                S.Term.FunOf(binder, body, until())
+                S.Term.FuncOf(binder, body, until())
               }
               "if"    -> {
                 skipTrivia()

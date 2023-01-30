@@ -86,7 +86,7 @@ object Lifted {
       val elements: kotlin.collections.List<Type>,
     ) : Type
 
-    data class Fun(
+    data class Func(
       val param: Type,
       val result: Type,
     ) : Type
@@ -179,7 +179,7 @@ object Lifted {
       override val type: Type,
     ) : Term
 
-    data class FunOf(
+    data class FuncOf(
       val tag: Int,
       val vars: List<Triple<String, Int, Type>>,
       override val type: Type,

@@ -77,7 +77,7 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
       is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
-      is C.Term.FunOf       -> C.Term.FunOf(stagePattern(term.binder), stageTerm(term.body), type)
+      is C.Term.FuncOf      -> C.Term.FuncOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), type)
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
@@ -159,7 +159,7 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
       is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
-      is C.Term.FunOf       -> Value.FunOf(term.binder, term.body)
+      is C.Term.FuncOf      -> Value.FunOf(term.binder, term.body)
       is C.Term.Apply       -> {
         val operator = evalTerm(term.operator)
         if (static && operator is Value.FunOf) {
@@ -333,11 +333,11 @@ class Stage private constructor(
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
       is Value.FunOf       -> {
-        type as C.Type.Fun
-        C.Term.FunOf(value.binder, value.body, type)
+        type as C.Type.Func
+        C.Term.FuncOf(value.binder, value.body, type)
       }
       is Value.Apply   -> {
-        value.operatorType as C.Type.Fun
+        value.operatorType as C.Type.Func
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
       }
       is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)

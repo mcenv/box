@@ -136,7 +136,7 @@ object Resolved {
       override val range: Range,
     ) : Type
 
-    data class Fun(
+    data class Func(
       val param: Type,
       val result: Type,
       override val range: Range,
@@ -255,7 +255,7 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class FunOf(
+    data class FuncOf(
       val binder: Pattern,
       val body: Term,
       override val range: Range,

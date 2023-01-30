@@ -149,7 +149,7 @@ class Elaborate private constructor(
               }
           C.Type.Union(listOf(head) + tail, head.kind)
         }
-      type is R.Type.Fun && expected == null       -> C.Type.Fun(elaborateType(type.param), elaborateType(type.result))
+      type is R.Type.Func && expected == null      -> C.Type.Func(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Code && expected == null      -> {
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
@@ -328,7 +328,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected == null              -> {
+      expected == null         -> {
         val elements = term.elements.map { element ->
           elaborateTerm(element)
         }
@@ -336,7 +336,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected is C.Type.Tuple    -> {
+      expected is C.Type.Tuple -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
         }
@@ -346,31 +346,31 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
       }
 
-      term is R.Term.FunOf &&
-      expected is C.Type.Fun?       -> {
+      term is R.Term.FuncOf &&
+      expected is C.Type.Func? -> {
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder, expected?.param)
           val body = elaborateTerm(term.body, expected?.result)
           binder to body
         }
-        C.Term.FunOf(binder, body, expected ?: C.Type.Fun(binder.type, body.type))
+        C.Term.FuncOf(binder, body, expected ?: C.Type.Func(binder.type, body.type))
       }
 
-      term is R.Term.Apply        -> {
+      term is R.Term.Apply     -> {
         val operator = elaborateTerm(term.operator)
         when (val operatorType = metaEnv.forceType(operator.type)) {
-          is C.Type.Fun -> {
+          is C.Type.Func -> {
             val operand = elaborateTerm(term.operand, operatorType.param)
             C.Term.Apply(operator, operand, operatorType.result)
           }
-          else          -> {
-            diagnostics += typeMismatch(C.Type.Fun(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
+          else           -> {
+            diagnostics += typeMismatch(C.Type.Func(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
       }
 
-      term is R.Term.If             -> {
+      term is R.Term.If        -> {
         val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
@@ -722,8 +722,8 @@ class Elaborate private constructor(
       type2 is C.Type.Tuple &&
       type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
 
-      type1 is C.Type.Fun &&
-      type2 is C.Type.Fun       -> type2.param isSubtypeOf type1.param &&
+      type1 is C.Type.Func &&
+      type2 is C.Type.Func      -> type2.param isSubtypeOf type1.param &&
                                    type1.result isSubtypeOf type2.result
 
       type1 is C.Type.Union     -> type1.elements.all { it isSubtypeOf type2 }

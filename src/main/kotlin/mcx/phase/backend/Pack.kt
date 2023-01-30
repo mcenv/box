@@ -122,7 +122,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.CompoundOf  -> {
+      is L.Term.CompoundOf -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -132,17 +132,17 @@ class Pack private constructor(
           drop(valueType)
         }
       }
-      is L.Term.RefOf       -> {
+      is L.Term.RefOf      -> {
         packTerm(term.element)
         !{ Raw("# todo: $term") }
         push(P.Stack.INT, SourceProvider.Value(Nbt.Int(0)))
       }
-      is L.Term.TupleOf     -> {
+      is L.Term.TupleOf    -> {
         term.elements.forEach { element ->
           packTerm(element)
         }
       }
-      is L.Term.FunOf       -> {
+      is L.Term.FuncOf     -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.vars.forEach { (name, level, type) ->
           val stack = eraseType(type).first()
@@ -150,7 +150,7 @@ class Pack private constructor(
           +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) }))))
         }
       }
-      is L.Term.If          -> {
+      is L.Term.If         -> {
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.BYTE.id)(-1) }))))
         drop(P.Stack.BYTE)
@@ -168,7 +168,7 @@ class Pack private constructor(
         )
         eraseType(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let         -> {
+      is L.Term.Let        -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -328,7 +328,7 @@ class Pack private constructor(
       is L.Type.Compound  -> listOf(P.Stack.COMPOUND)
       is L.Type.Ref       -> listOf(P.Stack.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
-      is L.Type.Fun       -> listOf(P.Stack.COMPOUND)
+      is L.Type.Func      -> listOf(P.Stack.COMPOUND)
       is L.Type.Union     -> type.elements
                                .firstOrNull()
                                ?.let { eraseType(it) } ?: listOf(P.Stack.END)

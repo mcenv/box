@@ -168,7 +168,7 @@ object Core {
       override val kind: Kind,
     ) : Type
 
-    data class Fun(
+    data class Func(
       val param: Type,
       val result: Type,
     ) : Type {
@@ -292,7 +292,7 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class FunOf(
+    data class FuncOf(
       val binder: Pattern,
       val body: Term,
       override val type: Type,
