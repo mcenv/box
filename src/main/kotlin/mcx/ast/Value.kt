@@ -76,7 +76,12 @@ sealed interface Value {
     val elements: List<Lazy<Value>>,
   ) : Value
 
-  class FunOf(
+  class ProcOf(
+    val binder: Core.Pattern,
+    val body: Core.Term,
+  ) : Value
+
+  class FuncOf(
     val binder: Core.Pattern,
     val body: Core.Term,
   ) : Value

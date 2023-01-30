@@ -77,6 +77,7 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
       is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
+      is C.Term.ProcOf      -> C.Term.ProcOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.FuncOf      -> C.Term.FuncOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), type)
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
@@ -159,10 +160,11 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
       is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
-      is C.Term.FuncOf      -> Value.FunOf(term.binder, term.body)
+      is C.Term.ProcOf      -> Value.ProcOf(term.binder, term.body)
+      is C.Term.FuncOf      -> Value.FuncOf(term.binder, term.body)
       is C.Term.Apply       -> {
         val operator = evalTerm(term.operator)
-        if (static && operator is Value.FunOf) {
+        if (static && operator is Value.FuncOf) {
           bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
         } else {
           Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
@@ -332,29 +334,39 @@ class Stage private constructor(
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.FunOf       -> {
+      is Value.ProcOf      -> {
+        type as C.Type.Proc
+        C.Term.ProcOf(value.binder, value.body, type)
+      }
+      is Value.FuncOf      -> {
         type as C.Type.Func
         C.Term.FuncOf(value.binder, value.body, type)
       }
-      is Value.Apply   -> {
-        value.operatorType as C.Type.Func
-        C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, value.operatorType.param), value.operatorType.result)
+      is Value.Apply       -> {
+        val (param, result) = run {
+          when (val operatorType = value.operatorType) {
+            is C.Type.Proc -> operatorType.param to operatorType.result
+            is C.Type.Func -> operatorType.param to operatorType.result
+            else           -> error("unexpected type: $operatorType")
+          }
+        }
+        C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, param), result)
       }
-      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Let     -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
-      is Value.Var     -> C.Term.Var(value.name, value.level, type)
-      is Value.Run     -> {
+      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Let         -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
+      is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Run         -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
-      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command -> C.Term.Command(value.value, type)
-      is Value.CodeOf  -> {
+      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
+      is Value.Command     -> C.Term.Command(value.value, type)
+      is Value.CodeOf      -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole    -> C.Term.Hole(value.type)
+      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole        -> C.Term.Hole(value.type)
     }
   }
 

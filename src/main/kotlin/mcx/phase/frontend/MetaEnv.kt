@@ -67,6 +67,7 @@ class MetaEnv {
       is C.Type.Ref       -> C.Type.Ref(zonkType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
+      is C.Type.Proc      -> C.Type.Proc(zonkType(type.param), zonkType(type.result))
       is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
@@ -173,7 +174,7 @@ class MetaEnv {
       type2 is C.Type.List      -> unifyTypes(type1.element, type2.element)
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
                                    type1.elements.all { (key1, element1) ->
                                      when (val element2 = type2.elements[key1]) {
                                        null -> false
@@ -182,36 +183,40 @@ class MetaEnv {
                                    }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref       -> unifyTypes(type1.element, type2.element)
+      type2 is C.Type.Ref      -> unifyTypes(type1.element, type2.element)
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
-                                   (type1.elements zip type2.elements).all { (element1, element2) -> unifyTypes(element1, element2) }
+      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> unifyTypes(element1, element2) }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1  -> unifyTypes(type1.elements.first(), type2)
+      type1.elements.size == 1 -> unifyTypes(type1.elements.first(), type2)
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1  -> unifyTypes(type1, type2.elements.first())
+      type2.elements.size == 1 -> unifyTypes(type1, type2.elements.first())
+
+      type1 is C.Type.Proc &&
+      type2 is C.Type.Proc     -> unifyTypes(type1.param, type2.param) &&
+                                  unifyTypes(type1.result, type2.result)
 
       type1 is C.Type.Func &&
-      type2 is C.Type.Func      -> unifyTypes(type1.param, type2.param) &&
-                                   unifyTypes(type1.result, type2.result)
+      type2 is C.Type.Func     -> unifyTypes(type1.param, type2.param) &&
+                                  unifyTypes(type1.result, type2.result)
 
-      type1 is C.Type.Union     -> false // TODO
-      type2 is C.Type.Union     -> false // TODO
+      type1 is C.Type.Union    -> false // TODO
+      type2 is C.Type.Union    -> false // TODO
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code      -> unifyTypes(type1.element, type2.element)
+      type2 is C.Type.Code     -> unifyTypes(type1.element, type2.element)
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var       -> type1.level == type2.level
+      type2 is C.Type.Var      -> type1.level == type2.level
 
       type1 is C.Type.Run &&
       type2 is C.Type.Run      -> type1.name == type2.name
 
-      type1 is C.Type.Hole      -> false
-      type2 is C.Type.Hole      -> false
+      type1 is C.Type.Hole     -> false
+      type2 is C.Type.Hole     -> false
 
       else                      -> false
     }

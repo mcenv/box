@@ -115,6 +115,7 @@ class Resolve private constructor(
       is S.Type.Compound  -> R.Type.Compound(type.elements.mapValues { resolveType(it.value) }, type.range)
       is S.Type.Ref       -> R.Type.Ref(resolveType(type.element), type.range)
       is S.Type.Tuple     -> R.Type.Tuple(type.elements.map { resolveType(it) }, type.range)
+      is S.Type.Proc      -> R.Type.Proc(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Func      -> R.Type.Func(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Union     -> R.Type.Union(type.elements.map { resolveType(it) }, type.range)
       is S.Type.Code      -> R.Type.Code(resolveType(type.element), type.range)
@@ -161,6 +162,15 @@ class Resolve private constructor(
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
       is S.Term.RefOf       -> R.Term.RefOf(resolveTerm(term.element), term.range)
       is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
+      is S.Term.ProcOf      -> {
+        val (binder, body) = restoring {
+          // TODO: use frontier level to hide variables
+          val binder = resolvePattern(term.binder)
+          val body = resolveTerm(term.body)
+          binder to body
+        }
+        R.Term.ProcOf(binder, body, term.range)
+      }
       is S.Term.FuncOf      -> {
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
@@ -176,7 +186,7 @@ class Resolve private constructor(
         val elseClause = resolveTerm(term.elseClause)
         R.Term.If(condition, thenClause, elseClause, term.range)
       }
-      is S.Term.Let    -> {
+      is S.Term.Let         -> {
         val init = resolveTerm(term.init)
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
@@ -262,7 +272,7 @@ class Resolve private constructor(
 
   private class Env private constructor(
     private val terms: MutableList<String>,
-    private val types: MutableList<String>,
+    val types: List<String>,
   ) {
     private var savedSize: Int = 0
     val lastIndex: Int get() = terms.lastIndex
@@ -284,10 +294,10 @@ class Resolve private constructor(
     }
 
     inline fun <R> restoring(
-      block: () -> R,
+      block: Env.() -> R,
     ): R {
       savedSize = terms.size
-      val result = block()
+      val result = this.block()
       repeat(terms.size - savedSize) {
         terms.removeLast()
       }

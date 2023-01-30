@@ -175,7 +175,7 @@ class Parse private constructor(
 
   private fun parseType(): S.Type =
     ranging {
-      (if (canRead()) {
+      if (canRead()) {
         when (peek()) {
           '('  -> {
             skip()
@@ -259,6 +259,22 @@ class Parse private constructor(
             "string" -> S.Type.String(null, until())
             "false"  -> S.Type.Bool(false, until())
             "true"   -> S.Type.Bool(true, until())
+            "proc"   -> {
+              skipTrivia()
+              val param = parseType()
+              expect('→')
+              skipTrivia()
+              val result = parseType()
+              S.Type.Proc(param, result, until())
+            }
+            "func"   -> {
+              skipTrivia()
+              val param = parseType()
+              expect('→')
+              skipTrivia()
+              val result = parseType()
+              S.Type.Func(param, result, until())
+            }
             "union"  -> {
               val elements = parseList(',', '{', '}') { parseType() }
               S.Type.Union(elements, until())
@@ -310,21 +326,6 @@ class Parse private constructor(
         val range = until()
         diagnostics += expectedType(range)
         S.Type.Hole(range)
-      }).let { left ->
-        skipTrivia()
-        if (canRead()) {
-          when (peek()) {
-            '→'  -> {
-              skip()
-              skipTrivia()
-              val result = parseType()
-              S.Type.Func(left, result, until())
-            }
-            else -> null
-          }
-        } else {
-          null
-        } ?: left
       }
     }
 
@@ -470,6 +471,16 @@ class Parse private constructor(
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
               "true"  -> S.Term.BoolOf(true, until())
+              "proc"  -> {
+                skipTrivia()
+                val binder = parsePattern()
+                expect('→')
+                expect('{')
+                skipTrivia()
+                val body = parseTerm()
+                expect('}')
+                S.Term.ProcOf(binder, body, until())
+              }
               "func"  -> {
                 skipTrivia()
                 val binder = parsePattern()

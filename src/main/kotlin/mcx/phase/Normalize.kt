@@ -30,6 +30,7 @@ object Normalize {
       is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
+      is C.Type.Proc      -> C.Type.Proc(evalType(type.param), evalType(type.result))
       is C.Type.Func      -> C.Type.Func(evalType(type.param), evalType(type.result))
       is C.Type.Code      -> C.Type.Code(evalType(type.element))
       is C.Type.Var       -> types[type.level]

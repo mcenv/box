@@ -68,6 +68,7 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
         is Type.Ref       -> Value.StringOf(Stack.INT.id)
         is Type.Tuple     -> error("unexpected type: ${prettyType(a)}")
         is Type.Union     -> null // TODO
+        is Type.Proc      -> Value.StringOf(Stack.INT.id)
         is Type.Func      -> Value.StringOf(Stack.COMPOUND.id)
         is Type.Code      -> error("unexpected type: ${prettyType(a)}")
         is Type.Var       -> error("unexpected type: ${prettyType(a)}")

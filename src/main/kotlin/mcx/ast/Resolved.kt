@@ -136,6 +136,12 @@ object Resolved {
       override val range: Range,
     ) : Type
 
+    data class Proc(
+      val param: Type,
+      val result: Type,
+      override val range: Range,
+    ) : Type
+
     data class Func(
       val param: Type,
       val result: Type,
@@ -252,6 +258,12 @@ object Resolved {
 
     data class TupleOf(
       val elements: List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class ProcOf(
+      val binder: Pattern,
+      val body: Term,
       override val range: Range,
     ) : Term
 

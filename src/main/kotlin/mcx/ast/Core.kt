@@ -168,6 +168,13 @@ object Core {
       override val kind: Kind,
     ) : Type
 
+    data class Proc(
+      val param: Type,
+      val result: Type,
+    ) : Type {
+      override val kind: Kind get() = Kind.Type.ONE
+    }
+
     data class Func(
       val param: Type,
       val result: Type,
@@ -289,6 +296,12 @@ object Core {
 
     data class TupleOf(
       val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class ProcOf(
+      val binder: Pattern,
+      val body: Term,
       override val type: Type,
     ) : Term
 

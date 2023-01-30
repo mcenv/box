@@ -149,6 +149,7 @@ class Elaborate private constructor(
               }
           C.Type.Union(listOf(head) + tail, head.kind)
         }
+      type is R.Type.Proc && expected == null      -> C.Type.Proc(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Func && expected == null      -> C.Type.Func(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Code && expected == null      -> {
         if (isMeta()) {
@@ -221,7 +222,7 @@ class Elaborate private constructor(
       expected == null              -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
 
       term is R.Term.StringOf &&
-      expected == null            -> {
+      expected == null              -> {
         val head = term.parts.first()
         if (head is R.Term.StringOf.Part.Raw && term.parts.size == 1) {
           C.Term.StringOf(head.value, C.Type.String(head.value))
@@ -295,7 +296,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CompoundOf &&
-      expected is C.Type.Compound -> {
+      expected is C.Type.Compound   -> {
         val elements = mutableMapOf<String, C.Term>()
         term.elements.forEach { (key, element) ->
           when (val type = expected.elements[key.value]) {
@@ -322,13 +323,13 @@ class Elaborate private constructor(
       }
 
       term is R.Term.RefOf &&
-      expected is C.Type.Ref?       -> {
+      expected is C.Type.Ref? -> {
         val element = elaborateTerm(term.element, expected?.element)
         C.Term.RefOf(element, C.Type.Ref(element.type))
       }
 
       term is R.Term.TupleOf &&
-      expected == null         -> {
+      expected == null              -> {
         val elements = term.elements.map { element ->
           elaborateTerm(element)
         }
@@ -336,7 +337,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected is C.Type.Tuple -> {
+      expected is C.Type.Tuple      -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
         }
@@ -346,8 +347,18 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
       }
 
+      term is R.Term.ProcOf &&
+      expected is C.Type.Proc?      -> {
+        val (binder, body) = restoring {
+          val binder = elaboratePattern(term.binder, expected?.param)
+          val body = elaborateTerm(term.body, expected?.result)
+          binder to body
+        }
+        C.Term.ProcOf(binder, body, expected ?: C.Type.Proc(binder.type, body.type))
+      }
+
       term is R.Term.FuncOf &&
-      expected is C.Type.Func? -> {
+      expected is C.Type.Func?      -> {
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder, expected?.param)
           val body = elaborateTerm(term.body, expected?.result)
@@ -356,9 +367,13 @@ class Elaborate private constructor(
         C.Term.FuncOf(binder, body, expected ?: C.Type.Func(binder.type, body.type))
       }
 
-      term is R.Term.Apply     -> {
+      term is R.Term.Apply          -> {
         val operator = elaborateTerm(term.operator)
         when (val operatorType = metaEnv.forceType(operator.type)) {
+          is C.Type.Proc -> {
+            val operand = elaborateTerm(term.operand, operatorType.param)
+            C.Term.Apply(operator, operand, operatorType.result)
+          }
           is C.Type.Func -> {
             val operand = elaborateTerm(term.operand, operatorType.param)
             C.Term.Apply(operator, operand, operatorType.result)
@@ -370,7 +385,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.If        -> {
+      term is R.Term.If             -> {
         val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
@@ -378,7 +393,7 @@ class Elaborate private constructor(
         C.Term.If(condition, thenClause, elseClause, thenClause.type)
       }
 
-      term is R.Term.Let          -> {
+      term is R.Term.Let            -> {
         val init = elaborateTerm(term.init)
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder)
@@ -392,7 +407,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Var &&
-      expected == null            -> {
+      expected == null              -> {
         val entry = entries[term.level]
         if (entry.used) {
           diagnostics += varAlreadyUsed(term.name, term.range)
@@ -407,7 +422,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Run &&
-      expected == null            -> {
+      expected == null              -> {
         if (isLeaf()) {
           diagnostics += leafFunctionCannotRunOtherFunctions(term.range)
           C.Term.Hole(C.Type.Hole)
@@ -444,7 +459,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Is &&
-      expected is C.Type.Bool?    -> {
+      expected is C.Type.Bool?      -> {
         val scrutinee = elaborateTerm(term.scrutinee)
         val scrutineer = restoring {
           elaboratePattern(term.scrutineer, scrutinee.type)
@@ -453,7 +468,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.CodeOf &&
-      expected is C.Type.Code?    -> {
+      expected is C.Type.Code?      -> {
         if (isMeta()) {
           val element = quoting {
             elaborateTerm(term.element, expected?.element)
@@ -465,7 +480,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Splice       -> {
+      term is R.Term.Splice         -> {
         val element = splicing {
           elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
         }
@@ -483,7 +498,7 @@ class Elaborate private constructor(
 
       expected == null              -> error("type must be non-null")
 
-      else                        -> {
+      else                          -> {
         val actual = elaborateTerm(term)
         if (!(actual.type isSubtypeOf expected)) {
           diagnostics += typeMismatch(expected, actual.type, term.range)
@@ -701,7 +716,7 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound  -> type1.elements.size == type2.elements.size &&
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
                                    type1.elements.all { (key1, element1) ->
                                      when (val element2 = type2.elements[key1]) {
                                        null -> false
@@ -710,40 +725,44 @@ class Elaborate private constructor(
                                    }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref       -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple     -> type1.elements.size == type2.elements.size &&
-                                   (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1  -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1  -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+
+      type1 is C.Type.Proc &&
+      type2 is C.Type.Proc     -> type2.param isSubtypeOf type1.param &&
+                                  type1.result isSubtypeOf type2.result
 
       type1 is C.Type.Func &&
-      type2 is C.Type.Func      -> type2.param isSubtypeOf type1.param &&
-                                   type1.result isSubtypeOf type2.result
+      type2 is C.Type.Func     -> type2.param isSubtypeOf type1.param &&
+                                  type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union     -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union     -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union    -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var       -> type1.level == type2.level
+      type2 is C.Type.Var      -> type1.level == type2.level
 
       type1 is C.Type.Run &&
       type2 is C.Type.Run &&
-      type1.name == type2.name  -> true
+      type1.name == type2.name -> true
 
       type1 is C.Type.Run &&
       (
           type1.name.module == input.module.name ||
           Modifier.INLINE in definitions[type1.name]!!.modifiers
-      )                         -> Normalize
+      )                        -> Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type1) isSubtypeOf type2
 
@@ -772,6 +791,7 @@ class Elaborate private constructor(
       is C.Type.Float  -> true
       is C.Type.Double -> true
       is C.Type.String -> true
+      is C.Type.Proc   -> true
       is C.Type.Code   -> true
       else             -> false
     }
@@ -874,11 +894,11 @@ class Elaborate private constructor(
   }
 
   private class Env private constructor(
-    private val definitions: Map<DefinitionLocation, C.Definition>,
-    private val types: List<Pair<String, C.Type>>,
+    val definitions: Map<DefinitionLocation, C.Definition>,
+    val types: List<Pair<String, C.Type>>,
     private val _entries: MutableList<Entry>,
-    private val leaf: Boolean,
-    private val static: Boolean,
+    val leaf: Boolean,
+    val static: Boolean,
   ) {
     val entries: List<Entry> get() = _entries
     private var savedSize: Int = 0
@@ -899,10 +919,10 @@ class Elaborate private constructor(
     }
 
     inline fun <R> restoring(
-      action: () -> R,
+      action: Env.() -> R,
     ): R {
       savedSize = _entries.size
-      val result = action()
+      val result = this.action()
       repeat(_entries.size - savedSize) {
         _entries.removeLast()
       }

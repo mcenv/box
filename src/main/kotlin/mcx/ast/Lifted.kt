@@ -86,6 +86,11 @@ object Lifted {
       val elements: kotlin.collections.List<Type>,
     ) : Type
 
+    data class Proc(
+      val param: Type,
+      val result: Type,
+    ) : Type
+
     data class Func(
       val param: Type,
       val result: Type,
@@ -176,6 +181,11 @@ object Lifted {
 
     data class TupleOf(
       val elements: List<Term>,
+      override val type: Type,
+    ) : Term
+
+    data class ProcOf(
+      val tag: Int,
       override val type: Type,
     ) : Term
 
