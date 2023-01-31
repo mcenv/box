@@ -29,8 +29,8 @@ object Launch : Subcommand(
 
     val pid = ProcessHandle.current().pid()
     val machine = VirtualMachine.attach(pid.toString())
-    val agent = Launch::class.java.protectionDomain.codeSource.location.toURI().toPath()
-    machine.loadAgent(agent.absolutePathString())
+    val agent = Launch::class.java.protectionDomain.codeSource.location
+    machine.loadAgent(agent.toURI().toPath().absolutePathString())
 
     System.setProperty(BUNDLER_REPO_DIR, root.absolutePathString())
 

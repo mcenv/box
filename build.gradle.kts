@@ -8,6 +8,7 @@ version = "0.1.0"
 
 repositories {
   mavenCentral()
+  maven("https://libraries.minecraft.net")
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
   implementation("org.ow2.asm:asm:9.4")
+  compileOnly("com.mojang:brigadier:1.0.18")
   testImplementation(kotlin("test"))
 }
 
@@ -44,7 +46,7 @@ application {
 
 tasks.withType<Jar> {
   manifest {
-    attributes("Agent-Class" to "mcx.util.Agent")
+    attributes("Agent-Class" to "mcx.script.Agent")
   }
 }
 
