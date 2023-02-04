@@ -51,6 +51,17 @@
       }
     },
     {
+      "match": "\\b(class) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
+      "captures": {
+        "1": {
+          "name": "keyword.mcx"
+        },
+        "2": {
+          "name": "support.class.mcx"
+        }
+      }
+    },
+    {
       "match": "\\b(test) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
       "captures": {
         "1": {
@@ -63,7 +74,7 @@
     },
     {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|tick|load|no_drop|leaf|builtin|export|inline|static|function|type|test|resource|union)\\b"
+      "match": "\\b(?:import|tick|load|no_drop|leaf|builtin|export|inline|static|function|type|class|test|resource|union)\\b"
     },
     {
       "name": "support.type.mcx",

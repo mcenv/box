@@ -52,9 +52,13 @@ class Elaborate private constructor(
   private fun elaborateDefinition(
     definition: R.Definition,
   ): C.Definition? {
+    if (definition is R.Definition.Hole) {
+      return null
+    }
+    val modifiers = definition.modifiers.map { it.value }
+    val name = definition.name.value
     return when (definition) {
       is R.Definition.Function -> {
-        val modifiers = definition.modifiers.map { it.value }
         val types = definition.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
         val env = emptyEnv(definitions, types, Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
         val binder = env.elaboratePattern(definition.binder)
@@ -65,31 +69,44 @@ class Elaborate private constructor(
           definition.body?.let { env.elaborateTerm(it, result) }
         }
         C.Definition
-          .Function(modifiers, definition.name.value, definition.typeParams, binder, result, body)
+          .Function(modifiers, name, definition.typeParams, binder, result, body)
           .also {
             hover(definition.name.range) { createFunctionDocumentation(it) }
           }
       }
       is R.Definition.Type     -> {
-        val modifiers = definition.modifiers.map { it.value }
         val env = emptyEnv(definitions, emptyList(), Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
         val kind = elaborateKind(definition.kind)
         val body = env.elaborateType(definition.body, kind)
         C.Definition
-          .Type(modifiers, definition.name.value, body)
+          .Type(modifiers, name, body)
           .also {
             hover(definition.name.range) { createTypeDocumentation(it) }
           }
+      }
+      is R.Definition.Class    -> {
+        val signatures = definition.signatures.mapNotNull { signature ->
+          when (signature) {
+            is R.Definition.Class.Signature.Function -> {
+              val types = signature.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
+              val env = emptyEnv(definitions, types, leaf = false, static = false)
+              val binder = env.elaboratePattern(signature.binder)
+              val result = env.elaborateType(signature.result)
+              C.Definition.Class.Signature.Function(signature.name.value, signature.typeParams, binder, result)
+            }
+            is R.Definition.Class.Signature.Hole     -> null
+          }
+        }
+        C.Definition.Class(modifiers, name, signatures)
       }
       is R.Definition.Test     -> {
         if (signature) {
           null
         } else {
-          val modifiers = definition.modifiers.map { it.value }
           val env = emptyEnv(definitions, emptyList(), Modifier.LEAF in modifiers, Modifier.STATIC in modifiers)
           val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
           C.Definition
-            .Test(modifiers, definition.name.value, body)
+            .Test(modifiers, name, body)
             .also {
               hover(definition.name.range) { createTestDocumentation(it) }
             }
@@ -834,6 +851,10 @@ class Elaborate private constructor(
             is C.Definition.Type     -> {
               // TODO: add documentation and detail
               CompletionItemKind.Class
+            }
+            is C.Definition.Class    -> {
+              // TODO: add documentation and detail
+              CompletionItemKind.Interface
             }
             is C.Definition.Test     -> {
               return@mapNotNull null

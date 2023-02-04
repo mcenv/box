@@ -33,6 +33,27 @@ object Resolved {
       override val range: Range,
     ) : Definition
 
+    data class Class(
+      override val modifiers: List<Ranged<Modifier>>,
+      override val name: Ranged<DefinitionLocation>,
+      val signatures: List<Signature>,
+      override val range: Range,
+    ) : Definition {
+      sealed interface Signature {
+        data class Function(
+          val name: Ranged<String>,
+          val typeParams: List<String>,
+          val binder: Pattern,
+          val result: Resolved.Type,
+          val range: Range,
+        ) : Signature
+
+        data class Hole(
+          val range: Range,
+        ) : Signature
+      }
+    }
+
     data class Test(
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,

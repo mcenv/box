@@ -27,6 +27,21 @@ object Core {
       val body: Core.Type,
     ) : Definition
 
+    data class Class(
+      override val modifiers: List<Modifier>,
+      override val name: DefinitionLocation,
+      val signatures: List<Signature>,
+    ) : Definition {
+      sealed interface Signature {
+        data class Function(
+          val name: String,
+          val typeParams: List<String>,
+          val binder: Pattern,
+          val result: Core.Type,
+        ) : Signature
+      }
+    }
+
     data class Test(
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,

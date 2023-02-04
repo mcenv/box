@@ -44,6 +44,7 @@ class Stage private constructor(
         }
       }
       is C.Definition.Type     -> null
+      is C.Definition.Class    -> null
       is C.Definition.Test     -> {
         if (Modifier.STATIC !in definition.modifiers) {
           val body = stageTerm(definition.body)

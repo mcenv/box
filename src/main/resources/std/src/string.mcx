@@ -45,9 +45,3 @@ export builtin static function substring_between'(string: string, start: int, en
 export function to_string(a: string) → string {
   a
 };
-
-function a() → () {
-  let x = clos x: int → { x };
-  let y = x of 10;
-  ()
-};

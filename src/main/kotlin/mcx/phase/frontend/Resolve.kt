@@ -77,6 +77,21 @@ class Resolve private constructor(
         val body = env.resolveType(definition.body)
         R.Definition.Type(definition.modifiers, name, kind, body, definition.range)
       }
+      is S.Definition.Class    -> {
+        val name = definition.name.map { input.module.name / it }
+        val signatures = definition.signatures.map { signature ->
+          when (signature) {
+            is S.Definition.Class.Signature.Function -> {
+              val env = emptyEnv(signature.typeParams)
+              val binder = env.resolvePattern(signature.binder)
+              val result = env.resolveType(signature.result)
+              R.Definition.Class.Signature.Function(signature.name, signature.typeParams, binder, result, signature.range)
+            }
+            is S.Definition.Class.Signature.Hole     -> R.Definition.Class.Signature.Hole(signature.range)
+          }
+        }
+        R.Definition.Class(definition.modifiers, name, signatures, definition.range)
+      }
       is S.Definition.Test     -> {
         val name = definition.name.map { input.module.name / it }
         val env = emptyEnv(emptyList())
