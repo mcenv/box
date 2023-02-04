@@ -92,7 +92,7 @@
         },
         {
           "name": "keyword.control.mcx",
-          "match": "\\b(?:proc|func|of|if|else|let|is)\\b"
+          "match": "\\b(?:func|clos|of|if|else|let|is)\\b"
         },
         {
           "name": "constant.language.mcx",

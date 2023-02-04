@@ -68,8 +68,8 @@ class Lift private constructor(
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
       is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
-      is C.Type.Proc      -> L.Type.Proc(liftType(type.param), liftType(type.result))
       is C.Type.Func      -> L.Type.Func(liftType(type.param), liftType(type.result))
+      is C.Type.Clos      -> L.Type.Clos(liftType(type.param), liftType(type.result))
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
@@ -99,7 +99,7 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
       is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
-      is C.Term.ProcOf      -> {
+      is C.Term.FuncOf      -> {
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
           val body = liftTerm(term.body)
@@ -114,10 +114,10 @@ class Lift private constructor(
             )
             .also { liftedDefinitions += it }
           dispatchedDefinitions += bodyFunction
-          L.Term.ProcOf(tag, type)
+          L.Term.FuncOf(tag, type)
         }
       }
-      is C.Term.FuncOf      -> {
+      is C.Term.ClosOf      -> {
         // remap levels
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
@@ -140,7 +140,7 @@ class Lift private constructor(
             )
             .also { liftedDefinitions += it }
           dispatchedDefinitions += bodyFunction
-          L.Term.FuncOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
+          L.Term.ClosOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
       }
       is C.Term.Apply   -> {
@@ -214,8 +214,8 @@ class Lift private constructor(
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.RefOf       -> freeVars(term.element)
       is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.ProcOf      -> linkedMapOf()
-      is C.Term.FuncOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }
+      is C.Term.FuncOf      -> linkedMapOf()
+      is C.Term.ClosOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }
       is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
       is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
       is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }

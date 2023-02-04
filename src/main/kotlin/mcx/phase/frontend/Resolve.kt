@@ -115,8 +115,8 @@ class Resolve private constructor(
       is S.Type.Compound  -> R.Type.Compound(type.elements.mapValues { resolveType(it.value) }, type.range)
       is S.Type.Ref       -> R.Type.Ref(resolveType(type.element), type.range)
       is S.Type.Tuple     -> R.Type.Tuple(type.elements.map { resolveType(it) }, type.range)
-      is S.Type.Proc      -> R.Type.Proc(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Func      -> R.Type.Func(resolveType(type.param), resolveType(type.result), type.range)
+      is S.Type.Clos      -> R.Type.Clos(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Union     -> R.Type.Union(type.elements.map { resolveType(it) }, type.range)
       is S.Type.Code      -> R.Type.Code(resolveType(type.element), type.range)
       is S.Type.Var       -> {
@@ -162,22 +162,22 @@ class Resolve private constructor(
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
       is S.Term.RefOf       -> R.Term.RefOf(resolveTerm(term.element), term.range)
       is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.ProcOf      -> {
+      is S.Term.FuncOf      -> {
         val (binder, body) = restoring {
           // TODO: use frontier level to hide variables
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)
           binder to body
         }
-        R.Term.ProcOf(binder, body, term.range)
+        R.Term.FuncOf(binder, body, term.range)
       }
-      is S.Term.FuncOf      -> {
+      is S.Term.ClosOf      -> {
         val (binder, body) = restoring {
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)
           binder to body
         }
-        R.Term.FuncOf(binder, body, term.range)
+        R.Term.ClosOf(binder, body, term.range)
       }
       is S.Term.Apply       -> R.Term.Apply(resolveTerm(term.operator), resolveTerm(term.operand), term.range)
       is S.Term.If          -> {

@@ -86,12 +86,12 @@ object Lifted {
       val elements: kotlin.collections.List<Type>,
     ) : Type
 
-    data class Proc(
+    data class Func(
       val param: Type,
       val result: Type,
     ) : Type
 
-    data class Func(
+    data class Clos(
       val param: Type,
       val result: Type,
     ) : Type
@@ -184,12 +184,12 @@ object Lifted {
       override val type: Type,
     ) : Term
 
-    data class ProcOf(
+    data class FuncOf(
       val tag: Int,
       override val type: Type,
     ) : Term
 
-    data class FuncOf(
+    data class ClosOf(
       val tag: Int,
       val vars: List<Triple<String, Int, Type>>,
       override val type: Type,

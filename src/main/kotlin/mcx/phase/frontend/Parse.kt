@@ -259,14 +259,6 @@ class Parse private constructor(
             "string" -> S.Type.String(null, until())
             "false"  -> S.Type.Bool(false, until())
             "true"   -> S.Type.Bool(true, until())
-            "proc"   -> {
-              skipTrivia()
-              val param = parseType()
-              expect('→')
-              skipTrivia()
-              val result = parseType()
-              S.Type.Proc(param, result, until())
-            }
             "func"   -> {
               skipTrivia()
               val param = parseType()
@@ -274,6 +266,14 @@ class Parse private constructor(
               skipTrivia()
               val result = parseType()
               S.Type.Func(param, result, until())
+            }
+            "clos"   -> {
+              skipTrivia()
+              val param = parseType()
+              expect('→')
+              skipTrivia()
+              val result = parseType()
+              S.Type.Clos(param, result, until())
             }
             "union"  -> {
               val elements = parseList(',', '{', '}') { parseType() }
@@ -471,16 +471,6 @@ class Parse private constructor(
               ""      -> null
               "false" -> S.Term.BoolOf(false, until())
               "true"  -> S.Term.BoolOf(true, until())
-              "proc"  -> {
-                skipTrivia()
-                val binder = parsePattern()
-                expect('→')
-                expect('{')
-                skipTrivia()
-                val body = parseTerm()
-                expect('}')
-                S.Term.ProcOf(binder, body, until())
-              }
               "func"  -> {
                 skipTrivia()
                 val binder = parsePattern()
@@ -490,6 +480,16 @@ class Parse private constructor(
                 val body = parseTerm()
                 expect('}')
                 S.Term.FuncOf(binder, body, until())
+              }
+              "clos"  -> {
+                skipTrivia()
+                val binder = parsePattern()
+                expect('→')
+                expect('{')
+                skipTrivia()
+                val body = parseTerm()
+                expect('}')
+                S.Term.ClosOf(binder, body, until())
               }
               "if"    -> {
                 skipTrivia()

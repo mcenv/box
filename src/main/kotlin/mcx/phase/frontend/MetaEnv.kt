@@ -67,8 +67,8 @@ class MetaEnv {
       is C.Type.Ref       -> C.Type.Ref(zonkType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
-      is C.Type.Proc      -> C.Type.Proc(zonkType(type.param), zonkType(type.result))
       is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
+      is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
       is C.Type.Run       -> type
@@ -195,12 +195,12 @@ class MetaEnv {
       type2 is C.Type.Tuple &&
       type2.elements.size == 1 -> unifyTypes(type1, type2.elements.first())
 
-      type1 is C.Type.Proc &&
-      type2 is C.Type.Proc     -> unifyTypes(type1.param, type2.param) &&
-                                  unifyTypes(type1.result, type2.result)
-
       type1 is C.Type.Func &&
       type2 is C.Type.Func     -> unifyTypes(type1.param, type2.param) &&
+                                  unifyTypes(type1.result, type2.result)
+
+      type1 is C.Type.Clos &&
+      type2 is C.Type.Clos     -> unifyTypes(type1.param, type2.param) &&
                                   unifyTypes(type1.result, type2.result)
 
       type1 is C.Type.Union    -> false // TODO
@@ -218,7 +218,7 @@ class MetaEnv {
       type1 is C.Type.Hole     -> false
       type2 is C.Type.Hole     -> false
 
-      else                      -> false
+      else                     -> false
     }
   }
 }

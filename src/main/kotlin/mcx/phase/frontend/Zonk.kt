@@ -74,8 +74,8 @@ class Zonk private constructor(
       is C.Type.Ref       -> C.Type.Ref(zonkType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
-      is C.Type.Proc      -> C.Type.Proc(zonkType(type.param), zonkType(type.result))
       is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
+      is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
       is C.Type.Run       -> type
@@ -107,8 +107,8 @@ class Zonk private constructor(
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
       is C.Term.RefOf       -> C.Term.RefOf(zonkTerm(term.element), type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.ProcOf      -> C.Term.ProcOf(zonkPattern(term.binder), zonkTerm(term.body), type)
       is C.Term.FuncOf      -> C.Term.FuncOf(zonkPattern(term.binder), zonkTerm(term.body), type)
+      is C.Term.ClosOf      -> C.Term.ClosOf(zonkPattern(term.binder), zonkTerm(term.body), type)
       is C.Term.Apply       -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
       is C.Term.If          -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)

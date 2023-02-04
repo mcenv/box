@@ -168,14 +168,14 @@ object Core {
       override val kind: Kind,
     ) : Type
 
-    data class Proc(
+    data class Func(
       val param: Type,
       val result: Type,
     ) : Type {
       override val kind: Kind get() = Kind.Type.ONE
     }
 
-    data class Func(
+    data class Clos(
       val param: Type,
       val result: Type,
     ) : Type {
@@ -299,13 +299,13 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class ProcOf(
+    data class FuncOf(
       val binder: Pattern,
       val body: Term,
       override val type: Type,
     ) : Term
 
-    data class FuncOf(
+    data class ClosOf(
       val binder: Pattern,
       val body: Term,
       override val type: Type,

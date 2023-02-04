@@ -136,13 +136,13 @@ object Resolved {
       override val range: Range,
     ) : Type
 
-    data class Proc(
+    data class Func(
       val param: Type,
       val result: Type,
       override val range: Range,
     ) : Type
 
-    data class Func(
+    data class Clos(
       val param: Type,
       val result: Type,
       override val range: Range,
@@ -261,13 +261,13 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class ProcOf(
+    data class FuncOf(
       val binder: Pattern,
       val body: Term,
       override val range: Range,
     ) : Term
 
-    data class FuncOf(
+    data class ClosOf(
       val binder: Pattern,
       val body: Term,
       override val range: Range,

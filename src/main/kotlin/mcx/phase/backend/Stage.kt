@@ -77,8 +77,8 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
       is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
-      is C.Term.ProcOf      -> C.Term.ProcOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.FuncOf      -> C.Term.FuncOf(stagePattern(term.binder), stageTerm(term.body), type)
+      is C.Term.ClosOf      -> C.Term.ClosOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), type)
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
@@ -160,11 +160,11 @@ class Stage private constructor(
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
       is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
-      is C.Term.ProcOf      -> Value.ProcOf(term.binder, term.body)
       is C.Term.FuncOf      -> Value.FuncOf(term.binder, term.body)
+      is C.Term.ClosOf      -> Value.ClosOf(term.binder, term.body)
       is C.Term.Apply       -> {
         val operator = evalTerm(term.operator)
-        if (static && operator is Value.FuncOf) {
+        if (static && operator is Value.ClosOf) {
           bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
         } else {
           Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
@@ -334,19 +334,19 @@ class Stage private constructor(
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.ProcOf      -> {
-        type as C.Type.Proc
-        C.Term.ProcOf(value.binder, value.body, type)
-      }
       is Value.FuncOf      -> {
         type as C.Type.Func
         C.Term.FuncOf(value.binder, value.body, type)
       }
+      is Value.ClosOf      -> {
+        type as C.Type.Clos
+        C.Term.ClosOf(value.binder, value.body, type)
+      }
       is Value.Apply       -> {
         val (param, result) = run {
           when (val operatorType = value.operatorType) {
-            is C.Type.Proc -> operatorType.param to operatorType.result
             is C.Type.Func -> operatorType.param to operatorType.result
+            is C.Type.Clos -> operatorType.param to operatorType.result
             else           -> error("unexpected type: $operatorType")
           }
         }

@@ -149,8 +149,8 @@ class Elaborate private constructor(
               }
           C.Type.Union(listOf(head) + tail, head.kind)
         }
-      type is R.Type.Proc && expected == null      -> C.Type.Proc(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Func && expected == null      -> C.Type.Func(elaborateType(type.param), elaborateType(type.result))
+      type is R.Type.Clos && expected == null      -> C.Type.Clos(elaborateType(type.param), elaborateType(type.result))
       type is R.Type.Code && expected == null      -> {
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
@@ -329,7 +329,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected == null              -> {
+      expected == null         -> {
         val elements = term.elements.map { element ->
           elaborateTerm(element)
         }
@@ -337,7 +337,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TupleOf &&
-      expected is C.Type.Tuple      -> {
+      expected is C.Type.Tuple -> {
         if (expected.elements.size != term.elements.size) {
           diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
         }
@@ -347,18 +347,8 @@ class Elaborate private constructor(
         C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
       }
 
-      term is R.Term.ProcOf &&
-      expected is C.Type.Proc?      -> {
-        val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, expected?.param)
-          val body = elaborateTerm(term.body, expected?.result)
-          binder to body
-        }
-        C.Term.ProcOf(binder, body, expected ?: C.Type.Proc(binder.type, body.type))
-      }
-
       term is R.Term.FuncOf &&
-      expected is C.Type.Func?      -> {
+      expected is C.Type.Func? -> {
         val (binder, body) = restoring {
           val binder = elaboratePattern(term.binder, expected?.param)
           val body = elaborateTerm(term.body, expected?.result)
@@ -367,25 +357,35 @@ class Elaborate private constructor(
         C.Term.FuncOf(binder, body, expected ?: C.Type.Func(binder.type, body.type))
       }
 
-      term is R.Term.Apply          -> {
+      term is R.Term.ClosOf &&
+      expected is C.Type.Clos? -> {
+        val (binder, body) = restoring {
+          val binder = elaboratePattern(term.binder, expected?.param)
+          val body = elaborateTerm(term.body, expected?.result)
+          binder to body
+        }
+        C.Term.ClosOf(binder, body, expected ?: C.Type.Clos(binder.type, body.type))
+      }
+
+      term is R.Term.Apply     -> {
         val operator = elaborateTerm(term.operator)
         when (val operatorType = metaEnv.forceType(operator.type)) {
-          is C.Type.Proc -> {
-            val operand = elaborateTerm(term.operand, operatorType.param)
-            C.Term.Apply(operator, operand, operatorType.result)
-          }
           is C.Type.Func -> {
             val operand = elaborateTerm(term.operand, operatorType.param)
             C.Term.Apply(operator, operand, operatorType.result)
           }
+          is C.Type.Clos -> {
+            val operand = elaborateTerm(term.operand, operatorType.param)
+            C.Term.Apply(operator, operand, operatorType.result)
+          }
           else           -> {
-            diagnostics += typeMismatch(C.Type.Func(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
+            diagnostics += typeMismatch(C.Type.Clos(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
             C.Term.Hole(C.Type.Hole)
           }
         }
       }
 
-      term is R.Term.If             -> {
+      term is R.Term.If        -> {
         val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
         val elseEnv = copy()
         val thenClause = elaborateTerm(term.thenClause, expected)
@@ -737,12 +737,12 @@ class Elaborate private constructor(
       type2 is C.Type.Tuple &&
       type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
 
-      type1 is C.Type.Proc &&
-      type2 is C.Type.Proc     -> type2.param isSubtypeOf type1.param &&
-                                  type1.result isSubtypeOf type2.result
-
       type1 is C.Type.Func &&
       type2 is C.Type.Func     -> type2.param isSubtypeOf type1.param &&
+                                  type1.result isSubtypeOf type2.result
+
+      type1 is C.Type.Clos &&
+      type2 is C.Type.Clos     -> type2.param isSubtypeOf type1.param &&
                                   type1.result isSubtypeOf type2.result
 
       type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
@@ -791,7 +791,7 @@ class Elaborate private constructor(
       is C.Type.Float  -> true
       is C.Type.Double -> true
       is C.Type.String -> true
-      is C.Type.Proc   -> true
+      is C.Type.Func   -> true
       is C.Type.Code   -> true
       else             -> false
     }

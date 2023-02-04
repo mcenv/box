@@ -4,6 +4,8 @@ import mcx.util.quoted
 import mcx.util.toSubscript
 import mcx.ast.Core as C
 
+// TODO: precedence-aware prettify
+
 fun prettyKind(
   kind: C.Kind,
 ): String =
@@ -38,8 +40,8 @@ fun prettyType(
     is C.Type.Ref       -> "&${prettyType(type.element)}"
     is C.Type.Tuple     -> type.elements.joinToString(", ", "(", ")") { prettyType(it) }
     is C.Type.Union     -> type.elements.joinToString(", ", "union {", "}") { prettyType(it) }
-    is C.Type.Proc      -> "(proc ${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Func      -> "(func ${prettyType(type.param)} → ${prettyType(type.result)})"
+    is C.Type.Clos      -> "(clos ${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
     is C.Type.Run       -> type.name.toString()
