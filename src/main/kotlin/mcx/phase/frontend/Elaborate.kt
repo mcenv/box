@@ -11,10 +11,12 @@ import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
 import kotlin.also
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import mcx.ast.Core as C
 import mcx.ast.Resolved as R
 
-@Suppress("NAME_SHADOWING")
+@Suppress("NAME_SHADOWING", "NOTHING_TO_INLINE")
 class Elaborate private constructor(
   dependencies: List<C.Module>,
   private val input: Resolve.Result,
@@ -211,321 +213,388 @@ class Elaborate private constructor(
     }
   }
 
+  @OptIn(ExperimentalContracts::class)
+  private inline fun synthType(type: C.Type?): Boolean {
+    contract {
+      returns(false) implies (type != null)
+      returns(true) implies (type == null)
+    }
+    return type == null
+  }
+
+  @OptIn(ExperimentalContracts::class)
+  private inline fun <reified V : C.Type> checkType(type: C.Type?): Boolean {
+    contract {
+      returns(false) implies (type !is V)
+      returns(true) implies (type is V)
+    }
+    return type is V
+  }
+
+  @OptIn(ExperimentalContracts::class)
+  private inline fun <reified V : C.Type> matchType(type: C.Type?): Boolean {
+    contract {
+      returns(false) implies (type !is V?)
+      returns(true) implies (type is V?)
+    }
+    return type is V?
+  }
+
   private fun Env.elaborateTerm(
     term: R.Term,
     expected: C.Type? = null,
   ): C.Term {
     val expected = expected?.let { metaEnv.forceType(it) }
     return when {
-      term is R.Term.BoolOf &&
-      expected == null              -> C.Term.BoolOf(term.value, C.Type.Bool(term.value))
-
-      term is R.Term.ByteOf &&
-      expected == null              -> C.Term.ByteOf(term.value, C.Type.Byte(term.value))
-
-      term is R.Term.ShortOf &&
-      expected == null              -> C.Term.ShortOf(term.value, C.Type.Short(term.value))
-
-      term is R.Term.IntOf &&
-      expected == null              -> C.Term.IntOf(term.value, C.Type.Int(term.value))
-
-      term is R.Term.LongOf &&
-      expected == null              -> C.Term.LongOf(term.value, C.Type.Long(term.value))
-
-      term is R.Term.FloatOf &&
-      expected == null              -> C.Term.FloatOf(term.value, C.Type.Float(term.value))
-
-      term is R.Term.DoubleOf &&
-      expected == null              -> C.Term.DoubleOf(term.value, C.Type.Double(term.value))
-
-      term is R.Term.StringOf &&
-      expected == null              -> {
-        val head = term.parts.first()
-        if (head is R.Term.StringOf.Part.Raw && term.parts.size == 1) {
-          C.Term.StringOf(head.value, C.Type.String(head.value))
-        } else if (isMeta()) {
-          term.parts.fold<R.Term.StringOf.Part, C.Term>(C.Term.StringOf("", C.Type.String.SET)) { acc, part ->
-            val part = when (part) {
-              is R.Term.StringOf.Part.Raw         -> C.Term.StringOf(part.value, C.Type.String.SET)
-              is R.Term.StringOf.Part.Interpolate -> elaborateTerm(part.element, C.Type.String.SET)
-            }
-            val type = C.Type.Tuple(listOf(C.Type.String.SET, C.Type.String.SET), C.Kind.Type(2))
-            C.Term.Run(
-              prelude / "++",
-              emptyList(),
-              C.Term.TupleOf(listOf(acc, part), type),
-              C.Type.String.SET,
-            )
-          }
-        } else {
-          diagnostics += levelMismatch(term.range)
-          C.Term.Hole(C.Type.String.SET)
-        }
-      }
-
-      term is R.Term.ByteArrayOf &&
-      expected is C.Type.ByteArray? -> {
-        val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Byte.SET)
-        }
-        C.Term.ByteArrayOf(elements, C.Type.ByteArray)
-      }
-
-      term is R.Term.IntArrayOf &&
-      expected is C.Type.IntArray?  -> {
-        val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Int.SET)
-        }
-        C.Term.IntArrayOf(elements, C.Type.IntArray)
-      }
-
-      term is R.Term.LongArrayOf &&
-      expected is C.Type.LongArray? -> {
-        val elements = term.elements.map { element ->
-          elaborateTerm(element, C.Type.Long.SET)
-        }
-        C.Term.LongArrayOf(elements, C.Type.LongArray)
-      }
-
-      term is R.Term.ListOf &&
-      term.elements.isEmpty() &&
-      expected is C.Type.List?      -> C.Term.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
-
-      term is R.Term.ListOf &&
-      expected is C.Type.List?      -> {
-        val head = elaborateTerm(term.elements.first(), expected?.element)
-        val element = expected?.element ?: head.type
-        val tail =
-          term.elements
-            .drop(1)
-            .map { elaborateTerm(it, element) }
-        C.Term.ListOf(listOf(head) + tail, C.Type.List(element))
-      }
-
-      term is R.Term.CompoundOf &&
-      expected == null              -> {
-        val elements = term.elements.associate { (key, element) ->
-          val element = elaborateTerm(element)
-          hoverType(key.range, element.type)
-          key.value to element
-        }
-        C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-      }
-
-      term is R.Term.CompoundOf &&
-      expected is C.Type.Compound   -> {
-        val elements = mutableMapOf<String, C.Term>()
-        term.elements.forEach { (key, element) ->
-          when (val type = expected.elements[key.value]) {
-            null -> {
-              diagnostics += extraKey(key.value, key.range)
-              val element = elaborateTerm(element)
-              hoverType(key.range, element.type)
-              elements[key.value] = element
-            }
-            else -> {
-              hoverType(key.range, type)
-              elements[key.value] = elaborateTerm(element, type)
-            }
-          }
-        }
-        expected.elements.keys
-          .minus(
-            term.elements
-              .map { it.first.value }
-              .toSet()
-          )
-          .forEach { diagnostics += keyNotFound(it, term.range) }
-        C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-      }
-
-      term is R.Term.RefOf &&
-      expected is C.Type.Ref? -> {
-        val element = elaborateTerm(term.element, expected?.element)
-        C.Term.RefOf(element, C.Type.Ref(element.type))
-      }
-
-      term is R.Term.TupleOf &&
-      expected == null         -> {
-        val elements = term.elements.map { element ->
-          elaborateTerm(element)
-        }
-        C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
-      }
-
-      term is R.Term.TupleOf &&
-      expected is C.Type.Tuple -> {
-        if (expected.elements.size != term.elements.size) {
-          diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
-        }
-        val elements = term.elements.mapIndexed { index, element ->
-          elaborateTerm(element, expected.elements.getOrNull(index))
-        }
-        C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
-      }
-
-      term is R.Term.FuncOf &&
-      expected is C.Type.Func? -> {
-        val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, expected?.param)
-          val body = elaborateTerm(term.body, expected?.result)
-          binder to body
-        }
-        C.Term.FuncOf(binder, body, expected ?: C.Type.Func(binder.type, body.type))
-      }
-
-      term is R.Term.ClosOf &&
-      expected is C.Type.Clos? -> {
-        val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder, expected?.param)
-          val body = elaborateTerm(term.body, expected?.result)
-          binder to body
-        }
-        C.Term.ClosOf(binder, body, expected ?: C.Type.Clos(binder.type, body.type))
-      }
-
-      term is R.Term.Apply     -> {
-        val operator = elaborateTerm(term.operator)
-        when (val operatorType = metaEnv.forceType(operator.type)) {
-          is C.Type.Func -> {
-            val operand = elaborateTerm(term.operand, operatorType.param)
-            C.Term.Apply(operator, operand, operatorType.result)
-          }
-          is C.Type.Clos -> {
-            val operand = elaborateTerm(term.operand, operatorType.param)
-            C.Term.Apply(operator, operand, operatorType.result)
-          }
-          else           -> {
-            diagnostics += typeMismatch(C.Type.Clos(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
-            C.Term.Hole(C.Type.Hole)
-          }
-        }
-      }
-
-      term is R.Term.If        -> {
-        val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
-        val elseEnv = copy()
-        val thenClause = elaborateTerm(term.thenClause, expected)
-        val elseClause = elseEnv.elaborateTerm(term.elseClause, expected ?: thenClause.type)
-        C.Term.If(condition, thenClause, elseClause, thenClause.type)
-      }
-
-      term is R.Term.Let            -> {
-        val init = elaborateTerm(term.init)
-        val (binder, body) = restoring {
-          val binder = elaboratePattern(term.binder)
-          if (!(init.type isSubtypeOf binder.type)) {
-            diagnostics += typeMismatch(binder.type, init.type, term.init.range)
-          }
-          val body = elaborateTerm(term.body, expected)
-          binder to body
-        }
-        C.Term.Let(binder, init, body, body.type)
-      }
-
-      term is R.Term.Var &&
-      expected == null              -> {
-        val entry = entries[term.level]
-        if (entry.used) {
-          diagnostics += varAlreadyUsed(term.name, term.range)
-        }
-        if (stage != entry.stage) {
-          diagnostics += stageMismatch(stage, entry.stage, term.range)
-        }
-        if (!entry.type.isValueType()) {
-          entry.used = true
-        }
-        C.Term.Var(term.name, term.level, entry.type)
-      }
-
-      term is R.Term.Run &&
-      expected == null              -> {
-        if (isLeaf()) {
-          diagnostics += leafFunctionCannotRunOtherFunctions(term.range)
-          C.Term.Hole(C.Type.Hole)
-        } else {
-          when (val definition = definitions[term.name.value]) {
-            is C.Definition.Function -> {
-              if (!isMeta() && Modifier.STATIC in definition.modifiers) {
-                diagnostics += levelMismatch(term.name.range)
-                C.Term.Hole(C.Type.Hole)
-              } else {
-                hover(term.name.range) { createFunctionDocumentation(definition) }
-                val typeArgs =
-                  if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
-                    definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
-                  } else {
-                    if (definition.typeParams.size != term.typeArgs.value.size) {
-                      diagnostics += arityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
-                    }
-                    term.typeArgs.value.map { elaborateType(it) }
-                  }
-                val typeEnv = Normalize.Env(definitions, typeArgs, false)
-                val param = typeEnv.evalType(definition.binder.type)
-                val arg = elaborateTerm(term.arg, param)
-                val result = typeEnv.evalType(definition.result)
-                C.Term.Run(definition.name, typeArgs, arg, result)
-              }
-            }
-            else                     -> {
-              diagnostics += expectedFunctionDefinition(term.name.range)
-              C.Term.Hole(C.Type.Hole)
-            }
-          }
-        }
-      }
-
-      term is R.Term.Is &&
-      expected is C.Type.Bool?      -> {
-        val scrutinee = elaborateTerm(term.scrutinee)
-        val scrutineer = restoring {
-          elaboratePattern(term.scrutineer, scrutinee.type)
-        }
-        C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
-      }
-
-      term is R.Term.CodeOf &&
-      expected is C.Type.Code?      -> {
-        if (isMeta()) {
-          val element = quoting {
-            elaborateTerm(term.element, expected?.element)
-          }
-          C.Term.CodeOf(element, C.Type.Code(element.type))
-        } else {
-          diagnostics += levelMismatch(term.range)
-          C.Term.Hole(expected ?: C.Type.Hole)
-        }
-      }
-
-      term is R.Term.Splice         -> {
-        val element = splicing {
-          elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
-        }
-        when (val elementType = element.type) {
-          is C.Type.Code -> C.Term.Splice(element, elementType.element)
-          else           -> {
-            diagnostics += typeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
-            C.Term.Hole(expected ?: C.Type.Hole)
-          }
-        }
-      }
-
-      term is R.Term.Hole           ->
-        C.Term.Hole(expected ?: C.Type.Hole)
-
-      expected == null              -> error("type must be non-null")
-
-      else                          -> {
-        val actual = elaborateTerm(term)
-        if (!(actual.type isSubtypeOf expected)) {
-          diagnostics += typeMismatch(expected, actual.type, term.range)
-        }
-        actual
-      }
+      term is R.Term.BoolOf && synthType(expected)                        -> synthTermBoolOf(term)
+      term is R.Term.ByteOf && synthType(expected)                        -> synthTermByteOf(term)
+      term is R.Term.ShortOf && synthType(expected)                       -> synthTermShortOf(term)
+      term is R.Term.IntOf && synthType(expected)                         -> synthTermIntOf(term)
+      term is R.Term.LongOf && synthType(expected)                        -> synthTermLongOf(term)
+      term is R.Term.FloatOf && synthType(expected)                       -> synthTermFloatOf(term)
+      term is R.Term.DoubleOf && synthType(expected)                      -> synthTermDoubleOf(term)
+      term is R.Term.StringOf && synthType(expected)                      -> synthTermStringOf(term)
+      term is R.Term.ByteArrayOf && matchType<C.Type.ByteArray>(expected) -> matchTermByteArrayOf(term)
+      term is R.Term.IntArrayOf && matchType<C.Type.IntArray>(expected)   -> matchTermIntArrayOf(term)
+      term is R.Term.LongArrayOf && matchType<C.Type.LongArray>(expected) -> matchTermLongArrayOf(term)
+      term is R.Term.ListOf && matchType<C.Type.List>(expected)           -> matchTermListOf(term, expected)
+      term is R.Term.CompoundOf && synthType(expected)                    -> synthTermCompoundOf(term)
+      term is R.Term.CompoundOf && checkType<C.Type.Compound>(expected)   -> checkTermCompoundOf(term, expected)
+      term is R.Term.RefOf && matchType<C.Type.Ref>(expected)             -> matchTermRefOf(term, expected)
+      term is R.Term.TupleOf && matchType<C.Type.Tuple>(expected)         -> matchTermTupleOf(term, expected)
+      term is R.Term.FuncOf && matchType<C.Type.Func>(expected)           -> matchTermFuncOf(term, expected)
+      term is R.Term.ClosOf && matchType<C.Type.Clos>(expected)           -> matchTermClosOf(term, expected)
+      term is R.Term.Apply && matchType<C.Type>(expected)                 -> matchTermApply(term)
+      term is R.Term.If && matchType<C.Type>(expected)                    -> matchTermIf(term, expected)
+      term is R.Term.Let && matchType<C.Type>(expected)                   -> matchTermLet(term, expected)
+      term is R.Term.Var && synthType(expected)                           -> synthTermVar(term)
+      term is R.Term.Run && synthType(expected)                           -> synthTermRun(term)
+      term is R.Term.Is && matchType<C.Type.Bool>(expected)               -> matchTermIs(term)
+      term is R.Term.CodeOf && matchType<C.Type.Code>(expected)           -> matchTermCodeOf(term, expected)
+      term is R.Term.Splice && matchType<C.Type>(expected)                -> matchTermSplice(term, expected)
+      term is R.Term.Hole && matchType<C.Type>(expected)                  -> matchTermHole(expected)
+      checkType<C.Type>(expected)                                         -> checkTermSub(term, expected)
+      else                                                                -> error("unreachable")
     }.also {
       hoverType(term.range, it.type)
       completionVars(term.range)
     }
+  }
+
+  private inline fun synthTermBoolOf(term: R.Term.BoolOf): C.Term {
+    return C.Term.BoolOf(term.value, C.Type.Bool(term.value))
+  }
+
+  private inline fun synthTermByteOf(term: R.Term.ByteOf): C.Term {
+    return C.Term.ByteOf(term.value, C.Type.Byte(term.value))
+  }
+
+  private inline fun synthTermShortOf(term: R.Term.ShortOf): C.Term {
+    return C.Term.ShortOf(term.value, C.Type.Short(term.value))
+  }
+
+  private inline fun synthTermIntOf(term: R.Term.IntOf): C.Term {
+    return C.Term.IntOf(term.value, C.Type.Int(term.value))
+  }
+
+  private inline fun synthTermLongOf(term: R.Term.LongOf): C.Term {
+    return C.Term.LongOf(term.value, C.Type.Long(term.value))
+  }
+
+  private inline fun synthTermFloatOf(term: R.Term.FloatOf): C.Term {
+    return C.Term.FloatOf(term.value, C.Type.Float(term.value))
+  }
+
+  private inline fun synthTermDoubleOf(term: R.Term.DoubleOf): C.Term {
+    return C.Term.DoubleOf(term.value, C.Type.Double(term.value))
+  }
+
+  private inline fun Env.synthTermStringOf(term: R.Term.StringOf): C.Term {
+    val head = term.parts.first()
+    return if (head is R.Term.StringOf.Part.Raw && term.parts.size == 1) {
+      C.Term.StringOf(head.value, C.Type.String(head.value))
+    } else if (isMeta()) {
+      term.parts.fold<R.Term.StringOf.Part, C.Term>(C.Term.StringOf("", C.Type.String.SET)) { acc, part ->
+        val part = when (part) {
+          is R.Term.StringOf.Part.Raw         -> C.Term.StringOf(part.value, C.Type.String.SET)
+          is R.Term.StringOf.Part.Interpolate -> elaborateTerm(part.element, C.Type.String.SET)
+        }
+        val type = C.Type.Tuple(listOf(C.Type.String.SET, C.Type.String.SET), C.Kind.Type(2))
+        C.Term.Run(
+          prelude / "++",
+          emptyList(),
+          C.Term.TupleOf(listOf(acc, part), type),
+          C.Type.String.SET,
+        )
+      }
+    } else {
+      diagnostics += levelMismatch(term.range)
+      C.Term.Hole(C.Type.String.SET)
+    }
+  }
+
+  private inline fun Env.matchTermByteArrayOf(term: R.Term.ByteArrayOf): C.Term {
+    val elements = term.elements.map { element ->
+      elaborateTerm(element, C.Type.Byte.SET)
+    }
+    return C.Term.ByteArrayOf(elements, C.Type.ByteArray)
+  }
+
+  private inline fun Env.matchTermIntArrayOf(term: R.Term.IntArrayOf): C.Term {
+    val elements = term.elements.map { element ->
+      elaborateTerm(element, C.Type.Int.SET)
+    }
+    return C.Term.IntArrayOf(elements, C.Type.IntArray)
+  }
+
+  private inline fun Env.matchTermLongArrayOf(term: R.Term.LongArrayOf): C.Term {
+    val elements = term.elements.map { element ->
+      elaborateTerm(element, C.Type.Long.SET)
+    }
+    return C.Term.LongArrayOf(elements, C.Type.LongArray)
+  }
+
+  private inline fun Env.matchTermListOf(
+    term: R.Term.ListOf,
+    expected: C.Type.List?,
+  ): C.Term {
+    return if (term.elements.isEmpty()) {
+      C.Term.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
+    } else {
+      val head = elaborateTerm(term.elements.first(), expected?.element)
+      val element = expected?.element ?: head.type
+      val tail = term.elements.drop(1).map { elaborateTerm(it, element) }
+      C.Term.ListOf(listOf(head) + tail, C.Type.List(element))
+    }
+  }
+
+  private inline fun Env.synthTermCompoundOf(term: R.Term.CompoundOf): C.Term {
+    val elements = term.elements.associate { (key, element) ->
+      val element = elaborateTerm(element)
+      hoverType(key.range, element.type)
+      key.value to element
+    }
+    return C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
+  }
+
+  private inline fun Env.checkTermCompoundOf(
+    term: R.Term.CompoundOf,
+    expected: C.Type.Compound,
+  ): C.Term {
+    val elements = mutableMapOf<String, C.Term>()
+    term.elements.forEach { (key, element) ->
+      when (val type = expected.elements[key.value]) {
+        null -> {
+          diagnostics += extraKey(key.value, key.range)
+          val element = elaborateTerm(element)
+          hoverType(key.range, element.type)
+          elements[key.value] = element
+        }
+        else -> {
+          hoverType(key.range, type)
+          elements[key.value] = elaborateTerm(element, type)
+        }
+      }
+    }
+    expected.elements.keys
+      .minus(term.elements.map { it.first.value }.toSet())
+      .forEach { diagnostics += keyNotFound(it, term.range) }
+    return C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
+  }
+
+  private inline fun Env.matchTermRefOf(
+    term: R.Term.RefOf,
+    expected: C.Type.Ref?,
+  ): C.Term {
+    val element = elaborateTerm(term.element, expected?.element)
+    return C.Term.RefOf(element, C.Type.Ref(element.type))
+  }
+
+  private inline fun Env.matchTermTupleOf(
+    term: R.Term.TupleOf,
+    expected: C.Type.Tuple?,
+  ): C.Term {
+    if (expected != null && expected.elements.size != term.elements.size) {
+      diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
+    }
+    val elements = term.elements.mapIndexed { index, element ->
+      elaborateTerm(element, expected?.elements?.getOrNull(index))
+    }
+    return C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
+  }
+
+  private inline fun Env.matchTermFuncOf(
+    term: R.Term.FuncOf,
+    expected: C.Type.Func?,
+  ): C.Term {
+    val (binder, body) = restoring {
+      val binder = elaboratePattern(term.binder, expected?.param)
+      val body = elaborateTerm(term.body, expected?.result)
+      binder to body
+    }
+    return C.Term.FuncOf(binder, body, expected ?: C.Type.Func(binder.type, body.type))
+  }
+
+  private inline fun Env.matchTermClosOf(
+    term: R.Term.ClosOf,
+    expected: C.Type.Clos?,
+  ): C.Term {
+    val (binder, body) = restoring {
+      val binder = elaboratePattern(term.binder, expected?.param)
+      val body = elaborateTerm(term.body, expected?.result)
+      binder to body
+    }
+    return C.Term.ClosOf(binder, body, expected ?: C.Type.Clos(binder.type, body.type))
+  }
+
+  // TODO: split
+  private inline fun Env.matchTermApply(term: R.Term.Apply): C.Term {
+    val operator = elaborateTerm(term.operator)
+    return when (val operatorType = metaEnv.forceType(operator.type)) {
+      is C.Type.Func -> {
+        val operand = elaborateTerm(term.operand, operatorType.param)
+        C.Term.Apply(operator, operand, operatorType.result)
+      }
+      is C.Type.Clos -> {
+        val operand = elaborateTerm(term.operand, operatorType.param)
+        C.Term.Apply(operator, operand, operatorType.result)
+      }
+      else           -> {
+        diagnostics += typeMismatch(C.Type.Clos(C.Type.Hole, C.Type.Hole), operatorType, term.operator.range)
+        C.Term.Hole(C.Type.Hole)
+      }
+    }
+  }
+
+  private inline fun Env.matchTermIf(
+    term: R.Term.If,
+    expected: C.Type?,
+  ): C.Term {
+    val condition = elaborateTerm(term.condition, C.Type.Bool.SET)
+    val elseEnv = copy()
+    val thenClause = elaborateTerm(term.thenClause, expected)
+    val elseClause = elseEnv.elaborateTerm(term.elseClause, expected ?: thenClause.type)
+    return C.Term.If(condition, thenClause, elseClause, thenClause.type)
+  }
+
+  private inline fun Env.matchTermLet(
+    term: R.Term.Let,
+    expected: C.Type?,
+  ): C.Term {
+    val init = elaborateTerm(term.init)
+    val (binder, body) = restoring {
+      val binder = elaboratePattern(term.binder)
+      if (!(init.type isSubtypeOf binder.type)) {
+        diagnostics += typeMismatch(binder.type, init.type, term.init.range)
+      }
+      val body = elaborateTerm(term.body, expected)
+      binder to body
+    }
+    return C.Term.Let(binder, init, body, body.type)
+  }
+
+  private inline fun Env.synthTermVar(term: R.Term.Var): C.Term {
+    val entry = entries[term.level]
+    if (entry.used) {
+      diagnostics += varAlreadyUsed(term.name, term.range)
+    }
+    if (stage != entry.stage) {
+      diagnostics += stageMismatch(stage, entry.stage, term.range)
+    }
+    if (!entry.type.isValueType()) {
+      entry.used = true
+    }
+    return C.Term.Var(term.name, term.level, entry.type)
+  }
+
+  private inline fun Env.synthTermRun(term: R.Term.Run): C.Term {
+    return if (isLeaf()) {
+      diagnostics += leafFunctionCannotRunOtherFunctions(term.range)
+      C.Term.Hole(C.Type.Hole)
+    } else {
+      when (val definition = definitions[term.name.value]) {
+        is C.Definition.Function -> {
+          if (!isMeta() && Modifier.STATIC in definition.modifiers) {
+            diagnostics += levelMismatch(term.name.range)
+            C.Term.Hole(C.Type.Hole)
+          } else {
+            hover(term.name.range) { createFunctionDocumentation(definition) }
+            val typeArgs =
+              if (definition.typeParams.isNotEmpty() && term.typeArgs.value.isEmpty()) {
+                definition.typeParams.map { metaEnv.freshType(term.typeArgs.range) }
+              } else {
+                if (definition.typeParams.size != term.typeArgs.value.size) {
+                  diagnostics += arityMismatch(definition.typeParams.size, term.typeArgs.value.size, term.typeArgs.range.end..term.typeArgs.range.end)
+                }
+                term.typeArgs.value.map { elaborateType(it) }
+              }
+            val typeEnv = Normalize.Env(definitions, typeArgs, false)
+            val param = typeEnv.evalType(definition.binder.type)
+            val arg = elaborateTerm(term.arg, param)
+            val result = typeEnv.evalType(definition.result)
+            C.Term.Run(definition.name, typeArgs, arg, result)
+          }
+        }
+        else                     -> {
+          diagnostics += expectedFunctionDefinition(term.name.range)
+          C.Term.Hole(C.Type.Hole)
+        }
+      }
+    }
+  }
+
+  private inline fun Env.matchTermIs(term: R.Term.Is): C.Term {
+    val scrutinee = elaborateTerm(term.scrutinee)
+    val scrutineer = restoring {
+      elaboratePattern(term.scrutineer, scrutinee.type)
+    }
+    return C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
+  }
+
+  private inline fun Env.matchTermCodeOf(
+    term: R.Term.CodeOf,
+    expected: C.Type.Code?,
+  ): C.Term {
+    return if (isMeta()) {
+      val element = quoting {
+        elaborateTerm(term.element, expected?.element)
+      }
+      C.Term.CodeOf(element, C.Type.Code(element.type))
+    } else {
+      diagnostics += levelMismatch(term.range)
+      C.Term.Hole(expected ?: C.Type.Hole)
+    }
+  }
+
+  private inline fun Env.matchTermSplice(
+    term: R.Term.Splice,
+    expected: C.Type?,
+  ): C.Term {
+    val element = splicing {
+      elaborateTerm(term.element, expected?.let { C.Type.Code(it) })
+    }
+    return when (val elementType = element.type) {
+      is C.Type.Code -> C.Term.Splice(element, elementType.element)
+      else           -> {
+        diagnostics += typeMismatch(C.Type.Code(C.Type.Hole), elementType, term.element.range)
+        C.Term.Hole(expected ?: C.Type.Hole)
+      }
+    }
+  }
+
+  private inline fun matchTermHole(expected: C.Type?): C.Term {
+    return C.Term.Hole(expected ?: C.Type.Hole)
+  }
+
+  private inline fun Env.checkTermSub(
+    term: R.Term,
+    expected: C.Type,
+  ): C.Term {
+    val actual = elaborateTerm(term)
+    if (!(actual.type isSubtypeOf expected)) {
+      diagnostics += typeMismatch(expected, actual.type, term.range)
+    }
+    return actual
   }
 
   private fun Env.elaboratePattern(
@@ -534,139 +603,151 @@ class Elaborate private constructor(
   ): C.Pattern {
     val expected = expected?.let { metaEnv.forceType(it) }
     return when {
-      pattern is R.Pattern.IntOf &&
-      expected is C.Type.Int?   -> C.Pattern.IntOf(pattern.value, C.Type.Int.SET)
-
-      pattern is R.Pattern.IntRangeOf &&
-      expected is C.Type.Int?     -> {
-        if (pattern.min > pattern.max) {
-          diagnostics += emptyRange(pattern.range)
-        }
-        C.Pattern.IntRangeOf(pattern.min, pattern.max, C.Type.Int.SET)
-      }
-
-      pattern is R.Pattern.ListOf &&
-      pattern.elements.isEmpty() &&
-      expected is C.Type.List?  -> C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
-
-      pattern is R.Pattern.ListOf &&
-      expected is C.Type.List?    -> {
-        val head = elaboratePattern(pattern.elements.first(), expected?.element)
-        val element = expected?.element ?: head.type
-        val tail =
-          pattern.elements
-            .drop(1)
-            .map { elaboratePattern(it, element) }
-        C.Pattern.ListOf(listOf(head) + tail, C.Type.List(element))
-      }
-
-      pattern is R.Pattern.CompoundOf &&
-      expected == null            -> {
-        val elements = pattern.elements.associate { (key, element) ->
-          val element = elaboratePattern(element)
-          hoverType(key.range, element.type)
-          key.value to element
-        }
-        C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-      }
-
-      pattern is R.Pattern.CompoundOf &&
-      expected is C.Type.Compound -> {
-        val elements = mutableMapOf<String, C.Pattern>()
-        pattern.elements.forEach { (key, element) ->
-          when (val type = expected.elements[key.value]) {
-            null -> {
-              diagnostics += extraKey(key.value, key.range)
-              val element = elaboratePattern(element)
-              hoverType(key.range, element.type)
-              elements[key.value] = element
-            }
-            else -> {
-              hoverType(key.range, type)
-              elements[key.value] = elaboratePattern(element, type)
-            }
-          }
-        }
-        expected.elements.keys
-          .minus(
-            pattern.elements
-              .map { it.first.value }
-              .toSet()
-          )
-          .forEach { diagnostics += keyNotFound(it, pattern.range) }
-        C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-      }
-
-      pattern is R.Pattern.TupleOf &&
-      expected is C.Type.Tuple    -> {
-        if (expected.elements.size != pattern.elements.size) {
-          diagnostics += arityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
-        }
-        val elements = pattern.elements.mapIndexed { index, element ->
-          elaboratePattern(element, expected.elements.getOrNull(index))
-        }
-        C.Pattern.TupleOf(elements, expected)
-      }
-
-      pattern is R.Pattern.TupleOf &&
-      expected == null            -> {
-        val elements = pattern.elements.map { element ->
-          elaboratePattern(element)
-        }
-        C.Pattern.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
-      }
-
-      pattern is R.Pattern.Var &&
-      expected != null            -> {
-        bind(pattern.name, expected)
-        when (val kind = metaEnv.forceKind(expected.kind)) {
-          is C.Kind.Type ->
-            if (kind.arity == 1) {
-              C.Pattern.Var(pattern.name, pattern.level, expected)
-            } else {
-              diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
-              C.Pattern.Hole(expected)
-            }
-          is C.Kind.Meta -> {
-            metaEnv.unifyKinds(kind, C.Kind.Type.ONE)
-            C.Pattern.Var(pattern.name, pattern.level, expected)
-          }
-          else           -> {
-            diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
-            C.Pattern.Hole(expected)
-          }
-        }
-      }
-
-      pattern is R.Pattern.Var &&
-      expected == null            -> {
-        val type = metaEnv.freshType(pattern.range, C.Kind.Type(1))
-        bind(pattern.name, type)
-        C.Pattern.Var(pattern.name, pattern.level, type)
-      }
-
-      pattern is R.Pattern.Drop -> C.Pattern.Drop(expected ?: metaEnv.freshType(pattern.range))
-
-      pattern is R.Pattern.Anno &&
-      expected == null            -> {
-        val type = elaborateType(pattern.type)
-        elaboratePattern(pattern.element, type)
-      }
-
-      pattern is R.Pattern.Hole -> C.Pattern.Hole(expected ?: C.Type.Hole)
-
-      expected == null            -> error("type must be non-null")
-
-      else                      -> {
-        val actual = elaboratePattern(pattern)
-        if (!(actual.type isSubtypeOf expected)) {
-          diagnostics += typeMismatch(expected, actual.type, pattern.range)
-        }
-        actual
-      }
+      pattern is R.Pattern.IntOf && matchType<C.Type.Int>(expected)           -> matchPatternIntOf(pattern)
+      pattern is R.Pattern.IntRangeOf && matchType<C.Type.Int>(expected)      -> matchPatternIntRangeOf(pattern)
+      pattern is R.Pattern.ListOf && matchType<C.Type.List>(expected)         -> matchPatternListOf(pattern, expected)
+      pattern is R.Pattern.CompoundOf && synthType(expected)                  -> synthPatternCompoundOf(pattern)
+      pattern is R.Pattern.CompoundOf && checkType<C.Type.Compound>(expected) -> checkPatternCompoundOf(pattern, expected)
+      pattern is R.Pattern.TupleOf && matchType<C.Type.Tuple>(expected)       -> matchPatternTupleOf(pattern, expected)
+      pattern is R.Pattern.Var && synthType(expected)                         -> synthPatternVar(pattern)
+      pattern is R.Pattern.Var && checkType<C.Type>(expected)                 -> checkPatternVar(pattern, expected)
+      pattern is R.Pattern.Drop && matchType<C.Type>(expected)                -> matchPatternDrop(pattern, expected)
+      pattern is R.Pattern.Anno && synthType(expected)                        -> synthPatternAnno(pattern)
+      pattern is R.Pattern.Hole && matchType<C.Type>(expected)                -> matchPatternHole(expected)
+      checkType<C.Type>(expected)                                             -> checkPatternSub(pattern, expected)
+      else                                                                    -> error("unreachable")
     }.also {
       hoverType(pattern.range, it.type)
     }
+  }
+
+  private inline fun matchPatternIntOf(pattern: R.Pattern.IntOf): C.Pattern {
+    return C.Pattern.IntOf(pattern.value, C.Type.Int.SET)
+  }
+
+  private inline fun matchPatternIntRangeOf(pattern: R.Pattern.IntRangeOf): C.Pattern {
+    if (pattern.min > pattern.max) {
+      diagnostics += emptyRange(pattern.range)
+    }
+    return C.Pattern.IntRangeOf(pattern.min, pattern.max, C.Type.Int.SET)
+  }
+
+  private inline fun Env.matchPatternListOf(
+    pattern: R.Pattern.ListOf,
+    expected: C.Type.List?,
+  ): C.Pattern {
+    return if (pattern.elements.isEmpty()) {
+      C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
+    } else {
+      val head = elaboratePattern(pattern.elements.first(), expected?.element)
+      val element = expected?.element ?: head.type
+      val tail = pattern.elements.drop(1).map { elaboratePattern(it, element) }
+      C.Pattern.ListOf(listOf(head) + tail, C.Type.List(element))
+    }
+  }
+
+  private inline fun Env.synthPatternCompoundOf(pattern: R.Pattern.CompoundOf): C.Pattern {
+    val elements = pattern.elements.associate { (key, element) ->
+      val element = elaboratePattern(element)
+      hoverType(key.range, element.type)
+      key.value to element
+    }
+    return C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
+  }
+
+  private inline fun Env.checkPatternCompoundOf(
+    pattern: R.Pattern.CompoundOf,
+    expected: C.Type.Compound,
+  ): C.Pattern {
+    val elements = mutableMapOf<String, C.Pattern>()
+    pattern.elements.forEach { (key, element) ->
+      when (val type = expected.elements[key.value]) {
+        null -> {
+          diagnostics += extraKey(key.value, key.range)
+          val element = elaboratePattern(element)
+          hoverType(key.range, element.type)
+          elements[key.value] = element
+        }
+        else -> {
+          hoverType(key.range, type)
+          elements[key.value] = elaboratePattern(element, type)
+        }
+      }
+    }
+    expected.elements.keys
+      .minus(pattern.elements.map { it.first.value }.toSet())
+      .forEach { diagnostics += keyNotFound(it, pattern.range) }
+    return C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
+  }
+
+  private inline fun Env.matchPatternTupleOf(
+    pattern: R.Pattern.TupleOf,
+    expected: C.Type.Tuple?,
+  ): C.Pattern {
+    if (expected != null && expected.elements.size != pattern.elements.size) {
+      diagnostics += arityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
+    }
+    val elements = pattern.elements.mapIndexed { index, element ->
+      elaboratePattern(element, expected?.elements?.getOrNull(index))
+    }
+    return C.Pattern.TupleOf(elements, expected ?: C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
+  }
+
+  private inline fun Env.synthPatternVar(pattern: R.Pattern.Var): C.Pattern {
+    val type = metaEnv.freshType(pattern.range, C.Kind.Type(1))
+    bind(pattern.name, type)
+    return C.Pattern.Var(pattern.name, pattern.level, type)
+  }
+
+  private inline fun Env.checkPatternVar(
+    pattern: R.Pattern.Var,
+    expected: C.Type,
+  ): C.Pattern {
+    bind(pattern.name, expected)
+    return when (val kind = metaEnv.forceKind(expected.kind)) {
+      is C.Kind.Type ->
+        if (kind.arity == 1) {
+          C.Pattern.Var(pattern.name, pattern.level, expected)
+        } else {
+          diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
+          C.Pattern.Hole(expected)
+        }
+      is C.Kind.Meta -> {
+        metaEnv.unifyKinds(kind, C.Kind.Type.ONE)
+        C.Pattern.Var(pattern.name, pattern.level, expected)
+      }
+      else           -> {
+        diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
+        C.Pattern.Hole(expected)
+      }
+    }
+  }
+
+  private inline fun matchPatternDrop(
+    pattern: R.Pattern.Drop,
+    expected: C.Type?,
+  ): C.Pattern {
+    return C.Pattern.Drop(expected ?: metaEnv.freshType(pattern.range))
+  }
+
+  private inline fun Env.synthPatternAnno(pattern: R.Pattern.Anno): C.Pattern {
+    val type = elaborateType(pattern.type)
+    return elaboratePattern(pattern.element, type)
+  }
+
+  private inline fun matchPatternHole(expected: C.Type?): C.Pattern {
+    return C.Pattern.Hole(expected ?: C.Type.Hole)
+  }
+
+  private inline fun Env.checkPatternSub(
+    pattern: R.Pattern,
+    expected: C.Type,
+  ): C.Pattern {
+    val actual = elaboratePattern(pattern)
+    if (!(actual.type isSubtypeOf expected)) {
+      diagnostics += typeMismatch(expected, actual.type, pattern.range)
+    }
+    return actual
   }
 
   private infix fun C.Kind.isSubkindOf(
@@ -733,53 +814,53 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> element1 isSubtypeOf element2
-                                     }
-                                   }
+      type2 is C.Type.Compound        -> type1.elements.size == type2.elements.size &&
+                                         type1.elements.all { (key1, element1) ->
+                                           when (val element2 = type2.elements[key1]) {
+                                             null -> false
+                                             else -> element1 isSubtypeOf element2
+                                           }
+                                         }
 
       type1 is C.Type.Ref &&
-      type2 is C.Type.Ref      -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Ref             -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple           -> type1.elements.size == type2.elements.size &&
+                                         (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1        -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1        -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Func &&
-      type2 is C.Type.Func     -> type2.param isSubtypeOf type1.param &&
-                                  type1.result isSubtypeOf type2.result
+      type2 is C.Type.Func            -> type2.param isSubtypeOf type1.param &&
+                                         type1.result isSubtypeOf type2.result
 
       type1 is C.Type.Clos &&
-      type2 is C.Type.Clos     -> type2.param isSubtypeOf type1.param &&
-                                  type1.result isSubtypeOf type2.result
+      type2 is C.Type.Clos            -> type2.param isSubtypeOf type1.param &&
+                                         type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union    -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union           -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union           -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code            -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var      -> type1.level == type2.level
+      type2 is C.Type.Var             -> type1.level == type2.level
 
       type1 is C.Type.Run &&
       type2 is C.Type.Run &&
-      type1.name == type2.name -> true
+      type1.name == type2.name        -> true
 
       type1 is C.Type.Run &&
       (
           type1.name.module == input.module.name ||
           Modifier.INLINE in definitions[type1.name]!!.modifiers
-      )                        -> Normalize
+      )                               -> Normalize
         .Env(definitions, emptyList(), true)
         .evalType(type1) isSubtypeOf type2
 
