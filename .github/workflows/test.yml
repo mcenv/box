@@ -22,7 +22,7 @@ jobs:
         with:
           arguments: kover
       - name: Generate coverage badge
-        uses: Schneegans/dynamic-badges-action@v1
+        uses: Schneegans/dynamic-badges-action@v1.6.0
         with:
           auth: ${{secrets.COVERAGE}}
           gistID: 7af9a474143f247a1e0077a972afd904
