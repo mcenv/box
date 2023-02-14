@@ -37,14 +37,14 @@ class Pack private constructor(
       is L.Definition.Function -> {
         !{ Raw("# function ${definition.name}") }
 
-        val binderTypes = eraseType(definition.binder.type)
+        val binderTypes = eraseTypes(definition.binder.type)
         binderTypes.forEach { push(it, null) }
         packPattern(definition.binder)
 
         packTerm(definition.body)
 
         if (L.Modifier.NO_DROP !in definition.modifiers) {
-          val resultTypes = eraseType(definition.body.type)
+          val resultTypes = eraseTypes(definition.body.type)
           dropPattern(definition.binder, resultTypes)
         }
 
@@ -113,7 +113,7 @@ class Pack private constructor(
       is L.Term.ListOf      -> {
         push(P.Stack.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
-          val elementType = eraseType(term.elements.first().type).first()
+          val elementType = eraseSingleType(term.elements.first().type)
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == P.Stack.LIST) -2 else -1
@@ -122,38 +122,38 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.CompoundOf -> {
+      is L.Term.CompoundOf  -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
-          val valueType = eraseType(element.type).first()
+          val valueType = eraseSingleType(element.type)
           val index = if (valueType == P.Stack.COMPOUND) -2 else -1
           +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.id)(-1) }))))
           drop(valueType)
         }
       }
-      is L.Term.RefOf      -> {
+      is L.Term.RefOf       -> {
         packTerm(term.element)
         !{ Raw("# todo: $term") }
         push(P.Stack.INT, SourceProvider.Value(Nbt.Int(0)))
       }
-      is L.Term.TupleOf    -> {
+      is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
           packTerm(element)
         }
       }
-      is L.Term.FuncOf     -> {
+      is L.Term.FuncOf      -> {
         push(P.Stack.INT, SourceProvider.Value(Nbt.Int(term.tag)))
       }
-      is L.Term.ClosOf     -> {
+      is L.Term.ClosOf      -> {
         push(P.Stack.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.vars.forEach { (name, level, type) ->
-          val stack = eraseType(type).first()
+          val stack = eraseSingleType(type)
           val index = this[level, stack]
           +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) }))))
         }
       }
-      is L.Term.If         -> {
+      is L.Term.If          -> {
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.BYTE.id)(-1) }))))
         drop(P.Stack.BYTE)
@@ -169,29 +169,31 @@ class Pack private constructor(
             RunFunction(packDefinitionLocation(term.elseName))
           )
         )
-        eraseType(term.type).forEach { push(it, null) }
+        eraseTypes(term.type).forEach { push(it, null) }
       }
-      is L.Term.Let        -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
 
-        val bodyTypes = eraseType(term.body.type)
+        val bodyTypes = eraseTypes(term.body.type)
         dropPattern(term.binder, bodyTypes)
       }
       is L.Term.Var         -> {
-        val type = eraseType(term.type).first()
-        val index = this[term.level, type]
-        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
+        val stacks = eraseTypes(term.type)
+        stacks.forEachIndexed { offset, stack ->
+          val index = this[term.level, stack] - stacks.size + offset + 1
+          push(stack, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) })))
+        }
       }
       is L.Term.Run         -> {
         packTerm(term.arg)
 
         +RunFunction(packDefinitionLocation(term.name))
-        eraseType(term.arg.type).forEach {
+        eraseTypes(term.arg.type).forEach {
           drop(it, relevant = false)
         }
-        eraseType(term.type).forEach { push(it, null) }
+        eraseTypes(term.type).forEach { push(it, null) }
       }
       is L.Term.Is          -> {
         packTerm(term.scrutinee)
@@ -200,7 +202,7 @@ class Pack private constructor(
       is L.Term.Command     -> {
         !{ Raw("# command") }
         +Raw(term.value)
-        eraseType(term.type).forEach { push(it, null) }
+        eraseTypes(term.type).forEach { push(it, null) }
       }
     }
   }
@@ -216,7 +218,7 @@ class Pack private constructor(
       }
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(eraseType(element.type).first(), SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
+          push(eraseSingleType(element.type), SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
           packPattern(element)
         }
       }
@@ -224,7 +226,7 @@ class Pack private constructor(
         pattern.elements
           .asReversed()
           .forEach { packPattern(it) }
-      is L.Pattern.Var        -> bind(pattern.level, eraseType(pattern.type).first())
+      is L.Pattern.Var        -> eraseTypes(pattern.type).forEach { bind(pattern.level, it) }
       is L.Pattern.Drop       -> Unit
     }
   }
@@ -249,8 +251,8 @@ class Pack private constructor(
         pattern.elements
           .asReversed()
           .forEach { dropPattern(it, keeps) }
-      is L.Pattern.Var        -> drop(eraseType(pattern.type).first(), keeps)
-      is L.Pattern.Drop       -> eraseType(pattern.type).forEach { drop(it, keeps) }
+      is L.Pattern.Var        -> eraseTypes(pattern.type).forEach { drop(it, keeps) }
+      is L.Pattern.Drop       -> eraseTypes(pattern.type).forEach { drop(it, keeps) }
     }
   }
 
@@ -298,8 +300,8 @@ class Pack private constructor(
           scrutineer.elements
             .asReversed()
             .forEach { visit(it) } // TODO: short-circuit optimization (in lift phase?)
-        is L.Pattern.Var        -> drop(eraseType(scrutineer.type).first())
-        is L.Pattern.Drop       -> eraseType(scrutineer.type).forEach { drop(it) }
+        is L.Pattern.Var        -> eraseTypes(scrutineer.type).forEach { drop(it) }
+        is L.Pattern.Drop       -> eraseTypes(scrutineer.type).forEach { drop(it) }
       }
     }
     visit(scrutineer)
@@ -312,7 +314,10 @@ class Pack private constructor(
     )
   }
 
-  private fun eraseType(
+  private fun eraseSingleType(type: L.Type): P.Stack =
+    eraseTypes(type).also { require(it.size == 1) }.first()
+
+  private fun eraseTypes(
     type: L.Type,
   ): List<P.Stack> {
     return when (type) {
@@ -330,11 +335,11 @@ class Pack private constructor(
       is L.Type.List      -> listOf(P.Stack.LIST)
       is L.Type.Compound  -> listOf(P.Stack.COMPOUND)
       is L.Type.Ref       -> listOf(P.Stack.INT)
-      is L.Type.Tuple     -> type.elements.flatMap { eraseType(it) }
+      is L.Type.Tuple     -> type.elements.flatMap { eraseTypes(it) }
       is L.Type.Func      -> listOf(P.Stack.INT)
       is L.Type.Clos      -> listOf(P.Stack.COMPOUND)
-      is L.Type.Union     -> type.elements.firstOrNull()?.let { eraseType(it) } ?: listOf(P.Stack.END)
-      is L.Type.Run       -> eraseType(type.body.value)
+      is L.Type.Union     -> type.elements.firstOrNull()?.let { eraseTypes(it) } ?: listOf(P.Stack.END)
+      is L.Type.Run       -> eraseTypes(type.body.value)
     }
   }
 
@@ -377,9 +382,7 @@ class Pack private constructor(
     stack: P.Stack,
   ): Int {
     val entry = entry(stack)
-    return entry
-             .indexOfLast { it == level }
-             .also { require(it != -1) } - entry.size
+    return entry.indexOfLast { it == level }.also { require(it != -1) } - entry.size
   }
 
   private fun entry(

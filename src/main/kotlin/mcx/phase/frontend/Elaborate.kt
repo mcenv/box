@@ -694,7 +694,7 @@ class Elaborate private constructor(
   }
 
   private inline fun Env.synthPatternVar(pattern: R.Pattern.Var): C.Pattern {
-    val type = metaEnv.freshType(pattern.range, C.Kind.Type(1))
+    val type = metaEnv.freshType(pattern.range, metaEnv.freshKind())
     bind(pattern.name, type)
     return C.Pattern.Var(pattern.name, pattern.level, type)
   }
@@ -705,13 +705,9 @@ class Elaborate private constructor(
   ): C.Pattern {
     bind(pattern.name, expected)
     return when (val kind = metaEnv.forceKind(expected.kind)) {
-      is C.Kind.Type ->
-        if (kind.arity == 1) {
-          C.Pattern.Var(pattern.name, pattern.level, expected)
-        } else {
-          diagnostics += kindMismatch(C.Kind.Type.ONE, kind, pattern.range)
-          C.Pattern.Hole(expected)
-        }
+      is C.Kind.Type -> {
+        C.Pattern.Var(pattern.name, pattern.level, expected)
+      }
       is C.Kind.Meta -> {
         metaEnv.unifyKinds(kind, C.Kind.Type.ONE)
         C.Pattern.Var(pattern.name, pattern.level, expected)

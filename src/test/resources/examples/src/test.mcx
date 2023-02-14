@@ -11,3 +11,25 @@ test drop_end {
   let _: int = $command("");
   true
 };
+
+test drop_pair {
+  let x = (0, 1);
+  true
+};
+
+test copy_pair {
+  let x = (0, 1);
+  let y = x;
+  true
+};
+
+test drop_triple {
+  let x = (0, 1, 2);
+  true
+};
+
+test copy_triple {
+  let x = (0, 1, 2);
+  let y = x;
+  true
+};
