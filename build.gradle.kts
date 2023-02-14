@@ -1,6 +1,9 @@
+import javax.xml.parsers.DocumentBuilderFactory
+
 plugins {
   kotlin("jvm") version "1.8.10"
   kotlin("plugin.serialization") version "1.8.10"
+  id("org.jetbrains.kotlinx.kover") version "0.6.1"
   application
 }
 
@@ -54,5 +57,30 @@ tasks.withType<Jar> {
 tasks.withType<ProcessResources> {
   filesMatching("version") {
     expand("version" to version)
+  }
+}
+
+tasks.register("kover") {
+  group = "verification"
+  dependsOn("koverXmlReport")
+  doLast {
+    var node = DocumentBuilderFactory
+      .newInstance()
+      .newDocumentBuilder()
+      .parse(file("$buildDir/reports/kover/xml/report.xml"))
+      .firstChild
+      .firstChild
+    while (node != null) {
+      if (node.nodeName == "counter") {
+        if (node.attributes.getNamedItem("type").textContent == "INSTRUCTION") {
+          val missed = node.attributes.getNamedItem("missed").textContent.toLong()
+          val covered = node.attributes.getNamedItem("covered").textContent.toLong()
+          val coverage = (covered * 100.0) / (missed + covered)
+          println(""""COVERAGE=%.1f" >> ${'$'}GITHUB_ENV""".format(coverage))
+          break
+        }
+      }
+      node = node.nextSibling
+    }
   }
 }
