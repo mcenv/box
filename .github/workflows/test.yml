@@ -18,9 +18,7 @@ jobs:
           java-version: "17"
       - uses: gradle/wrapper-validation-action@v1
       - name: Test
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: kover
+        run: ./gradlew kover
       - name: Generate coverage badge
         uses: Schneegans/dynamic-badges-action@v1.6.0
         with:
