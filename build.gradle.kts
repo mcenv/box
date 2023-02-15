@@ -77,7 +77,7 @@ tasks.register("kover") {
           val covered = node.attributes.getNamedItem("covered").textContent.toLong()
           val coverage = (covered * 100.0) / (missed + covered)
           exec {
-            commandLine("cmd", "/c", """echo "COVERAGE=%.1f" >> ${'$'}GITHUB_ENV""".format(coverage))
+            commandLine("bash", "-c", """echo "COVERAGE=%.1f"""".format(coverage), ">>", "\$GITHUB_ENV")
           }
           break
         }
