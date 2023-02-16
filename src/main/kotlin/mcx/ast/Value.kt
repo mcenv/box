@@ -123,7 +123,7 @@ sealed interface Value {
   ) : Value
 
   class Command(
-    val value: String,
+    val element: Lazy<Value>,
   ) : Value
 
   @JvmInline

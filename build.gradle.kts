@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
@@ -40,6 +41,11 @@ tasks.test {
 
 kotlin {
   jvmToolchain(17)
+}
+
+tasks.withType<KotlinCompile> {
+  kotlinOptions.jvmTarget = "17"
+  kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 }
 
 application {

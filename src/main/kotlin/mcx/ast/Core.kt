@@ -366,7 +366,7 @@ object Core {
     ) : Term
 
     data class Command(
-      val value: String,
+      val element: Term,
       override val type: Type,
     ) : Term
 

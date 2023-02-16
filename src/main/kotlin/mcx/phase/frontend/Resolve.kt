@@ -219,7 +219,7 @@ class Resolve private constructor(
           else -> R.Term.Var(term.name, level, term.range)
         }
       }
-      is S.Term.Run    -> {
+      is S.Term.Run     -> {
         when (val location = resolveName(term.name.value, term.name.range)) {
           null -> R.Term.Hole(term.range)
           else -> {
@@ -230,14 +230,15 @@ class Resolve private constructor(
           }
         }
       }
-      is S.Term.Is     -> {
+      is S.Term.Is      -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = restoring { resolvePattern(term.scrutineer) }
         R.Term.Is(scrutinee, scrutineer, term.range)
       }
-      is S.Term.CodeOf -> R.Term.CodeOf(resolveTerm(term.element), term.range)
-      is S.Term.Splice -> R.Term.Splice(resolveTerm(term.element), term.range)
-      is S.Term.Hole   -> R.Term.Hole(term.range)
+      is S.Term.Command -> R.Term.Command(resolveTerm(term.element), term.range)
+      is S.Term.CodeOf  -> R.Term.CodeOf(resolveTerm(term.element), term.range)
+      is S.Term.Splice  -> R.Term.Splice(resolveTerm(term.element), term.range)
+      is S.Term.Hole    -> R.Term.Hole(term.range)
     }
   }
 

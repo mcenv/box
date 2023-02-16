@@ -240,6 +240,7 @@ class Elaborate private constructor(
     return type is V?
   }
 
+  // TODO: bidirectionalize stage
   private fun Env.elaborateTerm(
     term: R.Term,
     expected: C.Type? = null,
@@ -270,6 +271,7 @@ class Elaborate private constructor(
       term is R.Term.Var && synthType(expected)                           -> synthTermVar(term)
       term is R.Term.Run && synthType(expected)                           -> synthTermRun(term)
       term is R.Term.Is && matchType<C.Type.Bool>(expected)               -> matchTermIs(term)
+      term is R.Term.Command && matchType<C.Type.Code>(expected)          -> matchTermCommand(term, expected)
       term is R.Term.CodeOf && matchType<C.Type.Code>(expected)           -> matchTermCodeOf(term, expected)
       term is R.Term.Splice && matchType<C.Type>(expected)                -> matchTermSplice(term, expected)
       term is R.Term.Hole && matchType<C.Type>(expected)                  -> matchTermHole(expected)
@@ -549,6 +551,19 @@ class Elaborate private constructor(
       elaboratePattern(term.scrutineer, scrutinee.type)
     }
     return C.Term.Is(scrutinee, scrutineer, C.Type.Bool.SET)
+  }
+
+  private inline fun Env.matchTermCommand(
+    term: R.Term.Command,
+    expected: C.Type.Code?,
+  ): C.Term {
+    return if (isMeta()) {
+      val element = elaborateTerm(term.element, C.Type.String.SET)
+      C.Term.Command(element, expected ?: C.Type.Code(metaEnv.freshType(term.range, C.Kind.Type.ONE)))
+    } else {
+      diagnostics += levelMismatch(term.range)
+      C.Term.Hole(expected ?: C.Type.Hole)
+    }
   }
 
   private inline fun Env.matchTermCodeOf(

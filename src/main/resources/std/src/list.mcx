@@ -1,12 +1,11 @@
 import {
   int::to_string,
-  magic::command,
   magic::erase,
 }
 
 export static function get⟨a⟩(list: `[a], index: int) → `a {
   `(
     let _ = $list;
-    $command("data modify storage mcx: ${erase⟨a⟩(())} append from storage mcx: list[-1][${to_string(index)}]")
+    $/"data modify storage mcx: ${erase⟨a⟩(())} append from storage mcx: list[-1][${to_string(index)}]"
   )
 };

@@ -1,5 +1,3 @@
-export builtin static function command⟨a⟩(command: string) → `a;
-
 export builtin static function erase⟨a⟩() → string;
 
 export builtin static function lift⟨a⟩(a: a) → `a;

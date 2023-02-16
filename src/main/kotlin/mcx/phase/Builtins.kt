@@ -36,16 +36,6 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(magic / "command") {
-    override fun eval(
-      arg: Value,
-      typeArgs: List<Type>,
-    ): Value? {
-      if (arg !is Value.StringOf) return null
-      return Value.CodeOf(lazyOf(Value.Command(arg.value)))
-    }
-  },
-
   object : Builtin(magic / "erase") {
     override fun eval(
       arg: Value,

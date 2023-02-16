@@ -418,7 +418,7 @@ class Parse private constructor(
             }
             S.Term.StringOf(parts, until())
           }
-          '[' -> {
+          '['  -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ']') {
@@ -483,6 +483,11 @@ class Parse private constructor(
             skip()
             skipTrivia()
             S.Term.RefOf(parseTermAtom(), until())
+          }
+          '/'  -> {
+            skip()
+            skipTrivia()
+            S.Term.Command(parseTermAtom(), until())
           }
           '`'  -> {
             skip()

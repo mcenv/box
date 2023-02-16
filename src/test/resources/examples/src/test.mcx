@@ -1,14 +1,12 @@
-import {
-  magic::command,
-}
+import {}
 
 test bind_end {
-  let x: int = $command("");
+  let x: int = $/"";
   true
 };
 
 test drop_end {
-  let _: int = $command("");
+  let _: int = $/"";
   true
 };
 

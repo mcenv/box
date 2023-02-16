@@ -333,6 +333,11 @@ object Resolved {
       override val range: Range,
     ) : Term
 
+    data class Command(
+      val element: Term,
+      override val range: Range,
+    ) : Term
+
     data class CodeOf(
       val element: Term,
       override val range: Range,

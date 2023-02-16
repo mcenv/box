@@ -91,7 +91,7 @@
     },
     "keyword": {
       "name": "keyword.operator.mcx",
-      "match": "[:*→=,;&`$_]|(?:\\.\\.)"
+      "match": "[:*→=,;&/`$_]|(?:\\.\\.)"
     },
     "term": {
       "patterns": [

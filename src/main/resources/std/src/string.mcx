@@ -2,12 +2,11 @@ import {
   int::-,
   int::=,
   int::to_string,
-  magic::command,
 }
 
 export builtin function size(_: string) → int {
-  let _: end = $command("data modify storage mcx: int append value 0");
-  $command("execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]")
+  let _: end = $/"data modify storage mcx: int append value 0";
+  $/"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]"
 };
 
 export static function repeat(string: string, count: int) → string {
@@ -22,7 +21,7 @@ export static function repeat(string: string, count: int) → string {
 export static function substring_from(string: `string, start: int) → `string {
   `(
     let _ = $string;
-    $command("data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)}")
+    $/"data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)}"
   )
 };
 
@@ -34,7 +33,7 @@ export builtin static function substring_from'(string: string, start: int) → s
 export static function substring_between(string: `string, start: int, end: int) → `string {
   `(
     let _ = $string;
-    $command("data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)} ${int::to_string(end)}")
+    $/"data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)} ${int::to_string(end)}"
   )
 };
 

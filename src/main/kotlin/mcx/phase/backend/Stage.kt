@@ -84,7 +84,7 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val definition = dependencies[term.name] as C.Definition.Function
         val typeArgs = term.typeArgs.map { evalType(it) }
         if (Modifier.INLINE in definition.modifiers) {
@@ -109,11 +109,11 @@ class Stage private constructor(
           C.Term.Run(mangledName, emptyList(), arg, type)
         }
       }
-      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Command     -> C.Term.Command(term.value, type)
-      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
-      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, types, term))
-      is C.Term.Hole        -> C.Term.Hole(type)
+      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Command -> C.Term.Command(term.element, type)
+      is C.Term.CodeOf  -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice  -> stageTerm(normalizeTerm(dependencies, types, term))
+      is C.Term.Hole    -> C.Term.Hole(type)
     }
   }
 
@@ -187,7 +187,7 @@ class Stage private constructor(
         }
       }
       is C.Term.Var         -> values.getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run         -> {
+      is C.Term.Run     -> {
         val arg = evalTerm(term.arg)
         val typeArgs = term.typeArgs.map { evalType(it) }
         val definition = requireNotNull(definitions[term.name] as? C.Definition.Function) { "definition not found: '${term.name}'" }
@@ -204,7 +204,7 @@ class Stage private constructor(
           Value.Run(term.name, typeArgs, arg)
         }
       }
-      is C.Term.Is          -> {
+      is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         val matched = matchValue(scrutinee, term.scrutineer)
         if (static && matched != null) {
@@ -213,15 +213,15 @@ class Stage private constructor(
           Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
         }
       }
-      is C.Term.Command     -> error("unexpected: command") // TODO
-      is C.Term.CodeOf      -> Value.CodeOf(lazy { withStatic(false).evalTerm(term.element) })
-      is C.Term.Splice      -> {
+      is C.Term.Command -> Value.CodeOf(lazyOf(Value.Command(lazy { evalTerm(term.element) })))
+      is C.Term.CodeOf  -> Value.CodeOf(lazy { withStatic(false).evalTerm(term.element) })
+      is C.Term.Splice  -> {
         when (val element = withStatic(true).evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
       }
-      is C.Term.Hole        -> Value.Hole(term.type)
+      is C.Term.Hole    -> Value.Hole(term.type)
     }
   }
 
@@ -331,19 +331,19 @@ class Stage private constructor(
         type as C.Type.Ref
         C.Term.RefOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.TupleOf     -> {
+      is Value.TupleOf -> {
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.FuncOf      -> {
+      is Value.FuncOf  -> {
         type as C.Type.Func
         C.Term.FuncOf(value.binder, value.body, type)
       }
-      is Value.ClosOf      -> {
+      is Value.ClosOf  -> {
         type as C.Type.Clos
         C.Term.ClosOf(value.binder, value.body, type)
       }
-      is Value.Apply       -> {
+      is Value.Apply   -> {
         val (param, result) = run {
           when (val operatorType = value.operatorType) {
             is C.Type.Func -> operatorType.param to operatorType.result
@@ -353,21 +353,21 @@ class Stage private constructor(
         }
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, param), result)
       }
-      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool(null)), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Let         -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
-      is Value.Var         -> C.Term.Var(value.name, value.level, type)
-      is Value.Run         -> {
+      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool.SET), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Let     -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
+      is Value.Var     -> C.Term.Var(value.name, value.level, type)
+      is Value.Run     -> {
         val definition = definitions[value.name] as C.Definition.Function
         C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
       }
-      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool(null))
-      is Value.Command     -> C.Term.Command(value.value, type)
-      is Value.CodeOf      -> {
+      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool.SET)
+      is Value.Command -> C.Term.Command(quoteValue(value.element.value, C.Type.String.SET), type)
+      is Value.CodeOf  -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole        -> C.Term.Hole(value.type)
+      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole    -> C.Term.Hole(value.type)
     }
   }
 
