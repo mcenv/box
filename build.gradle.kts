@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.19.0")
+  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.20.0")
   implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
