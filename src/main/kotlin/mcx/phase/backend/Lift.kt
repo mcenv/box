@@ -42,7 +42,6 @@ class Lift private constructor(
       Modifier.TICK    -> L.Modifier.TICK
       Modifier.LOAD    -> L.Modifier.LOAD
       Modifier.NO_DROP -> L.Modifier.NO_DROP
-      Modifier.LEAF    -> L.Modifier.LEAF
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
       Modifier.INLINE  -> error("unexpected: $modifier")

@@ -164,7 +164,6 @@ class Parse private constructor(
           "tick"    -> Ranged(Modifier.TICK, until())
           "load"    -> Ranged(Modifier.LOAD, until())
           "no_drop" -> Ranged(Modifier.NO_DROP, until())
-          "leaf"    -> Ranged(Modifier.LEAF, until())
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "inline"  -> Ranged(Modifier.INLINE, until())
