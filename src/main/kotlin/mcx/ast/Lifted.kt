@@ -18,8 +18,6 @@ object Lifted {
   }
 
   enum class Modifier {
-    TICK,
-    LOAD,
     NO_DROP,
     BUILTIN,
   }

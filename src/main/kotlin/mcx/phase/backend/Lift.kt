@@ -33,8 +33,6 @@ class Lift private constructor(
     modifier: Modifier,
   ): L.Modifier? {
     return when (modifier) {
-      Modifier.TICK    -> L.Modifier.TICK
-      Modifier.LOAD    -> L.Modifier.LOAD
       Modifier.NO_DROP -> L.Modifier.NO_DROP
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
