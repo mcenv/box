@@ -15,12 +15,6 @@ object Lifted {
       val body: Term,
       val restore: Int?,
     ) : Definition
-
-    data class Test(
-      override val modifiers: List<Modifier>,
-      override val name: DefinitionLocation,
-      val body: Term,
-    ) : Definition
   }
 
   enum class Modifier {

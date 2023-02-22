@@ -86,19 +86,6 @@ class Elaborate private constructor(
             hover(definition.name.range) { createTypeDocumentation(it) }
           }
       }
-      is R.Definition.Test     -> {
-        if (signature) {
-          null
-        } else {
-          val env = emptyEnv(definitions, emptyList(), Modifier.STATIC in modifiers)
-          val body = env.elaborateTerm(definition.body, C.Type.Bool.SET)
-          C.Definition
-            .Test(modifiers, name, body)
-            .also {
-              hover(definition.name.range) { createTestDocumentation(it) }
-            }
-        }
-      }
       is R.Definition.Hole     -> null
     }
   }
@@ -911,9 +898,6 @@ class Elaborate private constructor(
               // TODO: add documentation and detail
               CompletionItemKind.Class
             }
-            is C.Definition.Test     -> {
-              return@mapNotNull null
-            }
           }
           labelDetails.description = location.module.toString()
           this.labelDetails = labelDetails
@@ -960,13 +944,6 @@ class Elaborate private constructor(
     val name = definition.name.name
     val kind = prettyKind(definition.body.kind)
     return "type $name: $kind"
-  }
-
-  private fun createTestDocumentation(
-    definition: C.Definition.Test,
-  ): String {
-    val name = definition.name.name
-    return "test $name"
   }
 
   private class Env private constructor(

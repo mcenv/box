@@ -53,14 +53,6 @@ class Pack private constructor(
 
         P.Definition.Function(path, commands)
       }
-      is L.Definition.Test     -> {
-        !{ Raw("# test ${definition.name}") }
-
-        packTerm(definition.body)
-        +Raw("# todo")
-
-        P.Definition.Function(path, commands)
-      }
     }
   }
 

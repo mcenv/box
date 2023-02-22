@@ -77,12 +77,6 @@ class Resolve private constructor(
         val body = env.resolveType(definition.body)
         R.Definition.Type(definition.modifiers, name, kind, body, definition.range)
       }
-      is S.Definition.Test     -> {
-        val name = definition.name.map { input.module.name / it }
-        val env = emptyEnv(emptyList())
-        val body = env.resolveTerm(definition.body)
-        R.Definition.Test(definition.modifiers, name, body, definition.range)
-      }
       is S.Definition.Hole     -> R.Definition.Hole(definition.range)
     }
   }

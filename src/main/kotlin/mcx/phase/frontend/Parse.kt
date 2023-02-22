@@ -104,15 +104,6 @@ class Parse private constructor(
           val body = parseType()
           S.Definition.Type(modifiers, name, kind, body, until())
         }
-        "test"     -> {
-          skipTrivia()
-          val name = parseRanged { readWord() }
-          expect('{')
-          skipTrivia()
-          val body = parseTerm()
-          expect('}')
-          S.Definition.Test(modifiers, name, body, until())
-        }
         else       -> null
       }
       ?: run {

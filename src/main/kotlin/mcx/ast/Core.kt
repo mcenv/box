@@ -26,12 +26,6 @@ object Core {
       override val name: DefinitionLocation,
       val body: Core.Type,
     ) : Definition
-
-    data class Test(
-      override val modifiers: List<Modifier>,
-      override val name: DefinitionLocation,
-      val body: Term,
-    ) : Definition
   }
 
   sealed interface Kind {
