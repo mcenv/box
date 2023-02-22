@@ -1,7 +1,0 @@
-function return_ref() → &int {
-  &0
-};
-
-function receive_ref(a: &int) → () {
-  ()
-};

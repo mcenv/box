@@ -1,7 +1,6 @@
 package mcx.phase.backend
 
 import mcx.ast.DefinitionLocation
-import mcx.ast.ModuleLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
@@ -397,15 +396,10 @@ class Pack private constructor(
   }
 
   companion object {
-    private val FREE: Packed.ScoreHolder = Packed.ScoreHolder("#free")
     private val REG_0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
     private val REG: Packed.Objective = Packed.Objective("mcx")
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
-    private val HEAP_SET: DataAccessor = DataAccessor.Storage(MCX, nbtPath { it("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)() })
-    private val HEAP_GET: DataAccessor = DataAccessor.Storage(MCX, nbtPath { it("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(0) })
-    private val DEALLOCATE: DefinitionLocation = ModuleLocation("heap") / "deallocate"
-    private val TOUCH: DefinitionLocation = ModuleLocation("heap") / "touch"
 
     private fun packDefinitionLocation(
       location: DefinitionLocation,
