@@ -4,9 +4,7 @@ import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 
 private val definitions: List<CompletionItem> = listOf(
-  "function",
-  "type",
-  "test",
+  "def",
 ).map {
   CompletionItem(it).apply {
     kind = CompletionItemKind.Keyword
@@ -14,10 +12,7 @@ private val definitions: List<CompletionItem> = listOf(
 }
 
 private val modifiers: List<CompletionItem> = listOf(
-  "tick",
-  "load",
   "no_drop",
-  "leaf",
   "builtin",
   "export",
   "inline",
