@@ -132,11 +132,6 @@ class Pack private constructor(
           drop(valueType)
         }
       }
-      is L.Term.RefOf       -> {
-        packTerm(term.element)
-        !{ Raw("# todo: $term") }
-        push(P.Stack.INT, SourceProvider.Value(Nbt.Int(0)))
-      }
       is L.Term.TupleOf     -> {
         term.elements.forEach { element ->
           packTerm(element)
@@ -334,7 +329,6 @@ class Pack private constructor(
       is L.Type.LongArray -> listOf(P.Stack.LONG_ARRAY)
       is L.Type.List      -> listOf(P.Stack.LIST)
       is L.Type.Compound  -> listOf(P.Stack.COMPOUND)
-      is L.Type.Ref       -> listOf(P.Stack.INT)
       is L.Type.Tuple     -> type.elements.flatMap { eraseTypes(it) }
       is L.Type.Func      -> listOf(P.Stack.INT)
       is L.Type.Clos      -> listOf(P.Stack.COMPOUND)

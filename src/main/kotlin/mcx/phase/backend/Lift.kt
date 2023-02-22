@@ -66,7 +66,6 @@ class Lift private constructor(
       is C.Type.LongArray -> L.Type.LongArray
       is C.Type.List      -> L.Type.List(liftType(type.element))
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
-      is C.Type.Ref       -> L.Type.Ref(liftType(type.element))
       is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
       is C.Type.Func      -> L.Type.Func(liftType(type.param), liftType(type.result))
       is C.Type.Clos      -> L.Type.Clos(liftType(type.param), liftType(type.result))
@@ -97,7 +96,6 @@ class Lift private constructor(
       is C.Term.LongArrayOf -> L.Term.LongArrayOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.ListOf      -> L.Term.ListOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
-      is C.Term.RefOf       -> L.Term.RefOf(liftTerm(term.element), type)
       is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.FuncOf      -> {
         with(emptyEnv()) {
@@ -212,7 +210,6 @@ class Lift private constructor(
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.RefOf       -> freeVars(term.element)
       is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.FuncOf      -> linkedMapOf()
       is C.Term.ClosOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }

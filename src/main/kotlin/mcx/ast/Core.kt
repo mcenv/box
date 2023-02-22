@@ -172,12 +172,6 @@ object Core {
       override val kind: Kind get() = Kind.Type.ONE
     }
 
-    data class Ref(
-      val element: Type,
-    ) : Type {
-      override val kind: Kind get() = Kind.Type.ONE
-    }
-
     data class Tuple(
       val elements: kotlin.collections.List<Type>,
       override val kind: Kind,
@@ -301,11 +295,6 @@ object Core {
 
     data class CompoundOf(
       val elements: Map<String, Term>,
-      override val type: Type,
-    ) : Term
-
-    data class RefOf(
-      val element: Term,
       override val type: Type,
     ) : Term
 

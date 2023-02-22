@@ -147,11 +147,6 @@ object Surface {
       override val range: Range,
     ) : Type
 
-    data class Ref(
-      val element: Type,
-      override val range: Range,
-    ) : Type
-
     data class Tuple(
       val elements: kotlin.collections.List<Type>,
       override val range: Range,
@@ -263,11 +258,6 @@ object Surface {
 
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Term>>,
-      override val range: Range,
-    ) : Term
-
-    data class RefOf(
-      val element: Term,
       override val range: Range,
     ) : Term
 

@@ -67,11 +67,6 @@ sealed interface Value {
   ) : Value
 
   @JvmInline
-  value class RefOf(
-    val element: Lazy<Value>,
-  ) : Value
-
-  @JvmInline
   value class TupleOf(
     val elements: List<Lazy<Value>>,
   ) : Value

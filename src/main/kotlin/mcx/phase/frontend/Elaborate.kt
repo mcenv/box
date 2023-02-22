@@ -146,7 +146,6 @@ class Elaborate private constructor(
       type is R.Type.LongArray && expected == null -> C.Type.LongArray
       type is R.Type.List && expected == null      -> C.Type.List(elaborateType(type.element, C.Kind.Type.ONE))
       type is R.Type.Compound && expected == null  -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.Type.ONE) })
-      type is R.Type.Ref && expected == null       -> C.Type.Ref(elaborateType(type.element, C.Kind.Type.ONE))
       type is R.Type.Tuple && expected == null     -> {
         val elements = type.elements.map { elaborateType(it) }
         C.Type.Tuple(elements, C.Kind.Type(elements.size))
@@ -261,7 +260,6 @@ class Elaborate private constructor(
       term is R.Term.ListOf && matchType<C.Type.List>(expected)           -> matchTermListOf(term, expected)
       term is R.Term.CompoundOf && synthType(expected)                    -> synthTermCompoundOf(term)
       term is R.Term.CompoundOf && checkType<C.Type.Compound>(expected)   -> checkTermCompoundOf(term, expected)
-      term is R.Term.RefOf && matchType<C.Type.Ref>(expected)             -> matchTermRefOf(term, expected)
       term is R.Term.TupleOf && matchType<C.Type.Tuple>(expected)         -> matchTermTupleOf(term, expected)
       term is R.Term.FuncOf && matchType<C.Type.Func>(expected)           -> matchTermFuncOf(term, expected)
       term is R.Term.ClosOf && matchType<C.Type.Clos>(expected)           -> matchTermClosOf(term, expected)
@@ -402,14 +400,6 @@ class Elaborate private constructor(
       .minus(term.elements.map { it.first.value }.toSet())
       .forEach { diagnostics += keyNotFound(it, term.range) }
     return C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-  }
-
-  private inline fun Env.matchTermRefOf(
-    term: R.Term.RefOf,
-    expected: C.Type.Ref?,
-  ): C.Term {
-    val element = elaborateTerm(term.element, expected?.element)
-    return C.Term.RefOf(element, C.Type.Ref(element.type))
   }
 
   private inline fun Env.matchTermTupleOf(
@@ -827,9 +817,6 @@ class Elaborate private constructor(
                                              else -> element1 isSubtypeOf element2
                                            }
                                          }
-
-      type1 is C.Type.Ref &&
-      type2 is C.Type.Ref             -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Tuple &&
       type2 is C.Type.Tuple           -> type1.elements.size == type2.elements.size &&

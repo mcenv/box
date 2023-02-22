@@ -83,7 +83,6 @@ class Zonk private constructor(
       is C.Type.LongArray -> type
       is C.Type.List      -> C.Type.List(zonkType(type.element))
       is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { zonkType(it.value) })
-      is C.Type.Ref       -> C.Type.Ref(zonkType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
@@ -117,7 +116,6 @@ class Zonk private constructor(
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.CompoundOf -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
-      is C.Term.RefOf      -> C.Term.RefOf(zonkTerm(term.element), type)
       is C.Term.TupleOf    -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.FuncOf     -> C.Term.FuncOf(zonkPattern(term.binder), zonkTerm(term.body), type)
       is C.Term.ClosOf     -> C.Term.ClosOf(zonkPattern(term.binder), zonkTerm(term.body), type)

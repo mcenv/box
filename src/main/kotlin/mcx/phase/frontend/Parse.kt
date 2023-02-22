@@ -261,11 +261,6 @@ class Parse private constructor(
             }.toMap()
             S.Type.Compound(elements, until())
           }
-          '&'  -> {
-            skip()
-            skipTrivia()
-            S.Type.Ref(parseType(), until())
-          }
           '`'  -> {
             skip()
             skipTrivia()
@@ -477,11 +472,6 @@ class Parse private constructor(
               key to value
             }
             S.Term.CompoundOf(values, until())
-          }
-          '&'  -> {
-            skip()
-            skipTrivia()
-            S.Term.RefOf(parseTermAtom(), until())
           }
           '/'  -> {
             skip()

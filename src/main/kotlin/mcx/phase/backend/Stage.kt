@@ -76,7 +76,6 @@ class Stage private constructor(
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
-      is C.Term.RefOf       -> C.Term.RefOf(stageTerm(term.element), type)
       is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.FuncOf      -> C.Term.FuncOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.ClosOf      -> C.Term.ClosOf(stagePattern(term.binder), stageTerm(term.body), type)
@@ -159,7 +158,6 @@ class Stage private constructor(
       is C.Term.LongArrayOf -> Value.LongArrayOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.ListOf      -> Value.ListOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
-      is C.Term.RefOf       -> Value.RefOf(lazy { evalTerm(term.element) })
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.FuncOf      -> Value.FuncOf(term.binder, term.body)
       is C.Term.ClosOf      -> Value.ClosOf(term.binder, term.body)
@@ -326,10 +324,6 @@ class Stage private constructor(
       is Value.CompoundOf  -> {
         type as C.Type.Compound
         C.Term.CompoundOf(value.elements.mapValues { (key, element) -> quoteValue(element.value, type.elements[key]!!) }, type)
-      }
-      is Value.RefOf       -> {
-        type as C.Type.Ref
-        C.Term.RefOf(quoteValue(value.element.value, type.element), type)
       }
       is Value.TupleOf -> {
         type as C.Type.Tuple

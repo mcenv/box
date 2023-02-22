@@ -27,7 +27,6 @@ object Normalize {
       is C.Type.LongArray -> type
       is C.Type.List      -> C.Type.List(evalType(type.element))
       is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { evalType(it.value) })
-      is C.Type.Ref       -> C.Type.Ref(evalType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { evalType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { evalType(it) }, type.kind)
       is C.Type.Func      -> C.Type.Func(evalType(type.param), evalType(type.result))

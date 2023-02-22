@@ -128,7 +128,6 @@ class Resolve private constructor(
       is S.Type.LongArray -> R.Type.LongArray(type.range)
       is S.Type.List      -> R.Type.List(resolveType(type.element), type.range)
       is S.Type.Compound  -> R.Type.Compound(type.elements.mapValues { resolveType(it.value) }, type.range)
-      is S.Type.Ref       -> R.Type.Ref(resolveType(type.element), type.range)
       is S.Type.Tuple     -> R.Type.Tuple(type.elements.map { resolveType(it) }, type.range)
       is S.Type.Func      -> R.Type.Func(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Clos      -> R.Type.Clos(resolveType(type.param), resolveType(type.result), type.range)
@@ -175,7 +174,6 @@ class Resolve private constructor(
       is S.Term.LongArrayOf -> R.Term.LongArrayOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.ListOf      -> R.Term.ListOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
-      is S.Term.RefOf       -> R.Term.RefOf(resolveTerm(term.element), term.range)
       is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.FuncOf      -> {
         val (binder, body) = restoring {

@@ -77,10 +77,6 @@ object Lifted {
       val elements: Map<kotlin.String, Type>,
     ) : Type
 
-    data class Ref(
-      val element: Type,
-    ) : Type
-
     data class Tuple(
       val elements: kotlin.collections.List<Type>,
     ) : Type
@@ -170,11 +166,6 @@ object Lifted {
 
     data class CompoundOf(
       val elements: Map<String, Term>,
-      override val type: Type,
-    ) : Term
-
-    data class RefOf(
-      val element: Term,
       override val type: Type,
     ) : Term
 

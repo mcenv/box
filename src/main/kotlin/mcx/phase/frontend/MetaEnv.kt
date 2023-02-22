@@ -64,7 +64,6 @@ class MetaEnv {
       is C.Type.LongArray -> type
       is C.Type.List      -> C.Type.List(zonkType(type.element))
       is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { zonkType(it.value) })
-      is C.Type.Ref       -> C.Type.Ref(zonkType(type.element))
       is C.Type.Tuple     -> C.Type.Tuple(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
       is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
@@ -181,9 +180,6 @@ class MetaEnv {
                                        else -> unifyTypes(element1, element2)
                                      }
                                    }
-
-      type1 is C.Type.Ref &&
-      type2 is C.Type.Ref      -> unifyTypes(type1.element, type2.element)
 
       type1 is C.Type.Tuple &&
       type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
