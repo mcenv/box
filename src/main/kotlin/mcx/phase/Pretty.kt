@@ -43,7 +43,7 @@ fun prettyType(
     is C.Type.Clos      -> "(clos ${prettyType(type.param)} → ${prettyType(type.result)})"
     is C.Type.Code      -> "`${prettyType(type.element)}"
     is C.Type.Var       -> type.name
-    is C.Type.Run       -> type.name.toString()
+    is C.Type.Def       -> type.name.toString()
     is C.Type.Meta      -> "?${type.index.toSubscript()}"
     is C.Type.Hole      -> " "
   }

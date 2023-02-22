@@ -15,21 +15,11 @@ object Resolved {
     val name: Ranged<DefinitionLocation>
     val range: Range
 
-    data class Function(
+    data class Def(
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
-      val typeParams: List<String>,
-      val binder: Pattern,
-      val result: Resolved.Type,
+      val type: Type,
       val body: Term?,
-      override val range: Range,
-    ) : Definition
-
-    data class Type(
-      override val modifiers: List<Ranged<Modifier>>,
-      override val name: Ranged<DefinitionLocation>,
-      val kind: Kind,
-      val body: Resolved.Type,
       override val range: Range,
     ) : Definition
 
@@ -152,7 +142,7 @@ object Resolved {
       override val range: Range,
     ) : Type
 
-    data class Run(
+    data class Def(
       val name: DefinitionLocation,
       override val range: Range,
     ) : Type
@@ -282,12 +272,7 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class Run(
-      val name: Ranged<DefinitionLocation>,
-      val typeArgs: Ranged<List<Type>>,
-      val arg: Term,
-      override val range: Range,
-    ) : Term
+    // TODO: Def
 
     data class Is(
       val scrutinee: Term,

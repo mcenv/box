@@ -67,44 +67,22 @@ class Parse private constructor(
     ranging {
       val (modifiers, keyword) = parseModifiers()
       when (keyword) {
-        "function" -> {
-          skipTrivia()
-          val name = parseRanged { readWord() }
-          skipTrivia()
-          val typeParams =
-            if (canRead() && peek() == '⟨') {
-              parseList(',', '⟨', '⟩') { readWord() }
-            } else {
-              emptyList()
-            }
-          skipTrivia()
-          val binder = parsePattern()
-          expect("→")
-          skipTrivia()
-          val result = parseType()
-          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.STATIC } != null) {
-            null
-          } else {
-            expect('{')
-            skipTrivia()
-            val body = parseTerm()
-            expect('}')
-            body
-          }
-          S.Definition.Function(modifiers, name, typeParams, binder, result, body, until())
-        }
-        "type"     -> {
+        "def" -> {
           skipTrivia()
           val name = parseRanged { readWord() }
           expect(':')
           skipTrivia()
-          val kind = parseKind()
-          expect('=')
-          skipTrivia()
-          val body = parseType()
-          S.Definition.Type(modifiers, name, kind, body, until())
+          val type = parseType()
+          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.STATIC } != null) {
+            null
+          } else {
+            expect('=')
+            skipTrivia()
+            parseTerm()
+          }
+          S.Definition.Def(modifiers, name, type, body, until())
         }
-        else       -> null
+        else  -> null
       }
       ?: run {
         val range = until()
@@ -537,31 +515,7 @@ class Parse private constructor(
                           .toDoubleOrNull()
                           ?.let { S.Term.DoubleOf(it, until()) }
                     }
-                  } ?: run {
-                  if (canRead()) {
-                    when (peek()) {
-                      '⟨'  -> {
-                        val typeArgs = parseRanged { parseList(',', '⟨', '⟩') { parseType() } }
-                        expect('(')
-                        skipTrivia()
-                        val arg = parseTerm()
-                        expect(')')
-                        S.Term.Run(word, typeArgs, arg, until())
-                      }
-                      '('  -> {
-                        skip()
-                        skipTrivia()
-                        val arg = parseTerm()
-                        expect(')')
-                        val range = until()
-                        S.Term.Run(word, Ranged(emptyList(), range), arg, range)
-                      }
-                      else -> null
-                    }
-                  } else {
-                    null
                   } ?: S.Term.Var(word.value, until())
-                }
             }
           }
         }
@@ -593,11 +547,7 @@ class Parse private constructor(
                 val right = parseTerm()
                 S.Term.Apply(term, right, until())
               }
-              else -> {
-                val right = parseTermAtom()
-                val range = until()
-                S.Term.Run(name, Ranged(emptyList(), range), S.Term.TupleOf(listOf(term, right), range), range)
-              }
+              else -> TODO()
             }
           }
           else              -> break

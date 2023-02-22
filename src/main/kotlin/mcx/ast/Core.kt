@@ -12,19 +12,11 @@ object Core {
     val modifiers: List<Modifier>
     val name: DefinitionLocation
 
-    data class Function(
+    data class Def(
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
-      val typeParams: List<String>,
-      val binder: Pattern,
-      val result: Core.Type,
+      val type: Type,
       val body: Term?,
-    ) : Definition
-
-    data class Type(
-      override val modifiers: List<Modifier>,
-      override val name: DefinitionLocation,
-      val body: Core.Type,
     ) : Definition
   }
 
@@ -192,7 +184,7 @@ object Core {
       override val kind: Kind get() = Kind.Type.ONE
     }
 
-    data class Run(
+    data class Def(
       val name: DefinitionLocation,
       val body: Type,
       override val kind: Kind,
@@ -320,12 +312,7 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class Run(
-      val name: DefinitionLocation,
-      val typeArgs: List<Type>,
-      val arg: Term,
-      override val type: Type,
-    ) : Term
+    // TODO: Def
 
     data class Is(
       val scrutinee: Term,

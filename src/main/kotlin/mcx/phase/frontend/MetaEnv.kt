@@ -70,7 +70,7 @@ class MetaEnv {
       is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
-      is C.Type.Run       -> type
+      is C.Type.Def       -> type
       is C.Type.Meta      -> type
       is C.Type.Hole      -> type
     }
@@ -208,8 +208,8 @@ class MetaEnv {
       type1 is C.Type.Var &&
       type2 is C.Type.Var      -> type1.level == type2.level
 
-      type1 is C.Type.Run &&
-      type2 is C.Type.Run      -> type1.name == type2.name
+      type1 is C.Type.Def &&
+      type2 is C.Type.Def      -> type1.name == type2.name
 
       type1 is C.Type.Hole     -> false
       type2 is C.Type.Hole     -> false

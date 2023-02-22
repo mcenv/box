@@ -18,13 +18,12 @@ class Lift private constructor(
   private fun lift(): Result {
     val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     when (definition) {
-      is C.Definition.Function -> {
+      is C.Definition.Def -> {
         val env = emptyEnv()
-        val binder = env.liftPattern(definition.binder)
+        val binder = L.Pattern.TupleOf(emptyList(), L.Type.Tuple(emptyList()))
         val body = env.liftTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
         liftedDefinitions += L.Definition.Function(modifiers, definition.name, binder, body, null)
       }
-      is C.Definition.Type     -> Unit
     }
     return Result(liftedDefinitions, dispatchedDefinitions)
   }
@@ -64,7 +63,7 @@ class Lift private constructor(
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
       is C.Type.Code      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Var       -> error("unexpected: ${prettyType(type)}")
-      is C.Type.Run       -> L.Type.Run(type.name, lazy { liftType(type.body) })
+      is C.Type.Def       -> L.Type.Def(type.name, lazy { liftType(type.body) })
       is C.Type.Meta      -> error("unexpected: ${prettyType(type)}")
       is C.Type.Hole      -> error("unexpected: ${prettyType(type)}")
     }
@@ -136,7 +135,7 @@ class Lift private constructor(
       is C.Term.Apply       -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
-        L.Term.Run(Context.DISPATCH, L.Term.TupleOf(listOf(arg, operator), L.Type.Tuple(listOf(arg.type, operator.type))), type)
+        L.Term.Apply(operator, arg, type)
       }
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
@@ -154,7 +153,6 @@ class Lift private constructor(
         L.Term.Let(binder, init, body, type)
       }
       is C.Term.Var     -> L.Term.Var(this[term.name], type)
-      is C.Term.Run     -> L.Term.Run(term.name, liftTerm(term.arg), type)
       is C.Term.Is      ->
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
@@ -209,7 +207,6 @@ class Lift private constructor(
       is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
       is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
       is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Run         -> freeVars(term.arg)
       is C.Term.Is          -> freeVars(term.scrutinee)
       is C.Term.Command     -> linkedMapOf()
       is C.Term.CodeOf      -> error("unexpected: code_of")

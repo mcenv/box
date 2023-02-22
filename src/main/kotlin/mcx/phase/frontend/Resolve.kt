@@ -62,22 +62,13 @@ class Resolve private constructor(
     definition: S.Definition,
   ): R.Definition {
     return when (definition) {
-      is S.Definition.Function -> {
+      is S.Definition.Def  -> {
         val name = definition.name.map { input.module.name / it }
-        val env = emptyEnv(definition.typeParams)
-        val binder = env.resolvePattern(definition.binder)
-        val result = env.resolveType(definition.result)
-        val body = definition.body?.let { env.resolveTerm(it) }
-        R.Definition.Function(definition.modifiers, name, definition.typeParams, binder, result, body, definition.range)
+        val type = emptyEnv().resolveType(definition.type)
+        val body = definition.body?.let { emptyEnv().resolveTerm(it) }
+        R.Definition.Def(definition.modifiers, name, type, body, definition.range)
       }
-      is S.Definition.Type     -> {
-        val name = definition.name.map { input.module.name / it }
-        val env = emptyEnv(emptyList())
-        val kind = resolveKind(definition.kind)
-        val body = env.resolveType(definition.body)
-        R.Definition.Type(definition.modifiers, name, kind, body, definition.range)
-      }
-      is S.Definition.Hole     -> R.Definition.Hole(definition.range)
+      is S.Definition.Hole -> R.Definition.Hole(definition.range)
     }
   }
 
@@ -112,17 +103,7 @@ class Resolve private constructor(
       is S.Type.Clos      -> R.Type.Clos(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Union     -> R.Type.Union(type.elements.map { resolveType(it) }, type.range)
       is S.Type.Code      -> R.Type.Code(resolveType(type.element), type.range)
-      is S.Type.Var       -> {
-        when (val level = getTypeVar(type.name)) {
-          -1   -> {
-            when (val location = resolveName(type.name, type.range)) {
-              null -> R.Type.Hole(type.range)
-              else -> R.Type.Run(location, type.range)
-            }
-          }
-          else -> R.Type.Var(type.name, level, type.range)
-        }
-      }
+      is S.Type.Var       -> TODO()
       is S.Type.Meta      -> R.Type.Meta(type.range)
       is S.Type.Hole      -> R.Type.Hole(type.range)
     }
@@ -196,17 +177,6 @@ class Resolve private constructor(
           else -> R.Term.Var(term.name, level, term.range)
         }
       }
-      is S.Term.Run     -> {
-        when (val location = resolveName(term.name.value, term.name.range)) {
-          null -> R.Term.Hole(term.range)
-          else -> {
-            val name = term.name.map { location }
-            val typeArgs = term.typeArgs.map { typeArgs -> typeArgs.map { resolveType(it) } }
-            val arg = resolveTerm(term.arg)
-            R.Term.Run(name, typeArgs, arg, term.range)
-          }
-        }
-      }
       is S.Term.Is      -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = restoring { resolvePattern(term.scrutineer) }
@@ -265,7 +235,6 @@ class Resolve private constructor(
 
   private class Env private constructor(
     private val terms: MutableList<String>,
-    val types: List<String>,
   ) {
     private var savedSize: Int = 0
     val lastIndex: Int get() = terms.lastIndex
@@ -274,11 +243,6 @@ class Resolve private constructor(
       name: String,
     ): Int =
       terms.lastIndexOf(name)
-
-    fun getTypeVar(
-      name: String,
-    ): Int =
-      types.lastIndexOf(name)
 
     fun bind(
       name: String,
@@ -298,10 +262,8 @@ class Resolve private constructor(
     }
 
     companion object {
-      fun emptyEnv(
-        types: List<String>,
-      ): Env =
-        Env(mutableListOf(), types.toMutableList())
+      fun emptyEnv(): Env =
+        Env(mutableListOf())
     }
   }
 

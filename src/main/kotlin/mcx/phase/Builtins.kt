@@ -61,7 +61,7 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
         is Type.Clos      -> Value.StringOf(Stack.COMPOUND.id)
         is Type.Code      -> error("unexpected type: ${prettyType(a)}")
         is Type.Var       -> error("unexpected type: ${prettyType(a)}")
-        is Type.Run       -> error("unexpected type: ${prettyType(a)}")
+        is Type.Def       -> error("unexpected type: ${prettyType(a)}")
         is Type.Meta      -> error("unexpected type: ${prettyType(a)}")
         is Type.Hole      -> error("unexpected type: ${prettyType(a)}")
       }

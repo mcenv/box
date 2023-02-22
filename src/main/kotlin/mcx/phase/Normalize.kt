@@ -6,7 +6,6 @@ import mcx.ast.Core as C
 object Normalize {
   open class Env(
     val definitions: Map<DefinitionLocation, C.Definition>,
-    val types: List<C.Type>,
     val unfold: Boolean,
   )
 
@@ -32,15 +31,8 @@ object Normalize {
       is C.Type.Func      -> C.Type.Func(evalType(type.param), evalType(type.result))
       is C.Type.Clos      -> C.Type.Clos(evalType(type.param), evalType(type.result))
       is C.Type.Code      -> C.Type.Code(evalType(type.element))
-      is C.Type.Var       -> types[type.level]
-      is C.Type.Run       -> {
-        if (unfold) {
-          val definition = definitions[type.name] as C.Definition.Type
-          definition.body
-        } else {
-          type
-        }
-      }
+      is C.Type.Var       -> TODO()
+      is C.Type.Def       -> TODO()
       is C.Type.Meta      -> type
       is C.Type.Hole      -> type
     }

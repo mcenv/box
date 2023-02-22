@@ -15,21 +15,11 @@ object Surface {
     val name: Ranged<String>
     val range: Range
 
-    data class Function(
+    data class Def(
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<String>,
-      val typeParams: List<String>,
-      val binder: Pattern,
-      val result: Surface.Type,
+      val type: Type,
       val body: Term?,
-      override val range: Range,
-    ) : Definition
-
-    data class Type(
-      override val modifiers: List<Ranged<Modifier>>,
-      override val name: Ranged<String>,
-      val kind: Kind,
-      val body: Surface.Type,
       override val range: Range,
     ) : Definition
 
@@ -272,13 +262,6 @@ object Surface {
 
     data class Var(
       val name: String,
-      override val range: Range,
-    ) : Term
-
-    data class Run(
-      val name: Ranged<String>,
-      val typeArgs: Ranged<List<Type>>,
-      val arg: Term,
       override val range: Range,
     ) : Term
 

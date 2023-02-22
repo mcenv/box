@@ -6,7 +6,6 @@ import kotlinx.collections.immutable.plus
 import mcx.ast.DefinitionLocation
 import mcx.ast.Modifier
 import mcx.ast.Value
-import mcx.phase.BUILTINS
 import mcx.phase.Context
 import mcx.phase.Normalize
 import mcx.phase.Normalize.evalType
@@ -21,7 +20,7 @@ class Stage private constructor(
   private fun stage(
     definition: C.Definition,
   ): List<C.Definition> {
-    Env(dependencies, emptyList(), true, persistentListOf(), false).stageDefinition(definition)
+    Env(dependencies, true, persistentListOf(), false).stageDefinition(definition)
     return stagedDefinitions
   }
 
@@ -29,21 +28,18 @@ class Stage private constructor(
     definition: C.Definition,
   ) {
     when (definition) {
-      is C.Definition.Function -> {
+      is C.Definition.Def -> {
         if (
-          definition.typeParams.isEmpty() &&
           Modifier.INLINE !in definition.modifiers &&
           Modifier.STATIC !in definition.modifiers
         ) {
-          val binder = stagePattern(definition.binder)
-          val result = evalType(definition.result)
+          val type = evalType(definition.type)
           val body = stageTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
-          C.Definition.Function(definition.modifiers, definition.name, emptyList(), binder, result, body)
+          C.Definition.Def(definition.modifiers, definition.name, type, body)
         } else {
           null
         }
       }
-      is C.Definition.Type     -> null
     }?.also {
       stagedDefinitions += it
     }
@@ -74,36 +70,11 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run     -> {
-        val definition = dependencies[term.name] as C.Definition.Function
-        val typeArgs = term.typeArgs.map { evalType(it) }
-        if (Modifier.INLINE in definition.modifiers) {
-          stageTerm(normalizeTerm(dependencies, typeArgs, term))
-        } else if (typeArgs.isEmpty()) {
-          val arg = stageTerm(term.arg)
-          C.Term.Run(term.name, emptyList(), arg, type)
-        } else {
-          val mangledName = mangle(term.name, typeArgs)
-          val arg = stageTerm(term.arg)
-          Env(dependencies, typeArgs, unfold, persistentListOf(), static).stageDefinition(
-            C.Definition
-              .Function(
-                definition.modifiers,
-                mangledName,
-                emptyList(),
-                definition.binder,
-                definition.result,
-                definition.body,
-              )
-          )
-          C.Term.Run(mangledName, emptyList(), arg, type)
-        }
-      }
-      is C.Term.Is      -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
-      is C.Term.Command -> C.Term.Command(term.element, type)
-      is C.Term.CodeOf  -> C.Term.CodeOf(stageTerm(term.element), type)
-      is C.Term.Splice  -> stageTerm(normalizeTerm(dependencies, types, term))
-      is C.Term.Hole    -> C.Term.Hole(type)
+      is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
+      is C.Term.Command     -> C.Term.Command(term.element, type)
+      is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
+      is C.Term.Splice      -> stageTerm(normalizeTerm(dependencies, term))
+      is C.Term.Hole        -> C.Term.Hole(type)
     }
   }
 
@@ -125,10 +96,9 @@ class Stage private constructor(
 
   private fun normalizeTerm(
     definitions: Map<DefinitionLocation, C.Definition>,
-    types: List<C.Type>,
     term: C.Term,
   ): C.Term =
-    with(Env(definitions, types, true, persistentListOf(), false)) {
+    with(Env(definitions, true, persistentListOf(), false)) {
       quoteValue(evalTerm(term), term.type)
     }
 
@@ -160,7 +130,7 @@ class Stage private constructor(
           Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
         }
       }
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = evalTerm(term.condition)
         if (static && condition is Value.BoolOf) {
           if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
@@ -168,31 +138,14 @@ class Stage private constructor(
           Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
         }
       }
-      is C.Term.Let         -> {
+      is C.Term.Let     -> {
         if (static) {
           bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
         } else {
           Value.Let(evalPattern(term.binder), lazy { evalTerm(term.init) }, lazy { evalTerm(term.body) }, evalType(term.body.type))
         }
       }
-      is C.Term.Var         -> values.getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
-      is C.Term.Run     -> {
-        val arg = evalTerm(term.arg)
-        val typeArgs = term.typeArgs.map { evalType(it) }
-        val definition = requireNotNull(definitions[term.name] as? C.Definition.Function) { "definition not found: '${term.name}'" }
-        if (static) {
-          if (Modifier.BUILTIN in definition.modifiers) {
-            val builtin = requireNotNull(BUILTINS[definition.name]) { "builtin not found: '${definition.name}'" }
-            builtin.eval(arg, typeArgs) ?: Value.Run(term.name, typeArgs, arg)
-          } else {
-            Env(definitions, typeArgs, true, persistentListOf(), true)
-              .bind(bindValue(arg, definition.binder))
-              .evalTerm(requireNotNull(definition.body) { "non-static function '${term.name}' without body" })
-          }
-        } else {
-          Value.Run(term.name, typeArgs, arg)
-        }
-      }
+      is C.Term.Var     -> values.getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
       is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         val matched = matchValue(scrutinee, term.scrutineer)
@@ -316,19 +269,19 @@ class Stage private constructor(
         type as C.Type.Compound
         C.Term.CompoundOf(value.elements.mapValues { (key, element) -> quoteValue(element.value, type.elements[key]!!) }, type)
       }
-      is Value.TupleOf -> {
+      is Value.TupleOf     -> {
         type as C.Type.Tuple
         C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
-      is Value.FuncOf  -> {
+      is Value.FuncOf      -> {
         type as C.Type.Func
         C.Term.FuncOf(value.binder, value.body, type)
       }
-      is Value.ClosOf  -> {
+      is Value.ClosOf      -> {
         type as C.Type.Clos
         C.Term.ClosOf(value.binder, value.body, type)
       }
-      is Value.Apply   -> {
+      is Value.Apply       -> {
         val (param, result) = run {
           when (val operatorType = value.operatorType) {
             is C.Type.Func -> operatorType.param to operatorType.result
@@ -338,21 +291,17 @@ class Stage private constructor(
         }
         C.Term.Apply(quoteValue(value.operator, value.operatorType), quoteValue(value.arg.value, param), result)
       }
-      is Value.If      -> C.Term.If(quoteValue(value.condition, C.Type.Bool.SET), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
-      is Value.Let     -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
-      is Value.Var     -> C.Term.Var(value.name, value.level, type)
-      is Value.Run     -> {
-        val definition = definitions[value.name] as C.Definition.Function
-        C.Term.Run(value.name, value.typeArgs, quoteValue(value.arg, definition.binder.type), definition.result)
-      }
-      is Value.Is      -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool.SET)
-      is Value.Command -> C.Term.Command(quoteValue(value.element.value, C.Type.String.SET), type)
-      is Value.CodeOf  -> {
+      is Value.If          -> C.Term.If(quoteValue(value.condition, C.Type.Bool.SET), quoteValue(value.thenClause.value, type), quoteValue(value.elseClause.value, type), type)
+      is Value.Let         -> C.Term.Let(value.binder, quoteValue(value.init.value, value.binder.type), quoteValue(value.body.value, value.type), value.type)
+      is Value.Var         -> C.Term.Var(value.name, value.level, type)
+      is Value.Is          -> C.Term.Is(quoteValue(value.scrutinee, value.scrutineeType), value.scrutineer, C.Type.Bool.SET)
+      is Value.Command     -> C.Term.Command(quoteValue(value.element.value, C.Type.String.SET), type)
+      is Value.CodeOf      -> {
         type as C.Type.Code
         C.Term.CodeOf(quoteValue(value.element.value, type.element), type)
       }
-      is Value.Splice  -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
-      is Value.Hole    -> C.Term.Hole(value.type)
+      is Value.Splice      -> C.Term.Splice(quoteValue(value.element, value.elementType), type)
+      is Value.Hole        -> C.Term.Hole(value.type)
     }
   }
 
@@ -364,20 +313,19 @@ class Stage private constructor(
 
   private class Env(
     definitions: Map<DefinitionLocation, C.Definition>,
-    types: List<C.Type>,
     unfold: Boolean,
     val values: PersistentList<Lazy<Value>>,
     val static: Boolean,
-  ) : Normalize.Env(definitions, types, unfold) {
+  ) : Normalize.Env(definitions, unfold) {
     fun bind(
       values: List<Value>,
     ): Env =
-      Env(definitions, types, unfold, this.values + values.map { lazyOf(it) }, static)
+      Env(definitions, unfold, this.values + values.map { lazyOf(it) }, static)
 
     fun withStatic(
       static: Boolean,
     ): Env =
-      Env(definitions, types, unfold, values, static)
+      Env(definitions, unfold, values, static)
   }
 
   companion object {

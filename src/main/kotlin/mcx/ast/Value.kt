@@ -105,12 +105,6 @@ sealed interface Value {
     val level: Int,
   ) : Value
 
-  class Run(
-    val name: DefinitionLocation,
-    val typeArgs: List<Core.Type>,
-    val arg: Value,
-  ) : Value
-
   class Is(
     val scrutinee: Value,
     val scrutineer: Core.Pattern,

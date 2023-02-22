@@ -37,15 +37,10 @@ class Zonk private constructor(
     definition: C.Definition,
   ): C.Definition {
     return when (definition) {
-      is C.Definition.Function -> {
-        val binder = zonkPattern(definition.binder)
-        val result = zonkType(definition.result)
+      is C.Definition.Def -> {
+        val type = zonkType(definition.type)
         val body = definition.body?.let { zonkTerm(it) }
-        C.Definition.Function(definition.modifiers, definition.name, definition.typeParams, binder, result, body)
-      }
-      is C.Definition.Type     -> {
-        val body = zonkType(definition.body)
-        C.Definition.Type(definition.modifiers, definition.name, body)
+        C.Definition.Def(definition.modifiers, definition.name, type, body)
       }
     }
   }
@@ -73,7 +68,7 @@ class Zonk private constructor(
       is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
       is C.Type.Code      -> C.Type.Code(zonkType(type.element))
       is C.Type.Var       -> type
-      is C.Type.Run       -> type
+      is C.Type.Def       -> type
       is C.Type.Meta      -> {
         unsolved += type
         type
@@ -107,7 +102,6 @@ class Zonk private constructor(
       is C.Term.If         -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
       is C.Term.Let        -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
       is C.Term.Var        -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Run        -> C.Term.Run(term.name, term.typeArgs.map { zonkType(it) }, zonkTerm(term.arg), type)
       is C.Term.Is         -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
       is C.Term.Command    -> C.Term.Command(term.element, type)
       is C.Term.CodeOf     -> C.Term.CodeOf(zonkTerm(term.element), type)

@@ -1,8 +1,5 @@
 package mcx.ast
 
-/**
- * A lifted AST, where all code blocks are lifted to top-level.
- */
 object Lifted {
   sealed interface Definition {
     val modifiers: List<Modifier>
@@ -87,7 +84,7 @@ object Lifted {
       val elements: kotlin.collections.List<Type>,
     ) : Type
 
-    data class Run(
+    data class Def(
       val name: DefinitionLocation,
       val body: Lazy<Type>,
     ) : Type
@@ -177,6 +174,12 @@ object Lifted {
       override val type: Type,
     ) : Term
 
+    data class Apply(
+      val operator: Term,
+      val arg: Term,
+      override val type: Type,
+    ) : Term
+
     data class If(
       val condition: Term,
       val thenName: DefinitionLocation,
@@ -196,9 +199,8 @@ object Lifted {
       override val type: Type,
     ) : Term
 
-    data class Run(
+    data class Def(
       val name: DefinitionLocation,
-      val arg: Term,
       override val type: Type,
     ) : Term
 
