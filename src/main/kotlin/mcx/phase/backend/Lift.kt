@@ -25,7 +25,6 @@ class Lift private constructor(
         liftedDefinitions += L.Definition.Function(modifiers, definition.name, binder, body, null)
       }
       is C.Definition.Type     -> Unit
-      is C.Definition.Class    -> Unit
       is C.Definition.Test     -> {
         val env = emptyEnv()
         val body = env.liftTerm(definition.body)

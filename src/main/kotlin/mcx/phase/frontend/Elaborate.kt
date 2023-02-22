@@ -86,21 +86,6 @@ class Elaborate private constructor(
             hover(definition.name.range) { createTypeDocumentation(it) }
           }
       }
-      is R.Definition.Class    -> {
-        val signatures = definition.signatures.mapNotNull { signature ->
-          when (signature) {
-            is R.Definition.Class.Signature.Function -> {
-              val types = signature.typeParams.mapIndexed { level, typeParam -> typeParam to C.Type.Var(typeParam, level) }
-              val env = emptyEnv(definitions, types, static = false)
-              val binder = env.elaboratePattern(signature.binder)
-              val result = env.elaborateType(signature.result)
-              C.Definition.Class.Signature.Function(signature.name.value, signature.typeParams, binder, result)
-            }
-            is R.Definition.Class.Signature.Hole     -> null
-          }
-        }
-        C.Definition.Class(modifiers, name, signatures)
-      }
       is R.Definition.Test     -> {
         if (signature) {
           null
@@ -925,10 +910,6 @@ class Elaborate private constructor(
             is C.Definition.Type     -> {
               // TODO: add documentation and detail
               CompletionItemKind.Class
-            }
-            is C.Definition.Class    -> {
-              // TODO: add documentation and detail
-              CompletionItemKind.Interface
             }
             is C.Definition.Test     -> {
               return@mapNotNull null

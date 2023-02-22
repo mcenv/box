@@ -104,35 +104,6 @@ class Parse private constructor(
           val body = parseType()
           S.Definition.Type(modifiers, name, kind, body, until())
         }
-        "class"    -> {
-          skipTrivia()
-          val name = parseRanged { readWord() }
-          val signatures = parseList(';', '{', '}') {
-            ranging {
-              when (readWord()) {
-                "function" -> {
-                  skipTrivia()
-                  val name = parseRanged { readWord() }
-                  skipTrivia()
-                  val typeParams =
-                    if (canRead() && peek() == '⟨') {
-                      parseList(',', '⟨', '⟩') { readWord() }
-                    } else {
-                      emptyList()
-                    }
-                  skipTrivia()
-                  val binder = parsePattern()
-                  expect("→")
-                  skipTrivia()
-                  val result = parseType()
-                  S.Definition.Class.Signature.Function(name, typeParams, binder, result, until())
-                }
-                else       -> S.Definition.Class.Signature.Hole(until())
-              }
-            }
-          }
-          S.Definition.Class(modifiers, name, signatures, until())
-        }
         "test"     -> {
           skipTrivia()
           val name = parseRanged { readWord() }

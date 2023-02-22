@@ -33,27 +33,6 @@ object Surface {
       override val range: Range,
     ) : Definition
 
-    data class Class(
-      override val modifiers: List<Ranged<Modifier>>,
-      override val name: Ranged<String>,
-      val signatures: List<Signature>,
-      override val range: Range,
-    ) : Definition {
-      sealed interface Signature {
-        data class Function(
-          val name: Ranged<String>,
-          val typeParams: List<String>,
-          val binder: Pattern,
-          val result: Surface.Type,
-          val range: Range,
-        ) : Signature
-
-        data class Hole(
-          val range: Range,
-        ) : Signature
-      }
-    }
-
     data class Test(
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<String>,

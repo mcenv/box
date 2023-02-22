@@ -47,18 +47,6 @@ class Zonk private constructor(
         val body = zonkType(definition.body)
         C.Definition.Type(definition.modifiers, definition.name, body)
       }
-      is C.Definition.Class    -> {
-        val signatures = definition.signatures.map { signature ->
-          when (signature) {
-            is C.Definition.Class.Signature.Function -> {
-              val binder = zonkPattern(signature.binder)
-              val result = zonkType(signature.result)
-              C.Definition.Class.Signature.Function(signature.name, signature.typeParams, binder, result)
-            }
-          }
-        }
-        C.Definition.Class(definition.modifiers, definition.name, signatures)
-      }
       is C.Definition.Test     -> {
         val body = zonkTerm(definition.body)
         C.Definition.Test(definition.modifiers, definition.name, body)
