@@ -1,6 +1,6 @@
 package mcx.ast
 
-import mcx.util.Ranged
+import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 
 object Resolved {
@@ -272,7 +272,10 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    // TODO: Def
+    data class Def(
+      val name: DefinitionLocation,
+      override val range: Range,
+    ) : Term
 
     data class Is(
       val scrutinee: Term,

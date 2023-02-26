@@ -1,12 +1,12 @@
 package mcx.phase.frontend
 
 import mcx.ast.*
+import mcx.lsp.contains
+import mcx.lsp.diagnostic
 import mcx.lsp.highlight
+import mcx.lsp.rangeTo
 import mcx.phase.*
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
-import mcx.util.contains
-import mcx.util.diagnostic
-import mcx.util.rangeTo
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forRight
 import kotlin.also
@@ -27,10 +27,7 @@ class Elaborate private constructor(
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: (() -> String)? = null
-  private val definitions: Map<DefinitionLocation, C.Definition> =
-    dependencies
-      .flatMap { dependency -> dependency.definitions.map { it.name to it } }
-      .toMap()
+  private val definitions: Map<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap()
 
   private fun elaborate(): Result {
     return Result(
@@ -59,8 +56,8 @@ class Elaborate private constructor(
     val modifiers = definition.modifiers.map { it.value }
     val name = definition.name.value
     return when (definition) {
-      is R.Definition.Def      -> {
-        val env = emptyEnv(definitions, Modifier.STATIC in modifiers)
+      is R.Definition.Def  -> {
+        val env = emptyEnv(Modifier.STATIC in modifiers)
         val type = env.elaborateType(definition.type)
         val body = if (signature) {
           null
@@ -72,7 +69,7 @@ class Elaborate private constructor(
             hover(definition.name.range) { createDefDocumentation(it) }
           }
       }
-      is R.Definition.Hole     -> null
+      is R.Definition.Hole -> null
     }
   }
 
@@ -108,7 +105,7 @@ class Elaborate private constructor(
         val elements = type.elements.map { elaborateType(it) }
         C.Type.Tuple(elements, C.Kind.Type(elements.size))
       }
-      type is R.Type.Union && expected == null ->
+      type is R.Type.Union && expected == null     ->
         if (type.elements.isEmpty()) {
           C.Type.Union.END
         } else {
@@ -125,9 +122,9 @@ class Elaborate private constructor(
               }
           C.Type.Union(listOf(head) + tail, head.kind)
         }
-      type is R.Type.Func && expected == null  -> C.Type.Func(elaborateType(type.param), elaborateType(type.result))
-      type is R.Type.Clos && expected == null  -> C.Type.Clos(elaborateType(type.param), elaborateType(type.result))
-      type is R.Type.Code && expected == null  -> {
+      type is R.Type.Func && expected == null      -> C.Type.Func(elaborateType(type.param), elaborateType(type.result))
+      type is R.Type.Clos && expected == null      -> C.Type.Clos(elaborateType(type.param), elaborateType(type.result))
+      type is R.Type.Code && expected == null      -> {
         if (isMeta()) {
           C.Type.Code(elaborateType(type.element))
         } else {
@@ -135,9 +132,9 @@ class Elaborate private constructor(
           C.Type.Hole
         }
       }
-      type is R.Type.Var && expected == null   -> C.Type.Var(type.name, type.level)
-      type is R.Type.Def && expected == null   -> TODO()
-      type is R.Type.Meta                      -> {
+      type is R.Type.Var && expected == null       -> C.Type.Var(type.name, type.level)
+      type is R.Type.Def && expected == null       -> TODO()
+      type is R.Type.Meta                          -> {
         if (signature) {
           diagnostics += unexpectedMeta(type.range)
           C.Type.Hole
@@ -145,9 +142,9 @@ class Elaborate private constructor(
           metaEnv.freshType(type.range, expected)
         }
       }
-      type is R.Type.Hole                      -> C.Type.Hole
-      expected == null                         -> error("kind must be non-null")
-      else                                     -> {
+      type is R.Type.Hole                          -> C.Type.Hole
+      expected == null                             -> error("kind must be non-null")
+      else                                         -> {
         val actual = elaborateType(type)
         if (!(actual.kind isSubkindOf expected)) {
           diagnostics += kindMismatch(expected, actual.kind, type.range)
@@ -214,6 +211,7 @@ class Elaborate private constructor(
       term is R.Term.If && matchType<C.Type>(expected)                    -> matchTermIf(term, expected)
       term is R.Term.Let && matchType<C.Type>(expected)                   -> matchTermLet(term, expected)
       term is R.Term.Var && synthType(expected)                           -> synthTermVar(term)
+      term is R.Term.Def && synthType(expected)                           -> synthTermDef(term)
       term is R.Term.Is && matchType<C.Type.Bool>(expected)               -> matchTermIs(term)
       term is R.Term.Command && matchType<C.Type.Code>(expected)          -> matchTermCommand(term, expected)
       term is R.Term.CodeOf && matchType<C.Type.Code>(expected)           -> matchTermCodeOf(term, expected)
@@ -433,7 +431,7 @@ class Elaborate private constructor(
   }
 
   private inline fun Env.synthTermVar(term: R.Term.Var): C.Term {
-    val entry = entries[term.level]
+    val entry = this[term.level]
     if (entry.used) {
       diagnostics += varAlreadyUsed(term.name, term.range)
     }
@@ -444,6 +442,13 @@ class Elaborate private constructor(
       entry.used = true
     }
     return C.Term.Var(term.name, term.level, entry.type)
+  }
+
+  private inline fun synthTermDef(term: R.Term.Def): C.Term {
+    return when (val definition = definitions[term.name]) {
+      is C.Definition.Def -> C.Term.Def(term.name, definition.type)
+      else                -> error("unreachable")
+    }
   }
 
   private inline fun Env.matchTermIs(term: R.Term.Is): C.Term {
@@ -726,49 +731,49 @@ class Elaborate private constructor(
       type2 is C.Type.List      -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Compound &&
-      type2 is C.Type.Compound        -> type1.elements.size == type2.elements.size &&
-                                         type1.elements.all { (key1, element1) ->
-                                           when (val element2 = type2.elements[key1]) {
-                                             null -> false
-                                             else -> element1 isSubtypeOf element2
-                                           }
-                                         }
+      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
+                                  type1.elements.all { (key1, element1) ->
+                                    when (val element2 = type2.elements[key1]) {
+                                      null -> false
+                                      else -> element1 isSubtypeOf element2
+                                    }
+                                  }
 
       type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple           -> type1.elements.size == type2.elements.size &&
-                                         (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
+      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
+                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
 
       type1 is C.Type.Tuple &&
-      type1.elements.size == 1        -> type1.elements.first() isSubtypeOf type2
+      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
 
       type2 is C.Type.Tuple &&
-      type2.elements.size == 1        -> type1 isSubtypeOf type2.elements.first()
+      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Func &&
-      type2 is C.Type.Func            -> type2.param isSubtypeOf type1.param &&
-                                         type1.result isSubtypeOf type2.result
+      type2 is C.Type.Func     -> type2.param isSubtypeOf type1.param &&
+                                  type1.result isSubtypeOf type2.result
 
       type1 is C.Type.Clos &&
-      type2 is C.Type.Clos            -> type2.param isSubtypeOf type1.param &&
-                                         type1.result isSubtypeOf type2.result
+      type2 is C.Type.Clos     -> type2.param isSubtypeOf type1.param &&
+                                  type1.result isSubtypeOf type2.result
 
-      type1 is C.Type.Union           -> type1.elements.all { it isSubtypeOf type2 }
-      type2 is C.Type.Union           -> type2.elements.any { type1 isSubtypeOf it }
+      type1 is C.Type.Union    -> type1.elements.all { it isSubtypeOf type2 }
+      type2 is C.Type.Union    -> type2.elements.any { type1 isSubtypeOf it }
 
       type1 is C.Type.Code &&
-      type2 is C.Type.Code            -> type1.element isSubtypeOf type2.element
+      type2 is C.Type.Code     -> type1.element isSubtypeOf type2.element
 
       type1 is C.Type.Var &&
-      type2 is C.Type.Var             -> type1.level == type2.level
+      type2 is C.Type.Var      -> type1.level == type2.level
 
       type1 is C.Type.Def &&
       type2 is C.Type.Def &&
-      type1.name == type2.name        -> true
+      type1.name == type2.name -> true
 
-      type1 is C.Type.Hole            -> true
-      type2 is C.Type.Hole            -> true
+      type1 is C.Type.Hole     -> true
+      type2 is C.Type.Hole     -> true
 
-      else                            -> false
+      else                     -> false
     }
   }
 
@@ -861,28 +866,28 @@ class Elaborate private constructor(
   }
 
   private class Env private constructor(
-    val definitions: Map<DefinitionLocation, C.Definition>,
     private val _entries: MutableList<Entry>,
     val static: Boolean,
   ) {
-    val entries: List<Entry> get() = _entries
+    val entries: List<Entry> = _entries
     private var savedSize: Int = 0
     var stage: Int = 0
       private set
+
+    operator fun get(level: Int): Entry =
+      _entries[level]
 
     fun isMeta(): Boolean =
       static || stage > 0
 
     fun bind(
       name: String,
-      type: C.Type,
+      type: C.Type
     ) {
       _entries += Entry(name, false, stage, type)
     }
 
-    inline fun <R> restoring(
-      action: Env.() -> R,
-    ): R {
+    inline fun <R> restoring(action: Env.() -> R): R {
       savedSize = _entries.size
       val result = this.action()
       repeat(_entries.size - savedSize) {
@@ -891,18 +896,14 @@ class Elaborate private constructor(
       return result
     }
 
-    inline fun <R> quoting(
-      action: () -> R,
-    ): R {
+    inline fun <R> quoting(action: () -> R): R {
       --stage
       val result = action()
       ++stage
       return result
     }
 
-    inline fun <R> splicing(
-      action: () -> R,
-    ): R {
+    inline fun <R> splicing(action: () -> R): R {
       ++stage
       val result = action()
       --stage
@@ -911,7 +912,6 @@ class Elaborate private constructor(
 
     fun copy(): Env =
       Env(
-        definitions,
         _entries.map { it.copy() }.toMutableList(),
         static,
       )
@@ -924,11 +924,8 @@ class Elaborate private constructor(
     )
 
     companion object {
-      fun emptyEnv(
-        definitions: Map<DefinitionLocation, C.Definition>,
-        static: Boolean,
-      ): Env =
-        Env(definitions, mutableListOf(), static)
+      fun emptyEnv(static: Boolean): Env =
+        Env(mutableListOf(), static)
     }
   }
 
@@ -953,16 +950,6 @@ class Elaborate private constructor(
     return diagnostic(
       range,
       "level mismatch",
-      DiagnosticSeverity.Error,
-    )
-  }
-
-  private fun expectedTypeDefinition(
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "expected: type definition",
       DiagnosticSeverity.Error,
     )
   }
@@ -1051,16 +1038,6 @@ class Elaborate private constructor(
         |  expected: $expected
         |  actual  : $actual
       """.trimMargin(),
-      DiagnosticSeverity.Error,
-    )
-  }
-
-  private fun expectedFunctionDefinition(
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "expected: function definition",
       DiagnosticSeverity.Error,
     )
   }

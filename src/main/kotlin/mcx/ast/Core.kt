@@ -312,7 +312,10 @@ object Core {
       override val type: Type,
     ) : Term
 
-    // TODO: Def
+    data class Def(
+      val name: DefinitionLocation,
+      override val type: Type,
+    ) : Term
 
     data class Is(
       val scrutinee: Term,

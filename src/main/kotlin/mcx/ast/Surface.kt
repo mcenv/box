@@ -1,6 +1,6 @@
 package mcx.ast
 
-import mcx.util.Ranged
+import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 
 object Surface {

@@ -3,10 +3,10 @@ package mcx.phase.frontend
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.ast.Surface
+import mcx.lsp.Ranged
+import mcx.lsp.diagnostic
+import mcx.lsp.rangeTo
 import mcx.phase.Context
-import mcx.util.Ranged
-import mcx.util.diagnostic
-import mcx.util.rangeTo
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position

@@ -1,4 +1,4 @@
-package mcx.util
+package mcx.lsp
 
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity

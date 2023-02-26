@@ -132,12 +132,12 @@ class Lift private constructor(
           L.Term.ClosOf(tag, freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, type)
         }
       }
-      is C.Term.Apply       -> {
+      is C.Term.Apply   -> {
         val operator = liftTerm(term.operator)
         val arg = liftTerm(term.arg)
         L.Term.Apply(operator, arg, type)
       }
-      is C.Term.If          -> {
+      is C.Term.If      -> {
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenClause), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseClause), null)
@@ -153,10 +153,12 @@ class Lift private constructor(
         L.Term.Let(binder, init, body, type)
       }
       is C.Term.Var     -> L.Term.Var(this[term.name], type)
-      is C.Term.Is      ->
+      is C.Term.Def     -> L.Term.Def(term.name, type)
+      is C.Term.Is      -> {
         restoring {
           L.Term.Is(liftTerm(term.scrutinee), liftPattern(term.scrutineer), type)
         }
+      }
       is C.Term.Command -> L.Term.Command((term.element as C.Term.StringOf).value, type)
       is C.Term.CodeOf  -> error("unexpected: code_of")
       is C.Term.Splice  -> error("unexpected: splice")
@@ -207,6 +209,7 @@ class Lift private constructor(
       is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenClause); it += freeVars(term.elseClause) }
       is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
       is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
+      is C.Term.Def         -> linkedMapOf()
       is C.Term.Is          -> freeVars(term.scrutinee)
       is C.Term.Command     -> linkedMapOf()
       is C.Term.CodeOf      -> error("unexpected: code_of")
@@ -254,21 +257,17 @@ class Lift private constructor(
     private val _types: MutableList<Pair<String, L.Type>> = mutableListOf()
     val types: List<Pair<String, L.Type>> get() = _types
 
-    operator fun get(
-      name: String,
-    ): Int =
+    operator fun get(name: String): Int =
       _types.indexOfLast { it.first == name }
 
     fun bind(
       name: String,
-      type: L.Type,
+      type: L.Type
     ) {
       _types += name to type
     }
 
-    inline fun <R> restoring(
-      action: () -> R,
-    ): R {
+    inline fun <R> restoring(action: () -> R): R {
       savedSize = _types.size
       val result = action()
       repeat(_types.size - savedSize) {

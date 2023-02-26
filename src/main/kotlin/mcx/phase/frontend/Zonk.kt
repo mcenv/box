@@ -1,8 +1,8 @@
 package mcx.phase.frontend
 
+import mcx.lsp.diagnostic
 import mcx.phase.Context
 import mcx.phase.prettyType
-import mcx.util.diagnostic
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
@@ -94,19 +94,20 @@ class Zonk private constructor(
       is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { zonkTerm(it) }, type)
       is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.CompoundOf -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
-      is C.Term.TupleOf    -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.FuncOf     -> C.Term.FuncOf(zonkPattern(term.binder), zonkTerm(term.body), type)
-      is C.Term.ClosOf     -> C.Term.ClosOf(zonkPattern(term.binder), zonkTerm(term.body), type)
-      is C.Term.Apply      -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
-      is C.Term.If         -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
-      is C.Term.Let        -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
-      is C.Term.Var        -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Is         -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
-      is C.Term.Command    -> C.Term.Command(term.element, type)
-      is C.Term.CodeOf     -> C.Term.CodeOf(zonkTerm(term.element), type)
-      is C.Term.Splice     -> C.Term.Splice(zonkTerm(term.element), type)
-      is C.Term.Hole       -> C.Term.Hole(type)
+      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
+      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { zonkTerm(it) }, type)
+      is C.Term.FuncOf      -> C.Term.FuncOf(zonkPattern(term.binder), zonkTerm(term.body), type)
+      is C.Term.ClosOf      -> C.Term.ClosOf(zonkPattern(term.binder), zonkTerm(term.body), type)
+      is C.Term.Apply       -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
+      is C.Term.If          -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
+      is C.Term.Let         -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
+      is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
+      is C.Term.Def         -> term // ?
+      is C.Term.Is          -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
+      is C.Term.Command     -> C.Term.Command(term.element, type)
+      is C.Term.CodeOf      -> C.Term.CodeOf(zonkTerm(term.element), type)
+      is C.Term.Splice      -> C.Term.Splice(zonkTerm(term.element), type)
+      is C.Term.Hole        -> C.Term.Hole(type)
     }
   }
 

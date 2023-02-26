@@ -23,10 +23,7 @@ class Pack private constructor(
   private val context: Context,
 ) {
   private val commands: MutableList<Command> = mutableListOf()
-  private val entries: Map<P.Stack, MutableList<Int?>> =
-    P.Stack
-      .values()
-      .associateWith { mutableListOf() }
+  private val entries: Map<P.Stack, MutableList<Int?>> = P.Stack.values().associateWith { mutableListOf() }
 
   private fun packDefinition(
     definition: L.Definition,

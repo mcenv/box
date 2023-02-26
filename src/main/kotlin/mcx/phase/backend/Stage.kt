@@ -70,6 +70,7 @@ class Stage private constructor(
       is C.Term.If          -> C.Term.If(stageTerm(term.condition), stageTerm(term.thenClause), stageTerm(term.elseClause), type)
       is C.Term.Let         -> C.Term.Let(stagePattern(term.binder), stageTerm(term.init), stageTerm(term.body), type)
       is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
+      is C.Term.Def         -> C.Term.Def(term.name, type)
       is C.Term.Is          -> C.Term.Is(stageTerm(term.scrutinee), stagePattern(term.scrutineer), type)
       is C.Term.Command     -> C.Term.Command(term.element, type)
       is C.Term.CodeOf      -> C.Term.CodeOf(stageTerm(term.element), type)
@@ -122,7 +123,7 @@ class Stage private constructor(
       is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.FuncOf      -> Value.FuncOf(term.binder, term.body)
       is C.Term.ClosOf      -> Value.ClosOf(term.binder, term.body)
-      is C.Term.Apply       -> {
+      is C.Term.Apply   -> {
         val operator = evalTerm(term.operator)
         if (static && operator is Value.ClosOf) {
           bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
@@ -146,6 +147,12 @@ class Stage private constructor(
         }
       }
       is C.Term.Var     -> values.getOrNull(term.level)?.value ?: Value.Var(term.name, term.level)
+      is C.Term.Def     -> {
+        when (val definition = definitions[term.name]) {
+          is C.Definition.Def -> evalTerm(definition.body!!)
+          else                -> error("unreachable")
+        }
+      }
       is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         val matched = matchValue(scrutinee, term.scrutineer)

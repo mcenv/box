@@ -1,4 +1,4 @@
-package mcx.util
+package mcx.lsp
 
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range

@@ -3,9 +3,9 @@ package mcx.phase.frontend
 import mcx.ast.DefinitionLocation
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
+import mcx.lsp.diagnostic
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
-import mcx.util.diagnostic
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Range
@@ -28,7 +28,7 @@ class Resolve private constructor(
     dependencies.mapNotNull { dependency ->
       when (val definition = dependency.module) {
         null -> {
-          diagnostics += definitionNotFound(dependency.location.toString(), dependency.range!!)
+          diagnostics += nameNotFound(dependency.location.toString(), dependency.range!!)
           null
         }
         else -> {
@@ -168,24 +168,26 @@ class Resolve private constructor(
         }
         R.Term.Let(binder, init, body, term.range)
       }
-      is S.Term.Var    -> {
-        when (val level = getVar(term.name)) {
+      is S.Term.Var         -> {
+        when (val level = this[term.name]) {
           -1   -> {
-            diagnostics += varNotFound(term.name, term.range)
-            R.Term.Hole(term.range)
+            when (val name = resolveName(term.name, term.range)) {
+              null -> R.Term.Hole(term.range)
+              else -> R.Term.Def(name, term.range)
+            }
           }
           else -> R.Term.Var(term.name, level, term.range)
         }
       }
-      is S.Term.Is      -> {
+      is S.Term.Is          -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = restoring { resolvePattern(term.scrutineer) }
         R.Term.Is(scrutinee, scrutineer, term.range)
       }
-      is S.Term.Command -> R.Term.Command(resolveTerm(term.element), term.range)
-      is S.Term.CodeOf  -> R.Term.CodeOf(resolveTerm(term.element), term.range)
-      is S.Term.Splice  -> R.Term.Splice(resolveTerm(term.element), term.range)
-      is S.Term.Hole    -> R.Term.Hole(term.range)
+      is S.Term.Command     -> R.Term.Command(resolveTerm(term.element), term.range)
+      is S.Term.CodeOf      -> R.Term.CodeOf(resolveTerm(term.element), term.range)
+      is S.Term.Splice      -> R.Term.Splice(resolveTerm(term.element), term.range)
+      is S.Term.Hole        -> R.Term.Hole(term.range)
     }
   }
 
@@ -212,9 +214,7 @@ class Resolve private constructor(
     name: String,
     range: Range,
   ): DefinitionLocation? {
-    val expected = name
-      .split("::")
-      .let { ModuleLocation(it.dropLast(1)) / it.last() }
+    val expected = name.split("::").let { ModuleLocation(it.dropLast(1)) / it.last() }
     val candidates = locations.filter { actual ->
       expected.module.parts.size <= actual.module.parts.size &&
       (expected.name == actual.name) &&
@@ -222,12 +222,12 @@ class Resolve private constructor(
     }
     return when (candidates.size) {
       0    -> {
-        diagnostics += definitionNotFound(name, range)
+        diagnostics += nameNotFound(name, range)
         null
       }
       1    -> candidates.first()
       else -> {
-        diagnostics += ambiguousDefinition(name, range)
+        diagnostics += ambiguousName(name, range)
         null
       }
     }
@@ -239,20 +239,14 @@ class Resolve private constructor(
     private var savedSize: Int = 0
     val lastIndex: Int get() = terms.lastIndex
 
-    fun getVar(
-      name: String,
-    ): Int =
+    operator fun get(name: String): Int =
       terms.lastIndexOf(name)
 
-    fun bind(
-      name: String,
-    ) {
+    fun bind(name: String) {
       terms += name
     }
 
-    inline fun <R> restoring(
-      block: Env.() -> R,
-    ): R {
+    inline fun <R> restoring(block: Env.() -> R): R {
       savedSize = terms.size
       val result = this.block()
       repeat(terms.size - savedSize) {
@@ -267,35 +261,24 @@ class Resolve private constructor(
     }
   }
 
-  private fun definitionNotFound(
+  private fun nameNotFound(
     name: String,
     range: Range,
   ): Diagnostic {
     return diagnostic(
       range,
-      "definition not found: '$name'",
+      "name not found: '$name'",
       DiagnosticSeverity.Error,
     )
   }
 
-  private fun ambiguousDefinition(
+  private fun ambiguousName(
     name: String,
     range: Range,
   ): Diagnostic {
     return diagnostic(
       range,
-      "ambiguous definition: '$name'",
-      DiagnosticSeverity.Error,
-    )
-  }
-
-  private fun varNotFound(
-    name: String,
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "variable not found: '$name'",
+      "ambiguous name: '$name'",
       DiagnosticSeverity.Error,
     )
   }
