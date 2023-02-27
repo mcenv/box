@@ -21,7 +21,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
   implementation("org.ow2.asm:asm:9.4")
   compileOnly("com.mojang:brigadier:1.0.18")
   testImplementation(kotlin("test"))
