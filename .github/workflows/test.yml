@@ -20,18 +20,7 @@ jobs:
       - name: Test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: kover
-      - name: Generate coverage badge
-        uses: Schneegans/dynamic-badges-action@v1.6.0
-        with:
-          auth: ${{ secrets.COVERAGE }}
-          gistID: 7af9a474143f247a1e0077a972afd904
-          filename: mcx-coverage-badge.json
-          label: coverage
-          message: ${{ env.COVERAGE }}%
-          valColorRange: ${{ env.COVERAGE }}
-          minColorRange: 0
-          maxColorRange: 100
+          arguments: test
       - name: Install dist
         uses: gradle/gradle-build-action@v2
         with:
