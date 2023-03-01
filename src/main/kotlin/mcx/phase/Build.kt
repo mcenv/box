@@ -31,9 +31,7 @@ import kotlin.system.exitProcess
 class Build(
   private val root: Path,
 ) {
-  private val src: Path = root
-    .resolve("src")
-    .also { it.createDirectories() }
+  private val src: Path = root.resolve("src").also { it.createDirectories() }
   private val values: ConcurrentMap<Key<*>, Value<*>> = ConcurrentHashMap()
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
 
