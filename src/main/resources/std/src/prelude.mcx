@@ -1,7 +1,8 @@
-export type end: * = union {};
+export def End: Type = Union{};
 
-export builtin static function ++(_: (string, string)) → string;
+export def Unit: Type = Tuple();
 
-export function identity⟨a⟩(a: a) → a {
-  a
-};
+export builtin const def ++: Proc Tuple(String, String) -> String;
+
+export const def identity: Proc (A: Code Type) -> Code Proc $A -> $A =
+  proc _ -> `proc a -> a;

@@ -1,3 +1,0 @@
-export builtin static function erase⟨a⟩() → string;
-
-export builtin static function lift⟨a⟩(a: a) → `a;

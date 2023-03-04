@@ -1,15 +1,3 @@
-import {
-  int::to_string,
-}
+export builtin def size: Proc LongArray -> Int;
 
-export builtin function size(_: [long;]) → int {
-  let _: end = $/"data modify storage mcx: int append value 0";
-  $/"execute store result storage mcx: int[-1] int 1 if data storage mcx: long_array[-1][]"
-};
-
-export static function get(array: `[long;], index: int) → `long {
-  `(
-    let _ = $array;
-    $/"data modify storage mcx: long_array append from storage mcx: long_array[-1][${to_string(index)}]"
-  )
-};
+export builtin const def get: Proc Tuple(Code LongArray, Int) -> Code Long;

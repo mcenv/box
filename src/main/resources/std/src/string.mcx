@@ -1,46 +1,11 @@
 import {
   int::-,
   int::=,
-  int::to_string,
 }
 
-export builtin function size(_: string) → int {
-  let _: end = $/"data modify storage mcx: int append value 0";
-  $/"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]"
-};
+export builtin def size: Proc String -> Int;
 
-export static function repeat(string: string, count: int) → string {
-  if count = 0 {
-    ""
-  } else {
-    string ++ repeat((string, count - 1))
-  }
-};
+export const def repeat: Proc Tuple(String, Int) -> string =
+  if count = 0 then "" else string ++ (repeat @ (string, count - 1));
 
-# todo: safety
-export static function substring_from(string: `string, start: int) → `string {
-  `(
-    let _ = $string;
-    $/"data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)}"
-  )
-};
-
-# todo: safety
-# todo: share signature between substring_from and substring_from'?
-export builtin static function substring_from'(string: string, start: int) → string;
-
-# todo: safety
-export static function substring_between(string: `string, start: int, end: int) → `string {
-  `(
-    let _ = $string;
-    $/"data modify storage mcx: string append string storage mcx: string[-1] ${int::to_string(start)} ${int::to_string(end)}"
-  )
-};
-
-# todo: safety
-# todo: share signature between substring_between and substring_between'?
-export builtin static function substring_between'(string: string, start: int, end: int) → string;
-
-export function to_string(a: string) → string {
-  a
-};
+export def to_string: Proc String -> String = $(identity @ `String`);

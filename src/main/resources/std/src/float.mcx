@@ -1,5 +1,1 @@
-import {}
-
-export builtin function to_string(_: float) → string {
-  $/"data modify storage mcx: string append string storage mcx: float[-1]"
-};
+export builtin def to_string: Proc Float -> String;

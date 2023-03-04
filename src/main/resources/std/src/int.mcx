@@ -1,125 +1,39 @@
-import {}
+export builtin def +: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function +(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx += #0 mcx"
-};
+export builtin def -: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function -(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx -= #0 mcx"
-};
+export builtin def *: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function *(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx *= #0 mcx"
-};
+export builtin def /: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function /(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx /= #0 mcx"
-};
+export builtin def %: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function %(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx %= #0 mcx"
-};
+export builtin def min: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function min(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx < #0 mcx"
-};
+export builtin def max: Proc Tuple(Int, Int) -> Int;
 
-export builtin no_drop function max(_: (int, int)) → int {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data remove storage mcx: int[-1]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  $/"execute store result storage mcx: int[-1] int 1 run scoreboard players operation #1 mcx > #0 mcx"
-};
+export builtin def =: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function =(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 1b"
-};
+export builtin def <: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function <(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute if score #1 mcx < #0 mcx run data modify storage mcx: byte[-1] set value 1b"
-};
+export builtin def <=: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function <=(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute if score #1 mcx <= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
-};
+export builtin def >: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function >(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute if score #1 mcx > #0 mcx run data modify storage mcx: byte[-1] set value 1b"
-};
+export builtin def >=: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function >=(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute if score #1 mcx >= #0 mcx run data modify storage mcx: byte[-1] set value 1b"
-};
+export builtin def !=: Proc Tuple(Int, Int) -> Bool;
 
-export builtin function !=(_: (int, int)) → bool {
-  let _: end = $/"execute store result score #0 mcx run data get storage mcx: int[-2]";
-  let _: end = $/"execute store result score #1 mcx run data get storage mcx: int[-1]";
-  let _: end = $/"data modify storage mcx: byte append value 1b";
-  $/"execute if score #1 mcx = #0 mcx run data modify storage mcx: byte[-1] set value 0b"
-};
+export builtin def to_byte: Proc Int -> Byte;
 
-export builtin function to_byte(_: int) → byte {
-  let _: end = $/"data modify storage mcx: byte append value 0b";
-  $/"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]"
-};
+export builtin def to_short: Proc Int -> Short;
 
-export builtin function to_short(_: int) → short {
-  let _: end = $/"data modify storage mcx: short append value 0s";
-  $/"execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]"
-};
+export def to_int: Proc Int -> Int = $(identity @ `Int);
 
-export function to_int(a: int) → int {
-  a
-};
+export builtin def to_long: Proc Int -> Long;
 
-export builtin function to_long(_: int) → long {
-  let _: end = $/"data modify storage mcx: long append value 0l";
-  $/"execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]"
-};
+export builtin def to_float: Proc Int -> Float;
 
-export builtin function to_float(_: int) → float {
-  let _: end = $/"data modify storage mcx: float append value 0.0f";
-  $/"execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]"
-};
+export builtin def to_double: Proc Int -> Double;
 
-export builtin function to_double(_: int) → double {
-  let _: end = $/"data modify storage mcx: double append value 0.0";
-  $/"execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]"
-};
-
-export builtin function to_string(_: int) → string {
-  $/"data modify storage mcx: string append string storage mcx: int[-1]"
-};
+export builtin def to_string: Proc Int -> String;

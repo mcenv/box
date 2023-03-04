@@ -2,14 +2,6 @@ import {
   int::to_string,
 }
 
-export builtin function size(_: [int;]) → int {
-  let _: end = $/"data modify storage mcx: int append value 0";
-  $/"execute store result storage mcx: int[-1] int 1 if data storage mcx: int_array[-1][]"
-};
+export builtin def size: Proc IntArray -> Int;
 
-export static function get(array: `[int;], index: int) → `int {
-  `(
-    let _ = $array;
-    $/"data modify storage mcx: int_array append from storage mcx: int_array[-1][${to_string(index)}]"
-  )
-};
+export builtin const def get: Proc Tuple(Code IntArray, Int) -> Code Int;
