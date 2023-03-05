@@ -86,7 +86,6 @@ class Stage private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> pattern
       is C.Pattern.IntRangeOf -> pattern
-      is C.Pattern.ListOf     -> C.Pattern.ListOf(pattern.elements.map { stagePattern(it) }, type)
       is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { stagePattern(it.value) }, type)
       is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { stagePattern(it) }, type)
       is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, type)
@@ -181,7 +180,6 @@ class Stage private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> pattern
       is C.Pattern.IntRangeOf -> pattern
-      is C.Pattern.ListOf     -> C.Pattern.ListOf(pattern.elements.map { evalPattern(it) }, type)
       is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { evalPattern(it.value) }, type)
       is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { evalPattern(it) }, type)
       is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, type)
@@ -195,14 +193,6 @@ class Stage private constructor(
     binder: C.Pattern,
   ): List<Value> {
     return when {
-      value is Value.ListOf &&
-      binder is C.Pattern.ListOf &&
-      value.elements.size == binder.elements.size -> {
-        (value.elements zip binder.elements).fold(mutableListOf()) { acc, (value, binder) ->
-          acc.also { it += bindValue(value.value, binder) }
-        }
-      }
-
       value is Value.CompoundOf &&
       binder is C.Pattern.CompoundOf              ->
         value.elements.entries.fold(mutableListOf()) { acc, (name, value) ->
@@ -231,10 +221,6 @@ class Stage private constructor(
 
       value is Value.IntOf &&
       pattern is C.Pattern.IntRangeOf              -> value.value in pattern.min..pattern.max
-
-      value is Value.ListOf &&
-      pattern is C.Pattern.ListOf &&
-      value.elements.size == pattern.elements.size -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
 
       value is Value.CompoundOf &&
       pattern is C.Pattern.CompoundOf              -> value.elements.all { (name, value) -> matchValue(value.value, pattern.elements[name]!!) == true }

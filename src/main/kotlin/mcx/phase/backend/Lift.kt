@@ -173,7 +173,6 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, type)
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, type)
-      is C.Pattern.ListOf     -> L.Pattern.ListOf(pattern.elements.map { liftPattern(it) }, type)
       is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, type)
       is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, type)
       is C.Pattern.Var        -> {
@@ -224,7 +223,6 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.IntRangeOf -> emptySet()
-      is C.Pattern.ListOf     -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.CompoundOf -> pattern.elements.values.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.Var        -> setOf(pattern.name)

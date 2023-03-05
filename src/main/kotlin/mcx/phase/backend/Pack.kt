@@ -192,9 +192,6 @@ class Pack private constructor(
     when (pattern) {
       is L.Pattern.IntOf      -> Unit
       is L.Pattern.IntRangeOf -> Unit
-      is L.Pattern.ListOf     -> {
-        TODO()
-      }
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
           push(eraseSingleType(element.type), SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(P.Stack.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
@@ -217,9 +214,6 @@ class Pack private constructor(
     when (pattern) {
       is L.Pattern.IntOf      -> drop(P.Stack.INT, keeps)
       is L.Pattern.IntRangeOf -> drop(P.Stack.INT, keeps)
-      is L.Pattern.ListOf     -> {
-        TODO()
-      }
       is L.Pattern.CompoundOf -> {
         pattern.elements
           .asReversed()
@@ -273,7 +267,6 @@ class Pack private constructor(
             )
           )
         }
-        is L.Pattern.ListOf     -> TODO()
         is L.Pattern.CompoundOf -> TODO()
         is L.Pattern.TupleOf    ->
           scrutineer.elements

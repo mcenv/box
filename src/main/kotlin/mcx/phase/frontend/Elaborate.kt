@@ -526,7 +526,6 @@ class Elaborate private constructor(
     return when {
       pattern is R.Pattern.IntOf && matchType<C.Type.Int>(expected)           -> matchPatternIntOf(pattern)
       pattern is R.Pattern.IntRangeOf && matchType<C.Type.Int>(expected)      -> matchPatternIntRangeOf(pattern)
-      pattern is R.Pattern.ListOf && matchType<C.Type.List>(expected)         -> matchPatternListOf(pattern, expected)
       pattern is R.Pattern.CompoundOf && synthType(expected)                  -> synthPatternCompoundOf(pattern)
       pattern is R.Pattern.CompoundOf && checkType<C.Type.Compound>(expected) -> checkPatternCompoundOf(pattern, expected)
       pattern is R.Pattern.TupleOf && matchType<C.Type.Tuple>(expected)       -> matchPatternTupleOf(pattern, expected)
@@ -551,20 +550,6 @@ class Elaborate private constructor(
       diagnostics += emptyRange(pattern.range)
     }
     return C.Pattern.IntRangeOf(pattern.min, pattern.max, C.Type.Int.SET)
-  }
-
-  private inline fun Env.matchPatternListOf(
-    pattern: R.Pattern.ListOf,
-    expected: C.Type.List?,
-  ): C.Pattern {
-    return if (pattern.elements.isEmpty()) {
-      C.Pattern.ListOf(emptyList(), C.Type.List(C.Type.Union.END))
-    } else {
-      val head = elaboratePattern(pattern.elements.first(), expected?.element)
-      val element = expected?.element ?: head.type
-      val tail = pattern.elements.drop(1).map { elaboratePattern(it, element) }
-      C.Pattern.ListOf(listOf(head) + tail, C.Type.List(element))
-    }
   }
 
   private inline fun Env.synthPatternCompoundOf(pattern: R.Pattern.CompoundOf): C.Pattern {
