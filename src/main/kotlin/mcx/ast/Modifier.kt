@@ -6,4 +6,5 @@ enum class Modifier {
   EXPORT,
   INLINE,
   CONST,
+  WORLD,
 }
