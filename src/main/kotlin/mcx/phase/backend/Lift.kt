@@ -21,7 +21,7 @@ class Lift private constructor(
       is C.Definition.Def -> {
         val env = emptyEnv()
         val binder = L.Pattern.TupleOf(emptyList(), L.Type.Tuple(emptyList()))
-        val body = env.liftTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
+        val body = env.liftTerm(requireNotNull(definition.body) { "non-const function '${definition.name}' without body" })
         liftedDefinitions += L.Definition.Function(modifiers, definition.name, binder, body, null)
       }
     }
@@ -36,7 +36,7 @@ class Lift private constructor(
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
       Modifier.INLINE  -> error("unexpected: $modifier")
-      Modifier.STATIC  -> error("unexpected: $modifier")
+      Modifier.CONST   -> error("unexpected: $modifier")
     }
   }
 

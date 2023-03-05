@@ -16,7 +16,7 @@ private val modifiers: List<CompletionItem> = listOf(
   "builtin",
   "export",
   "inline",
-  "static",
+  "const",
 ).map {
   CompletionItem(it).apply {
     kind = CompletionItemKind.Keyword

@@ -31,10 +31,10 @@ class Stage private constructor(
       is C.Definition.Def -> {
         if (
           Modifier.INLINE !in definition.modifiers &&
-          Modifier.STATIC !in definition.modifiers
+          Modifier.CONST !in definition.modifiers
         ) {
           val type = evalType(definition.type)
-          val body = stageTerm(requireNotNull(definition.body) { "non-static function '${definition.name}' without body" })
+          val body = stageTerm(requireNotNull(definition.body) { "non-const function '${definition.name}' without body" })
           C.Definition.Def(definition.modifiers, definition.name, type, body)
         } else {
           null
@@ -124,7 +124,7 @@ class Stage private constructor(
       is C.Term.ClosOf      -> Value.ClosOf(term.binder, term.body)
       is C.Term.Apply   -> {
         val operator = evalTerm(term.operator)
-        if (static && operator is Value.ClosOf) {
+        if (const && operator is Value.ClosOf) {
           bind(bindValue(evalTerm(term.arg), operator.binder)).evalTerm(operator.body)
         } else {
           Value.Apply(operator, lazy { evalTerm(term.arg) }, term.type)
@@ -132,14 +132,14 @@ class Stage private constructor(
       }
       is C.Term.If      -> {
         val condition = evalTerm(term.condition)
-        if (static && condition is Value.BoolOf) {
+        if (const && condition is Value.BoolOf) {
           if (condition.value) evalTerm(term.thenClause) else evalTerm(term.elseClause)
         } else {
           Value.If(condition, lazy { evalTerm(term.thenClause) }, lazy { evalTerm(term.elseClause) })
         }
       }
       is C.Term.Let     -> {
-        if (static) {
+        if (const) {
           bind(bindValue(evalTerm(term.init), term.binder)).evalTerm(term.body)
         } else {
           Value.Let(evalPattern(term.binder), lazy { evalTerm(term.init) }, lazy { evalTerm(term.body) }, evalType(term.body.type))
@@ -155,16 +155,16 @@ class Stage private constructor(
       is C.Term.Is      -> {
         val scrutinee = evalTerm(term.scrutinee)
         val matched = matchValue(scrutinee, term.scrutineer)
-        if (static && matched != null) {
+        if (const && matched != null) {
           Value.BoolOf(matched)
         } else {
           Value.Is(scrutinee, term.scrutineer, term.scrutinee.type)
         }
       }
       is C.Term.Command -> Value.CodeOf(lazyOf(Value.Command(lazy { evalTerm(term.element) })))
-      is C.Term.CodeOf  -> Value.CodeOf(lazy { withStatic(false).evalTerm(term.element) })
+      is C.Term.CodeOf  -> Value.CodeOf(lazy { withConst(false).evalTerm(term.element) })
       is C.Term.Splice  -> {
-        when (val element = withStatic(true).evalTerm(term.element)) {
+        when (val element = withConst(true).evalTerm(term.element)) {
           is Value.CodeOf -> element.element.value
           else            -> Value.Splice(element, term.element.type)
         }
@@ -308,17 +308,17 @@ class Stage private constructor(
     definitions: Map<DefinitionLocation, C.Definition>,
     unfold: Boolean,
     val values: PersistentList<Lazy<Value>>,
-    val static: Boolean,
+    val const: Boolean,
   ) : Normalize.Env(definitions, unfold) {
     fun bind(
       values: List<Value>,
     ): Env =
-      Env(definitions, unfold, this.values + values.map { lazyOf(it) }, static)
+      Env(definitions, unfold, this.values + values.map { lazyOf(it) }, const)
 
-    fun withStatic(
-      static: Boolean,
+    fun withConst(
+      const: Boolean,
     ): Env =
-      Env(definitions, unfold, values, static)
+      Env(definitions, unfold, values, const)
   }
 
   companion object {

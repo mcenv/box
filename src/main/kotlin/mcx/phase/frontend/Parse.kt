@@ -73,7 +73,7 @@ class Parse private constructor(
           expect(':')
           skipTrivia()
           val type = parseType()
-          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.STATIC } != null) {
+          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.CONST } != null) {
             null
           } else {
             expect('=')
@@ -105,7 +105,7 @@ class Parse private constructor(
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "inline"  -> Ranged(Modifier.INLINE, until())
-          "static"  -> Ranged(Modifier.STATIC, until())
+          "const"   -> Ranged(Modifier.CONST, until())
           else      -> return modifiers to word
         }
       }

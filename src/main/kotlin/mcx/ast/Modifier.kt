@@ -5,5 +5,5 @@ enum class Modifier {
   BUILTIN,
   EXPORT,
   INLINE,
-  STATIC,
+  CONST,
 }

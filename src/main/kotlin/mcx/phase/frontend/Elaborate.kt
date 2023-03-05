@@ -57,7 +57,7 @@ class Elaborate private constructor(
     val name = definition.name.value
     return when (definition) {
       is R.Definition.Def  -> {
-        val env = emptyEnv(Modifier.STATIC in modifiers)
+        val env = emptyEnv(Modifier.CONST in modifiers)
         val type = env.elaborateType(definition.type)
         val body = if (signature) {
           null
@@ -852,7 +852,7 @@ class Elaborate private constructor(
 
   private class Env private constructor(
     private val _entries: MutableList<Entry>,
-    val static: Boolean,
+    val const: Boolean,
   ) {
     val entries: List<Entry> = _entries
     private var savedSize: Int = 0
@@ -863,7 +863,7 @@ class Elaborate private constructor(
       _entries[level]
 
     fun isMeta(): Boolean =
-      static || stage > 0
+      const || stage > 0
 
     fun bind(
       name: String,
@@ -898,7 +898,7 @@ class Elaborate private constructor(
     fun copy(): Env =
       Env(
         _entries.map { it.copy() }.toMutableList(),
-        static,
+        const,
       )
 
     data class Entry(
@@ -909,8 +909,8 @@ class Elaborate private constructor(
     )
 
     companion object {
-      fun emptyEnv(static: Boolean): Env =
-        Env(mutableListOf(), static)
+      fun emptyEnv(const: Boolean): Env =
+        Env(mutableListOf(), const)
     }
   }
 
