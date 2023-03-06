@@ -98,7 +98,6 @@ class Resolve private constructor(
       is S.Type.LongArray -> R.Type.LongArray(type.range)
       is S.Type.List      -> R.Type.List(resolveType(type.element), type.range)
       is S.Type.Compound  -> R.Type.Compound(type.elements.mapValues { resolveType(it.value) }, type.range)
-      is S.Type.Tuple     -> R.Type.Tuple(type.elements.map { resolveType(it) }, type.range)
       is S.Type.Func      -> R.Type.Func(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Clos      -> R.Type.Clos(resolveType(type.param), resolveType(type.result), type.range)
       is S.Type.Union     -> R.Type.Union(type.elements.map { resolveType(it) }, type.range)
@@ -134,7 +133,6 @@ class Resolve private constructor(
       is S.Term.LongArrayOf -> R.Term.LongArrayOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.ListOf      -> R.Term.ListOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
-      is S.Term.TupleOf     -> R.Term.TupleOf(term.elements.map { resolveTerm(it) }, term.range)
       is S.Term.FuncOf      -> {
         val (binder, body) = restoring {
           // TODO: use frontier level to hide variables
@@ -198,7 +196,6 @@ class Resolve private constructor(
       is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
       is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.min, pattern.max, pattern.range)
       is S.Pattern.CompoundOf -> R.Pattern.CompoundOf(pattern.elements.map { (key, element) -> key to resolvePattern(element) }, pattern.range)
-      is S.Pattern.TupleOf    -> R.Pattern.TupleOf(pattern.elements.map { resolvePattern(it) }, pattern.range)
       is S.Pattern.Var        -> {
         bind(pattern.name)
         R.Pattern.Var(pattern.name, lastIndex, pattern.range)

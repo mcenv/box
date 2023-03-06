@@ -66,10 +66,6 @@ object Lifted {
       val elements: Map<kotlin.String, Type>,
     ) : Type
 
-    data class Tuple(
-      val elements: kotlin.collections.List<Type>,
-    ) : Type
-
     data class Func(
       val param: Type,
       val result: Type,
@@ -158,11 +154,6 @@ object Lifted {
       override val type: Type,
     ) : Term
 
-    data class TupleOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
     data class FuncOf(
       val tag: Int,
       override val type: Type,
@@ -232,11 +223,6 @@ object Lifted {
 
     data class CompoundOf(
       val elements: List<Pair<String, Pattern>>,
-      override val type: Type,
-    ) : Pattern
-
-    data class TupleOf(
-      val elements: List<Pattern>,
       override val type: Type,
     ) : Pattern
 

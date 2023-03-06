@@ -66,11 +66,6 @@ sealed interface Value {
     val elements: Map<String, Lazy<Value>>,
   ) : Value
 
-  @JvmInline
-  value class TupleOf(
-    val elements: List<Lazy<Value>>,
-  ) : Value
-
   class FuncOf(
     val binder: Core.Pattern,
     val body: Core.Term,

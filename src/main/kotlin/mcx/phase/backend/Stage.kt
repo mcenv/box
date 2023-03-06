@@ -63,7 +63,6 @@ class Stage private constructor(
       is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { stageTerm(it.value) }, type)
-      is C.Term.TupleOf     -> C.Term.TupleOf(term.elements.map { stageTerm(it) }, type)
       is C.Term.FuncOf      -> C.Term.FuncOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.ClosOf      -> C.Term.ClosOf(stagePattern(term.binder), stageTerm(term.body), type)
       is C.Term.Apply       -> C.Term.Apply(stageTerm(term.operator), stageTerm(term.arg), type)
@@ -87,7 +86,6 @@ class Stage private constructor(
       is C.Pattern.IntOf      -> pattern
       is C.Pattern.IntRangeOf -> pattern
       is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { stagePattern(it.value) }, type)
-      is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { stagePattern(it) }, type)
       is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, type)
       is C.Pattern.Drop       -> C.Pattern.Drop(type)
       is C.Pattern.Hole       -> C.Pattern.Hole(type)
@@ -119,7 +117,6 @@ class Stage private constructor(
       is C.Term.LongArrayOf -> Value.LongArrayOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.ListOf      -> Value.ListOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.CompoundOf  -> Value.CompoundOf(term.elements.mapValues { lazy { evalTerm(it.value) } })
-      is C.Term.TupleOf     -> Value.TupleOf(term.elements.map { lazy { evalTerm(it) } })
       is C.Term.FuncOf      -> Value.FuncOf(term.binder, term.body)
       is C.Term.ClosOf      -> Value.ClosOf(term.binder, term.body)
       is C.Term.Apply   -> {
@@ -181,7 +178,6 @@ class Stage private constructor(
       is C.Pattern.IntOf      -> pattern
       is C.Pattern.IntRangeOf -> pattern
       is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { evalPattern(it.value) }, type)
-      is C.Pattern.TupleOf    -> C.Pattern.TupleOf(pattern.elements.map { evalPattern(it) }, type)
       is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, type)
       is C.Pattern.Drop       -> C.Pattern.Drop(type)
       is C.Pattern.Hole       -> C.Pattern.Hole(type)
@@ -197,12 +193,6 @@ class Stage private constructor(
       binder is C.Pattern.CompoundOf              ->
         value.elements.entries.fold(mutableListOf()) { acc, (name, value) ->
           acc.also { it += bindValue(value.value, binder.elements[name]!!) }
-        }
-
-      value is Value.TupleOf &&
-      binder is C.Pattern.TupleOf                 ->
-        (value.elements zip binder.elements).fold(mutableListOf()) { acc, (value, binder) ->
-          acc.also { it += bindValue(value.value, binder) }
         }
 
       binder is C.Pattern.Var                     -> listOf(value)
@@ -224,9 +214,6 @@ class Stage private constructor(
 
       value is Value.CompoundOf &&
       pattern is C.Pattern.CompoundOf              -> value.elements.all { (name, value) -> matchValue(value.value, pattern.elements[name]!!) == true }
-
-      value is Value.TupleOf &&
-      pattern is C.Pattern.TupleOf                 -> (value.elements zip pattern.elements).all { (value, pattern) -> matchValue(value.value, pattern) == true }
 
       pattern is C.Pattern.Var                     -> true
 
@@ -261,10 +248,6 @@ class Stage private constructor(
       is Value.CompoundOf  -> {
         type as C.Type.Compound
         C.Term.CompoundOf(value.elements.mapValues { (key, element) -> quoteValue(element.value, type.elements[key]!!) }, type)
-      }
-      is Value.TupleOf     -> {
-        type as C.Type.Tuple
-        C.Term.TupleOf(value.elements.mapIndexed { index, element -> quoteValue(element.value, type.elements[index]) }, type)
       }
       is Value.FuncOf      -> {
         type as C.Type.Func

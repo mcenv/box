@@ -58,7 +58,6 @@ class Lift private constructor(
       is C.Type.LongArray -> L.Type.LongArray
       is C.Type.List      -> L.Type.List(liftType(type.element))
       is C.Type.Compound  -> L.Type.Compound(type.elements.mapValues { liftType(it.value) })
-      is C.Type.Tuple     -> L.Type.Tuple(type.elements.map { liftType(it) })
       is C.Type.Func      -> L.Type.Func(liftType(type.param), liftType(type.result))
       is C.Type.Clos      -> L.Type.Clos(liftType(type.param), liftType(type.result))
       is C.Type.Union     -> L.Type.Union(type.elements.map { liftType(it) })
@@ -88,7 +87,6 @@ class Lift private constructor(
       is C.Term.LongArrayOf -> L.Term.LongArrayOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.ListOf      -> L.Term.ListOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.CompoundOf  -> L.Term.CompoundOf(term.elements.mapValues { liftTerm(it.value) }, type)
-      is C.Term.TupleOf     -> L.Term.TupleOf(term.elements.map { liftTerm(it) }, type)
       is C.Term.FuncOf      -> {
         with(emptyEnv()) {
           val binder = liftPattern(term.binder)
@@ -175,7 +173,6 @@ class Lift private constructor(
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value, type)
       is C.Pattern.IntRangeOf -> L.Pattern.IntRangeOf(pattern.min, pattern.max, type)
       is C.Pattern.CompoundOf -> L.Pattern.CompoundOf(pattern.elements.map { (name, element) -> name to liftPattern(element) }, type)
-      is C.Pattern.TupleOf    -> L.Pattern.TupleOf(pattern.elements.map { liftPattern(it) }, type)
       is C.Pattern.Var        -> {
         bind(pattern.name, type)
         L.Pattern.Var(types.lastIndex, type)
@@ -202,7 +199,6 @@ class Lift private constructor(
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.TupleOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.FuncOf      -> linkedMapOf()
       is C.Term.ClosOf      -> freeVars(term.body).also { it -= boundVars(term.binder) }
       is C.Term.Apply       -> freeVars(term.operator).also { it += freeVars(term.arg) }
@@ -225,7 +221,6 @@ class Lift private constructor(
       is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.IntRangeOf -> emptySet()
       is C.Pattern.CompoundOf -> pattern.elements.values.flatMapTo(hashSetOf()) { boundVars(it) }
-      is C.Pattern.TupleOf    -> pattern.elements.flatMapTo(hashSetOf()) { boundVars(it) }
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
       is C.Pattern.Hole       -> error("unexpected: hole")

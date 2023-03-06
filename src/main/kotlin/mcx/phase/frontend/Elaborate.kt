@@ -4,7 +4,6 @@ import mcx.ast.*
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.lsp.highlight
-import mcx.lsp.rangeTo
 import mcx.phase.*
 import mcx.phase.frontend.Elaborate.Env.Companion.emptyEnv
 import org.eclipse.lsp4j.*
@@ -101,10 +100,6 @@ class Elaborate private constructor(
       type is R.Type.LongArray && expected == null -> C.Type.LongArray
       type is R.Type.List && expected == null      -> C.Type.List(elaborateType(type.element, C.Kind.Type.ONE))
       type is R.Type.Compound && expected == null  -> C.Type.Compound(type.elements.mapValues { elaborateType(it.value, C.Kind.Type.ONE) })
-      type is R.Type.Tuple && expected == null     -> {
-        val elements = type.elements.map { elaborateType(it) }
-        C.Type.Tuple(elements, C.Kind.Type(elements.size))
-      }
       type is R.Type.Union && expected == null     ->
         if (type.elements.isEmpty()) {
           C.Type.Union.END
@@ -204,7 +199,6 @@ class Elaborate private constructor(
       term is R.Term.ListOf && matchType<C.Type.List>(expected)           -> matchTermListOf(term, expected)
       term is R.Term.CompoundOf && synthType(expected)                    -> synthTermCompoundOf(term)
       term is R.Term.CompoundOf && checkType<C.Type.Compound>(expected)   -> checkTermCompoundOf(term, expected)
-      term is R.Term.TupleOf && matchType<C.Type.Tuple>(expected)         -> matchTermTupleOf(term, expected)
       term is R.Term.FuncOf && matchType<C.Type.Func>(expected)           -> matchTermFuncOf(term, expected)
       term is R.Term.ClosOf && matchType<C.Type.Clos>(expected)           -> matchTermClosOf(term, expected)
       term is R.Term.Apply && matchType<C.Type>(expected)                 -> matchTermApply(term)
@@ -263,7 +257,6 @@ class Elaborate private constructor(
           is R.Term.StringOf.Part.Raw         -> C.Term.StringOf(part.value, C.Type.String.SET)
           is R.Term.StringOf.Part.Interpolate -> elaborateTerm(part.element, C.Type.String.SET)
         }
-        val type = C.Type.Tuple(listOf(C.Type.String.SET, C.Type.String.SET), C.Kind.Type(2))
         TODO()
         /* C.Term.Run(
           prelude / "++",
@@ -345,19 +338,6 @@ class Elaborate private constructor(
       .minus(term.elements.map { it.first.value }.toSet())
       .forEach { diagnostics += keyNotFound(it, term.range) }
     return C.Term.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-  }
-
-  private inline fun Env.matchTermTupleOf(
-    term: R.Term.TupleOf,
-    expected: C.Type.Tuple?,
-  ): C.Term {
-    if (expected != null && expected.elements.size != term.elements.size) {
-      diagnostics += arityMismatch(expected.elements.size, term.elements.size, term.range) // TODO: use KindMismatch
-    }
-    val elements = term.elements.mapIndexed { index, element ->
-      elaborateTerm(element, expected?.elements?.getOrNull(index))
-    }
-    return C.Term.TupleOf(elements, C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
   }
 
   private inline fun Env.matchTermFuncOf(
@@ -528,7 +508,6 @@ class Elaborate private constructor(
       pattern is R.Pattern.IntRangeOf && matchType<C.Type.Int>(expected)      -> matchPatternIntRangeOf(pattern)
       pattern is R.Pattern.CompoundOf && synthType(expected)                  -> synthPatternCompoundOf(pattern)
       pattern is R.Pattern.CompoundOf && checkType<C.Type.Compound>(expected) -> checkPatternCompoundOf(pattern, expected)
-      pattern is R.Pattern.TupleOf && matchType<C.Type.Tuple>(expected)       -> matchPatternTupleOf(pattern, expected)
       pattern is R.Pattern.Var && synthType(expected)                         -> synthPatternVar(pattern)
       pattern is R.Pattern.Var && checkType<C.Type>(expected)                 -> checkPatternVar(pattern, expected)
       pattern is R.Pattern.Drop && matchType<C.Type>(expected)                -> matchPatternDrop(pattern, expected)
@@ -584,19 +563,6 @@ class Elaborate private constructor(
       .minus(pattern.elements.map { it.first.value }.toSet())
       .forEach { diagnostics += keyNotFound(it, pattern.range) }
     return C.Pattern.CompoundOf(elements, C.Type.Compound(elements.mapValues { it.value.type }))
-  }
-
-  private inline fun Env.matchPatternTupleOf(
-    pattern: R.Pattern.TupleOf,
-    expected: C.Type.Tuple?,
-  ): C.Pattern {
-    if (expected != null && expected.elements.size != pattern.elements.size) {
-      diagnostics += arityMismatch(expected.elements.size, pattern.elements.size, pattern.range.end..pattern.range.end) // TODO: use KindMismatch
-    }
-    val elements = pattern.elements.mapIndexed { index, element ->
-      elaboratePattern(element, expected?.elements?.getOrNull(index))
-    }
-    return C.Pattern.TupleOf(elements, expected ?: C.Type.Tuple(elements.map { it.type }, C.Kind.Type(elements.size)))
   }
 
   private inline fun Env.synthPatternVar(pattern: R.Pattern.Var): C.Pattern {
@@ -723,16 +689,6 @@ class Elaborate private constructor(
                                       else -> element1 isSubtypeOf element2
                                     }
                                   }
-
-      type1 is C.Type.Tuple &&
-      type2 is C.Type.Tuple    -> type1.elements.size == type2.elements.size &&
-                                  (type1.elements zip type2.elements).all { (element1, element2) -> element1 isSubtypeOf element2 }
-
-      type1 is C.Type.Tuple &&
-      type1.elements.size == 1 -> type1.elements.first() isSubtypeOf type2
-
-      type2 is C.Type.Tuple &&
-      type2.elements.size == 1 -> type1 isSubtypeOf type2.elements.first()
 
       type1 is C.Type.Func &&
       type2 is C.Type.Func     -> type2.param isSubtypeOf type1.param &&

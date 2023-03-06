@@ -143,11 +143,6 @@ object Core {
       override val kind: Kind get() = Kind.Type.ONE
     }
 
-    data class Tuple(
-      val elements: kotlin.collections.List<Type>,
-      override val kind: Kind,
-    ) : Type
-
     data class Func(
       val param: Type,
       val result: Type,
@@ -269,11 +264,6 @@ object Core {
       override val type: Type,
     ) : Term
 
-    data class TupleOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
     data class FuncOf(
       val binder: Pattern,
       val body: Term,
@@ -359,11 +349,6 @@ object Core {
 
     data class CompoundOf(
       val elements: Map<String, Pattern>,
-      override val type: Type,
-    ) : Pattern
-
-    data class TupleOf(
-      val elements: List<Pattern>,
       override val type: Type,
     ) : Pattern
 

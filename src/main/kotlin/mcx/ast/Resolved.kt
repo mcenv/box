@@ -109,11 +109,6 @@ object Resolved {
       override val range: Range,
     ) : Type
 
-    data class Tuple(
-      val elements: kotlin.collections.List<Type>,
-      override val range: Range,
-    ) : Type
-
     data class Func(
       val param: Type,
       val result: Type,
@@ -229,11 +224,6 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class TupleOf(
-      val elements: List<Term>,
-      override val range: Range,
-    ) : Term
-
     data class FuncOf(
       val binder: Pattern,
       val body: Term,
@@ -319,11 +309,6 @@ object Resolved {
 
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val range: Range,
-    ) : Pattern
-
-    data class TupleOf(
-      val elements: List<Pattern>,
       override val range: Range,
     ) : Pattern
 

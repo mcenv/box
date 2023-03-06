@@ -55,7 +55,6 @@ val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
         is Type.LongArray -> Value.StringOf(Stack.LONG_ARRAY.id)
         is Type.List      -> Value.StringOf(Stack.LIST.id)
         is Type.Compound  -> Value.StringOf(Stack.COMPOUND.id)
-        is Type.Tuple     -> error("unexpected type: ${prettyType(a)}")
         is Type.Union     -> null // TODO
         is Type.Func      -> Value.StringOf(Stack.INT.id)
         is Type.Clos      -> Value.StringOf(Stack.COMPOUND.id)
