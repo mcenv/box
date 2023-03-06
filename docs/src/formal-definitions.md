@@ -44,8 +44,6 @@ $$
 \newcommand{\list}[1]{\texttt{[} #1 \texttt{]}}
 \newcommand{\Compound}[1]{\texttt{Compound\\{} \ #1 \ \texttt{\\}}}
 \newcommand{\compound}[1]{\texttt{\\{} \ #1 \texttt{\\}}}
-\newcommand{\Tuple}[1]{\texttt{Tuple} \ #1}
-\newcommand{\tuple}[1]{\texttt{(} #1 \texttt{)}}
 \newcommand{\Union}[1]{\texttt{Union\\{} #1 \texttt{\\}}}
 \newcommand{\Func}[3]{\texttt{Func(} #1 : #2 \texttt{)} \rightarrow #3}
 \newcommand{\func}[2]{\backslash #1 \rightarrow #2}
@@ -84,7 +82,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Tag }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Tag }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -192,15 +190,13 @@ $$
 }
 \\]
 
-#### TupleTag-\\(\synth\\)
-
 #### Type-\\(\synth\\)
 
 \\[
 \infer{
 \relc{ \Gamma }{ \tau }{ \Tag }
 }{
-\rels{ \Gamma }{ \Type{\tau} }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Type{\tau} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -208,7 +204,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Bool }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Bool }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -261,7 +257,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Byte }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Byte }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -279,7 +275,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Short }{ \Type{(\ShortTag)} }
+\rels{ \Gamma }{ \Short }{ \Type{\ShortTag} }
 }
 \\]
 
@@ -297,7 +293,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Int }{ \Type{(\IntTag)} }
+\rels{ \Gamma }{ \Int }{ \Type{\IntTag} }
 }
 \\]
 
@@ -315,7 +311,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Long }{ \Type{(\LongTag)} }
+\rels{ \Gamma }{ \Long }{ \Type{\LongTag} }
 }
 \\]
 
@@ -333,7 +329,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Float }{ \Type{(\FloatTag)} }
+\rels{ \Gamma }{ \Float }{ \Type{\FloatTag} }
 }
 \\]
 
@@ -351,7 +347,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Double }{ \Type{(\DoubleTag)} }
+\rels{ \Gamma }{ \Double }{ \Type{\DoubleTag} }
 }
 \\]
 
@@ -369,7 +365,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \String }{ \Type{(\StringTag)} }
+\rels{ \Gamma }{ \String }{ \Type{\StringTag} }
 }
 \\]
 
@@ -387,7 +383,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ByteArray }{ \Type{(\ByteArrayTag)} }
+\rels{ \Gamma }{ \ByteArray }{ \Type{\ByteArrayTag} }
 }
 \\]
 
@@ -405,7 +401,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \IntArray }{ \Type{(\IntArrayTag)} }
+\rels{ \Gamma }{ \IntArray }{ \Type{\IntArrayTag} }
 }
 \\]
 
@@ -423,7 +419,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \LongArray }{ \Type{(\LongArrayTag)} }
+\rels{ \Gamma }{ \LongArray }{ \Type{\LongArrayTag} }
 }
 \\]
 
@@ -442,9 +438,9 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\relc{ \Gamma }{ A }{ \Type{(\tau)} }
+\relc{ \Gamma }{ A }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \List{A} }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \List{A} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -472,9 +468,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ A_i }{ \Type{(\tau)} }
+\relc{ \Gamma }{ A_i }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -497,12 +493,6 @@ n \in \\{ \false, \true \\}
 \relc{ \Gamma }{ \compound{k_1: t_1, k_2: t_2, \dots, k_n: t_n} }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }
 }
 \\]
-
-#### Tuple-\\(\synth\\)
-
-#### TupleOf-\\(\synth\\)
-
-#### TupleOf-\\(\check\\)
 
 #### Union-\\(\synth\\)
 
@@ -535,7 +525,7 @@ n \in \\{ \false, \true \\}
 \relcp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
 \relc{ \Gamma, \Delta }{ A_2 }{ \Type{\tau_2} }
 }{
-\rels{ \Gamma }{ \Func{p}{A_1}{A_2} }{ \Type{(\CompoundTag)} }
+\rels{ \Gamma }{ \Func{p}{A_1}{A_2} }{ \Type{\CompoundTag} }
 }
 \\]
 
@@ -590,7 +580,7 @@ n \in \\{ \false, \true \\}
 \relf{ \tau }{ \Tag } \\\\
 \relc{ \Gamma }{ A }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Code{A} }{ \Type{(\ByteTag)} }
+\rels{ \Gamma }{ \Code{A} }{ \Type{\ByteTag} }
 }
 \\]
 
