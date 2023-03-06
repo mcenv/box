@@ -2,4 +2,7 @@
 
 [Introduction](./introduction.md)
 
-[References](./references.md)
+# Internals
+
+- [Formal Definitions](./formal-definitions.md)
+- [References](./references.md)
