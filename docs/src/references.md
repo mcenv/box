@@ -26,6 +26,7 @@
 
 * [AndrasKovacs/elaboration-zoo](https://github.com/AndrasKovacs/elaboration-zoo)
 * [AndrasKovacs/staged](https://github.com/AndrasKovacs/staged)
+* [JetBrains/kotlin](https://github.com/JetBrains/kotlin)
 * [bytecodealliance/wasmtime](https://github.com/bytecodealliance/wasmtime)
 * [rust-lang/rust](https://github.com/rust-lang/rust)
 
