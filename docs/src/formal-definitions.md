@@ -75,7 +75,7 @@ $$
 - \\(\boxed{\relc{\Gamma}{t}{A}}\\): Under context \\(\Gamma\\), term \\(t\\) checks against type \\(A\\)
 - \\(\boxed{\relsp{\Gamma}{p}{A}{\Delta}}\\): Under context \\(\Gamma\\), pattern \\(p\\) synthesizes type \\(A\\) and outputs bindings \\(\Delta\\)
 - \\(\boxed{\relcp{\Gamma}{p}{A}{\Delta}}\\): Under context \\(\Gamma\\), pattern \\(p\\) checks against type \\(A\\) and outputs bindings \\(\Delta\\)
-- \\(\boxed{\relsub{\Gamma}{A}{B}}\\): Under context \\(\Gamma\\), type \\(A\\) is a subtype of type \\(\\)
+- \\(\boxed{\relsub{\Gamma}{A}{B}}\\): Under context \\(\Gamma\\), type \\(A\\) is a subtype of type \\(B\\)
 - \\(\boxed{\relf{t}{A}}\\): Term \\(t\\) is fresh and has type \\(A\\)
 
 ### Terms
