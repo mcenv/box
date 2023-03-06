@@ -45,9 +45,9 @@ $$
 \newcommand{\Compound}[1]{\texttt{Compound\\{} \ #1 \ \texttt{\\}}}
 \newcommand{\compound}[1]{\texttt{\\{} \ #1 \texttt{\\}}}
 \newcommand{\Union}[1]{\texttt{Union\\{} #1 \texttt{\\}}}
-\newcommand{\Func}[3]{\texttt{Func(} #1 : #2 \texttt{)} \rightarrow #3}
+\newcommand{\Func}[2]{\texttt{Func(} #1 \texttt{)} \rightarrow #2}
 \newcommand{\func}[2]{\backslash #1 \rightarrow #2}
-\newcommand{\apply}[2]{#1 \ @ \ #2}
+\newcommand{\apply}[2]{#1 \texttt{(} #2 \texttt{)}}
 \newcommand{\Code}[1]{\texttt{Code} \ #1}
 \newcommand{\code}[1]{\texttt{`} #1}
 \newcommand{\splice}[1]{\texttt{\\$} #1}
@@ -393,7 +393,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ t_i }{ \Byte }
 }{
-\rels{ \Gamma }{ \bytearray{t_1, t_2, \dots, t_n} }{ \ByteArray }
+\rels{ \Gamma }{ \bytearray{\dots, t_n} }{ \ByteArray }
 }
 \\]
 
@@ -411,7 +411,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ t_i }{ \Int }
 }{
-\rels{ \Gamma }{ \intarray{t_1, t_2, \dots, t_n} }{ \IntArray }
+\rels{ \Gamma }{ \intarray{\dots, t_n} }{ \IntArray }
 }
 \\]
 
@@ -429,7 +429,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ t_i }{ \Long }
 }{
-\rels{ \Gamma }{ \longarray{t_1, t_2, \dots, t_n} }{ \LongArray }
+\rels{ \Gamma }{ \longarray{\dots, t_n} }{ \LongArray }
 }
 \\]
 
@@ -450,7 +450,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \rels{ \Gamma }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \list{t_1, t_2, \dots, t_n} }{ \List{\Union{A_1, A_2, \dots, A_n}} }
+\rels{ \Gamma }{ \list{\dots, t_n} }{ \List{\Union{\dots, A_n}} }
 }
 \\]
 
@@ -460,7 +460,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ t_i }{ A }
 }{
-\relc{ \Gamma }{ \list{t_1, t_2, \dots, t_n} }{ \List{A} }
+\relc{ \Gamma }{ \list{\dots, t_n} }{ \List{A} }
 }
 \\]
 
@@ -470,7 +470,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ A_i }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ \Compound{\dots, k_n: A_n} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -480,7 +480,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \rels{ \Gamma }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \compound{k_1: t_1, k_2: t_2, \dots, k_n: t_n} }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }
+\rels{ \Gamma }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
 \\]
 
@@ -490,7 +490,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ t_i }{ A }
 }{
-\relc{ \Gamma }{ \compound{k_1: t_1, k_2: t_2, \dots, k_n: t_n} }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }
+\relc{ \Gamma }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
 \\]
 
@@ -501,7 +501,7 @@ n \in \\{ \false, \true \\}
 \relf{ \tau }{ \Tag } \\\\
 \relc{ \Gamma }{ A_i }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Union{A_1, A_2, \dots, A_n} }{ \Type{\tau} }
+\rels{ \Gamma }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
 \\]
 
@@ -511,7 +511,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \relc{ \Gamma }{ A_i }{ \Type{\tau} }
 }{
-\relc{ \Gamma }{ \Union{A_1, A_2, \dots, A_n} }{ \Type{\tau} }
+\relc{ \Gamma }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
 \\]
 
@@ -519,13 +519,15 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relf{ \tau_1 }{ \Tag } \\\\
-\relf{ \tau_2 }{ \Tag } \\\\
-\relc{ \Gamma }{ A_1 }{ \Type{\tau_1} } \\\\
-\relcp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
-\relc{ \Gamma, \Delta }{ A_2 }{ \Type{\tau_2} }
+\relf{ \tau }{ \Tag } \\\\
+\begin{cases}
+\relf{ \tau_i }{ \Tag } \\\\
+\relc{ \Gamma, \dots, \Delta_{i-1} }{ A_i }{ \Type{\tau_i} } \\\\
+\relcp{ \Gamma, \dots, \Delta_{i-1} }{ p_i }{ A_i }{ \Delta_i }
+\end{cases} \\\\
+\relc{ \Gamma, \dots, \Delta_n }{ B }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Func{p}{A_1}{A_2} }{ \Type{\CompoundTag} }
+\rels{ \Gamma }{ \Func{\dots, p_n: A_n}{B} }{ \Type{\CompoundTag} }
 }
 \\]
 
@@ -533,10 +535,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
-\rels{ \Gamma, \Delta }{ t }{ A_2 }
+\relsp{ \Gamma }{ p_i }{ A_i }{ \Delta_i } \\\\
+\rels{ \Gamma, \dots, \Delta_n }{ t }{ B }
 }{
-\rels{ \Gamma }{ \func{p}{t} }{ \Func{p_1}{A_1}{A_2} }
+\rels{ \Gamma }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
 }
 \\]
 
@@ -544,10 +546,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relcp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
-\relc{ \Gamma, \Delta }{ t }{ A_2 }
+\relcp{ \Gamma }{ p_i }{ A_i }{ \Delta_i } \\\\
+\relc{ \Gamma, \dots, \Delta_n }{ t }{ B }
 }{
-\relc{ \Gamma }{ \func{p}{t} }{ \Func{p_1}{A_1}{A_2} }
+\relc{ \Gamma }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
 }
 \\]
 
@@ -555,10 +557,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t_1 }{ \Func{p}{A_1}{A_2} } \\\\
-\relc{ \Gamma }{ t_2 }{ A_1}
+\rels{ \Gamma }{ t }{ \Func{\dots, p_n: A_n}{B} } \\\\
+\relc{ \Gamma }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \apply{t_1}{t_2} }{ A_2 }
+\rels{ \Gamma }{ \apply{t}{\dots, t_n} }{ B }
 }
 \\]
 
@@ -566,10 +568,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t_2 }{ A_1 } \\\\
-\relc{ \Gamma }{ t_1 }{ \Func{p}{A_1}{A_2} }
+\rels{ \Gamma }{ t_i }{ A_i } \\\\
+\relc{ \Gamma }{ t }{ \Func{\dots, \drop: A_n}{B} }
 }{
-\relc{ \Gamma }{ \apply{t_1}{t_2} }{ A_2 }
+\relc{ \Gamma }{ \apply{t}{\dots, t_n} }{ B }
 }
 \\]
 
@@ -699,7 +701,7 @@ n_1 \ \texttt{<=} \ n_2
 \infer{
 \relsp{ \Gamma }{ p_i }{ A_i }{ \Delta_i }
 }{
-\relsp{ \Gamma }{ \compound{k_1: p_1, k_2: p_2, \dots, k_n: p_n} }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relsp{ \Gamma }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
 }
 \\]
 
@@ -709,13 +711,9 @@ n_1 \ \texttt{<=} \ n_2
 \infer{
 \relcp{ \Gamma }{ p_i }{ A_i }{ \Delta_i }
 }{
-\relcp{ \Gamma }{ \compound{k_1: p_1, k_2: p_2, \dots, k_n: p_n} }{ \Compound{k_1: A_1, k_2: A_2, \dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relcp{ \Gamma }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
 }
 \\]
-
-#### TupleOf-\\(\synth\\)
-
-#### TupleOf-\\(\check\\)
 
 #### Var-\\(\synth\\)
 
