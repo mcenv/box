@@ -18,7 +18,7 @@ object Surface {
     data class Def(
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<String>,
-      val type: Type,
+      val type: Term,
       val body: Term?,
       override val range: Range,
     ) : Definition
@@ -31,227 +31,83 @@ object Surface {
     }
   }
 
-  sealed interface Kind {
-    val range: Range
-
-    data class Type(
-      val arity: Int,
-      override val range: Range,
-    ) : Kind
-
-    data class Hole(
-      override val range: Range,
-    ) : Kind
-  }
-
-  sealed interface Type {
-    val range: Range
-
-    data class Bool(
-      val value: Boolean?,
-      override val range: Range,
-    ) : Type
-
-    data class Byte(
-      val value: kotlin.Byte?,
-      override val range: Range,
-    ) : Type
-
-    data class Short(
-      val value: kotlin.Short?,
-      override val range: Range,
-    ) : Type
-
-    data class Int(
-      val value: kotlin.Int?,
-      override val range: Range,
-    ) : Type
-
-    data class Long(
-      val value: kotlin.Long?,
-      override val range: Range,
-    ) : Type
-
-    data class Float(
-      val value: kotlin.Float?,
-      override val range: Range,
-    ) : Type
-
-    data class Double(
-      val value: kotlin.Double?,
-      override val range: Range,
-    ) : Type
-
-    data class String(
-      val value: kotlin.String?,
-      override val range: Range,
-    ) : Type
-
-    data class ByteArray(
-      override val range: Range,
-    ) : Type
-
-    data class IntArray(
-      override val range: Range,
-    ) : Type
-
-    data class LongArray(
-      override val range: Range,
-    ) : Type
-
-    data class List(
-      val element: Type,
-      override val range: Range,
-    ) : Type
-
-    data class Compound(
-      val elements: Map<kotlin.String, Type>,
-      override val range: Range,
-    ) : Type
-
-    data class Func(
-      val param: Type,
-      val result: Type,
-      override val range: Range,
-    ) : Type
-
-    data class Clos(
-      val param: Type,
-      val result: Type,
-      override val range: Range,
-    ) : Type
-
-    data class Union(
-      val elements: kotlin.collections.List<Type>,
-      override val range: Range,
-    ) : Type
-
-    data class Code(
-      val element: Type,
-      override val range: Range,
-    ) : Type
-
-    data class Var(
-      val name: kotlin.String,
-      override val range: Range,
-    ) : Type
-
-    data class Meta(
-      override val range: Range,
-    ) : Type
-
-    data class Hole(
-      override val range: Range,
-    ) : Type
-  }
-
   sealed interface Term {
     val range: Range
+
+    data class Tag(
+      override val range: Range,
+    ) : Term
+
+    data class EndTag(
+      override val range: Range,
+    ) : Term
+
+    data class ByteTag(
+      override val range: Range,
+    ) : Term
+
+    data class ShortTag(
+      override val range: Range,
+    ) : Term
+
+    data class IntTag(
+      override val range: Range,
+    ) : Term
+
+    data class LongTag(
+      override val range: Range,
+    ) : Term
+
+    data class FloatTag(
+      override val range: Range,
+    ) : Term
+
+    data class DoubleTag(
+      override val range: Range,
+    ) : Term
+
+    data class StringTag(
+      override val range: Range,
+    ) : Term
+
+    data class ByteArrayTag(
+      override val range: Range,
+    ) : Term
+
+    data class IntArrayTag(
+      override val range: Range,
+    ) : Term
+
+    data class LongArrayTag(
+      override val range: Range,
+    ) : Term
+
+    data class ListTag(
+      override val range: Range,
+    ) : Term
+
+    data class CompoundTag(
+      override val range: Range,
+    ) : Term
+
+    data class Type(
+      val tag: Term,
+      override val range: Range,
+    ) : Term
+
+    data class Bool(
+      override val range: Range,
+    ) : Term
 
     data class BoolOf(
       val value: Boolean,
       override val range: Range,
     ) : Term
 
-    data class ByteOf(
-      val value: Byte,
-      override val range: Range,
-    ) : Term
-
-    data class ShortOf(
-      val value: Short,
-      override val range: Range,
-    ) : Term
-
-    data class IntOf(
-      val value: Int,
-      override val range: Range,
-    ) : Term
-
-    data class LongOf(
-      val value: Long,
-      override val range: Range,
-    ) : Term
-
-    data class FloatOf(
-      val value: Float,
-      override val range: Range,
-    ) : Term
-
-    data class DoubleOf(
-      val value: Double,
-      override val range: Range,
-    ) : Term
-
-    data class StringOf(
-      val parts: List<Part>,
-      override val range: Range,
-    ) : Term {
-      sealed interface Part {
-        data class Raw(val value: String) : Part
-        data class Interpolate(val element: Term) : Part
-      }
-    }
-
-    data class ByteArrayOf(
-      val elements: List<Term>,
-      override val range: Range,
-    ) : Term
-
-    data class IntArrayOf(
-      val elements: List<Term>,
-      override val range: Range,
-    ) : Term
-
-    data class LongArrayOf(
-      val elements: List<Term>,
-      override val range: Range,
-    ) : Term
-
-    data class ListOf(
-      val elements: List<Term>,
-      override val range: Range,
-    ) : Term
-
-    data class CompoundOf(
-      val elements: List<Pair<Ranged<String>, Term>>,
-      override val range: Range,
-    ) : Term
-
-    data class FuncOf(
-      val binder: Pattern,
-      val body: Term,
-      override val range: Range,
-    ) : Term
-
-    data class ClosOf(
-      val binder: Pattern,
-      val body: Term,
-      override val range: Range,
-    ) : Term
-
-    data class Apply(
-      val operator: Term,
-      val operand: Term,
-      override val range: Range,
-    ) : Term
-
     data class If(
       val condition: Term,
-      val thenClause: Term,
-      val elseClause: Term,
-      override val range: Range,
-    ) : Term
-
-    data class Let(
-      val binder: Pattern,
-      val init: Term,
-      val body: Term,
-      override val range: Range,
-    ) : Term
-
-    data class Var(
-      val name: String,
+      val thenBranch: Term,
+      val elseBranch: Term,
       override val range: Range,
     ) : Term
 
@@ -261,7 +117,140 @@ object Surface {
       override val range: Range,
     ) : Term
 
-    data class Command(
+    data class Byte(
+      override val range: Range,
+    ) : Term
+
+    data class ByteOf(
+      val value: kotlin.Byte,
+      override val range: Range,
+    ) : Term
+
+    data class Short(
+      override val range: Range,
+    ) : Term
+
+    data class ShortOf(
+      val value: kotlin.Short,
+      override val range: Range,
+    ) : Term
+
+    data class Int(
+      override val range: Range,
+    ) : Term
+
+    data class IntOf(
+      val value: kotlin.Int,
+      override val range: Range,
+    ) : Term
+
+    data class Long(
+      override val range: Range,
+    ) : Term
+
+    data class LongOf(
+      val value: kotlin.Long,
+      override val range: Range,
+    ) : Term
+
+    data class Float(
+      override val range: Range,
+    ) : Term
+
+    data class FloatOf(
+      val value: kotlin.Float,
+      override val range: Range,
+    ) : Term
+
+    data class Double(
+      override val range: Range,
+    ) : Term
+
+    data class DoubleOf(
+      val value: kotlin.Double,
+      override val range: Range,
+    ) : Term
+
+    data class String(
+      override val range: Range,
+    ) : Term
+
+    data class StringOf(
+      val value: kotlin.String,
+      override val range: Range,
+    ) : Term
+
+    data class ByteArray(
+      override val range: Range,
+    ) : Term
+
+    data class ByteArrayOf(
+      val elements: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class IntArray(
+      override val range: Range,
+    ) : Term
+
+    data class IntArrayOf(
+      val elements: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class LongArray(
+      override val range: Range,
+    ) : Term
+
+    data class LongArrayOf(
+      val elements: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class List(
+      val element: Term,
+      override val range: Range,
+    ) : Term
+
+    data class ListOf(
+      val elements: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class Compound(
+      val elements: kotlin.collections.List<Pair<Ranged<kotlin.String>, Term>>,
+      override val range: Range,
+    ) : Term
+
+    data class CompoundOf(
+      val elements: kotlin.collections.List<Pair<Ranged<kotlin.String>, Term>>,
+      override val range: Range,
+    ) : Term
+
+    data class Union(
+      val elements: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class Func(
+      val params: kotlin.collections.List<Pair<Pattern, Term>>,
+      val result: Term,
+      override val range: Range,
+    ) : Term
+
+    data class FuncOf(
+      val params: kotlin.collections.List<Pattern>,
+      val result: Term,
+      override val range: Range,
+    ) : Term
+
+    data class Apply(
+      val func: Term,
+      val args: kotlin.collections.List<Term>,
+      override val range: Range,
+    ) : Term
+
+    data class Code(
       val element: Term,
       override val range: Range,
     ) : Term
@@ -273,6 +262,18 @@ object Surface {
 
     data class Splice(
       val element: Term,
+      override val range: Range,
+    ) : Term
+
+    data class Let(
+      val binder: Pattern,
+      val init: Term,
+      val body: Term,
+      override val range: Range,
+    ) : Term
+
+    data class Var(
+      val name: kotlin.String,
       override val range: Range,
     ) : Term
 
@@ -311,7 +312,7 @@ object Surface {
 
     data class Anno(
       val element: Pattern,
-      val type: Type,
+      val type: Term,
       override val range: Range,
     ) : Pattern
 
