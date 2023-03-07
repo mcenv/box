@@ -28,7 +28,7 @@ export builtin def to_byte: (_: Int) -> Byte;
 
 export builtin def to_short: (_: Int) -> Short;
 
-export def to_int: (_: Int) -> Int = $identity(`Int);
+export def to_int: (_: Int) -> Int = $identity(IntTag, `Int);
 
 export builtin def to_long: (_: Int) -> Long;
 
