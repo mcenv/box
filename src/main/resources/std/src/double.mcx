@@ -1,1 +1,1 @@
-export builtin def to_string: Proc Double -> String;
+export builtin def to_string: (_: Double) -> String;

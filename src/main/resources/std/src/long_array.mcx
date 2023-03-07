@@ -1,3 +1,3 @@
-export builtin def size: Proc LongArray -> Int;
+export builtin def size: (_: LongArray) -> Int;
 
-export builtin const def get: Proc Tuple(Code LongArray, Int) -> Code Long;
+export builtin const def get: (_: Code LongArray, index: Int) -> Code Long;

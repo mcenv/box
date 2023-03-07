@@ -1,39 +1,39 @@
-export builtin def +: Proc Tuple(Int, Int) -> Int;
+export builtin def +: (_: Int, _: Int) -> Int;
 
-export builtin def -: Proc Tuple(Int, Int) -> Int;
+export builtin def -: (_: Int, _: Int) -> Int;
 
-export builtin def *: Proc Tuple(Int, Int) -> Int;
+export builtin def *: (_: Int, _: Int) -> Int;
 
-export builtin def /: Proc Tuple(Int, Int) -> Int;
+export builtin def /: (_: Int, _: Int) -> Int;
 
-export builtin def %: Proc Tuple(Int, Int) -> Int;
+export builtin def %: (_: Int, _: Int) -> Int;
 
-export builtin def min: Proc Tuple(Int, Int) -> Int;
+export builtin def min: (_: Int, _: Int) -> Int;
 
-export builtin def max: Proc Tuple(Int, Int) -> Int;
+export builtin def max: (_: Int, _: Int) -> Int;
 
-export builtin def =: Proc Tuple(Int, Int) -> Bool;
+export builtin def =: (_: Int, _: Int) -> Bool;
 
-export builtin def <: Proc Tuple(Int, Int) -> Bool;
+export builtin def <: (_: Int, _: Int) -> Bool;
 
-export builtin def <=: Proc Tuple(Int, Int) -> Bool;
+export builtin def <=: (_: Int, _: Int) -> Bool;
 
-export builtin def >: Proc Tuple(Int, Int) -> Bool;
+export builtin def >: (_: Int, _: Int) -> Bool;
 
-export builtin def >=: Proc Tuple(Int, Int) -> Bool;
+export builtin def >=: (_: Int, _: Int) -> Bool;
 
-export builtin def !=: Proc Tuple(Int, Int) -> Bool;
+export builtin def !=: (_: Int, _: Int) -> Bool;
 
-export builtin def to_byte: Proc Int -> Byte;
+export builtin def to_byte: (_: Int) -> Byte;
 
-export builtin def to_short: Proc Int -> Short;
+export builtin def to_short: (_: Int) -> Short;
 
-export def to_int: Proc Int -> Int = $(identity @ `Int);
+export def to_int: (_: Int) -> Int = $identity(`Int);
 
-export builtin def to_long: Proc Int -> Long;
+export builtin def to_long: (_: Int) -> Long;
 
-export builtin def to_float: Proc Int -> Float;
+export builtin def to_float: (_: Int) -> Float;
 
-export builtin def to_double: Proc Int -> Double;
+export builtin def to_double: (_: Int) -> Double;
 
-export builtin def to_string: Proc Int -> String;
+export builtin def to_string: (_: Int) -> String;

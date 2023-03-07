@@ -1,1 +1,1 @@
-export builtin def to_string: Proc Byte -> String;
+export builtin def to_string: (_: Byte) -> String;

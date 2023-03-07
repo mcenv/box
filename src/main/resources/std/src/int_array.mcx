@@ -1,7 +1,3 @@
-import {
-  int::to_string,
-}
+export builtin def size: (_: IntArray) -> Int;
 
-export builtin def size: Proc IntArray -> Int;
-
-export builtin const def get: Proc Tuple(Code IntArray, Int) -> Code Int;
+export builtin const def get: (_: Code IntArray, index: Int) -> Code Int;

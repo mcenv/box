@@ -1,1 +1,1 @@
-export builtin def to_string: Proc Short -> String;
+export builtin def to_string: (_: Short) -> String;
