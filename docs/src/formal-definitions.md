@@ -56,10 +56,10 @@ $$
 \newcommand{\drop}[0]{\texttt{_}}
 \newcommand{\synth}[0]{\color{red} \blacktriangle}
 \newcommand{\check}[0]{\color{blue} \blacktriangledown}
-\newcommand{\rels}[3]{#1 \vdash #2 \ \synth \ #3}
-\newcommand{\relc}[3]{#1 \vdash #2 \ \check \ #3}
-\newcommand{\relsp}[4]{#1 \vdash #2 \ \synth \ #3 \dashv #4}
-\newcommand{\relcp}[4]{#1 \vdash #2 \ \check \ #3 \dashv #4}
+\newcommand{\rels}[4]{#1 \vdash _{#2} #3 \ \synth \ #4}
+\newcommand{\relc}[4]{#1 \vdash _{#2} #3 \ \check \ #4}
+\newcommand{\relsp}[5]{#1 \vdash _{#2} #3 \ \synth \ #4 \dashv #5}
+\newcommand{\relcp}[5]{#1 \vdash _{#2} #3 \ \check \ #4 \dashv #5}
 \newcommand{\relsub}[3]{#1 \vdash #2 <: #3}
 \newcommand{\relf}[2]{\vdash \texttt{fresh} \ #1 : #2}
 \newcommand{\infer}[2]{\dfrac{#1}{#2}}
@@ -69,12 +69,12 @@ $$
 
 ## Typing Rules
 
-- \\(\boxed{\rels{\Gamma}{t}{A}}\\): Under context \\(\Gamma\\), term \\(t\\) synthesizes type \\(A\\)
-- \\(\boxed{\relc{\Gamma}{t}{A}}\\): Under context \\(\Gamma\\), term \\(t\\) checks against type \\(A\\)
-- \\(\boxed{\relsp{\Gamma}{p}{A}{\Delta}}\\): Under context \\(\Gamma\\), pattern \\(p\\) synthesizes type \\(A\\) and outputs bindings \\(\Delta\\)
-- \\(\boxed{\relcp{\Gamma}{p}{A}{\Delta}}\\): Under context \\(\Gamma\\), pattern \\(p\\) checks against type \\(A\\) and outputs bindings \\(\Delta\\)
-- \\(\boxed{\relsub{\Gamma}{A}{B}}\\): Under context \\(\Gamma\\), type \\(A\\) is a subtype of type \\(B\\)
-- \\(\boxed{\relf{t}{A}}\\): Term \\(t\\) is fresh and has type \\(A\\)
+- \\(\boxed{\rels{ \Gamma }{ s }{ t }{ A }}\\): Under context \\(\Gamma\\), at stage \\(s\\), term \\(t\\) synthesizes type \\(A\\)
+- \\(\boxed{\relc{ \Gamma }{ s }{ t }{ A }}\\): Under context \\(\Gamma\\), at stage \\(s\\), term \\(t\\) checks against type \\(A\\)
+- \\(\boxed{\relsp{ \Gamma }{ s }{ p }{ A }{ \Delta }}\\): Under context \\(\Gamma\\), at stage \\(s\\), pattern \\(p\\) synthesizes type \\(A\\) and outputs bindings \\(\Delta\\)
+- \\(\boxed{\relcp{ \Gamma }{ s }{ p }{ A }{ \Delta }}\\): Under context \\(\Gamma\\), at stage \\(s\\), pattern \\(p\\) checks against type \\(A\\) and outputs bindings \\(\Delta\\)
+- \\(\boxed{\relsub{ \Gamma }{ A }{ B }}\\): Under context \\(\Gamma\\), type \\(A\\) is a subtype of type \\(B\\)
+- \\(\boxed{\relf{ t }{ A }}\\): Term \\(t\\) is fresh and has type \\(A\\)
 
 ### Terms
 
@@ -82,7 +82,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Tag }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s+1 }{ \Tag }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -90,7 +90,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \EndTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \EndTag }{ \Tag }
 }
 \\]
 
@@ -98,7 +98,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ByteTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \ByteTag }{ \Tag }
 }
 \\]
 
@@ -106,7 +106,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ShortTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \ShortTag }{ \Tag }
 }
 \\]
 
@@ -114,7 +114,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \IntTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \IntTag }{ \Tag }
 }
 \\]
 
@@ -122,7 +122,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \LongTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \LongTag }{ \Tag }
 }
 \\]
 
@@ -130,7 +130,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \FloatTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \FloatTag }{ \Tag }
 }
 \\]
 
@@ -138,7 +138,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \DoubleTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \DoubleTag }{ \Tag }
 }
 \\]
 
@@ -146,7 +146,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \StringTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \StringTag }{ \Tag }
 }
 \\]
 
@@ -154,7 +154,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ByteArrayTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \ByteArrayTag }{ \Tag }
 }
 \\]
 
@@ -162,7 +162,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \IntArrayTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \IntArrayTag }{ \Tag }
 }
 \\]
 
@@ -170,7 +170,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \LongArrayTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \LongArrayTag }{ \Tag }
 }
 \\]
 
@@ -178,7 +178,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ListTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \ListTag }{ \Tag }
 }
 \\]
 
@@ -186,7 +186,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \CompoundTag }{ \Tag }
+\rels{ \Gamma }{ s+1 }{ \CompoundTag }{ \Tag }
 }
 \\]
 
@@ -194,9 +194,9 @@ $$
 
 \\[
 \infer{
-\relc{ \Gamma }{ \tau }{ \Tag }
+\relc{ \Gamma }{ s }{ \tau }{ \Tag }
 }{
-\rels{ \Gamma }{ \Type{\tau} }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s }{ \Type{\tau} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -204,7 +204,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Bool }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s }{ \Bool }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -214,7 +214,7 @@ $$
 \infer{
 n \in \\{ \false, \true \\}
 }{
-\rels{ \Gamma }{ n }{ \Bool }
+\rels{ \Gamma }{ s }{ n }{ \Bool }
 }
 \\]
 
@@ -222,11 +222,11 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_1 }{ \Bool } \\\\
-\rels{ \Gamma }{ t_2 }{ A_2 } \\\\
-\rels{ \Gamma }{ t_3 }{ A_3 }
+\relc{ \Gamma }{ s }{ t_1 }{ \Bool } \\\\
+\rels{ \Gamma }{ s }{ t_2 }{ A_2 } \\\\
+\rels{ \Gamma }{ s }{ t_3 }{ A_3 }
 }{
-\rels{ \Gamma }{ \if{t_1}{t_2}{t_3} }{ \Union{A_2, A_3} }
+\rels{ \Gamma }{ s }{ \if{t_1}{t_2}{t_3} }{ \Union{A_2, A_3} }
 }
 \\]
 
@@ -234,11 +234,11 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_1 }{ \Bool } \\\\
-\relc{ \Gamma }{ t_2 }{ A } \\\\
-\relc{ \Gamma }{ t_3 }{ A }
+\relc{ \Gamma }{ s }{ t_1 }{ \Bool } \\\\
+\relc{ \Gamma }{ s }{ t_2 }{ A } \\\\
+\relc{ \Gamma }{ s }{ t_3 }{ A }
 }{
-\relc{ \Gamma }{ \if{t_1}{t_2}{t_3} }{ A }
+\relc{ \Gamma }{ s }{ \if{t_1}{t_2}{t_3} }{ A }
 }
 \\]
 
@@ -246,10 +246,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p }{ A }{ \Delta } \\\\
-\relc{ \Gamma }{ t }{ A }
+\relsp{ \Gamma }{ s }{ p }{ A }{ \Delta } \\\\
+\relc{ \Gamma }{ s }{ t }{ A }
 }{
-\rels{ \Gamma }{ \is{t}{p} }{ \Bool }
+\rels{ \Gamma }{ s }{ \is{t}{p} }{ \Bool }
 }
 \\]
 
@@ -257,7 +257,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Byte }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s }{ \Byte }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -267,7 +267,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{byte} \ n
 }{
-\rels{ \Gamma }{ \byte{n} }{ \Byte }
+\rels{ \Gamma }{ s }{ \byte{n} }{ \Byte }
 }
 \\]
 
@@ -275,7 +275,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Short }{ \Type{\ShortTag} }
+\rels{ \Gamma }{ s }{ \Short }{ \Type{\ShortTag} }
 }
 \\]
 
@@ -285,7 +285,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{short} \ n
 }{
-\rels{ \Gamma }{ \short{n} }{ \Short }
+\rels{ \Gamma }{ s }{ \short{n} }{ \Short }
 }
 \\]
 
@@ -293,7 +293,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Int }{ \Type{\IntTag} }
+\rels{ \Gamma }{ s }{ \Int }{ \Type{\IntTag} }
 }
 \\]
 
@@ -303,7 +303,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{int} \ n
 }{
-\rels{ \Gamma }{ n }{ \Int }
+\rels{ \Gamma }{ s }{ n }{ \Int }
 }
 \\]
 
@@ -311,7 +311,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Long }{ \Type{\LongTag} }
+\rels{ \Gamma }{ s }{ \Long }{ \Type{\LongTag} }
 }
 \\]
 
@@ -321,7 +321,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{long} \ n
 }{
-\rels{ \Gamma }{ \long{n} }{ \Long }
+\rels{ \Gamma }{ s }{ \long{n} }{ \Long }
 }
 \\]
 
@@ -329,7 +329,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Float }{ \Type{\FloatTag} }
+\rels{ \Gamma }{ s }{ \Float }{ \Type{\FloatTag} }
 }
 \\]
 
@@ -339,7 +339,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{float} \ n
 }{
-\rels{ \Gamma }{ \float{n} }{ \Float }
+\rels{ \Gamma }{ s }{ \float{n} }{ \Float }
 }
 \\]
 
@@ -347,7 +347,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \Double }{ \Type{\DoubleTag} }
+\rels{ \Gamma }{ s }{ \Double }{ \Type{\DoubleTag} }
 }
 \\]
 
@@ -357,7 +357,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{double} \ n
 }{
-\rels{ \Gamma }{ \double{n} }{ \Double }
+\rels{ \Gamma }{ s }{ \double{n} }{ \Double }
 }
 \\]
 
@@ -365,7 +365,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \String }{ \Type{\StringTag} }
+\rels{ \Gamma }{ s }{ \String }{ \Type{\StringTag} }
 }
 \\]
 
@@ -375,7 +375,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{java.lang.String} \ n
 }{
-\rels{ \Gamma }{ \string{n} }{ \String }
+\rels{ \Gamma }{ s }{ \string{n} }{ \String }
 }
 \\]
 
@@ -383,7 +383,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \ByteArray }{ \Type{\ByteArrayTag} }
+\rels{ \Gamma }{ s }{ \ByteArray }{ \Type{\ByteArrayTag} }
 }
 \\]
 
@@ -391,9 +391,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_i }{ \Byte }
+\relc{ \Gamma }{ s }{ t_i }{ \Byte }
 }{
-\rels{ \Gamma }{ \bytearray{\dots, t_n} }{ \ByteArray }
+\rels{ \Gamma }{ s }{ \bytearray{\dots, t_n} }{ \ByteArray }
 }
 \\]
 
@@ -401,7 +401,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \IntArray }{ \Type{\IntArrayTag} }
+\rels{ \Gamma }{ s }{ \IntArray }{ \Type{\IntArrayTag} }
 }
 \\]
 
@@ -409,9 +409,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_i }{ \Int }
+\relc{ \Gamma }{ s }{ t_i }{ \Int }
 }{
-\rels{ \Gamma }{ \intarray{\dots, t_n} }{ \IntArray }
+\rels{ \Gamma }{ s }{ \intarray{\dots, t_n} }{ \IntArray }
 }
 \\]
 
@@ -419,7 +419,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ \LongArray }{ \Type{\LongArrayTag} }
+\rels{ \Gamma }{ s }{ \LongArray }{ \Type{\LongArrayTag} }
 }
 \\]
 
@@ -427,9 +427,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_i }{ \Long }
+\relc{ \Gamma }{ s }{ t_i }{ \Long }
 }{
-\rels{ \Gamma }{ \longarray{\dots, t_n} }{ \LongArray }
+\rels{ \Gamma }{ s }{ \longarray{\dots, t_n} }{ \LongArray }
 }
 \\]
 
@@ -438,9 +438,9 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\relc{ \Gamma }{ A }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ A }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \List{A} }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s }{ \List{A} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -448,9 +448,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t_i }{ A_i }
+\rels{ \Gamma }{ s }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \list{\dots, t_n} }{ \List{\Union{\dots, A_n}} }
+\rels{ \Gamma }{ s }{ \list{\dots, t_n} }{ \List{\Union{\dots, A_n}} }
 }
 \\]
 
@@ -458,9 +458,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_i }{ A }
+\relc{ \Gamma }{ s }{ t_i }{ A }
 }{
-\relc{ \Gamma }{ \list{\dots, t_n} }{ \List{A} }
+\relc{ \Gamma }{ s }{ \list{\dots, t_n} }{ \List{A} }
 }
 \\]
 
@@ -468,9 +468,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ A_i }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Compound{\dots, k_n: A_n} }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s }{ \Compound{\dots, k_n: A_n} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -478,9 +478,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t_i }{ A_i }
+\rels{ \Gamma }{ s }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
+\rels{ \Gamma }{ s }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
 \\]
 
@@ -488,9 +488,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t_i }{ A }
+\relc{ \Gamma }{ s }{ t_i }{ A }
 }{
-\relc{ \Gamma }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
+\relc{ \Gamma }{ s }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
 \\]
 
@@ -499,9 +499,9 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\relc{ \Gamma }{ A_i }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Union{\dots, A_n} }{ \Type{\tau} }
+\rels{ \Gamma }{ s }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
 \\]
 
@@ -509,9 +509,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ A_i }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
 }{
-\relc{ \Gamma }{ \Union{\dots, A_n} }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
 \\]
 
@@ -522,12 +522,12 @@ n \in \\{ \false, \true \\}
 \relf{ \tau }{ \Tag } \\\\
 \begin{cases}
 \relf{ \tau_i }{ \Tag } \\\\
-\relc{ \Gamma, \dots, \Delta_{i-1} }{ A_i }{ \Type{\tau_i} } \\\\
-\relcp{ \Gamma, \dots, \Delta_{i-1} }{ p_i }{ A_i }{ \Delta_i }
+\relc{ \Gamma, \dots, \Delta_{i-1} }{ s }{ A_i }{ \Type{\tau_i} } \\\\
+\relcp{ \Gamma, \dots, \Delta_{i-1} }{ s }{ p_i }{ A_i }{ \Delta_i }
 \end{cases} \\\\
-\relc{ \Gamma, \dots, \Delta_n }{ B }{ \Type{\tau} }
+\relc{ \Gamma, \dots, \Delta_n }{ s }{ B }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Func{\dots, p_n: A_n}{B} }{ \Type{\CompoundTag} }
+\rels{ \Gamma }{ s }{ \Func{\dots, p_n: A_n}{B} }{ \Type{\CompoundTag} }
 }
 \\]
 
@@ -535,10 +535,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p_i }{ A_i }{ \Delta_i } \\\\
-\rels{ \Gamma, \dots, \Delta_n }{ t }{ B }
+\relsp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i } \\\\
+\rels{ \Gamma, \dots, \Delta_n }{ s }{ t }{ B }
 }{
-\rels{ \Gamma }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
+\rels{ \Gamma }{ s }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
 }
 \\]
 
@@ -546,10 +546,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relcp{ \Gamma }{ p_i }{ A_i }{ \Delta_i } \\\\
-\relc{ \Gamma, \dots, \Delta_n }{ t }{ B }
+\relcp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i } \\\\
+\relc{ \Gamma, \dots, \Delta_n }{ s }{ t }{ B }
 }{
-\relc{ \Gamma }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
+\relc{ \Gamma }{ s }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
 }
 \\]
 
@@ -557,10 +557,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t }{ \Func{\dots, p_n: A_n}{B} } \\\\
-\relc{ \Gamma }{ t_i }{ A_i }
+\rels{ \Gamma }{ s }{ t }{ \Func{\dots, p_n: A_n}{B} } \\\\
+\relc{ \Gamma }{ s }{ t_i }{ A_i }
 }{
-\rels{ \Gamma }{ \apply{t}{\dots, t_n} }{ B }
+\rels{ \Gamma }{ s }{ \apply{t}{\dots, t_n} }{ B }
 }
 \\]
 
@@ -568,10 +568,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t_i }{ A_i } \\\\
-\relc{ \Gamma }{ t }{ \Func{\dots, \drop: A_n}{B} }
+\rels{ \Gamma }{ s }{ t_i }{ A_i } \\\\
+\relc{ \Gamma }{ s }{ t }{ \Func{\dots, \drop: A_n}{B} }
 }{
-\relc{ \Gamma }{ \apply{t}{\dots, t_n} }{ B }
+\relc{ \Gamma }{ s }{ \apply{t}{\dots, t_n} }{ B }
 }
 \\]
 
@@ -580,9 +580,9 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\relc{ \Gamma }{ A }{ \Type{\tau} }
+\relc{ \Gamma }{ s }{ A }{ \Type{\tau} }
 }{
-\rels{ \Gamma }{ \Code{A} }{ \Type{\ByteTag} }
+\rels{ \Gamma }{ s+1 }{ \Code{A} }{ \Type{\ByteTag} }
 }
 \\]
 
@@ -590,9 +590,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t }{ A }
+\rels{ \Gamma }{ s }{ t }{ A }
 }{
-\rels{ \Gamma }{ \code{t} }{ \Code{A} }
+\rels{ \Gamma }{ s+1 }{ \code{t} }{ \Code{A} }
 }
 \\]
 
@@ -600,9 +600,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t }{ A }
+\relc{ \Gamma }{ s }{ t }{ A }
 }{
-\relc{ \Gamma }{ \code{t} }{ \Code{A} }
+\relc{ \Gamma }{ s+1 }{ \code{t} }{ \Code{A} }
 }
 \\]
 
@@ -610,9 +610,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t }{ \Code{A} }
+\rels{ \Gamma }{ s+1 }{ t }{ \Code{A} }
 }{
-\rels{ \Gamma }{ \splice{t} }{ A }
+\rels{ \Gamma }{ s }{ \splice{t} }{ A }
 }
 \\]
 
@@ -620,9 +620,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ t }{ \Code{A} }
+\relc{ \Gamma }{ s+1 }{ t }{ \Code{A} }
 }{
-\relc{ \Gamma }{ \splice{t} }{ A }
+\relc{ \Gamma }{ s }{ \splice{t} }{ A }
 }
 \\]
 
@@ -630,11 +630,11 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
-\relc{ \Gamma }{ t_1 }{ A_1 } \\\\
-\rels{ \Gamma, \Delta }{ t_2 }{ A_2 }
+\relsp{ \Gamma }{ s }{ p }{ A_1 }{ \Delta } \\\\
+\relc{ \Gamma }{ s }{ t_1 }{ A_1 } \\\\
+\rels{ \Gamma, \Delta }{ s }{ t_2 }{ A_2 }
 }{
-\rels{ \Gamma }{ \let{p}{t_1}{t_2} }{ A_2 }
+\rels{ \Gamma }{ s }{ \let{p}{t_1}{t_2} }{ A_2 }
 }
 \\]
 
@@ -642,11 +642,11 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p }{ A_1 }{ \Delta } \\\\
-\relc{ \Gamma }{ t_1 }{ A_1 } \\\\
-\relc{ \Gamma, \Delta }{ t_2 }{ A_2 }
+\relsp{ \Gamma }{ s }{ p }{ A_1 }{ \Delta } \\\\
+\relc{ \Gamma }{ s }{ t_1 }{ A_1 } \\\\
+\relc{ \Gamma, \Delta }{ s }{ t_2 }{ A_2 }
 }{
-\relc{ \Gamma }{ \let{p}{t_1}{t_2} }{ A_2 }
+\relc{ \Gamma }{ s }{ \let{p}{t_1}{t_2} }{ A_2 }
 }
 \\]
 
@@ -654,9 +654,9 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-(x : A) \in \Gamma
+(x :_s A) \in \Gamma
 }{
-\rels{ \Gamma }{ x }{ A }
+\rels{ \Gamma }{ s }{ x }{ A }
 }
 \\]
 
@@ -664,10 +664,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ t }{ A } \\\\
+\rels{ \Gamma }{ s }{ t }{ A } \\\\
 \relsub{ \Gamma }{ A }{ B }
 }{
-\relc{ \Gamma }{ t }{ B }
+\relc{ \Gamma }{ s }{ t }{ B }
 }
 \\]
 
@@ -679,7 +679,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{int} \ n
 }{
-\relsp{ \Gamma }{ n }{ \Int }{ \Delta } \\\\
+\relsp{ \Gamma }{ s }{ n }{ \Int }{ \Delta } \\\\
 }
 \\]
 
@@ -691,7 +691,7 @@ n \in \\{ \false, \true \\}
 \texttt{int} \ n_2 \\\\
 n_1 \ \texttt{<=} \ n_2
 }{
-\relsp{ \Gamma }{ \intrange{n_1}{n_2} }{ \Int }{ \Delta } \\\\
+\relsp{ \Gamma }{ s }{ \intrange{n_1}{n_2} }{ \Int }{ \Delta } \\\\
 }
 \\]
 
@@ -699,9 +699,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p_i }{ A_i }{ \Delta_i }
+\relsp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i }
 }{
-\relsp{ \Gamma }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relsp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
 }
 \\]
 
@@ -709,9 +709,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relcp{ \Gamma }{ p_i }{ A_i }{ \Delta_i }
+\relcp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i }
 }{
-\relcp{ \Gamma }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relcp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
 }
 \\]
 
@@ -722,7 +722,7 @@ n_1 \ \texttt{<=} \ n_2
 \relf{ \tau }{ \Tag } \\\\
 \relf{ A }{ \Type{\tau} }
 }{
-\relsp{ \Gamma }{ x }{ A }{ x : A } \\\\
+\relsp{ \Gamma }{ s }{ x }{ A }{ x :_s A } \\\\
 }
 \\]
 
@@ -730,7 +730,7 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{}{
-\relcp{ \Gamma }{ x }{ A }{ x : A } \\\\
+\relcp{ \Gamma }{ s }{ x }{ A }{ x :_s A } \\\\
 }
 \\]
 
@@ -741,7 +741,7 @@ n_1 \ \texttt{<=} \ n_2
 \relf{ \tau }{ \Tag } \\\\
 \relf{ A }{ \Type{\tau} }
 }{
-\relsp{ \Gamma }{ \drop }{ A }{ \cdot } \\\\
+\relsp{ \Gamma }{ s }{ \drop }{ A }{ \cdot } \\\\
 }
 \\]
 
@@ -749,7 +749,7 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{}{
-\relcp{ \Gamma }{ \drop }{ A }{ \cdot } \\\\
+\relcp{ \Gamma }{ s }{ \drop }{ A }{ \cdot } \\\\
 }
 \\]
 
@@ -757,9 +757,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relsp{ \Gamma }{ p }{ A }{ \Delta } \\\\
+\relsp{ \Gamma }{ s }{ p }{ A }{ \Delta } \\\\
 \relsub{ \Gamma }{ A }{ B }
 }{
-\relcp{ \Gamma }{ p }{ B }{ \Delta } \\\\
+\relcp{ \Gamma }{ s }{ p }{ B }{ \Delta } \\\\
 }
 \\]
