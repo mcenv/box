@@ -46,7 +46,7 @@ $$
 \newcommand{\compound}[1]{\texttt{\\{} \ #1 \texttt{\\}}}
 \newcommand{\Union}[1]{\texttt{Union\\{} #1 \texttt{\\}}}
 \newcommand{\Func}[2]{\texttt{Func(} #1 \texttt{)} \rightarrow #2}
-\newcommand{\func}[2]{\backslash #1 \rightarrow #2}
+\newcommand{\func}[2]{\texttt{\\\\(} #1 \texttt{)} \rightarrow #2}
 \newcommand{\apply}[2]{#1 \texttt{(} #2 \texttt{)}}
 \newcommand{\Code}[1]{\texttt{Code} \ #1}
 \newcommand{\code}[1]{\texttt{`} #1}
