@@ -679,7 +679,7 @@ n \in \\{ \false, \true \\}
 \infer{
 \texttt{int} \ n
 }{
-\relsp{ \Gamma }{ s }{ n }{ \Int }{ \Delta } \\\\
+\relsp{ \Gamma }{ s }{ n }{ \Int }{ \Delta }
 }
 \\]
 
@@ -691,7 +691,7 @@ n \in \\{ \false, \true \\}
 \texttt{int} \ n_2 \\\\
 n_1 \ \texttt{<=} \ n_2
 }{
-\relsp{ \Gamma }{ s }{ \intrange{n_1}{n_2} }{ \Int }{ \Delta } \\\\
+\relsp{ \Gamma }{ s }{ \intrange{n_1}{n_2} }{ \Int }{ \Delta }
 }
 \\]
 
@@ -701,7 +701,7 @@ n_1 \ \texttt{<=} \ n_2
 \infer{
 \dots \relsp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n }
 }{
-\relsp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n } \\\\
+\relsp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n }
 }
 \\]
 
@@ -711,7 +711,27 @@ n_1 \ \texttt{<=} \ n_2
 \infer{
 \dots \relcp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n }
 }{
-\relcp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n } \\\\
+\relcp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n }
+}
+\\]
+
+#### Splice-\\(\synth\\)
+
+\\[
+\infer{
+\relsp{ \Gamma }{ s+1 }{ p }{ \Code{A} }{ \Delta }
+}{
+\relsp{ \Gamma }{ s }{ \splice{p} }{ A }{ \Delta }
+}
+\\]
+
+#### Splice-\\(\check\\)
+
+\\[
+\infer{
+\relcp{ \Gamma }{ s+1 }{ p }{ \Code{A} }{ \Delta }
+}{
+\relcp{ \Gamma }{ s }{ \splice{p} }{ A }{ \Delta }
 }
 \\]
 
@@ -722,7 +742,7 @@ n_1 \ \texttt{<=} \ n_2
 \relf{ \tau }{ \Tag } \\\\
 \relf{ A }{ \Type{\tau} }
 }{
-\relsp{ \Gamma }{ s }{ x }{ A }{ x :_s A } \\\\
+\relsp{ \Gamma }{ s }{ x }{ A }{ x :_s A }
 }
 \\]
 
@@ -730,7 +750,7 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{}{
-\relcp{ \Gamma }{ s }{ x }{ A }{ x :_s A } \\\\
+\relcp{ \Gamma }{ s }{ x }{ A }{ x :_s A }
 }
 \\]
 
@@ -741,7 +761,7 @@ n_1 \ \texttt{<=} \ n_2
 \relf{ \tau }{ \Tag } \\\\
 \relf{ A }{ \Type{\tau} }
 }{
-\relsp{ \Gamma }{ s }{ \drop }{ A }{ \cdot } \\\\
+\relsp{ \Gamma }{ s }{ \drop }{ A }{ \cdot }
 }
 \\]
 
@@ -749,7 +769,7 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{}{
-\relcp{ \Gamma }{ s }{ \drop }{ A }{ \cdot } \\\\
+\relcp{ \Gamma }{ s }{ \drop }{ A }{ \cdot }
 }
 \\]
 
@@ -760,6 +780,6 @@ n_1 \ \texttt{<=} \ n_2
 \relsp{ \Gamma }{ s }{ p }{ A }{ \Delta } \\\\
 \relsub{ \Gamma }{ A }{ B }
 }{
-\relcp{ \Gamma }{ s }{ p }{ B }{ \Delta } \\\\
+\relcp{ \Gamma }{ s }{ p }{ B }{ \Delta }
 }
 \\]

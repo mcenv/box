@@ -2,5 +2,5 @@ export def End: Type EndTag = Union{};
 
 export builtin const def ++: (_: String, _: String) -> String;
 
-export const def identity: (T: Tag, A: Code Type T) -> Code (_: $A) -> $A =
+export const def identity: (T: Tag, $A: Code Type T) -> Code (_: A) -> A =
   \(_, _) -> `\(a) -> a;
