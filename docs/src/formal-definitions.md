@@ -90,7 +90,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \EndTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \EndTag }{ \Tag }
 }
 \\]
 
@@ -98,7 +98,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \ByteTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \ByteTag }{ \Tag }
 }
 \\]
 
@@ -106,7 +106,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \ShortTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \ShortTag }{ \Tag }
 }
 \\]
 
@@ -114,7 +114,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \IntTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \IntTag }{ \Tag }
 }
 \\]
 
@@ -122,7 +122,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \LongTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \LongTag }{ \Tag }
 }
 \\]
 
@@ -130,7 +130,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \FloatTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \FloatTag }{ \Tag }
 }
 \\]
 
@@ -138,7 +138,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \DoubleTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \DoubleTag }{ \Tag }
 }
 \\]
 
@@ -146,7 +146,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \StringTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \StringTag }{ \Tag }
 }
 \\]
 
@@ -154,7 +154,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \ByteArrayTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \ByteArrayTag }{ \Tag }
 }
 \\]
 
@@ -162,7 +162,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \IntArrayTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \IntArrayTag }{ \Tag }
 }
 \\]
 
@@ -170,7 +170,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \LongArrayTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \LongArrayTag }{ \Tag }
 }
 \\]
 
@@ -178,7 +178,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \ListTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \ListTag }{ \Tag }
 }
 \\]
 
@@ -186,7 +186,7 @@ $$
 
 \\[
 \infer{}{
-\rels{ \Gamma }{ s+1 }{ \CompoundTag }{ \Tag }
+\rels{ \Gamma }{ s }{ \CompoundTag }{ \Tag }
 }
 \\]
 
