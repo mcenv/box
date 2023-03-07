@@ -391,7 +391,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ t_i }{ \Byte }
+\dots \relc{ \Gamma }{ s }{ t_n }{ \Byte }
 }{
 \rels{ \Gamma }{ s }{ \bytearray{\dots, t_n} }{ \ByteArray }
 }
@@ -409,7 +409,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ t_i }{ \Int }
+\dots \relc{ \Gamma }{ s }{ t_n }{ \Int }
 }{
 \rels{ \Gamma }{ s }{ \intarray{\dots, t_n} }{ \IntArray }
 }
@@ -427,7 +427,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ t_i }{ \Long }
+\dots \relc{ \Gamma }{ s }{ t_n }{ \Long }
 }{
 \rels{ \Gamma }{ s }{ \longarray{\dots, t_n} }{ \LongArray }
 }
@@ -448,7 +448,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ s }{ t_i }{ A_i }
+\dots \rels{ \Gamma }{ s }{ t_n }{ A_n }
 }{
 \rels{ \Gamma }{ s }{ \list{\dots, t_n} }{ \List{\Union{\dots, A_n}} }
 }
@@ -458,7 +458,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ t_i }{ A }
+\dots \relc{ \Gamma }{ s }{ t_n }{ A }
 }{
 \relc{ \Gamma }{ s }{ \list{\dots, t_n} }{ \List{A} }
 }
@@ -468,7 +468,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
+\dots \relc{ \Gamma }{ s }{ A_n }{ \Type{\tau} }
 }{
 \rels{ \Gamma }{ s }{ \Compound{\dots, k_n: A_n} }{ \Type{\ByteTag} }
 }
@@ -478,7 +478,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ s }{ t_i }{ A_i }
+\dots \rels{ \Gamma }{ s }{ t_n }{ A_n }
 }{
 \rels{ \Gamma }{ s }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
@@ -488,7 +488,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ t_i }{ A }
+\dots \relc{ \Gamma }{ s }{ t_n }{ A }
 }{
 \relc{ \Gamma }{ s }{ \compound{\dots, k_n: t_n} }{ \Compound{\dots, k_n: A_n} }
 }
@@ -499,7 +499,7 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
+\dots \relc{ \Gamma }{ s }{ A_n }{ \Type{\tau} }
 }{
 \rels{ \Gamma }{ s }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
@@ -509,7 +509,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relc{ \Gamma }{ s }{ A_i }{ \Type{\tau} }
+\dots \relc{ \Gamma }{ s }{ A_n }{ \Type{\tau} }
 }{
 \relc{ \Gamma }{ s }{ \Union{\dots, A_n} }{ \Type{\tau} }
 }
@@ -520,10 +520,10 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \relf{ \tau }{ \Tag } \\\\
-\begin{cases}
-\relf{ \tau_i }{ \Tag } \\\\
-\relc{ \Gamma, \dots, \Delta_{i-1} }{ s }{ A_i }{ \Type{\tau_i} } \\\\
-\relcp{ \Gamma, \dots, \Delta_{i-1} }{ s }{ p_i }{ A_i }{ \Delta_i }
+\dots \begin{cases}
+\relf{ \tau_n }{ \Tag } \\\\
+\relc{ \Gamma, \dots, \Delta_{n-1} }{ s }{ A_n }{ \Type{\tau_n} } \\\\
+\relcp{ \Gamma, \dots, \Delta_{n-1} }{ s }{ p_n }{ A_n }{ \Delta_n }
 \end{cases} \\\\
 \relc{ \Gamma, \dots, \Delta_n }{ s }{ B }{ \Type{\tau} }
 }{
@@ -535,7 +535,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relsp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i } \\\\
+\dots \relsp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n } \\\\
 \rels{ \Gamma, \dots, \Delta_n }{ s }{ t }{ B }
 }{
 \rels{ \Gamma }{ s }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
@@ -546,7 +546,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relcp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i } \\\\
+\dots \relcp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n } \\\\
 \relc{ \Gamma, \dots, \Delta_n }{ s }{ t }{ B }
 }{
 \relc{ \Gamma }{ s }{ \func{\dots, p_n}{t} }{ \Func{\dots, p_n: A_n}{B} }
@@ -558,7 +558,7 @@ n \in \\{ \false, \true \\}
 \\[
 \infer{
 \rels{ \Gamma }{ s }{ t }{ \Func{\dots, p_n: A_n}{B} } \\\\
-\relc{ \Gamma }{ s }{ t_i }{ A_i }
+\dots \relc{ \Gamma }{ s }{ t_n }{ A_n }
 }{
 \rels{ \Gamma }{ s }{ \apply{t}{\dots, t_n} }{ B }
 }
@@ -568,7 +568,7 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\rels{ \Gamma }{ s }{ t_i }{ A_i } \\\\
+\dots \rels{ \Gamma }{ s }{ t_n }{ A_n } \\\\
 \relc{ \Gamma }{ s }{ t }{ \Func{\dots, \drop: A_n}{B} }
 }{
 \relc{ \Gamma }{ s }{ \apply{t}{\dots, t_n} }{ B }
@@ -699,9 +699,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relsp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i }
+\dots \relsp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n }
 }{
-\relsp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relsp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n } \\\\
 }
 \\]
 
@@ -709,9 +709,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relcp{ \Gamma }{ s }{ p_i }{ A_i }{ \Delta_i }
+\dots \relcp{ \Gamma }{ s }{ p_n }{ A_n }{ \Delta_n }
 }{
-\relcp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \Delta_1, \Delta_2, \dots, \Delta_n } \\\\
+\relcp{ \Gamma }{ s }{ \compound{\dots, k_n: p_n} }{ \Compound{\dots, k_n: A_n} }{ \dots, \Delta_n } \\\\
 }
 \\]
 
