@@ -61,131 +61,154 @@ class Resolve private constructor(
   private fun resolveDefinition(
     definition: S.Definition,
   ): R.Definition {
+    val range = definition.range
     return when (definition) {
       is S.Definition.Def  -> {
         val name = definition.name.map { input.module.name / it }
-        val type = emptyEnv().resolveType(definition.type)
+        val type = emptyEnv().resolveTerm(definition.type)
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
-        R.Definition.Def(definition.modifiers, name, type, body, definition.range)
+        R.Definition.Def(definition.modifiers, name, type, body, range)
       }
-      is S.Definition.Hole -> R.Definition.Hole(definition.range)
-    }
-  }
-
-  private fun resolveKind(
-    kind: S.Kind,
-  ): R.Kind {
-    return when (kind) {
-      is S.Kind.Type -> R.Kind.Type(kind.arity, kind.range)
-      is S.Kind.Hole -> R.Kind.Hole(kind.range)
-    }
-  }
-
-  private fun Env.resolveType(
-    type: S.Type,
-  ): R.Type {
-    return when (type) {
-      is S.Type.Bool      -> R.Type.Bool(type.value, type.range)
-      is S.Type.Byte      -> R.Type.Byte(type.value, type.range)
-      is S.Type.Short     -> R.Type.Short(type.value, type.range)
-      is S.Type.Int       -> R.Type.Int(type.value, type.range)
-      is S.Type.Long      -> R.Type.Long(type.value, type.range)
-      is S.Type.Float     -> R.Type.Float(type.value, type.range)
-      is S.Type.Double    -> R.Type.Double(type.value, type.range)
-      is S.Type.String    -> R.Type.String(type.value, type.range)
-      is S.Type.ByteArray -> R.Type.ByteArray(type.range)
-      is S.Type.IntArray  -> R.Type.IntArray(type.range)
-      is S.Type.LongArray -> R.Type.LongArray(type.range)
-      is S.Type.List      -> R.Type.List(resolveType(type.element), type.range)
-      is S.Type.Compound  -> R.Type.Compound(type.elements.mapValues { resolveType(it.value) }, type.range)
-      is S.Type.Func      -> R.Type.Func(resolveType(type.param), resolveType(type.result), type.range)
-      is S.Type.Clos      -> R.Type.Clos(resolveType(type.param), resolveType(type.result), type.range)
-      is S.Type.Union     -> R.Type.Union(type.elements.map { resolveType(it) }, type.range)
-      is S.Type.Code      -> R.Type.Code(resolveType(type.element), type.range)
-      is S.Type.Var       -> TODO()
-      is S.Type.Meta      -> R.Type.Meta(type.range)
-      is S.Type.Hole      -> R.Type.Hole(type.range)
+      is S.Definition.Hole -> R.Definition.Hole(range)
     }
   }
 
   private fun Env.resolveTerm(
     term: S.Term,
   ): R.Term {
+    val range = term.range
     return when (term) {
-      is S.Term.BoolOf      -> R.Term.BoolOf(term.value, term.range)
-      is S.Term.ByteOf      -> R.Term.ByteOf(term.value, term.range)
-      is S.Term.ShortOf     -> R.Term.ShortOf(term.value, term.range)
-      is S.Term.IntOf       -> R.Term.IntOf(term.value, term.range)
-      is S.Term.LongOf      -> R.Term.LongOf(term.value, term.range)
-      is S.Term.FloatOf     -> R.Term.FloatOf(term.value, term.range)
-      is S.Term.DoubleOf    -> R.Term.DoubleOf(term.value, term.range)
-      is S.Term.StringOf    -> {
-        val parts = term.parts.map {
-          when (it) {
-            is S.Term.StringOf.Part.Raw         -> R.Term.StringOf.Part.Raw(it.value)
-            is S.Term.StringOf.Part.Interpolate -> R.Term.StringOf.Part.Interpolate(resolveTerm(it.element))
-          }
-        }
-        R.Term.StringOf(parts, term.range)
+      is S.Term.Tag          -> R.Term.Tag(range)
+      is S.Term.EndTag       -> R.Term.EndTag(range)
+      is S.Term.ByteTag      -> R.Term.ByteTag(range)
+      is S.Term.ShortTag     -> R.Term.ShortTag(range)
+      is S.Term.IntTag       -> R.Term.IntTag(range)
+      is S.Term.LongTag      -> R.Term.LongTag(range)
+      is S.Term.FloatTag     -> R.Term.FloatTag(range)
+      is S.Term.DoubleTag    -> R.Term.DoubleTag(range)
+      is S.Term.StringTag    -> R.Term.StringTag(range)
+      is S.Term.ByteArrayTag -> R.Term.ByteArrayTag(range)
+      is S.Term.IntArrayTag  -> R.Term.IntArrayTag(range)
+      is S.Term.LongArrayTag -> R.Term.LongArrayTag(range)
+      is S.Term.ListTag      -> R.Term.ListTag(range)
+      is S.Term.CompoundTag  -> R.Term.CompoundTag(range)
+      is S.Term.Type         -> {
+        val tag = resolveTerm(term.tag)
+        R.Term.Type(tag, range)
       }
-      is S.Term.ByteArrayOf -> R.Term.ByteArrayOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.IntArrayOf  -> R.Term.IntArrayOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.LongArrayOf -> R.Term.LongArrayOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.ListOf      -> R.Term.ListOf(term.elements.map { resolveTerm(it) }, term.range)
-      is S.Term.CompoundOf  -> R.Term.CompoundOf(term.elements.map { (key, element) -> key to resolveTerm(element) }, term.range)
-      is S.Term.FuncOf      -> {
-        val (binder, body) = restoring {
-          // TODO: use frontier level to hide variables
-          val binder = resolvePattern(term.binder)
-          val body = resolveTerm(term.body)
-          binder to body
-        }
-        R.Term.FuncOf(binder, body, term.range)
-      }
-      is S.Term.ClosOf      -> {
-        val (binder, body) = restoring {
-          val binder = resolvePattern(term.binder)
-          val body = resolveTerm(term.body)
-          binder to body
-        }
-        R.Term.ClosOf(binder, body, term.range)
-      }
-      is S.Term.Apply       -> R.Term.Apply(resolveTerm(term.operator), resolveTerm(term.operand), term.range)
-      is S.Term.If          -> {
+      is S.Term.Bool         -> R.Term.Bool(range)
+      is S.Term.BoolOf       -> R.Term.BoolOf(term.value, range)
+      is S.Term.If           -> {
         val condition = resolveTerm(term.condition)
-        val thenClause = resolveTerm(term.thenClause)
-        val elseClause = resolveTerm(term.elseClause)
-        R.Term.If(condition, thenClause, elseClause, term.range)
+        val thenBranch = resolveTerm(term.thenBranch)
+        val elseBranch = resolveTerm(term.elseBranch)
+        R.Term.If(condition, thenBranch, elseBranch, range)
       }
-      is S.Term.Let         -> {
+      is S.Term.Is           -> {
+        val scrutinee = resolveTerm(term.scrutinee)
+        val scrutineer = resolvePattern(term.scrutineer)
+        R.Term.Is(scrutinee, scrutineer, range)
+      }
+      is S.Term.Byte         -> R.Term.Byte(range)
+      is S.Term.ByteOf       -> R.Term.ByteOf(term.value, range)
+      is S.Term.Short        -> R.Term.Short(range)
+      is S.Term.ShortOf      -> R.Term.ShortOf(term.value, range)
+      is S.Term.Int          -> R.Term.Int(range)
+      is S.Term.IntOf        -> R.Term.IntOf(term.value, range)
+      is S.Term.Long         -> R.Term.Long(range)
+      is S.Term.LongOf       -> R.Term.LongOf(term.value, range)
+      is S.Term.Float        -> R.Term.Float(range)
+      is S.Term.FloatOf      -> R.Term.FloatOf(term.value, range)
+      is S.Term.Double       -> R.Term.Double(range)
+      is S.Term.DoubleOf     -> R.Term.DoubleOf(term.value, range)
+      is S.Term.String       -> R.Term.String(range)
+      is S.Term.StringOf     -> R.Term.StringOf(term.value, range)
+      is S.Term.ByteArray    -> R.Term.ByteArray(range)
+      is S.Term.ByteArrayOf  -> {
+        val elements = term.elements.map { resolveTerm(it) }
+        R.Term.ByteArrayOf(elements, range)
+      }
+      is S.Term.IntArray     -> R.Term.IntArray(range)
+      is S.Term.IntArrayOf   -> {
+        val elements = term.elements.map { resolveTerm(it) }
+        R.Term.IntArrayOf(elements, range)
+      }
+      is S.Term.LongArray    -> R.Term.LongArray(range)
+      is S.Term.LongArrayOf  -> {
+        val elements = term.elements.map { resolveTerm(it) }
+        R.Term.LongArrayOf(elements, range)
+      }
+      is S.Term.List         -> {
+        val element = resolveTerm(term.element)
+        R.Term.List(element, range)
+      }
+      is S.Term.ListOf       -> {
+        val elements = term.elements.map { resolveTerm(it) }
+        R.Term.ListOf(elements, range)
+      }
+      is S.Term.Compound     -> {
+        val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
+        R.Term.Compound(elements, range)
+      }
+      is S.Term.CompoundOf   -> {
+        val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
+        R.Term.CompoundOf(elements, range)
+      }
+      is S.Term.Union        -> {
+        val elements = term.elements.map { resolveTerm(it) }
+        R.Term.Union(elements, range)
+      }
+      is S.Term.Func         -> {
+        restoring {
+          val params = term.params.map { (binder, type) -> resolvePattern(binder) to resolveTerm(type) }
+          val result = resolveTerm(term.result)
+          R.Term.Func(params, result, range)
+        }
+      }
+      is S.Term.FuncOf       -> {
+        restoring {
+          val params = term.params.map { resolvePattern(it) }
+          val result = resolveTerm(term.result)
+          R.Term.FuncOf(params, result, range)
+        }
+      }
+      is S.Term.Apply        -> {
+        val func = resolveTerm(term.func)
+        val args = term.args.map { resolveTerm(it) }
+        R.Term.Apply(func, args, range)
+      }
+      is S.Term.Code         -> {
+        val element = resolveTerm(term.element)
+        R.Term.Code(element, range)
+      }
+      is S.Term.CodeOf       -> {
+        val element = resolveTerm(term.element)
+        R.Term.CodeOf(element, range)
+      }
+      is S.Term.Splice       -> {
+        val element = resolveTerm(term.element)
+        R.Term.Splice(element, range)
+      }
+      is S.Term.Let          -> {
         val init = resolveTerm(term.init)
-        val (binder, body) = restoring {
+        restoring {
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)
-          binder to body
+          R.Term.Let(binder, init, body, range)
         }
-        R.Term.Let(binder, init, body, term.range)
       }
-      is S.Term.Var         -> {
+      is S.Term.Var          -> {
         when (val level = this[term.name]) {
           -1   -> {
-            when (val name = resolveName(term.name, term.range)) {
-              null -> R.Term.Hole(term.range)
-              else -> R.Term.Def(name, term.range)
+            when (val name = resolveName(term.name, range)) {
+              null -> R.Term.Hole(range)
+              else -> R.Term.Def(name, range)
             }
           }
-          else -> R.Term.Var(term.name, level, term.range)
+          else -> R.Term.Var(term.name, level, range)
         }
       }
-      is S.Term.Is          -> {
-        val scrutinee = resolveTerm(term.scrutinee)
-        val scrutineer = restoring { resolvePattern(term.scrutineer) }
-        R.Term.Is(scrutinee, scrutineer, term.range)
-      }
-      is S.Term.Command     -> R.Term.Command(resolveTerm(term.element), term.range)
-      is S.Term.CodeOf      -> R.Term.CodeOf(resolveTerm(term.element), term.range)
-      is S.Term.Splice      -> R.Term.Splice(resolveTerm(term.element), term.range)
-      is S.Term.Hole        -> R.Term.Hole(term.range)
+      is S.Term.Hole         -> R.Term.Hole(range)
     }
   }
 
@@ -194,14 +217,21 @@ class Resolve private constructor(
   ): R.Pattern {
     return when (pattern) {
       is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
-      is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.min, pattern.max, pattern.range)
-      is S.Pattern.CompoundOf -> R.Pattern.CompoundOf(pattern.elements.map { (key, element) -> key to resolvePattern(element) }, pattern.range)
+      is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.value, pattern.range)
+      is S.Pattern.CompoundOf -> {
+        val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
+        R.Pattern.CompoundOf(elements, pattern.range)
+      }
       is S.Pattern.Var        -> {
         bind(pattern.name)
         R.Pattern.Var(pattern.name, lastIndex, pattern.range)
       }
       is S.Pattern.Drop       -> R.Pattern.Drop(pattern.range)
-      is S.Pattern.Anno       -> R.Pattern.Anno(resolvePattern(pattern.element), resolveType(pattern.type), pattern.range)
+      is S.Pattern.Anno       -> {
+        val element = resolvePattern(pattern.element)
+        val type = resolveTerm(pattern.type)
+        R.Pattern.Anno(element, type, pattern.range)
+      }
       is S.Pattern.Hole       -> R.Pattern.Hole(pattern.range)
     }
   }
@@ -235,8 +265,9 @@ class Resolve private constructor(
     private var savedSize: Int = 0
     val lastIndex: Int get() = terms.lastIndex
 
-    operator fun get(name: String): Int =
-      terms.lastIndexOf(name)
+    operator fun get(name: String): Int {
+      return terms.lastIndexOf(name)
+    }
 
     fun bind(name: String) {
       terms += name
@@ -252,8 +283,9 @@ class Resolve private constructor(
     }
 
     companion object {
-      fun emptyEnv(): Env =
-        Env(mutableListOf())
+      fun emptyEnv(): Env {
+        return Env(mutableListOf())
+      }
     }
   }
 

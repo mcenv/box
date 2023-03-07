@@ -291,8 +291,7 @@ object Surface {
     ) : Pattern
 
     data class IntRangeOf(
-      val min: Int,
-      val max: Int,
+      val value: IntRange,
       override val range: Range,
     ) : Pattern
 

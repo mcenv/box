@@ -1,209 +1,147 @@
 package mcx.phase.frontend
 
+import mcx.ast.Core.Term
+import mcx.ast.Core.Value
 import org.eclipse.lsp4j.Range
-import mcx.ast.Core as C
 
 @Suppress("NAME_SHADOWING")
 class MetaEnv {
-  private val kinds: MutableList<C.Kind?> = mutableListOf()
-  private val types: MutableList<C.Type?> = mutableListOf()
+  private val values: MutableList<Value?> = mutableListOf()
 
-  fun freshKind(): C.Kind =
-    C.Kind
-      .Meta(kinds.size)
-      .also { kinds += null }
+  fun fresh(
+    source: Range,
+  ): Value {
+    return Value.Meta(values.size, source).also { values += null }
+  }
 
-  fun freshType(
-    range: Range,
-    kind: C.Kind? = null,
-  ): C.Type =
-    C.Type
-      .Meta(types.size, range, kind ?: freshKind())
-      .also { types += null }
-
-  tailrec fun forceKind(
-    kind: C.Kind,
-  ): C.Kind {
-    return when (kind) {
-      is C.Kind.Meta ->
-        when (val forced = kinds.getOrNull(kind.index)) {
-          null -> kind
-          else -> forceKind(forced)
+  tailrec fun force(
+    value: Value,
+  ): Value {
+    return when (value) {
+      is Value.Meta ->
+        when (val forced = values.getOrNull(value.index)) {
+          null -> value
+          else -> force(forced)
         }
-      else           -> kind
+      else          -> value
     }
   }
 
-  tailrec fun forceType(
-    type: C.Type,
-  ): C.Type {
-    return when (type) {
-      is C.Type.Meta ->
-        when (val forced = types.getOrNull(type.index)) {
-          null -> type
-          else -> forceType(forced)
-        }
-      else           -> type
-    }
+  fun zonk(
+    term: Term,
+  ): Term {
+    TODO()
   }
 
-  fun zonkType(
-    type: C.Type,
-  ): C.Type {
-    return when (val type = forceType(type)) {
-      is C.Type.Bool      -> type
-      is C.Type.Byte      -> type
-      is C.Type.Short     -> type
-      is C.Type.Int       -> type
-      is C.Type.Long      -> type
-      is C.Type.Float     -> type
-      is C.Type.Double    -> type
-      is C.Type.String    -> type
-      is C.Type.ByteArray -> type
-      is C.Type.IntArray  -> type
-      is C.Type.LongArray -> type
-      is C.Type.List      -> C.Type.List(zonkType(type.element))
-      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { zonkType(it.value) })
-      is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
-      is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
-      is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
-      is C.Type.Code      -> C.Type.Code(zonkType(type.element))
-      is C.Type.Var       -> type
-      is C.Type.Def       -> type
-      is C.Type.Meta      -> type
-      is C.Type.Hole      -> type
-    }
-  }
-
-  fun unifyKinds(
-    kind1: C.Kind,
-    kind2: C.Kind,
+  fun Int.unify(
+    value1: Value,
+    value2: Value,
   ): Boolean {
-    val kind1 = forceKind(kind1)
-    val kind2 = forceKind(kind2)
+    val value1 = force(value1)
+    val value2 = force(value2)
     return when {
-      kind1 is C.Kind.Meta ->
-        when (val solution1 = kinds[kind1.index]) {
+      value1 is Value.Tag && value2 is Value.Tag                   -> true
+      value1 is Value.EndTag && value2 is Value.EndTag             -> true
+      value1 is Value.ByteTag && value2 is Value.ByteTag           -> true
+      value1 is Value.ShortTag && value2 is Value.ShortTag         -> true
+      value1 is Value.IntTag && value2 is Value.IntTag             -> true
+      value1 is Value.LongTag && value2 is Value.LongTag           -> true
+      value1 is Value.FloatTag && value2 is Value.FloatTag         -> true
+      value1 is Value.DoubleTag && value2 is Value.DoubleTag       -> true
+      value1 is Value.StringTag && value2 is Value.StringTag       -> true
+      value1 is Value.ByteArrayTag && value2 is Value.ByteArrayTag -> true
+      value1 is Value.IntArrayTag && value2 is Value.IntArrayTag   -> true
+      value1 is Value.LongArrayTag && value2 is Value.LongArrayTag -> true
+      value1 is Value.ListTag && value2 is Value.ListTag           -> true
+      value1 is Value.CompoundTag && value2 is Value.CompoundTag   -> true
+      value1 is Value.Type && value2 is Value.Type                 -> unify(value1.tag.value, value2.tag.value)
+      value1 is Value.Bool && value2 is Value.Bool                 -> true
+      value1 is Value.BoolOf && value2 is Value.BoolOf             -> value1.value == value2.value
+      value1 is Value.If && value2 is Value.If                     -> {
+        unify(value1.condition, value2.condition) &&
+        unify(value1.thenBranch.value, value2.elseBranch.value) &&
+        unify(value1.elseBranch.value, value2.elseBranch.value)
+      }
+      value1 is Value.Is && value2 is Value.Is                     -> {
+        unify(value1.scrutinee.value, value2.scrutinee.value) &&
+        value1.scrutineer == value2.scrutineer // TODO: unify patterns
+      }
+      value1 is Value.Byte && value2 is Value.Byte                 -> true
+      value1 is Value.ByteOf && value2 is Value.ByteOf             -> value1.value == value2.value
+      value1 is Value.Short && value2 is Value.Short               -> true
+      value1 is Value.ShortOf && value2 is Value.ShortOf           -> value1.value == value2.value
+      value1 is Value.Int && value2 is Value.Int                   -> true
+      value1 is Value.IntOf && value2 is Value.IntOf               -> value1.value == value2.value
+      value1 is Value.Long && value2 is Value.Long                 -> true
+      value1 is Value.LongOf && value2 is Value.LongOf             -> value1.value == value2.value
+      value1 is Value.Float && value2 is Value.Float               -> true
+      value1 is Value.FloatOf && value2 is Value.FloatOf           -> value1.value == value2.value
+      value1 is Value.Double && value2 is Value.Double             -> true
+      value1 is Value.DoubleOf && value2 is Value.DoubleOf         -> value1.value == value2.value
+      value1 is Value.String && value2 is Value.String             -> true
+      value1 is Value.StringOf && value2 is Value.StringOf         -> value1.value == value2.value
+      value1 is Value.ByteArray && value2 is Value.ByteArray       -> true
+      value1 is Value.ByteArrayOf && value2 is Value.ByteArrayOf   -> {
+        value1.elements.size == value2.elements.size &&
+        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+      }
+      value1 is Value.IntArray && value2 is Value.IntArray         -> true
+      value1 is Value.IntArrayOf && value2 is Value.IntArrayOf     -> {
+        value1.elements.size == value2.elements.size &&
+        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+      }
+      value1 is Value.LongArray && value2 is Value.LongArray       -> true
+      value1 is Value.LongArrayOf && value2 is Value.LongArrayOf   -> {
+        value1.elements.size == value2.elements.size &&
+        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+      }
+      value1 is Value.List && value2 is Value.List                 -> unify(value1.element.value, value2.element.value)
+      value1 is Value.ListOf && value2 is Value.ListOf             -> {
+        value1.elements.size == value2.elements.size &&
+        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+      }
+      value1 is Value.Compound && value2 is Value.Compound         -> {
+        value1.elements.size == value2.elements.size &&
+        value1.elements.all { (key1, element1) ->
+          when (val element2 = value2.elements[key1]) {
+            null -> false
+            else -> unify(element1.value, element2.value)
+          }
+        }
+      }
+      value1 is Value.Union && value2 is Value.Union               -> false // TODO
+      value1 is Value.Func && value2 is Value.Func                 -> false // TODO
+      value1 is Value.FuncOf && value2 is Value.FuncOf             -> false // TODO
+      value1 is Value.Apply && value2 is Value.Apply               -> {
+        unify(value1.func, value2.func) &&
+        value1.args.size == value2.args.size &&
+        (value1.args zip value2.args).all { (arg1, arg2) -> unify(arg1.value, arg2.value) }
+      }
+      value1 is Value.Code && value2 is Value.Code                 -> unify(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf             -> unify(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice             -> unify(value1.element.value, value2.element.value)
+      value1 is Value.Var && value2 is Value.Var                   -> value1.level == value2.level
+      value1 is Value.Meta                                         -> {
+        when (val solution1 = values[value1.index]) {
           null -> {
-            kinds[kind1.index] = kind2
+            values[value1.index] = value2
             true
           }
-          else -> unifyKinds(solution1, kind2)
+          else -> unify(solution1, value2)
         }
-
-      kind2 is C.Kind.Meta ->
-        when (val solution2 = kinds[kind2.index]) {
+      }
+      value2 is Value.Meta                                         -> {
+        when (val solution2 = values[value2.index]) {
           null -> {
-            kinds[kind2.index] = kind1
+            values[value2.index] = value1
             true
           }
-          else -> unifyKinds(kind1, solution2)
+          else -> unify(value1, solution2)
         }
-
-      kind1 is C.Kind.Type &&
-      kind2 is C.Kind.Type -> kind1.arity == kind2.arity
-
-      kind1 is C.Kind.Hole -> false
-      kind2 is C.Kind.Hole -> false
-
-      else                 -> false
-    }
-  }
-
-  fun unifyTypes(
-    type1: C.Type,
-    type2: C.Type,
-  ): Boolean {
-    val type1 = forceType(type1)
-    val type2 = forceType(type2)
-    return when {
-      type1 is C.Type.Meta  ->
-        when (val solution1 = types[type1.index]) {
-          null -> {
-            types[type1.index] = type2
-            true
-          }
-          else -> unifyTypes(solution1, type2)
-        }
-
-      type2 is C.Type.Meta  ->
-        when (val solution2 = types[type2.index]) {
-          null -> {
-            types[type2.index] = type1
-            true
-          }
-          else -> unifyTypes(type1, solution2)
-        }
-
-      type1 is C.Type.Bool &&
-      type2 is C.Type.Bool  -> true
-
-      type1 is C.Type.Byte &&
-      type2 is C.Type.Byte  -> true
-
-      type1 is C.Type.Short &&
-      type2 is C.Type.Short -> true
-
-      type1 is C.Type.Int &&
-      type2 is C.Type.Int   -> true
-
-      type1 is C.Type.Long &&
-      type2 is C.Type.Long  -> true
-
-      type1 is C.Type.Float &&
-      type2 is C.Type.Float -> true
-
-      type1 is C.Type.Double &&
-      type2 is C.Type.Double    -> true
-
-      type1 is C.Type.String &&
-      type2 is C.Type.String    -> true
-
-      type1 is C.Type.ByteArray &&
-      type2 is C.Type.ByteArray -> true
-
-      type1 is C.Type.IntArray &&
-      type2 is C.Type.IntArray  -> true
-
-      type1 is C.Type.LongArray &&
-      type2 is C.Type.LongArray -> true
-
-      type1 is C.Type.List &&
-      type2 is C.Type.List      -> unifyTypes(type1.element, type2.element)
-
-      type1 is C.Type.Compound &&
-      type2 is C.Type.Compound -> type1.elements.size == type2.elements.size &&
-                                   type1.elements.all { (key1, element1) ->
-                                     when (val element2 = type2.elements[key1]) {
-                                       null -> false
-                                       else -> unifyTypes(element1, element2)
-                                     }
-                                   }
-
-      type1 is C.Type.Func &&
-      type2 is C.Type.Func     -> unifyTypes(type1.param, type2.param) &&
-                                  unifyTypes(type1.result, type2.result)
-
-      type1 is C.Type.Clos &&
-      type2 is C.Type.Clos     -> unifyTypes(type1.param, type2.param) &&
-                                  unifyTypes(type1.result, type2.result)
-
-      type1 is C.Type.Union    -> false // TODO
-      type2 is C.Type.Union    -> false // TODO
-
-      type1 is C.Type.Code &&
-      type2 is C.Type.Code     -> unifyTypes(type1.element, type2.element)
-
-      type1 is C.Type.Var &&
-      type2 is C.Type.Var      -> type1.level == type2.level
-
-      type1 is C.Type.Def &&
-      type2 is C.Type.Def      -> type1.name == type2.name
-
-      type1 is C.Type.Hole     -> false
-      type2 is C.Type.Hole     -> false
-
-      else                     -> false
+      }
+      value1 is Value.Hole                                         -> false
+      value2 is Value.Hole                                         -> false
+      else                                                         -> false
     }
   }
 }

@@ -1,5 +1,8 @@
 package mcx.ast
 
+import kotlinx.collections.immutable.PersistentList
+import org.eclipse.lsp4j.Range
+
 object Core {
   data class Module(
     val name: ModuleLocation,
@@ -205,12 +208,12 @@ object Core {
     ) : Term
 
     data class Compound(
-      val elements: Map<String, Term>,
+      val elements: Map<kotlin.String, Term>,
       override val type: Value,
     ) : Term
 
     data class CompoundOf(
-      val elements: Map<String, Term>,
+      val elements: Map<kotlin.String, Term>,
       override val type: Value,
     ) : Term
 
@@ -267,6 +270,13 @@ object Core {
 
     data class Def(
       val name: DefinitionLocation,
+      val body: Term,
+      override val type: Value,
+    ) : Term
+
+    data class Meta(
+      val index: kotlin.Int,
+      val source: Range,
       override val type: Value,
     ) : Term
 
@@ -284,8 +294,7 @@ object Core {
     ) : Pattern
 
     data class IntRangeOf(
-      val min: Int,
-      val max: Int,
+      val value: IntRange,
       override val type: Value,
     ) : Pattern
 
@@ -310,7 +319,8 @@ object Core {
   }
 
   class Closure(
-    val values: List<Lazy<Value>>,
+    val values: PersistentList<Lazy<Value>>,
+    val binders: List<Pattern>,
     val body: Term,
   )
 
@@ -356,7 +366,7 @@ object Core {
     ) : Value
 
     class If(
-      val condition: Lazy<Value>,
+      val condition: Value,
       val thenBranch: Lazy<Value>,
       val elseBranch: Lazy<Value>,
     ) : Value
@@ -462,17 +472,17 @@ object Core {
     ) : Value
 
     class Func(
-      val params: kotlin.collections.List<Pair<Pattern, Lazy<Value>>>,
+      val params: kotlin.collections.List<Lazy<Value>>,
       val result: Closure,
     ) : Value
 
-    class FuncOf(
-      val params: kotlin.collections.List<Pattern>,
+    @JvmInline
+    value class FuncOf(
       val result: Closure,
     ) : Value
 
     class Apply(
-      val func: Lazy<Value>,
+      val func: Value,
       val args: kotlin.collections.List<Lazy<Value>>,
     ) : Value
 
@@ -496,9 +506,9 @@ object Core {
       val level: kotlin.Int,
     ) : Value
 
-    class Def(
-      val name: DefinitionLocation,
-      val body: Lazy<Value>,
+    class Meta(
+      val index: kotlin.Int,
+      val source: Range,
     ) : Value
 
     object Hole : Value
