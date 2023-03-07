@@ -13,7 +13,7 @@ import mcx.ast.Core as C
 class Zonk private constructor(
   private val input: Elaborate.Result,
 ) {
-  private val metaEnv: MetaEnv = input.metaEnv
+  private val meta: Meta = input.meta
   private val unsolved: MutableSet<C.Type.Meta> = hashSetOf()
 
   private fun zonk(): Result {
@@ -48,7 +48,7 @@ class Zonk private constructor(
   private fun zonkType(
     type: C.Type,
   ): C.Type {
-    return when (val type = metaEnv.forceType(type)) {
+    return when (val type = meta.forceType(type)) {
       is C.Type.Bool      -> type
       is C.Type.Byte      -> type
       is C.Type.Short     -> type

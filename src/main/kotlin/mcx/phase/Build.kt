@@ -40,43 +40,39 @@ class Build(
       val location: ModuleLocation,
     ) : Key<String?>
 
-    data class ParseResult(
+    data class Parsed(
       val location: ModuleLocation,
     ) : Key<Parse.Result?>
 
-    data class ResolveResult(
+    data class Resolved(
       val location: ModuleLocation,
     ) : Key<Resolve.Result?>
 
-    data class Signature(
-      val location: ModuleLocation,
-    ) : Key<Elaborate.Result?>
-
-    data class ElaborateResult(
+    data class Elaborated(
       val location: ModuleLocation,
     ) : Key<Elaborate.Result> {
       var position: Position? = null
     }
 
-    data class ZonkResult(
+    data class Zonked(
       val location: ModuleLocation,
     ) : Key<Zonk.Result> {
       var position: Position? = null
     }
 
-    data class StageResult(
+    data class Staged(
       val location: DefinitionLocation,
     ) : Key<List<Core.Definition>>
 
-    data class LiftResult(
+    data class Lifted(
       val location: DefinitionLocation,
     ) : Key<List<Lift.Result>>
 
-    object PackResult : Key<List<Packed.Definition>> {
+    object Packed : Key<List<mcx.ast.Packed.Definition>> {
       lateinit var locations: List<DefinitionLocation>
     }
 
-    object GenerateResult : Key<Map<String, String>> {
+    object Generated : Key<Map<String, String>> {
       lateinit var locations: List<DefinitionLocation>
     }
   }
@@ -110,17 +106,16 @@ class Build(
       }
     }
 
-    val definitions = fetch(Key.ResolveResult(location)).value!!.module.definitions
+    val definitions = fetch(Key.Resolved(location)).value!!.module.definitions
     return coroutineScope {
       close(Key.Text(location))
-      close(Key.ParseResult(location))
-      close(Key.ResolveResult(location))
-      close(Key.Signature(location))
-      close(Key.ElaborateResult(location))
-      close(Key.ZonkResult(location))
+      close(Key.Parsed(location))
+      close(Key.Resolved(location))
+      close(Key.Elaborated(location))
+      close(Key.Zonked(location))
       definitions.forEach { (location, _) ->
-        close(Key.StageResult(location))
-        close(Key.LiftResult(location))
+        close(Key.Staged(location))
+        close(Key.Lifted(location))
       }
     }
   }
@@ -155,7 +150,7 @@ class Build(
               }
             }
 
-            is Key.ParseResult     -> {
+            is Key.Parsed     -> {
               val text = fetch(Key.Text(key.location))
               if (text.value == null) {
                 return@coroutineScope Value.NULL
@@ -168,22 +163,22 @@ class Build(
               }
             }
 
-            is Key.ResolveResult   -> {
+            is Key.Resolved   -> {
               val location = key.location
-              val surface = fetch(Key.ParseResult(location))
+              val surface = fetch(Key.Parsed(location))
               if (surface.value == null) {
                 return@coroutineScope Value.NULL
               }
               val dependencyHashes = surface.value.module.imports
-                .map { async { fetch(Key.ResolveResult(it.value.module)) } }
-                .plus(async { if (location == prelude) null else fetch(Key.ResolveResult(prelude)) })
+                .map { async { fetch(Key.Resolved(it.value.module)) } }
+                .plus(async { if (location == prelude) null else fetch(Key.Resolved(prelude)) })
                 .awaitAll()
                 .filterNotNull()
                 .map { it.hash }
               val dependencies = surface.value.module.imports
-                .map { async { Resolve.Dependency(it.value, fetch(Key.ResolveResult(it.value.module)).value?.module?.definitions?.get(it.value), it.range) } }
+                .map { async { Resolve.Dependency(it.value, fetch(Key.Resolved(it.value.module)).value?.module?.definitions?.get(it.value), it.range) } }
                 .plus(
-                  if (location == prelude) emptyList() else fetch(Key.ResolveResult(prelude)).value!!.module.definitions.map {
+                  if (location == prelude) emptyList() else fetch(Key.Resolved(prelude)).value!!.module.definitions.map {
                     async { Resolve.Dependency(it.key, it.value, null) }
                   }
                 )
@@ -196,42 +191,24 @@ class Build(
               }
             }
 
-            is Key.Signature       -> {
-              val resolved = fetch(Key.ResolveResult(key.location))
-              if (resolved.value == null) {
-                return@coroutineScope Value.NULL
-              }
-              val hash = resolved.hash
-              if (value == null || value.hash != hash) {
-                Value(Elaborate(this@fetch, emptyList(), resolved.value, true), hash)
-              } else {
-                value
-              }
-            }
-
-            is Key.ElaborateResult -> {
+            is Key.Elaborated -> {
               val location = key.location
-              val resolved = fetch(Key.ResolveResult(location)) as Value<Resolve.Result>
-              val signature = fetch(Key.Signature(location)) as Value<Elaborate.Result>
+              val resolved = fetch(Key.Resolved(location)) as Value<Resolve.Result>
               val results = resolved.value.module.imports
-                .map { async { fetch(Key.Signature(it.value.module)) } }
-                .plus(async { fetch(Key.Signature(prelude)) })
+                .map { async { fetch(Key.Elaborated(it.value.module)) } }
+                .plus(async { fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
-              val dependencies = results
-                .mapNotNull { it.value?.module }
-                .plus(signature.value.module)
-              val hash = Objects.hash(resolved.hash, signature.hash, results.map { it.hash })
+              val dependencies = results.map { it.value.module }
+              val hash = Objects.hash(resolved.hash, results.map { it.hash })
               if (value == null || value.hash != hash || key.position != null) {
-                Value(Elaborate(this@fetch, dependencies, Resolve.Result(resolved.value.module, signature.value.diagnostics), false, key.position), hash)
+                Value(Elaborate(this@fetch, dependencies, resolved.value, key.position), hash)
               } else {
                 value
               }
             }
 
-            is Key.ZonkResult      -> {
-              val core = fetch(Key
-                                 .ElaborateResult(key.location)
-                                 .apply { position = key.position })
+            is Key.Zonked     -> {
+              val core = fetch(Key.Elaborated(key.location).apply { position = key.position })
               val hash = core.hash
               if (value == null || value.hash != hash || key.position != null) {
                 Value(Zonk(this@fetch, core.value), hash)
@@ -240,13 +217,13 @@ class Build(
               }
             }
 
-            is Key.StageResult     -> {
+            is Key.Staged     -> {
               val location = key.location
-              val zonked = fetch(Key.ZonkResult(location.module))
+              val zonked = fetch(Key.Zonked(location.module))
               val definition = zonked.value.module.definitions.find { it.name == location }!!
-              val results = transitiveImports(fetch(Key.ParseResult(location.module)).value!!.module.name)
-                .map { async { fetch(Key.ZonkResult(it.module)) } }
-                .plus(async { fetch(Key.ZonkResult(prelude)) })
+              val results = transitiveImports(fetch(Key.Parsed(location.module)).value!!.module.name)
+                .map { async { fetch(Key.Zonked(it.module)) } }
+                .plus(async { fetch(Key.Zonked(prelude)) })
                 .awaitAll()
               val dependencies = results
                 .flatMap { it.value.module.definitions }
@@ -260,8 +237,8 @@ class Build(
               }
             }
 
-            is Key.LiftResult      -> {
-              val staged = fetch(Key.StageResult(key.location))
+            is Key.Lifted     -> {
+              val staged = fetch(Key.Staged(key.location))
               val hash = staged.hash
               if (value == null || value.hash != hash) {
                 Value(staged.value.map { Lift(this@fetch, it) }, hash)
@@ -270,11 +247,9 @@ class Build(
               }
             }
 
-            is Key.PackResult      -> {
-              val results = key.locations.map { fetch(Key.LiftResult(it)) }
-              val hash = results
-                .map { it.hash }
-                .hashCode()
+            is Key.Packed     -> {
+              val results = key.locations.map { fetch(Key.Lifted(it)) }
+              val hash = results.map { it.hash }.hashCode()
               if (value == null || value.hash != hash) {
                 val definitions = results
                   .flatMap { result -> result.value.flatMap { it.liftedDefinitions.map { async { Pack(this@fetch, it) } } } }
@@ -286,8 +261,8 @@ class Build(
               }
             }
 
-            is Key.GenerateResult  -> {
-              val packed = fetch(Key.PackResult.apply { locations = key.locations })
+            is Key.Generated  -> {
+              val packed = fetch(Key.Packed.apply { locations = key.locations })
               val hash = packed.hash
               if (value == null || value.hash != hash) {
                 val definitions = packed.value
@@ -308,7 +283,7 @@ class Build(
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
     val imports = mutableListOf<DefinitionLocation>()
     suspend fun visit(location: ModuleLocation) {
-      fetch(Key.ParseResult(location)).value!!.module.imports.forEach { (import) ->
+      fetch(Key.Parsed(location)).value!!.module.imports.forEach { (import) ->
         imports += import
         visit(import.module)
       }
@@ -340,9 +315,11 @@ class Build(
       .use { Json.decodeFromStream<Config>(it) }
 
     fun Path.toModuleLocation(): ModuleLocation =
-      ModuleLocation(src.relativize(this).invariantSeparatorsPathString
-                       .dropLast(".mcx".length)
-                       .split('/'))
+      ModuleLocation(
+        src.relativize(this).invariantSeparatorsPathString
+          .dropLast(".mcx".length)
+          .split('/')
+      )
 
     val datapackRoot = datapacks
       .resolve(config.name)
@@ -356,7 +333,7 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val zonked = context.fetch(Key.ZonkResult(path.toModuleLocation()))
+            val zonked = context.fetch(Key.Zonked(path.toModuleLocation()))
             if (zonked.value.diagnostics.isNotEmpty()) {
               diagnosticsByPath += path to zonked.value.diagnostics
             }
@@ -376,7 +353,7 @@ class Build(
         exitProcess(1)
       }
 
-      context.fetch(Key.GenerateResult.apply { this.locations = locations }).value
+      context.fetch(Key.Generated.apply { this.locations = locations }).value
         .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
           name
@@ -401,10 +378,12 @@ class Build(
       .buffered()
       .use {
         Json.encodeToStream(
-          PackMetadata(pack = PackMetadataSection(
-            description = config.description,
-            packFormat = 10,
-          )),
+          PackMetadata(
+            pack = PackMetadataSection(
+              description = config.description,
+              packFormat = 10,
+            )
+          ),
           it,
         )
       }

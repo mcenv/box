@@ -5,7 +5,7 @@ import mcx.ast.Core.Value
 import org.eclipse.lsp4j.Range
 
 @Suppress("NAME_SHADOWING")
-class MetaEnv {
+class Meta {
   private val values: MutableList<Value?> = mutableListOf()
 
   fun fresh(

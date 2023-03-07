@@ -80,7 +80,7 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> =
     CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val zonked = with(build) { fetchContext().fetch(Build.Key.ZonkResult(uri.toModuleLocation())) }
+      val zonked = with(build) { fetchContext().fetch(Build.Key.Zonked(uri.toModuleLocation())) }
       val newHash = zonked.value.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -96,7 +96,7 @@ class McxService : TextDocumentService,
       val zonked = with(build) {
         fetchContext().fetch(
           Build.Key
-            .ZonkResult(params.textDocument.uri.toModuleLocation())
+            .Zonked(params.textDocument.uri.toModuleLocation())
             .apply { position = params.position }
         )
       }
@@ -108,7 +108,7 @@ class McxService : TextDocumentService,
       val zonked = with(build) {
         fetchContext().fetch(
           Build.Key
-            .ZonkResult(params.textDocument.uri.toModuleLocation())
+            .Zonked(params.textDocument.uri.toModuleLocation())
             .apply { position = params.position }
         )
       }
