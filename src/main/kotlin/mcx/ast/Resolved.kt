@@ -306,6 +306,11 @@ object Resolved {
       override val range: Range,
     ) : Pattern
 
+    data class Splice(
+      val element: Pattern,
+      override val range: Range,
+    ) : Pattern
+
     data class Var(
       val name: String,
       val level: Int,

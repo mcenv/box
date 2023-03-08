@@ -303,6 +303,11 @@ object Core {
       override val type: Value,
     ) : Pattern
 
+    data class Splice(
+      val element: Pattern,
+      override val type: Value,
+    ) : Pattern
+
     data class Var(
       val name: String,
       val level: Int,

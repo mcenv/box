@@ -14,6 +14,23 @@ operator fun Closure.invoke(
   return (values + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).eval(body)
 }
 
+operator fun Closure.invoke(): Value {
+  val vars = mutableListOf<Lazy<Value>>()
+  fun go(pattern: Pattern) {
+    when (pattern) {
+      is Pattern.IntOf      -> {}
+      is Pattern.IntRangeOf -> {}
+      is Pattern.CompoundOf -> {}
+      is Pattern.Splice     -> go(pattern.element)
+      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, values.size + vars.size))
+      is Pattern.Drop       -> {}
+      is Pattern.Hole       -> {}
+    }
+  }
+  binders.forEach { go(it) }
+  return (values + vars).eval(body)
+}
+
 fun PersistentList<Lazy<Value>>.eval(
   term: Term,
 ): Value {
@@ -157,6 +174,12 @@ fun bind(
           binder.elements.forEach { go(it.value, value.elements[it.key]!!) }
         }
       }
+      is Pattern.Splice     -> {
+        val value = value.value
+        if (value is Value.CodeOf) {
+          go(binder.element, value.element)
+        }
+      }
       is Pattern.Var        -> values += value
       is Pattern.Drop       -> {}
       is Pattern.Hole       -> {}
@@ -182,6 +205,10 @@ fun match(
     is Pattern.CompoundOf -> {
       val value = value.value as? Value.CompoundOf ?: return null
       binder.elements.all { (key, element) -> value.elements[key]?.let { match(element, it) } ?: false }
+    }
+    is Pattern.Splice     -> {
+      val value = value.value as? Value.CodeOf ?: return null
+      match(binder.element, value.element)
     }
     is Pattern.Var        -> true
     is Pattern.Drop       -> true

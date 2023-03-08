@@ -300,6 +300,11 @@ object Surface {
       override val range: Range,
     ) : Pattern
 
+    data class Splice(
+      val element: Pattern,
+      override val range: Range,
+    ) : Pattern
+
     data class Var(
       val name: String,
       override val range: Range,
