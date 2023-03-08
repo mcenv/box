@@ -468,7 +468,10 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\dots \relc{ \Gamma }{ s }{ A_n }{ \Type{\tau} }
+\dots \begin{cases}
+\relf{ \tau_n }{ \Tag } \\\\
+\relc{ \Gamma }{ s }{ A_n }{ \Type{\tau_n} }
+\end{cases}
 }{
 \rels{ \Gamma }{ s }{ \Compound{\dots, k_n: A_n} }{ \Type{\ByteTag} }
 }
@@ -519,12 +522,12 @@ n \in \\{ \false, \true \\}
 
 \\[
 \infer{
-\relf{ \tau }{ \Tag } \\\\
 \dots \begin{cases}
 \relf{ \tau_n }{ \Tag } \\\\
 \relc{ \Gamma, \dots, \Delta_{n-1} }{ s }{ A_n }{ \Type{\tau_n} } \\\\
 \relcp{ \Gamma, \dots, \Delta_{n-1} }{ s }{ p_n }{ A_n }{ \Delta_n }
 \end{cases} \\\\
+\relf{ \tau }{ \Tag } \\\\
 \relc{ \Gamma, \dots, \Delta_n }{ s }{ B }{ \Type{\tau} }
 }{
 \rels{ \Gamma }{ s }{ \Func{\dots, p_n: A_n}{B} }{ \Type{\CompoundTag} }
