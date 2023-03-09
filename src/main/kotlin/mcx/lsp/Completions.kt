@@ -12,11 +12,11 @@ private val definitions: List<CompletionItem> = listOf(
 }
 
 private val modifiers: List<CompletionItem> = listOf(
-  "no_drop",
   "builtin",
   "export",
   "inline",
   "const",
+  "world",
 ).map {
   CompletionItem(it).apply {
     kind = CompletionItemKind.Keyword

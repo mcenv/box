@@ -102,7 +102,6 @@ class Parse private constructor(
       val start = cursor
       modifiers += ranging {
         when (val word = readWord()) {
-          "no_drop" -> Ranged(Modifier.NO_DROP, until())
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "inline"  -> Ranged(Modifier.INLINE, until())

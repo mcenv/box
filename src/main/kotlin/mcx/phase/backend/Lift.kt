@@ -32,11 +32,10 @@ class Lift private constructor(
     modifier: Modifier,
   ): L.Modifier? {
     return when (modifier) {
-      Modifier.NO_DROP -> L.Modifier.NO_DROP
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
-      Modifier.INLINE  -> error("unexpected: $modifier")
-      Modifier.CONST   -> error("unexpected: $modifier")
+      Modifier.INLINE  -> error("unexpected modifier: $modifier")
+      Modifier.CONST   -> error("unexpected modifier: $modifier")
       Modifier.WORLD   -> null
     }
   }

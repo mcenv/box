@@ -44,7 +44,7 @@ fun PersistentList<Lazy<Value>>.eval(
     }
     is Term.Bool        -> Value.Bool
     is Term.BoolOf      -> Value.BoolOf(term.value)
-    is Term.If     -> {
+    is Term.If          -> {
       when (val condition = eval(term.condition)) {
         is Value.BoolOf -> if (condition.value) eval(term.thenBranch) else eval(term.elseBranch)
         else            -> {
@@ -94,7 +94,7 @@ fun PersistentList<Lazy<Value>>.eval(
       val element = lazy { eval(term.element) }
       Value.List(element)
     }
-    is Term.ListOf -> {
+    is Term.ListOf      -> {
       val elements = term.elements.map { lazy { eval(it) } }
       Value.ListOf(elements, term.type)
     }
@@ -115,37 +115,37 @@ fun PersistentList<Lazy<Value>>.eval(
       val result = Closure(this, term.params.map { (binder, _) -> binder }, term.result)
       Value.Func(params, result)
     }
-    is Term.FuncOf -> {
+    is Term.FuncOf      -> {
       val result = Closure(this, term.params, term.result)
       Value.FuncOf(result, term.type)
     }
-    is Term.Apply  -> {
+    is Term.Apply       -> {
       val args = term.args.map { lazy { eval(it) } }
       when (val func = eval(term.func)) {
         is Value.FuncOf -> func.result(args)
         else            -> Value.Apply(func, args, term.type)
       }
     }
-    is Term.Code   -> {
+    is Term.Code        -> {
       val element = lazy { eval(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf -> {
+    is Term.CodeOf      -> {
       val element = lazy { eval(term.element) }
       Value.CodeOf(element)
     }
-    is Term.Splice -> {
+    is Term.Splice      -> {
       val element = lazy { eval(term.element) }
       Value.Splice(element, term.type)
     }
-    is Term.Let    -> {
+    is Term.Let         -> {
       val init = lazy { eval(term.init) }
       (this + bind(term.binder, init)).eval(term.body)
     }
-    is Term.Var    -> this[term.level].value
-    is Term.Def    -> eval(term.body)
-    is Term.Meta   -> Value.Meta(term.index, term.source, term.type)
-    is Term.Hole   -> Value.Hole(term.type)
+    is Term.Var         -> this[term.level].value
+    is Term.Def         -> eval(term.body)
+    is Term.Meta        -> Value.Meta(term.index, term.source, term.type)
+    is Term.Hole        -> Value.Hole(term.type)
   }
 }
 
