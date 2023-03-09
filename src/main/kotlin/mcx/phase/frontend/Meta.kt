@@ -10,8 +10,16 @@ class Meta {
 
   fun fresh(
     source: Range,
+    type: Value,
   ): Value {
-    return Value.Meta(values.size, source).also { values += null }
+    return Value.Meta(values.size, source, type).also { values += null }
+  }
+
+  fun freshType(
+    source: Range,
+  ): Value {
+    val tag = lazy { fresh(source, Value.Tag) }
+    return fresh(source, Value.Type(tag))
   }
 
   tailrec fun force(
