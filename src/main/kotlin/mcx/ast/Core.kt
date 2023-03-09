@@ -1,6 +1,7 @@
 package mcx.ast
 
 import kotlinx.collections.immutable.PersistentList
+import mcx.data.NbtType
 import org.eclipse.lsp4j.Range
 
 object Core {
@@ -28,55 +29,8 @@ object Core {
       override val type: Value,
     ) : Term
 
-    data class EndTag(
-      override val type: Value,
-    ) : Term
-
-    data class ByteTag(
-      override val type: Value,
-    ) : Term
-
-    data class ShortTag(
-      override val type: Value,
-    ) : Term
-
-    data class IntTag(
-      override val type: Value,
-    ) : Term
-
-    data class LongTag(
-      override val type: Value,
-    ) : Term
-
-    data class FloatTag(
-      override val type: Value,
-    ) : Term
-
-    data class DoubleTag(
-      override val type: Value,
-    ) : Term
-
-    data class StringTag(
-      override val type: Value,
-    ) : Term
-
-    data class ByteArrayTag(
-      override val type: Value,
-    ) : Term
-
-    data class IntArrayTag(
-      override val type: Value,
-    ) : Term
-
-    data class LongArrayTag(
-      override val type: Value,
-    ) : Term
-
-    data class ListTag(
-      override val type: Value,
-    ) : Term
-
-    data class CompoundTag(
+    data class TagOf(
+      val value: NbtType,
       override val type: Value,
     ) : Term
 
@@ -327,31 +281,10 @@ object Core {
   sealed interface Value {
     object Tag : Value
 
-    object EndTag : Value
-
-    object ByteTag : Value
-
-    object ShortTag : Value
-
-    object IntTag : Value
-
-    object LongTag : Value
-
-    object FloatTag : Value
-
-    object DoubleTag : Value
-
-    object StringTag : Value
-
-    object ByteArrayTag : Value
-
-    object IntArrayTag : Value
-
-    object LongArrayTag : Value
-
-    object ListTag : Value
-
-    object CompoundTag : Value
+    @JvmInline
+    value class TagOf(
+      val value: NbtType,
+    ) : Value
 
     @JvmInline
     value class Type(

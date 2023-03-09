@@ -1,5 +1,6 @@
 package mcx.ast
 
+import mcx.data.NbtType
 import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 
@@ -38,55 +39,8 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class EndTag(
-      override val range: Range,
-    ) : Term
-
-    data class ByteTag(
-      override val range: Range,
-    ) : Term
-
-    data class ShortTag(
-      override val range: Range,
-    ) : Term
-
-    data class IntTag(
-      override val range: Range,
-    ) : Term
-
-    data class LongTag(
-      override val range: Range,
-    ) : Term
-
-    data class FloatTag(
-      override val range: Range,
-    ) : Term
-
-    data class DoubleTag(
-      override val range: Range,
-    ) : Term
-
-    data class StringTag(
-      override val range: Range,
-    ) : Term
-
-    data class ByteArrayTag(
-      override val range: Range,
-    ) : Term
-
-    data class IntArrayTag(
-      override val range: Range,
-    ) : Term
-
-    data class LongArrayTag(
-      override val range: Range,
-    ) : Term
-
-    data class ListTag(
-      override val range: Range,
-    ) : Term
-
-    data class CompoundTag(
+    data class TagOf(
+      val value: NbtType,
       override val range: Range,
     ) : Term
 

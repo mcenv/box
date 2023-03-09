@@ -78,118 +78,106 @@ class Resolve private constructor(
   ): R.Term {
     val range = term.range
     return when (term) {
-      is S.Term.Tag          -> R.Term.Tag(range)
-      is S.Term.EndTag       -> R.Term.EndTag(range)
-      is S.Term.ByteTag      -> R.Term.ByteTag(range)
-      is S.Term.ShortTag     -> R.Term.ShortTag(range)
-      is S.Term.IntTag       -> R.Term.IntTag(range)
-      is S.Term.LongTag      -> R.Term.LongTag(range)
-      is S.Term.FloatTag     -> R.Term.FloatTag(range)
-      is S.Term.DoubleTag    -> R.Term.DoubleTag(range)
-      is S.Term.StringTag    -> R.Term.StringTag(range)
-      is S.Term.ByteArrayTag -> R.Term.ByteArrayTag(range)
-      is S.Term.IntArrayTag  -> R.Term.IntArrayTag(range)
-      is S.Term.LongArrayTag -> R.Term.LongArrayTag(range)
-      is S.Term.ListTag      -> R.Term.ListTag(range)
-      is S.Term.CompoundTag  -> R.Term.CompoundTag(range)
-      is S.Term.Type         -> {
+      is S.Term.Tag         -> R.Term.Tag(range)
+      is S.Term.TagOf       -> R.Term.TagOf(term.value, range)
+      is S.Term.Type        -> {
         val tag = resolveTerm(term.tag)
         R.Term.Type(tag, range)
       }
-      is S.Term.Bool         -> R.Term.Bool(range)
-      is S.Term.BoolOf       -> R.Term.BoolOf(term.value, range)
-      is S.Term.If           -> {
+      is S.Term.Bool        -> R.Term.Bool(range)
+      is S.Term.BoolOf      -> R.Term.BoolOf(term.value, range)
+      is S.Term.If          -> {
         val condition = resolveTerm(term.condition)
         val thenBranch = resolveTerm(term.thenBranch)
         val elseBranch = resolveTerm(term.elseBranch)
         R.Term.If(condition, thenBranch, elseBranch, range)
       }
-      is S.Term.Is           -> {
+      is S.Term.Is          -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val scrutineer = resolvePattern(term.scrutineer)
         R.Term.Is(scrutinee, scrutineer, range)
       }
-      is S.Term.Byte         -> R.Term.Byte(range)
-      is S.Term.ByteOf       -> R.Term.ByteOf(term.value, range)
-      is S.Term.Short        -> R.Term.Short(range)
-      is S.Term.ShortOf      -> R.Term.ShortOf(term.value, range)
-      is S.Term.Int          -> R.Term.Int(range)
-      is S.Term.IntOf        -> R.Term.IntOf(term.value, range)
-      is S.Term.Long         -> R.Term.Long(range)
-      is S.Term.LongOf       -> R.Term.LongOf(term.value, range)
-      is S.Term.Float        -> R.Term.Float(range)
-      is S.Term.FloatOf      -> R.Term.FloatOf(term.value, range)
-      is S.Term.Double       -> R.Term.Double(range)
-      is S.Term.DoubleOf     -> R.Term.DoubleOf(term.value, range)
-      is S.Term.String       -> R.Term.String(range)
-      is S.Term.StringOf     -> R.Term.StringOf(term.value, range)
-      is S.Term.ByteArray    -> R.Term.ByteArray(range)
-      is S.Term.ByteArrayOf  -> {
+      is S.Term.Byte        -> R.Term.Byte(range)
+      is S.Term.ByteOf      -> R.Term.ByteOf(term.value, range)
+      is S.Term.Short       -> R.Term.Short(range)
+      is S.Term.ShortOf     -> R.Term.ShortOf(term.value, range)
+      is S.Term.Int         -> R.Term.Int(range)
+      is S.Term.IntOf       -> R.Term.IntOf(term.value, range)
+      is S.Term.Long        -> R.Term.Long(range)
+      is S.Term.LongOf      -> R.Term.LongOf(term.value, range)
+      is S.Term.Float       -> R.Term.Float(range)
+      is S.Term.FloatOf     -> R.Term.FloatOf(term.value, range)
+      is S.Term.Double      -> R.Term.Double(range)
+      is S.Term.DoubleOf    -> R.Term.DoubleOf(term.value, range)
+      is S.Term.String      -> R.Term.String(range)
+      is S.Term.StringOf    -> R.Term.StringOf(term.value, range)
+      is S.Term.ByteArray   -> R.Term.ByteArray(range)
+      is S.Term.ByteArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.ByteArrayOf(elements, range)
       }
-      is S.Term.IntArray     -> R.Term.IntArray(range)
-      is S.Term.IntArrayOf   -> {
+      is S.Term.IntArray    -> R.Term.IntArray(range)
+      is S.Term.IntArrayOf  -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.IntArrayOf(elements, range)
       }
-      is S.Term.LongArray    -> R.Term.LongArray(range)
-      is S.Term.LongArrayOf  -> {
+      is S.Term.LongArray   -> R.Term.LongArray(range)
+      is S.Term.LongArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.LongArrayOf(elements, range)
       }
-      is S.Term.List         -> {
+      is S.Term.List        -> {
         val element = resolveTerm(term.element)
         R.Term.List(element, range)
       }
-      is S.Term.ListOf       -> {
+      is S.Term.ListOf      -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.ListOf(elements, range)
       }
-      is S.Term.Compound     -> {
+      is S.Term.Compound    -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.Compound(elements, range)
       }
-      is S.Term.CompoundOf   -> {
+      is S.Term.CompoundOf  -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.CompoundOf(elements, range)
       }
-      is S.Term.Union        -> {
+      is S.Term.Union       -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.Union(elements, range)
       }
-      is S.Term.Func         -> {
+      is S.Term.Func        -> {
         restoring {
           val params = term.params.map { (binder, type) -> resolvePattern(binder) to resolveTerm(type) }
           val result = resolveTerm(term.result)
           R.Term.Func(params, result, range)
         }
       }
-      is S.Term.FuncOf       -> {
+      is S.Term.FuncOf      -> {
         restoring {
           val params = term.params.map { resolvePattern(it) }
           val result = resolveTerm(term.result)
           R.Term.FuncOf(params, result, range)
         }
       }
-      is S.Term.Apply        -> {
+      is S.Term.Apply       -> {
         val func = resolveTerm(term.func)
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
-      is S.Term.Code         -> {
+      is S.Term.Code        -> {
         val element = resolveTerm(term.element)
         R.Term.Code(element, range)
       }
-      is S.Term.CodeOf       -> {
+      is S.Term.CodeOf      -> {
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, range)
       }
-      is S.Term.Splice       -> {
+      is S.Term.Splice      -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, range)
       }
-      is S.Term.Let          -> {
+      is S.Term.Let         -> {
         val init = resolveTerm(term.init)
         restoring {
           val binder = resolvePattern(term.binder)
@@ -197,7 +185,7 @@ class Resolve private constructor(
           R.Term.Let(binder, init, body, range)
         }
       }
-      is S.Term.Var          -> {
+      is S.Term.Var         -> {
         when (val level = this[term.name]) {
           -1   -> {
             when (val name = resolveName(term.name, range)) {
@@ -208,7 +196,7 @@ class Resolve private constructor(
           else -> R.Term.Var(term.name, level, range)
         }
       }
-      is S.Term.Hole         -> R.Term.Hole(range)
+      is S.Term.Hole        -> R.Term.Hole(range)
     }
   }
 

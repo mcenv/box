@@ -3,6 +3,7 @@ package mcx.phase.frontend
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.ast.Surface
+import mcx.data.NbtType
 import mcx.lsp.Ranged
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo
@@ -205,19 +206,19 @@ class Parse private constructor(
             when (word.value) {
               ""             -> null
               "Tag"          -> S.Term.Tag(until())
-              "EndTag"       -> S.Term.EndTag(until())
-              "ByteTag"      -> S.Term.ByteTag(until())
-              "ShortTag"     -> S.Term.ShortTag(until())
-              "IntTag"       -> S.Term.IntTag(until())
-              "LongTag"      -> S.Term.LongTag(until())
-              "FloatTag"     -> S.Term.FloatTag(until())
-              "DoubleTag"    -> S.Term.DoubleTag(until())
-              "StringTag"    -> S.Term.StringTag(until())
-              "ByteArrayTag" -> S.Term.ByteArrayTag(until())
-              "IntArrayTag"  -> S.Term.IntArrayTag(until())
-              "LongArrayTag" -> S.Term.LongArrayTag(until())
-              "ListTag"      -> S.Term.ListTag(until())
-              "CompoundTag"  -> S.Term.CompoundTag(until())
+              "EndTag"       -> S.Term.TagOf(NbtType.END, until())
+              "ByteTag"      -> S.Term.TagOf(NbtType.BYTE, until())
+              "ShortTag"     -> S.Term.TagOf(NbtType.SHORT, until())
+              "IntTag"       -> S.Term.TagOf(NbtType.INT, until())
+              "LongTag"      -> S.Term.TagOf(NbtType.LONG, until())
+              "FloatTag"     -> S.Term.TagOf(NbtType.FLOAT, until())
+              "DoubleTag"    -> S.Term.TagOf(NbtType.DOUBLE, until())
+              "StringTag"    -> S.Term.TagOf(NbtType.STRING, until())
+              "ByteArrayTag" -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
+              "IntArrayTag"  -> S.Term.TagOf(NbtType.INT_ARRAY, until())
+              "LongArrayTag" -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
+              "ListTag"      -> S.Term.TagOf(NbtType.LIST, until())
+              "CompoundTag"  -> S.Term.TagOf(NbtType.COMPOUND, until())
               "Type"         -> {
                 skipTrivia()
                 val tag = parseTermAtom()
