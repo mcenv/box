@@ -3,7 +3,6 @@ package mcx.phase.frontend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.toPersistentList
 import mcx.ast.*
-import mcx.data.NbtType
 import mcx.lsp.diagnostic
 import mcx.phase.*
 import mcx.phase.frontend.Elaborate.Ctx.Companion.emptyCtx
@@ -71,35 +70,32 @@ class Elaborate private constructor(
   ): C.Term {
     val type = type?.let { meta.force(type) }
     return when {
-      term is R.Term.Tag && stage > 0 && synth(type)                  -> C.Term.Tag
-      term is R.Term.TagOf && synth(type)                             -> C.Term.TagOf(term.value)
-      term is R.Term.Type && synth(type)                              -> {
+      term is R.Term.Tag && stage > 0 && synth(type)     -> C.Term.Tag
+      term is R.Term.TagOf && synth(type)                -> C.Term.TagOf(term.value)
+      term is R.Term.Type && synth(type)                 -> {
         val tag = elaborateTerm(term.tag, stage, C.Value.Tag)
         C.Term.Type(tag)
       }
-      term is R.Term.Bool && synth(type)                              -> C.Term.Bool
-      term is R.Term.Byte && synth(type)                              -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
-        C.Term.Byte(type)
-      }
-      term is R.Term.BoolOf && synth(type)                            -> C.Term.BoolOf(term.value)
-      term is R.Term.If && synth(type)                                -> {
+      term is R.Term.Bool && synth(type)                 -> C.Term.Bool
+      term is R.Term.Byte && synth(type)                 -> C.Term.Byte
+      term is R.Term.BoolOf && synth(type)               -> C.Term.BoolOf(term.value)
+      term is R.Term.If && synth(type)                   -> {
         val condition = elaborateTerm(term.condition, stage, C.Value.Byte)
         val thenBranch = elaborateTerm(term.thenBranch, stage, null)
         val elseBranch = elaborateTerm(term.elseBranch, stage, null)
         val type = C.Value.Union(listOf(lazyOf(thenBranch.type), lazyOf(elseBranch.type)))
         C.Term.If(condition, thenBranch, elseBranch, type)
       }
-      term is R.Term.If && check<C.Value>(type)                       -> {
+      term is R.Term.If && check<C.Value>(type)          -> {
         val condition = elaborateTerm(term.condition, stage, C.Value.Byte)
         val thenBranch = elaborateTerm(term.thenBranch, stage, type)
         val elseBranch = elaborateTerm(term.elseBranch, stage, type)
         C.Term.If(condition, thenBranch, elseBranch, type)
       }
-      term is R.Term.Is && synth(type)                                -> {
+      term is R.Term.Is && synth(type)                   -> {
         val scrutineer = restoring { elaboratePattern(term.scrutineer, stage, null) }
         val scrutinee = elaborateTerm(term.scrutinee, stage, scrutineer.type)
-        C.Term.Is(scrutinee, scrutineer, C.Value.Bool)
+        C.Term.Is(scrutinee, scrutineer)
       }
       term is R.Term.Byte && synth(type)                              -> C.Term.Byte
       term is R.Term.ByteOf && synth(type)                            -> C.Term.ByteOf(term.value)
@@ -189,13 +185,13 @@ class Elaborate private constructor(
           C.Term.FuncOf(params, result, type)
         }
       }
-      term is R.Term.FuncOf && check<C.Value.Func>(type)              -> {
+      term is R.Term.FuncOf && check<C.Value.Func>(type) -> {
         restoring {
           if (type.params.size == term.params.size) {
             val params = term.params.mapIndexed { index, param ->
               elaboratePattern(param, stage, type.params.getOrNull(index)?.value)
             }
-            val result = elaborateTerm(term.result, stage, type.result())
+            val result = elaborateTerm(term.result, stage, type.result(size.collect(type.result)))
             C.Term.FuncOf(params, result, type)
           } else {
             diagnostics += arityMismatch(type.params.size, term.params.size, term.range)
@@ -405,7 +401,7 @@ class Elaborate private constructor(
       type: C.Value,
       value: Lazy<C.Value>?,
     ) {
-      _values += value ?: lazyOf(C.Value.Var(name, size))
+      _values += value ?: lazyOf(C.Value.Var(name, size, type))
       _entries += Entry(name, stage, type)
     }
 

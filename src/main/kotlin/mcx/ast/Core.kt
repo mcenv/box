@@ -61,8 +61,9 @@ object Core {
     data class Is(
       val scrutinee: Term,
       val scrutineer: Pattern,
-      override val type: Value,
-    ) : Term
+    ) : Term {
+      override val type: Value get() = Value.Bool
+    }
 
     object Byte : Term {
       override val type: Value get() = Value.Type.BYTE
@@ -336,6 +337,7 @@ object Core {
       val condition: Value,
       val thenBranch: Lazy<Value>,
       val elseBranch: Lazy<Value>,
+      val type: Value,
     ) : Value
 
     class Is(
@@ -418,9 +420,9 @@ object Core {
       val element: Lazy<Value>,
     ) : Value
 
-    @JvmInline
-    value class ListOf(
+    class ListOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
+      val type: Value,
     ) : Value
 
     @JvmInline
@@ -443,14 +445,15 @@ object Core {
       val result: Closure,
     ) : Value
 
-    @JvmInline
-    value class FuncOf(
+    class FuncOf(
       val result: Closure,
+      val type: Value,
     ) : Value
 
     class Apply(
       val func: Value,
       val args: kotlin.collections.List<Lazy<Value>>,
+      val type: Value,
     ) : Value
 
     @JvmInline
@@ -463,21 +466,26 @@ object Core {
       val element: Lazy<Value>,
     ) : Value
 
-    @JvmInline
-    value class Splice(
+    class Splice(
       val element: Lazy<Value>,
+      val type: Value,
     ) : Value
 
     class Var(
       val name: kotlin.String,
       val level: kotlin.Int,
+      val type: Value,
     ) : Value
 
     class Meta(
       val index: kotlin.Int,
       val source: Range,
+      val type: Value,
     ) : Value
 
-    object Hole : Value
+    @JvmInline
+    value class Hole(
+      val type: Value,
+    ) : Value
   }
 }

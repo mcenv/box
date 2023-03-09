@@ -14,20 +14,22 @@ operator fun Closure.invoke(
   return (values + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).eval(body)
 }
 
-operator fun Closure.invoke(): Value {
+fun Int.collect(
+  closure: Closure,
+): List<Lazy<Value>> {
   val vars = mutableListOf<Lazy<Value>>()
   fun go(pattern: Pattern) {
     when (pattern) {
       is Pattern.IntOf      -> {}
       is Pattern.CompoundOf -> {}
       is Pattern.Splice     -> go(pattern.element)
-      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, values.size + vars.size))
+      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.type))
       is Pattern.Drop       -> {}
       is Pattern.Hole       -> {}
     }
   }
-  binders.forEach { go(it) }
-  return (values + vars).eval(body)
+  closure.binders.forEach { go(it) }
+  return vars
 }
 
 fun PersistentList<Lazy<Value>>.eval(
@@ -42,10 +44,14 @@ fun PersistentList<Lazy<Value>>.eval(
     }
     is Term.Bool        -> Value.Bool
     is Term.BoolOf      -> Value.BoolOf(term.value)
-    is Term.If          -> {
+    is Term.If     -> {
       when (val condition = eval(term.condition)) {
         is Value.BoolOf -> if (condition.value) eval(term.thenBranch) else eval(term.elseBranch)
-        else            -> Value.If(condition, lazy { eval(term.thenBranch) }, lazy { eval(term.elseBranch) })
+        else            -> {
+          val thenBranch = lazy { eval(term.thenBranch) }
+          val elseBranch = lazy { eval(term.elseBranch) }
+          Value.If(condition, thenBranch, elseBranch, term.type)
+        }
       }
     }
     is Term.Is          -> {
@@ -88,9 +94,9 @@ fun PersistentList<Lazy<Value>>.eval(
       val element = lazy { eval(term.element) }
       Value.List(element)
     }
-    is Term.ListOf      -> {
+    is Term.ListOf -> {
       val elements = term.elements.map { lazy { eval(it) } }
-      Value.ListOf(elements)
+      Value.ListOf(elements, term.type)
     }
     is Term.Compound    -> {
       val elements = term.elements.mapValues { lazy { eval(it.value) } }
@@ -109,37 +115,37 @@ fun PersistentList<Lazy<Value>>.eval(
       val result = Closure(this, term.params.map { (binder, _) -> binder }, term.result)
       Value.Func(params, result)
     }
-    is Term.FuncOf      -> {
+    is Term.FuncOf -> {
       val result = Closure(this, term.params, term.result)
-      Value.FuncOf(result)
+      Value.FuncOf(result, term.type)
     }
-    is Term.Apply       -> {
+    is Term.Apply  -> {
       val args = term.args.map { lazy { eval(it) } }
       when (val func = eval(term.func)) {
         is Value.FuncOf -> func.result(args)
-        else            -> Value.Apply(func, args)
+        else            -> Value.Apply(func, args, term.type)
       }
     }
-    is Term.Code        -> {
+    is Term.Code   -> {
       val element = lazy { eval(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf      -> {
+    is Term.CodeOf -> {
       val element = lazy { eval(term.element) }
       Value.CodeOf(element)
     }
-    is Term.Splice      -> {
+    is Term.Splice -> {
       val element = lazy { eval(term.element) }
-      Value.Splice(element)
+      Value.Splice(element, term.type)
     }
-    is Term.Let         -> {
+    is Term.Let    -> {
       val init = lazy { eval(term.init) }
       (this + bind(term.binder, init)).eval(term.body)
     }
-    is Term.Var         -> this[term.level].value
-    is Term.Def         -> eval(term.body)
-    is Term.Meta        -> Value.Meta(term.index, term.source)
-    is Term.Hole        -> Value.Hole
+    is Term.Var    -> this[term.level].value
+    is Term.Def    -> eval(term.body)
+    is Term.Meta   -> Value.Meta(term.index, term.source, term.type)
+    is Term.Hole   -> Value.Hole(term.type)
   }
 }
 
@@ -202,46 +208,106 @@ fun Int.quote(
   value: Value,
 ): Term {
   return when (value) {
-    is Value.Tag         -> TODO()
-    is Value.TagOf       -> TODO()
-    is Value.Type        -> TODO()
-    is Value.Bool        -> TODO()
-    is Value.BoolOf      -> TODO()
-    is Value.If          -> TODO()
-    is Value.Is          -> TODO()
-    is Value.Byte        -> TODO()
-    is Value.ByteOf      -> TODO()
-    is Value.Short       -> TODO()
-    is Value.ShortOf     -> TODO()
-    is Value.Int         -> TODO()
-    is Value.IntOf       -> TODO()
-    is Value.Long        -> TODO()
-    is Value.LongOf      -> TODO()
-    is Value.Float       -> TODO()
-    is Value.FloatOf     -> TODO()
-    is Value.Double      -> TODO()
-    is Value.DoubleOf    -> TODO()
-    is Value.String      -> TODO()
-    is Value.StringOf    -> TODO()
-    is Value.ByteArray   -> TODO()
-    is Value.ByteArrayOf -> TODO()
-    is Value.IntArray    -> TODO()
-    is Value.IntArrayOf  -> TODO()
-    is Value.LongArray   -> TODO()
-    is Value.LongArrayOf -> TODO()
-    is Value.List        -> TODO()
-    is Value.ListOf      -> TODO()
-    is Value.Compound    -> TODO()
-    is Value.CompoundOf  -> TODO()
-    is Value.Union       -> TODO()
-    is Value.Func        -> TODO()
-    is Value.FuncOf      -> TODO()
-    is Value.Apply       -> TODO()
-    is Value.Code        -> TODO()
-    is Value.CodeOf      -> TODO()
-    is Value.Splice      -> TODO()
-    is Value.Var         -> TODO()
-    is Value.Meta        -> TODO()
-    is Value.Hole        -> TODO()
+    is Value.Tag         -> Term.Tag
+    is Value.TagOf       -> Term.TagOf(value.value)
+    is Value.Type        -> {
+      val tag = quote(value.tag.value)
+      Term.Type(tag)
+    }
+    is Value.Bool        -> Term.Bool
+    is Value.BoolOf      -> Term.BoolOf(value.value)
+    is Value.If          -> {
+      val condition = quote(value.condition)
+      val thenBranch = quote(value.thenBranch.value)
+      val elseBranch = quote(value.elseBranch.value)
+      Term.If(condition, thenBranch, elseBranch, value.type)
+    }
+    is Value.Is          -> {
+      val scrutinee = quote(value.scrutinee.value)
+      Term.Is(scrutinee, value.scrutineer)
+    }
+    is Value.Byte        -> Term.Byte
+    is Value.ByteOf      -> Term.ByteOf(value.value)
+    is Value.Short       -> Term.Short
+    is Value.ShortOf     -> Term.ShortOf(value.value)
+    is Value.Int         -> Term.Int
+    is Value.IntOf       -> Term.IntOf(value.value)
+    is Value.Long        -> Term.Long
+    is Value.LongOf      -> Term.LongOf(value.value)
+    is Value.Float       -> Term.Float
+    is Value.FloatOf     -> Term.FloatOf(value.value)
+    is Value.Double      -> Term.Double
+    is Value.DoubleOf    -> Term.DoubleOf(value.value)
+    is Value.String      -> Term.String
+    is Value.StringOf    -> Term.StringOf(value.value)
+    is Value.ByteArray   -> Term.ByteArray
+    is Value.ByteArrayOf -> {
+      val elements = value.elements.map { quote(it.value) }
+      Term.ByteArrayOf(elements)
+    }
+    is Value.IntArray    -> Term.IntArray
+    is Value.IntArrayOf  -> {
+      val elements = value.elements.map { quote(it.value) }
+      Term.IntArrayOf(elements)
+    }
+    is Value.LongArray   -> Term.LongArray
+    is Value.LongArrayOf -> {
+      val elements = value.elements.map { quote(it.value) }
+      Term.LongArrayOf(elements)
+    }
+    is Value.List        -> {
+      val element = quote(value.element.value)
+      Term.List(element)
+    }
+    is Value.ListOf      -> {
+      val elements = value.elements.map { quote(it.value) }
+      Term.ListOf(elements, value.type)
+    }
+    is Value.Compound    -> {
+      val elements = value.elements.mapValues { quote(it.value.value) }
+      Term.Compound(elements)
+    }
+    is Value.CompoundOf  -> {
+      val elements = value.elements.mapValues { quote(it.value.value) }
+      val type = Value.Compound(elements.mapValues { lazyOf(it.value.type) })
+      Term.CompoundOf(elements, type)
+    }
+    is Value.Union       -> {
+      val elements = value.elements.map { quote(it.value) }
+      val type = elements.firstOrNull()?.type ?: Value.Type.END
+      Term.Union(elements, type)
+    }
+    is Value.Func        -> {
+      val params = (value.result.binders zip value.params).map { (binder, param) ->
+        val param = quote(param.value)
+        binder to param
+      }
+      val result = collect(value.result).let { (this + it.size).quote(value.result(it)) }
+      Term.Func(params, result)
+    }
+    is Value.FuncOf      -> {
+      val result = collect(value.result).let { (this + it.size).quote(value.result(it)) }
+      Term.FuncOf(value.result.binders, result, value.type)
+    }
+    is Value.Apply       -> {
+      val func = quote(value.func)
+      val args = value.args.map { quote(it.value) }
+      Term.Apply(func, args, value.type)
+    }
+    is Value.Code        -> {
+      val element = quote(value.element.value)
+      Term.Code(element)
+    }
+    is Value.CodeOf      -> {
+      val element = quote(value.element.value)
+      Term.CodeOf(element, Value.Code(lazyOf(element.type)))
+    }
+    is Value.Splice      -> {
+      val element = quote(value.element.value)
+      Term.Splice(element, value.type)
+    }
+    is Value.Var         -> Term.Var(value.name, value.level, value.type)
+    is Value.Meta        -> Term.Meta(value.index, value.source, value.type)
+    is Value.Hole        -> Term.Hole(value.type)
   }
 }
