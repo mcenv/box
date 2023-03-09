@@ -293,11 +293,6 @@ object Core {
       override val type: Value,
     ) : Pattern
 
-    data class IntRangeOf(
-      val value: IntRange,
-      override val type: Value,
-    ) : Pattern
-
     data class CompoundOf(
       val elements: Map<String, Pattern>,
       override val type: Value,

@@ -217,7 +217,6 @@ class Resolve private constructor(
   ): R.Pattern {
     return when (pattern) {
       is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
-      is S.Pattern.IntRangeOf -> R.Pattern.IntRangeOf(pattern.value, pattern.range)
       is S.Pattern.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.CompoundOf(elements, pattern.range)

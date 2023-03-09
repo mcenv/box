@@ -296,11 +296,6 @@ object Resolved {
       override val range: Range,
     ) : Pattern
 
-    data class IntRangeOf(
-      val value: IntRange,
-      override val range: Range,
-    ) : Pattern
-
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
       override val range: Range,

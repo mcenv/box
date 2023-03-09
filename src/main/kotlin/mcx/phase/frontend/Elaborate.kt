@@ -359,7 +359,6 @@ class Elaborate private constructor(
     val type = type?.let { meta.force(type) }
     return when {
       pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value, C.Value.Int)
-      pattern is R.Pattern.IntRangeOf && synth(type)                   -> C.Pattern.IntRangeOf(pattern.value, C.Value.Int)
       pattern is R.Pattern.CompoundOf && synth(type)                   -> {
         TODO()
       }

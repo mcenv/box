@@ -19,7 +19,6 @@ operator fun Closure.invoke(): Value {
   fun go(pattern: Pattern) {
     when (pattern) {
       is Pattern.IntOf      -> {}
-      is Pattern.IntRangeOf -> {}
       is Pattern.CompoundOf -> {}
       is Pattern.Splice     -> go(pattern.element)
       is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, values.size + vars.size))
@@ -167,7 +166,6 @@ fun bind(
   ) {
     when (binder) {
       is Pattern.IntOf      -> {}
-      is Pattern.IntRangeOf -> {}
       is Pattern.CompoundOf -> {
         val value = value.value
         if (value is Value.CompoundOf) {
@@ -197,10 +195,6 @@ fun match(
     is Pattern.IntOf      -> {
       val value = value.value as? Value.IntOf ?: return null
       binder.value == value.value
-    }
-    is Pattern.IntRangeOf -> {
-      val value = value.value as? Value.IntOf ?: return null
-      value.value in binder.value
     }
     is Pattern.CompoundOf -> {
       val value = value.value as? Value.CompoundOf ?: return null
