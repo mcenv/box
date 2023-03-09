@@ -71,22 +71,18 @@ class Elaborate private constructor(
   ): C.Term {
     val type = type?.let { meta.force(type) }
     return when {
-      term is R.Term.Tag && stage > 0 && synth(type)                  -> C.Term.Tag(C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE))))
-      term is R.Term.TagOf && synth(type)                             -> C.Term.TagOf(term.value, C.Value.Tag)
+      term is R.Term.Tag && stage > 0 && synth(type)                  -> C.Term.Tag
+      term is R.Term.TagOf && synth(type)                             -> C.Term.TagOf(term.value)
       term is R.Term.Type && synth(type)                              -> {
         val tag = elaborateTerm(term.tag, stage, C.Value.Tag)
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
-        C.Term.Type(tag, type)
+        C.Term.Type(tag)
       }
-      term is R.Term.Bool && synth(type)                              -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
-        C.Term.Bool(type)
-      }
+      term is R.Term.Bool && synth(type)                              -> C.Term.Bool
       term is R.Term.Byte && synth(type)                              -> {
         val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
         C.Term.Byte(type)
       }
-      term is R.Term.BoolOf && synth(type)                            -> C.Term.BoolOf(term.value, C.Value.Byte)
+      term is R.Term.BoolOf && synth(type)                            -> C.Term.BoolOf(term.value)
       term is R.Term.If && synth(type)                                -> {
         val condition = elaborateTerm(term.condition, stage, C.Value.Byte)
         val thenBranch = elaborateTerm(term.thenBranch, stage, null)
@@ -105,70 +101,39 @@ class Elaborate private constructor(
         val scrutinee = elaborateTerm(term.scrutinee, stage, scrutineer.type)
         C.Term.Is(scrutinee, scrutineer, C.Value.Bool)
       }
-      term is R.Term.Byte && synth(type)                              -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
-        C.Term.Byte(type)
-      }
-      term is R.Term.ByteOf && synth(type)                            -> C.Term.ByteOf(term.value, C.Value.Byte)
-      term is R.Term.Short && synth(type)                             -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.SHORT)))
-        C.Term.Short(type)
-      }
-      term is R.Term.ShortOf && synth(type)                           -> C.Term.ShortOf(term.value, C.Value.Short)
-      term is R.Term.Int && synth(type)                               -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.INT)))
-        C.Term.Int(type)
-      }
-      term is R.Term.IntOf && synth(type)                             -> C.Term.IntOf(term.value, C.Value.Int)
-      term is R.Term.Long && synth(type)                              -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.LONG)))
-        C.Term.Long(type)
-      }
-      term is R.Term.LongOf && synth(type)                            -> C.Term.LongOf(term.value, C.Value.Long)
-      term is R.Term.Float && synth(type)                             -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.FLOAT)))
-        C.Term.Float(type)
-      }
-      term is R.Term.FloatOf && synth(type)                           -> C.Term.FloatOf(term.value, C.Value.Float)
-      term is R.Term.Double && synth(type)                            -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.DOUBLE)))
-        C.Term.Double(type)
-      }
-      term is R.Term.DoubleOf && synth(type)                          -> C.Term.DoubleOf(term.value, C.Value.Double)
-      term is R.Term.String && synth(type)                            -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.STRING)))
-        C.Term.String(type)
-      }
-      term is R.Term.StringOf && synth(type)                          -> C.Term.StringOf(term.value, C.Value.String)
-      term is R.Term.ByteArray && synth(type)                         -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE_ARRAY)))
-        C.Term.ByteArray(type)
-      }
+      term is R.Term.Byte && synth(type)                              -> C.Term.Byte
+      term is R.Term.ByteOf && synth(type)                            -> C.Term.ByteOf(term.value)
+      term is R.Term.Short && synth(type)                             -> C.Term.Short
+      term is R.Term.ShortOf && synth(type)                           -> C.Term.ShortOf(term.value)
+      term is R.Term.Int && synth(type)                               -> C.Term.Int
+      term is R.Term.IntOf && synth(type)                             -> C.Term.IntOf(term.value)
+      term is R.Term.Long && synth(type)                              -> C.Term.Long
+      term is R.Term.LongOf && synth(type)                            -> C.Term.LongOf(term.value)
+      term is R.Term.Float && synth(type)                             -> C.Term.Float
+      term is R.Term.FloatOf && synth(type)                           -> C.Term.FloatOf(term.value)
+      term is R.Term.Double && synth(type)                            -> C.Term.Double
+      term is R.Term.DoubleOf && synth(type)                          -> C.Term.DoubleOf(term.value)
+      term is R.Term.String && synth(type)                            -> C.Term.String
+      term is R.Term.StringOf && synth(type)                          -> C.Term.StringOf(term.value)
+      term is R.Term.ByteArray && synth(type)                         -> C.Term.ByteArray
       term is R.Term.ByteArrayOf && synth(type)                       -> {
         val elements = term.elements.map { elaborateTerm(it, stage, C.Value.Byte) }
-        C.Term.ByteArrayOf(elements, C.Value.ByteArray)
+        C.Term.ByteArrayOf(elements)
       }
-      term is R.Term.IntArray && synth(type)                          -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.INT_ARRAY)))
-        C.Term.IntArray(type)
-      }
+      term is R.Term.IntArray && synth(type)                          -> C.Term.IntArray
       term is R.Term.IntArrayOf && synth(type)                        -> {
         val elements = term.elements.map { elaborateTerm(it, stage, C.Value.Int) }
-        C.Term.IntArrayOf(elements, C.Value.IntArray)
+        C.Term.IntArrayOf(elements)
       }
-      term is R.Term.LongArray && synth(type)                         -> {
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.LONG_ARRAY)))
-        C.Term.LongArray(type)
-      }
+      term is R.Term.LongArray && synth(type)                         -> C.Term.LongArray
       term is R.Term.LongArrayOf && synth(type)                       -> {
         val elements = term.elements.map { elaborateTerm(it, stage, C.Value.Long) }
-        C.Term.LongArrayOf(elements, C.Value.LongArray)
+        C.Term.LongArrayOf(elements)
       }
       term is R.Term.List && synth(type)                              -> {
         val tag = lazy { meta.fresh(term.element.range) }
         val element = elaborateTerm(term.element, stage, C.Value.Type(tag))
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.LIST)))
-        C.Term.List(element, type)
+        C.Term.List(element)
       }
       term is R.Term.ListOf && synth(type)                            -> {
         val elements = term.elements.map { elaborateTerm(it, stage, null) }
@@ -185,8 +150,7 @@ class Elaborate private constructor(
           val element = elaborateTerm(element, stage, C.Value.Type(tag))
           key.value to element
         }
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.COMPOUND)))
-        C.Term.Compound(elements, type)
+        C.Term.Compound(elements)
       }
       term is R.Term.CompoundOf && synth(type)                        -> {
         TODO()
@@ -197,7 +161,7 @@ class Elaborate private constructor(
       term is R.Term.Union && synth(type)                             -> {
         val tag = lazy { meta.fresh(term.range) }
         val elements = term.elements.map { elaborateTerm(it, stage, C.Value.Type(tag)) }
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
+        val type = C.Value.Type(tag)
         C.Term.Union(elements, type)
       }
       term is R.Term.Union && check<C.Value.Type>(type)               -> {
@@ -214,8 +178,7 @@ class Elaborate private constructor(
           }
           val tag = lazy { meta.fresh(term.result.range) }
           val result = elaborateTerm(term.result, stage, C.Value.Type(tag))
-          val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.COMPOUND)))
-          C.Term.Func(params, result, type)
+          C.Term.Func(params, result)
         }
       }
       term is R.Term.FuncOf && synth(type)                            -> {
@@ -271,8 +234,7 @@ class Elaborate private constructor(
       term is R.Term.Code && stage > 0 && synth(type)                 -> {
         val tag = lazy { meta.fresh(term.range) }
         val element = elaborateTerm(term.element, stage - 1, C.Value.Type(tag))
-        val type = C.Value.Type(lazyOf(C.Value.TagOf(NbtType.BYTE)))
-        C.Term.Code(element, type)
+        C.Term.Code(element)
       }
       term is R.Term.CodeOf && stage > 0 && synth(type)               -> {
         val element = elaborateTerm(term.element, stage - 1, null)
@@ -347,7 +309,7 @@ class Elaborate private constructor(
   ): C.Pattern {
     val type = type?.let { meta.force(type) }
     return when {
-      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value, C.Value.Int)
+      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value)
       pattern is R.Pattern.CompoundOf && synth(type)                   -> {
         TODO()
       }
