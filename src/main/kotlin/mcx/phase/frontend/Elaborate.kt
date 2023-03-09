@@ -448,8 +448,8 @@ class Elaborate private constructor(
       actual: C.Value,
       range: Range,
     ): Diagnostic {
-      val expected = prettyTerm(quote(expected))
-      val actual = prettyTerm(quote(actual))
+      val expected = prettyValue(expected)
+      val actual = prettyValue(actual)
       return diagnostic(
         range,
         """type mismatch:
