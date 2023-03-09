@@ -222,6 +222,10 @@ class Resolve private constructor(
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.CompoundOf(elements, pattern.range)
       }
+      is S.Pattern.Splice     -> {
+        val element = resolvePattern(pattern.element)
+        R.Pattern.Splice(element, pattern.range)
+      }
       is S.Pattern.Var        -> {
         bind(pattern.name)
         R.Pattern.Var(pattern.name, lastIndex, pattern.range)
