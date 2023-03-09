@@ -2,6 +2,8 @@ package mcx.phase.frontend
 
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
+import mcx.phase.collect
+import mcx.phase.quote
 import org.eclipse.lsp4j.Range
 
 @Suppress("NAME_SHADOWING")
@@ -35,10 +37,113 @@ class Meta {
     }
   }
 
-  fun zonk(
+  fun Int.zonk(
     term: Term,
   ): Term {
-    TODO()
+    return when (term) {
+      is Term.Tag         -> term
+      is Term.TagOf       -> term
+      is Term.Type        -> {
+        val tag = zonk(term)
+        Term.Type(tag)
+      }
+      is Term.Bool        -> term
+      is Term.BoolOf      -> term
+      is Term.If          -> {
+        val condition = zonk(term.condition)
+        val thenBranch = zonk(term.thenBranch)
+        val elseBranch = zonk(term.elseBranch)
+        Term.If(condition, thenBranch, elseBranch, term.type)
+      }
+      is Term.Is          -> {
+        val scrutinee = zonk(term.scrutinee)
+        Term.Is(scrutinee, term.scrutineer)
+      }
+      is Term.Byte        -> term
+      is Term.ByteOf      -> term
+      is Term.Short       -> term
+      is Term.ShortOf     -> term
+      is Term.Int         -> term
+      is Term.IntOf       -> term
+      is Term.Long        -> term
+      is Term.LongOf      -> term
+      is Term.Float       -> term
+      is Term.FloatOf     -> term
+      is Term.Double      -> term
+      is Term.DoubleOf    -> term
+      is Term.String      -> term
+      is Term.StringOf    -> term
+      is Term.ByteArray   -> term
+      is Term.ByteArrayOf -> {
+        val elements = term.elements.map { zonk(it) }
+        Term.ByteArrayOf(elements)
+      }
+      is Term.IntArray    -> term
+      is Term.IntArrayOf  -> {
+        val elements = term.elements.map { zonk(it) }
+        Term.IntArrayOf(elements)
+      }
+      is Term.LongArray   -> term
+      is Term.LongArrayOf -> {
+        val elements = term.elements.map { zonk(it) }
+        Term.LongArrayOf(elements)
+      }
+      is Term.List        -> {
+        val element = zonk(term.element)
+        Term.List(element)
+      }
+      is Term.ListOf      -> {
+        val elements = term.elements.map { zonk(it) }
+        Term.ListOf(elements, term.type)
+      }
+      is Term.Compound    -> {
+        val elements = term.elements.mapValues { zonk(it.value) }
+        Term.Compound(elements)
+      }
+      is Term.CompoundOf  -> {
+        val elements = term.elements.mapValues { zonk(it.value) }
+        Term.CompoundOf(elements, term.type)
+      }
+      is Term.Union       -> {
+        val elements = term.elements.map { zonk(it) }
+        Term.Union(elements, term.type)
+      }
+      is Term.Func        -> {
+        val params = term.params.map { (binder, type) -> binder to zonk(type) }
+        val result = (this + collect(term.params.map { it.first }).size).zonk(term.result)
+        Term.Func(params, result)
+      }
+      is Term.FuncOf      -> {
+        val result = (this + collect(term.params).size).zonk(term.result)
+        Term.FuncOf(term.params, result, term.type)
+      }
+      is Term.Apply       -> {
+        val func = zonk(term.func)
+        val args = term.args.map { zonk(it) }
+        Term.Apply(func, args, term.type)
+      }
+      is Term.Code        -> {
+        val element = zonk(term.element)
+        Term.Code(element)
+      }
+      is Term.CodeOf      -> {
+        val element = zonk(term.element)
+        Term.CodeOf(element, term.type)
+      }
+      is Term.Splice      -> {
+        val element = zonk(term.element)
+        Term.Splice(element, term.type)
+      }
+      is Term.Let         -> {
+        val init = zonk(term.init)
+        val body = zonk(term.body)
+        Term.Let(term.binder, init, body, term.type)
+      }
+      is Term.Var         -> term
+      is Term.Def         -> term
+      is Term.Meta        -> values.getOrNull(term.index)?.let { quote(it) } ?: term
+      is Term.Hole        -> term
+    }
   }
 
   fun Int.unify(

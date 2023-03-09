@@ -2,7 +2,6 @@ package mcx.phase
 
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.Core.Value
 import mcx.data.NbtType
 import mcx.util.quoted
 import mcx.util.toSubscript
@@ -69,10 +68,6 @@ fun prettyTerm(term: Term): String {
     is Term.Meta        -> "?${term.index.toSubscript()}"
     is Term.Hole        -> "??"
   }
-}
-
-fun Int.prettyValue(value: Value): String {
-  return prettyTerm(quote(value))
 }
 
 fun prettyPattern(pattern: Pattern): String {

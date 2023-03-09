@@ -15,7 +15,7 @@ operator fun Closure.invoke(
 }
 
 fun Int.collect(
-  closure: Closure,
+  patterns: List<Pattern>,
 ): List<Lazy<Value>> {
   val vars = mutableListOf<Lazy<Value>>()
   fun go(pattern: Pattern) {
@@ -28,7 +28,7 @@ fun Int.collect(
       is Pattern.Hole       -> {}
     }
   }
-  closure.binders.forEach { go(it) }
+  patterns.forEach { go(it) }
   return vars
 }
 
@@ -282,11 +282,11 @@ fun Int.quote(
         val param = quote(param.value)
         binder to param
       }
-      val result = collect(value.result).let { (this + it.size).quote(value.result(it)) }
+      val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.Func(params, result)
     }
     is Value.FuncOf      -> {
-      val result = collect(value.result).let { (this + it.size).quote(value.result(it)) }
+      val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.FuncOf(value.result.binders, result, value.type)
     }
     is Value.Apply       -> {

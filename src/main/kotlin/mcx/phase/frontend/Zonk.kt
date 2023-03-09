@@ -1,147 +1,85 @@
 package mcx.phase.frontend
 
+import mcx.ast.Core.Definition
+import mcx.ast.Core.Module
+import mcx.ast.Core.Pattern
+import mcx.ast.Core.Term
+import mcx.ast.Core.Value
 import mcx.lsp.diagnostic
 import mcx.phase.Context
-import mcx.phase.prettyType
+import mcx.util.toSubscript
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Range
-import mcx.ast.Core as C
 
 @Suppress("NAME_SHADOWING")
 class Zonk private constructor(
   private val input: Elaborate.Result,
 ) {
   private val meta: Meta = input.meta
-  private val unsolved: MutableSet<C.Type.Meta> = hashSetOf()
+  private val unsolved: MutableSet<Value.Meta> = hashSetOf()
 
   private fun zonk(): Result {
     val module = zonkModule(input.module)
     return Result(
       module,
-      input.diagnostics + unsolved.map { unsolvedMeta(it, it.source) },
+      input.diagnostics + unsolved.map { unsolvedMeta(it.index, it.source) },
       input.completionItems,
       input.hover,
     )
   }
 
   private fun zonkModule(
-    module: C.Module,
-  ): C.Module {
+    module: Module,
+  ): Module {
     val definitions = module.definitions.map { zonkDefinition(it) }
-    return C.Module(module.name, definitions)
+    return Module(module.name, definitions)
   }
 
   private fun zonkDefinition(
-    definition: C.Definition,
-  ): C.Definition {
+    definition: Definition,
+  ): Definition {
     return when (definition) {
-      is C.Definition.Def -> {
-        val type = zonkType(definition.type)
+      is Definition.Def -> {
+        val type = definition.type // TODO: zonk
         val body = definition.body?.let { zonkTerm(it) }
-        C.Definition.Def(definition.modifiers, definition.name, type, body)
+        Definition.Def(definition.modifiers, definition.name, type, body)
       }
-    }
-  }
-
-  private fun zonkType(
-    type: C.Type,
-  ): C.Type {
-    return when (val type = meta.forceType(type)) {
-      is C.Type.Bool      -> type
-      is C.Type.Byte      -> type
-      is C.Type.Short     -> type
-      is C.Type.Int       -> type
-      is C.Type.Long      -> type
-      is C.Type.Float     -> type
-      is C.Type.Double    -> type
-      is C.Type.String    -> type
-      is C.Type.ByteArray -> type
-      is C.Type.IntArray  -> type
-      is C.Type.LongArray -> type
-      is C.Type.List      -> C.Type.List(zonkType(type.element))
-      is C.Type.Compound  -> C.Type.Compound(type.elements.mapValues { zonkType(it.value) })
-      is C.Type.Union     -> C.Type.Union(type.elements.map { zonkType(it) }, type.kind)
-      is C.Type.Func      -> C.Type.Func(zonkType(type.param), zonkType(type.result))
-      is C.Type.Clos      -> C.Type.Clos(zonkType(type.param), zonkType(type.result))
-      is C.Type.Code      -> C.Type.Code(zonkType(type.element))
-      is C.Type.Var       -> type
-      is C.Type.Def       -> type
-      is C.Type.Meta      -> {
-        unsolved += type
-        type
-      }
-      is C.Type.Hole      -> type
     }
   }
 
   private fun zonkTerm(
-    term: C.Term,
-  ): C.Term {
-    val type = zonkType(term.type)
-    return when (term) {
-      is C.Term.BoolOf      -> term
-      is C.Term.ByteOf      -> term
-      is C.Term.ShortOf     -> term
-      is C.Term.IntOf       -> term
-      is C.Term.LongOf      -> term
-      is C.Term.FloatOf     -> term
-      is C.Term.DoubleOf    -> term
-      is C.Term.StringOf    -> term
-      is C.Term.ByteArrayOf -> C.Term.ByteArrayOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.IntArrayOf  -> C.Term.IntArrayOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.LongArrayOf -> C.Term.LongArrayOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.ListOf      -> C.Term.ListOf(term.elements.map { zonkTerm(it) }, type)
-      is C.Term.CompoundOf  -> C.Term.CompoundOf(term.elements.mapValues { zonkTerm(it.value) }, type)
-      is C.Term.FuncOf      -> C.Term.FuncOf(zonkPattern(term.binder), zonkTerm(term.body), type)
-      is C.Term.ClosOf      -> C.Term.ClosOf(zonkPattern(term.binder), zonkTerm(term.body), type)
-      is C.Term.Apply       -> C.Term.Apply(zonkTerm(term.operator), zonkTerm(term.arg), type)
-      is C.Term.If          -> C.Term.If(zonkTerm(term.condition), zonkTerm(term.thenClause), zonkTerm(term.elseClause), type)
-      is C.Term.Let         -> C.Term.Let(zonkPattern(term.binder), zonkTerm(term.init), zonkTerm(term.body), type)
-      is C.Term.Var         -> C.Term.Var(term.name, term.level, type)
-      is C.Term.Def         -> term // ?
-      is C.Term.Is          -> C.Term.Is(zonkTerm(term.scrutinee), zonkPattern(term.scrutineer), type)
-      is C.Term.Command     -> C.Term.Command(term.element, type)
-      is C.Term.CodeOf      -> C.Term.CodeOf(zonkTerm(term.element), type)
-      is C.Term.Splice      -> C.Term.Splice(zonkTerm(term.element), type)
-      is C.Term.Hole        -> C.Term.Hole(type)
-    }
+    term: Term,
+  ): Term {
+    return term // TODO
   }
 
   private fun zonkPattern(
-    pattern: C.Pattern,
-  ): C.Pattern {
-    val type = zonkType(pattern.type)
-    return when (pattern) {
-      is C.Pattern.IntOf      -> pattern
-      is C.Pattern.IntRangeOf -> pattern
-      is C.Pattern.CompoundOf -> C.Pattern.CompoundOf(pattern.elements.mapValues { zonkPattern(it.value) }, type)
-      is C.Pattern.Var        -> C.Pattern.Var(pattern.name, pattern.level, type)
-      is C.Pattern.Drop       -> C.Pattern.Drop(type)
-      is C.Pattern.Hole       -> C.Pattern.Hole(type)
-    }
-  }
-
-  private fun unsolvedMeta(
-    type: C.Type,
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "unsolved meta: ${prettyType(type)}",
-      DiagnosticSeverity.Error,
-    )
+    pattern: Pattern,
+  ): Pattern {
+    return pattern // TODO
   }
 
   data class Result(
-    val module: C.Module,
+    val module: Module,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>,
     val hover: (() -> String)?,
   )
 
   companion object {
+    private fun unsolvedMeta(
+      index: Int,
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "unsolved meta: ?${index.toSubscript()}",
+        DiagnosticSeverity.Error,
+      )
+    }
+
     operator fun invoke(
       context: Context,
       input: Elaborate.Result,
