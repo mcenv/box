@@ -1,9 +1,6 @@
 package mcx.phase.backend
 
-import mcx.ast.Modifier
 import mcx.phase.Context
-import mcx.phase.backend.Lift.Env.Companion.emptyEnv
-import mcx.phase.prettyType
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
@@ -15,6 +12,7 @@ class Lift private constructor(
   private val dispatchedDefinitions: MutableList<L.Definition.Function> = mutableListOf()
   private var freshFunctionId: Int = 0
 
+  /*
   private fun lift(): Result {
     val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     when (definition) {
@@ -244,6 +242,7 @@ class Lift private constructor(
       )
       .also { liftedDefinitions += it }
   }
+  */
 
   private class Env private constructor() {
     private var savedSize: Int = 0
@@ -284,7 +283,8 @@ class Lift private constructor(
     operator fun invoke(
       context: Context,
       definition: C.Definition,
-    ): Result =
-      Lift(context, definition).lift()
+    ): Result {
+      TODO()
+    }
   }
 }
