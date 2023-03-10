@@ -77,7 +77,7 @@ class Parse private constructor(
           val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null) {
             null
           } else {
-            expect('=')
+            expect(":=")
             skipTrivia()
             parseTerm()
           }
@@ -123,6 +123,7 @@ class Parse private constructor(
         when (peek()) {
           '('  -> {
             skip()
+            skipTrivia()
             val term = parseTerm()
             expect(')')
             term
@@ -182,6 +183,7 @@ class Parse private constructor(
             S.Term.CompoundOf(elements, until())
           }
           '\\' -> {
+            skip()
             skipTrivia()
             val params = parseList(',', '(', ')') { parsePattern() }
             skipTrivia()
@@ -291,7 +293,7 @@ class Parse private constructor(
               "let"          -> {
                 skipTrivia()
                 val name = parsePattern()
-                expect('=')
+                expect(":=")
                 skipTrivia()
                 val init = parseTerm()
                 expect(';')
@@ -341,11 +343,13 @@ class Parse private constructor(
             skipTrivia()
             when (name.value) {
               "is" -> {
+                skipTrivia()
                 val scrutineer = parsePattern()
                 S.Term.Is(term, scrutineer, until())
               }
               else -> {
                 val func = S.Term.Var(name.value, name.range)
+                skipTrivia()
                 val arg = parseTerm()
                 S.Term.Apply(func, listOf(term, arg), until())
               }
@@ -386,7 +390,7 @@ class Parse private constructor(
             S.Pattern.Splice(element, until())
           }
           else -> {
-            val word = parseRanged { readLocation() }
+            val word = parseRanged { readWord() }
             when (word.value) {
               ""   -> null
               "_"  -> S.Pattern.Drop(until())
@@ -620,10 +624,6 @@ class Parse private constructor(
     return text[cursor]
   }
 
-  private inline fun peek(offset: Int): Char {
-    return text[cursor + offset]
-  }
-
   private inline fun canRead(): Boolean {
     return cursor < length
   }
@@ -687,16 +687,6 @@ class Parse private constructor(
     return diagnostic(
       range,
       "expected: kind",
-      DiagnosticSeverity.Error,
-    )
-  }
-
-  private fun expectedType(
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "expected: type",
       DiagnosticSeverity.Error,
     )
   }

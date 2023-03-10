@@ -29,7 +29,7 @@
       ]
     },
     {
-      "match": "\\b(function) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
+      "match": "\\b(def) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
       "captures": {
         "1": {
           "name": "keyword.mcx"
@@ -40,45 +40,12 @@
       }
     },
     {
-      "match": "\\b(type) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
-      "captures": {
-        "1": {
-          "name": "keyword.mcx"
-        },
-        "2": {
-          "name": "support.type.mcx"
-        }
-      }
-    },
-    {
-      "match": "\\b(class) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
-      "captures": {
-        "1": {
-          "name": "keyword.mcx"
-        },
-        "2": {
-          "name": "support.class.mcx"
-        }
-      }
-    },
-    {
-      "match": "\\b(test) +([^ \n\r:;,()\\[\\]{}⟨⟩]+)",
-      "captures": {
-        "1": {
-          "name": "keyword.mcx"
-        },
-        "2": {
-          "name": "entity.name.function.test.mcx"
-        }
-      }
-    },
-    {
       "name": "keyword.mcx",
-      "match": "\\b(?:import|tick|load|no_drop|leaf|builtin|export|inline|static|function|type|class|test|resource|union)\\b"
+      "match": "\\b(?:import|builtin|export|inline|const|world|def)\\b"
     },
     {
       "name": "support.type.mcx",
-      "match": "\\b(?:bool|byte|short|int|long|float|double|string)\\b"
+      "match": "\\b(?:Bool|Byte|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Union)\\b"
     },
     {
       "include": "#term"
@@ -103,7 +70,7 @@
         },
         {
           "name": "keyword.control.mcx",
-          "match": "\\b(?:func|clos|of|if|else|let|is)\\b"
+          "match": "\\b(?:|if|then|else|is|let)\\b"
         },
         {
           "name": "constant.language.mcx",

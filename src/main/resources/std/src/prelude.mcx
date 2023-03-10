@@ -1,6 +1,6 @@
-export def End: Type EndTag = Union{};
+export def End : Type EndTag := Union {};
 
-export builtin const def ++: (_: String, _: String) -> String;
+export builtin const def ++ : Func (_ : String, _ : String) -> String;
 
-export const def identity: (T: Tag, $A: Code Type T) -> Code (_: A) -> A =
+export const def identity : Func (T : Tag, $A : Code Type T) -> Func (_ : Code A) -> A :=
   \(_, _) -> `\(a) -> a;

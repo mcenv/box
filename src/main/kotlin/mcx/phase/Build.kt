@@ -123,14 +123,14 @@ class Build(
   @Suppress("UNCHECKED_CAST")
   suspend fun <V> Context.fetch(
     key: Key<V>,
-  ): Value<V> =
-    coroutineScope {
+  ): Value<V> {
+    return coroutineScope {
       mutexes
         .computeIfAbsent(key) { Mutex() }
         .withLock {
           val value = values[key]
           when (key) {
-            is Key.Text            -> {
+            is Key.Text       -> {
               value ?: withContext(Dispatchers.IO) {
                 src
                   .resolve(key.location.parts.joinToString("/", postfix = ".mcx"))
@@ -279,6 +279,7 @@ class Build(
           }
         }
     } as Value<V>
+  }
 
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
     val imports = mutableListOf<DefinitionLocation>()

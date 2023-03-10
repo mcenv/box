@@ -3,9 +3,9 @@ import {
   int::=,
 }
 
-export builtin def size: (_: String) -> Int;
+export builtin def size : Func (_ : String) -> Int;
 
-export const def repeat: (string: String, count: Int) -> string =
+export const def repeat : Func (string : String, count : Int) -> string :=
   \(string, count) -> if count = 0 then "" else string ++ repeat(string, count - 1);
 
-export def to_string: String -> String = $identity(StringTag, `String);
+export def to_string : Func (_ : String) -> String = $identity(StringTag, `String);
