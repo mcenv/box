@@ -46,7 +46,13 @@ fun PersistentList<Lazy<Value>>.eval(
     is Term.BoolOf      -> Value.BoolOf(term.value)
     is Term.If          -> {
       when (val condition = eval(term.condition)) {
-        is Value.BoolOf -> if (condition.value) eval(term.thenBranch) else eval(term.elseBranch)
+        is Value.BoolOf -> {
+          if (condition.value) {
+            eval(term.thenBranch)
+          } else {
+            eval(term.elseBranch)
+          }
+        }
         else            -> {
           val thenBranch = lazy { eval(term.thenBranch) }
           val elseBranch = lazy { eval(term.elseBranch) }
@@ -135,8 +141,10 @@ fun PersistentList<Lazy<Value>>.eval(
       Value.CodeOf(element)
     }
     is Term.Splice      -> {
-      val element = lazy { eval(term.element) }
-      Value.Splice(element, term.type)
+      when (val element = eval(term.element)) {
+        is Value.CodeOf -> element.element.value
+        else            -> Value.Splice(element, term.type)
+      }
     }
     is Term.Let         -> {
       val init = lazy { eval(term.init) }
@@ -285,29 +293,35 @@ fun Int.quote(
       val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.Func(params, result)
     }
-    is Value.FuncOf      -> {
+    is Value.FuncOf -> {
       val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.FuncOf(value.result.binders, result, value.type)
     }
-    is Value.Apply       -> {
+    is Value.Apply  -> {
       val func = quote(value.func)
       val args = value.args.map { quote(it.value) }
       Term.Apply(func, args, value.type)
     }
-    is Value.Code        -> {
+    is Value.Code   -> {
       val element = quote(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf      -> {
+    is Value.CodeOf -> {
       val element = quote(value.element.value)
       Term.CodeOf(element, Value.Code(lazyOf(element.type)))
     }
-    is Value.Splice      -> {
-      val element = quote(value.element.value)
+    is Value.Splice -> {
+      val element = quote(value.element)
       Term.Splice(element, value.type)
     }
-    is Value.Var         -> Term.Var(value.name, value.level, value.type)
-    is Value.Meta        -> Term.Meta(value.index, value.source, value.type)
-    is Value.Hole        -> Term.Hole(value.type)
+    is Value.Let    -> {
+      val init = quote(value.init)
+      val body = collect(listOf(value.binder)).let { (this + it.size).quote(value.body) }
+      Term.Let(value.binder, init, body, value.type)
+    }
+    is Value.Var    -> Term.Var(value.name, value.level, value.type)
+    is Value.Def    -> Term.Def(value.name, value.body, value.type)
+    is Value.Meta   -> Term.Meta(value.index, value.source, value.type)
+    is Value.Hole   -> Term.Hole(value.type)
   }
 }

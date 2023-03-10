@@ -467,13 +467,26 @@ object Core {
     ) : Value
 
     class Splice(
-      val element: Lazy<Value>,
+      val element: Value,
+      val type: Value,
+    ) : Value
+
+    class Let(
+      val binder: Pattern,
+      val init: Value,
+      val body: Value,
       val type: Value,
     ) : Value
 
     class Var(
       val name: kotlin.String,
       val level: kotlin.Int,
+      val type: Value,
+    ) : Value
+
+    class Def(
+      val name: DefinitionLocation,
+      val body: Term,
       val type: Value,
     ) : Value
 
