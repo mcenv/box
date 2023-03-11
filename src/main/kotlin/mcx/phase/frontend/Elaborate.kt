@@ -193,7 +193,7 @@ class Elaborate private constructor(
           }
         }
       }
-      term is R.Term.Apply && synth(type)                             -> {
+      term is R.Term.Apply && synth(type)         -> {
         val func = elaborateTerm(term.func, stage, null)
         when (val funcType = meta.force(func.type)) {
           is C.Value.Func -> {
@@ -209,7 +209,9 @@ class Elaborate private constructor(
             }
           }
           else            -> {
-            TODO("solve meta")
+            // TODO: unify
+            val type = meta.freshType(term.range)
+            C.Term.Hole(type)
           }
         }
       }
@@ -251,7 +253,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, body.type)
         }
       }
-      term is R.Term.Let && check<C.Value>(type)                      -> {
+      term is R.Term.Let && check<C.Value>(type)  -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -259,7 +261,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, type)
         }
       }
-      term is R.Term.Var && synth(type)                               -> {
+      term is R.Term.Var && synth(type)           -> {
         val level = this[term.name]
         val entry = entries[level]
         if (stage == entry.stage) {
@@ -269,7 +271,7 @@ class Elaborate private constructor(
           C.Term.Hole(entry.type)
         }
       }
-      term is R.Term.Def && synth(type)                               -> {
+      term is R.Term.Def && synth(type)           -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             val body = definition.body ?: TODO("builtin")
@@ -278,7 +280,12 @@ class Elaborate private constructor(
           else                -> TODO()
         }
       }
-      check<C.Value>(type)                                            -> {
+      term is R.Term.Hole && synth(type)          -> {
+        val type = meta.freshType(term.range)
+        C.Term.Hole(type)
+      }
+      term is R.Term.Hole && check<C.Value>(type) -> C.Term.Hole(type)
+      check<C.Value>(type)                        -> {
         val synth = elaborateTerm(term, stage, null)
         if (size.sub(synth.type, type)) {
           synth
@@ -287,7 +294,7 @@ class Elaborate private constructor(
           C.Term.Hole(type)
         }
       }
-      else                                                            -> error("unreachable")
+      else                                        -> error("unreachable: $term $stage $type")
     }
   }
 
@@ -298,14 +305,14 @@ class Elaborate private constructor(
   ): C.Pattern {
     val type = type?.let { meta.force(type) }
     return when {
-      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value)
-      pattern is R.Pattern.CompoundOf && synth(type)                   -> {
+      pattern is R.Pattern.IntOf && synth(type)                             -> C.Pattern.IntOf(pattern.value)
+      pattern is R.Pattern.CompoundOf && synth(type)                        -> {
         TODO()
       }
-      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type) -> {
+      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type)      -> {
         TODO()
       }
-      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)          -> {
+      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)               -> {
         val type = meta.freshType(pattern.range)
         val element = elaboratePattern(pattern.element, stage - 1, C.Value.Code(lazyOf(type)))
         C.Pattern.CodeOf(element, type)
@@ -314,21 +321,26 @@ class Elaborate private constructor(
         val element = elaboratePattern(pattern.element, stage - 1, type.element.value)
         C.Pattern.CodeOf(element, type)
       }
-      pattern is R.Pattern.Var && synth(type) -> {
+      pattern is R.Pattern.Var && synth(type)                               -> {
         val type = meta.freshType(pattern.range)
         push(pattern.name, stage, type, null)
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
-      pattern is R.Pattern.Var && check<C.Value>(type) -> {
+      pattern is R.Pattern.Var && check<C.Value>(type)                      -> {
         push(pattern.name, stage, type, null)
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
-      pattern is R.Pattern.Drop && synth(type)                         -> {
+      pattern is R.Pattern.Drop && synth(type)                              -> {
         val type = meta.freshType(pattern.range)
         C.Pattern.Drop(type)
       }
-      pattern is R.Pattern.Drop && check<C.Value>(type)                -> C.Pattern.Drop(type)
-      check<C.Value>(type)                                             -> {
+      pattern is R.Pattern.Drop && check<C.Value>(type)                     -> C.Pattern.Drop(type)
+      pattern is R.Pattern.Hole && synth(type)                              -> {
+        val type = meta.freshType(pattern.range)
+        C.Pattern.Hole(type)
+      }
+      pattern is R.Pattern.Hole && check<C.Value>(type)                     -> C.Pattern.Hole(type)
+      check<C.Value>(type)                                                  -> {
         val synth = elaboratePattern(pattern, stage, null)
         if (size.sub(synth.type, type)) {
           synth
@@ -337,7 +349,7 @@ class Elaborate private constructor(
           C.Pattern.Hole(type)
         }
       }
-      else                                                             -> error("unreachable")
+      else                                                                  -> error("unreachable: $pattern $stage $type")
     }
   }
 
