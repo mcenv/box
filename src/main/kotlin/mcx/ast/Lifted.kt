@@ -127,7 +127,7 @@ object Lifted {
     }
 
     data class FuncOf(
-      val values: List<Triple<String, Int, NbtType>>,
+      val types: List<Triple<String, Int, NbtType>>,
       val tag: Int,
     ) : Term {
       override val type: NbtType get() = NbtType.COMPOUND

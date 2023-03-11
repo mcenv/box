@@ -118,15 +118,18 @@ class Lift private constructor(
           )
           val result = liftTerm(term.result)
           val tag = context.freshId()
-          val bodyFunction = L.Definition.Function(
+          L.Definition.Function(
             emptyList(),
             definition.name.module / "${definition.name.name}:${freshFunctionId++}",
             binders + capture,
             result,
             tag,
-          ).also { liftedDefinitions += it }
-          dispatchedDefinitions += bodyFunction
-          L.Term.FuncOf(freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }, tag)
+          ).also {
+            liftedDefinitions += it
+            dispatchedDefinitions += it
+          }
+          val types = freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }
+          L.Term.FuncOf(types, tag)
         }
       }
       is C.Term.Apply       -> {
