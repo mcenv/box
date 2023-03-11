@@ -1,5 +1,7 @@
 package mcx.ast
 
+import mcx.data.NbtType
+
 object Lifted {
   sealed interface Definition {
     val modifiers: List<Modifier>
@@ -8,7 +10,7 @@ object Lifted {
     data class Function(
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
-      val binder: Pattern,
+      val params: List<Pattern>,
       val body: Term,
       val restore: Int?,
     ) : Definition
@@ -19,220 +21,167 @@ object Lifted {
     BUILTIN,
   }
 
-  sealed interface Type {
-    data class Bool(
-      val value: Boolean?,
-    ) : Type
-
-    data class Byte(
-      val value: kotlin.Byte?,
-    ) : Type
-
-    data class Short(
-      val value: kotlin.Short?,
-    ) : Type
-
-    data class Int(
-      val value: kotlin.Int?,
-    ) : Type
-
-    data class Long(
-      val value: kotlin.Long?,
-    ) : Type
-
-    data class Float(
-      val value: kotlin.Float?,
-    ) : Type
-
-    data class Double(
-      val value: kotlin.Double?,
-    ) : Type
-
-    data class String(
-      val value: kotlin.String?,
-    ) : Type
-
-    object ByteArray : Type
-
-    object IntArray : Type
-
-    object LongArray : Type
-
-    data class List(
-      val element: Type,
-    ) : Type
-
-    data class Compound(
-      val elements: Map<kotlin.String, Type>,
-    ) : Type
-
-    data class Func(
-      val param: Type,
-      val result: Type,
-    ) : Type
-
-    data class Clos(
-      val param: Type,
-      val result: Type,
-    ) : Type
-
-    data class Union(
-      val elements: kotlin.collections.List<Type>,
-    ) : Type
-
-    data class Def(
-      val name: DefinitionLocation,
-      val body: Lazy<Type>,
-    ) : Type
-  }
-
   sealed interface Term {
-    val type: Type
+    val type: NbtType
+
+    data class TagOf(
+      val value: NbtType,
+    ) : Term {
+      override val type: NbtType get() = NbtType.BYTE
+    }
+
+    object Unit : Term {
+      override val type: NbtType get() = NbtType.BYTE
+    }
 
     data class BoolOf(
       val value: Boolean,
-      override val type: Type,
-    ) : Term
-
-    data class ByteOf(
-      val value: Byte,
-      override val type: Type,
-    ) : Term
-
-    data class ShortOf(
-      val value: Short,
-      override val type: Type,
-    ) : Term
-
-    data class IntOf(
-      val value: Int,
-      override val type: Type,
-    ) : Term
-
-    data class LongOf(
-      val value: Long,
-      override val type: Type,
-    ) : Term
-
-    data class FloatOf(
-      val value: Float,
-      override val type: Type,
-    ) : Term
-
-    data class DoubleOf(
-      val value: Double,
-      override val type: Type,
-    ) : Term
-
-    data class StringOf(
-      val value: String,
-      override val type: Type,
-    ) : Term
-
-    data class ByteArrayOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
-    data class IntArrayOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
-    data class LongArrayOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
-    data class ListOf(
-      val elements: List<Term>,
-      override val type: Type,
-    ) : Term
-
-    data class CompoundOf(
-      val elements: Map<String, Term>,
-      override val type: Type,
-    ) : Term
-
-    data class FuncOf(
-      val tag: Int,
-      override val type: Type,
-    ) : Term
-
-    data class ClosOf(
-      val tag: Int,
-      val vars: List<Triple<String, Int, Type>>,
-      override val type: Type,
-    ) : Term
-
-    data class Apply(
-      val operator: Term,
-      val arg: Term,
-      override val type: Type,
-    ) : Term
+    ) : Term {
+      override val type: NbtType get() = NbtType.BYTE
+    }
 
     data class If(
       val condition: Term,
       val thenName: DefinitionLocation,
       val elseName: DefinitionLocation,
-      override val type: Type,
+      override val type: NbtType,
+    ) : Term
+
+    data class Is(
+      val scrutinee: Term,
+      val scrutineer: Pattern,
+    ) : Term {
+      override val type: NbtType get() = NbtType.BYTE
+    }
+
+    data class ByteOf(
+      val value: Byte,
+    ) : Term {
+      override val type: NbtType get() = NbtType.BYTE
+    }
+
+    data class ShortOf(
+      val value: Short,
+    ) : Term {
+      override val type: NbtType get() = NbtType.SHORT
+    }
+
+    data class IntOf(
+      val value: Int,
+    ) : Term {
+      override val type: NbtType get() = NbtType.INT
+    }
+
+    data class LongOf(
+      val value: Long,
+    ) : Term {
+      override val type: NbtType get() = NbtType.LONG
+    }
+
+    data class FloatOf(
+      val value: Float,
+    ) : Term {
+      override val type: NbtType get() = NbtType.FLOAT
+    }
+
+    data class DoubleOf(
+      val value: Double,
+    ) : Term {
+      override val type: NbtType get() = NbtType.DOUBLE
+    }
+
+    data class StringOf(
+      val value: String,
+    ) : Term {
+      override val type: NbtType get() = NbtType.STRING
+    }
+
+    data class ByteArrayOf(
+      val elements: List<Term>,
+    ) : Term {
+      override val type: NbtType get() = NbtType.BYTE_ARRAY
+    }
+
+    data class IntArrayOf(
+      val elements: List<Term>,
+    ) : Term {
+      override val type: NbtType get() = NbtType.INT_ARRAY
+    }
+
+    data class LongArrayOf(
+      val elements: List<Term>,
+    ) : Term {
+      override val type: NbtType get() = NbtType.LONG_ARRAY
+    }
+
+    data class ListOf(
+      val elements: List<Term>,
+    ) : Term {
+      override val type: NbtType get() = NbtType.LIST
+    }
+
+    data class CompoundOf(
+      val elements: Map<String, Term>,
+    ) : Term {
+      override val type: NbtType get() = NbtType.COMPOUND
+    }
+
+    data class FuncOf(
+      val values: List<Triple<String, Int, NbtType>>,
+      val tag: Int,
+    ) : Term {
+      override val type: NbtType get() = NbtType.COMPOUND
+    }
+
+    data class Apply(
+      val func: Term,
+      val args: List<Term>,
+      override val type: NbtType,
     ) : Term
 
     data class Let(
       val binder: Pattern,
       val init: Term,
       val body: Term,
-      override val type: Type,
-    ) : Term
+    ) : Term {
+      override val type: NbtType = body.type
+    }
 
     data class Var(
+      val name: String,
       val level: Int,
-      override val type: Type,
+      override val type: NbtType,
     ) : Term
 
     data class Def(
       val name: DefinitionLocation,
-      override val type: Type,
-    ) : Term
-
-    data class Is(
-      val scrutinee: Term,
-      val scrutineer: Pattern,
-      override val type: Type,
-    ) : Term
-
-    data class Command(
-      val value: String,
-      override val type: Type,
+      override val type: NbtType,
     ) : Term
   }
 
   sealed interface Pattern {
-    val type: Type
+    val type: NbtType
 
     data class IntOf(
       val value: Int,
-      override val type: Type,
-    ) : Pattern
-
-    data class IntRangeOf(
-      val min: Int,
-      val max: Int,
-      override val type: Type,
-    ) : Pattern
+    ) : Pattern {
+      override val type: NbtType get() = NbtType.INT
+    }
 
     data class CompoundOf(
-      val elements: List<Pair<String, Pattern>>,
-      override val type: Type,
-    ) : Pattern
+      val elements: Map<String, Pattern>,
+    ) : Pattern {
+      override val type: NbtType get() = NbtType.COMPOUND
+    }
 
     data class Var(
+      val name: String,
       val level: Int,
-      override val type: Type,
+      override val type: NbtType,
     ) : Pattern
 
     data class Drop(
-      override val type: Type,
+      override val type: NbtType,
     ) : Pattern
   }
 }

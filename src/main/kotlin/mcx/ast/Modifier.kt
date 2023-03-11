@@ -1,9 +1,9 @@
 package mcx.ast
 
-enum class Modifier {
-  BUILTIN,
-  EXPORT,
-  INLINE,
-  CONST,
-  WORLD,
+enum class Modifier(val token: String) {
+  BUILTIN("builtin"),
+  EXPORT("export"),
+  INLINE("inline"),
+  CONST("const"),
+  WORLD("world"),
 }

@@ -1,5 +1,6 @@
 package mcx.lsp
 
+import mcx.ast.Modifier
 import org.eclipse.lsp4j.CompletionItem
 import org.eclipse.lsp4j.CompletionItemKind
 
@@ -11,14 +12,8 @@ private val definitions: List<CompletionItem> = listOf(
   }
 }
 
-private val modifiers: List<CompletionItem> = listOf(
-  "builtin",
-  "export",
-  "inline",
-  "const",
-  "world",
-).map {
-  CompletionItem(it).apply {
+private val modifiers: List<CompletionItem> = Modifier.values().map {
+  CompletionItem(it.token).apply {
     kind = CompletionItemKind.Keyword
   }
 }
