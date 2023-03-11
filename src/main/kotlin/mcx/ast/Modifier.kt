@@ -1,6 +1,6 @@
 package mcx.ast
 
-enum class Modifier(val token: String) {
+enum class Modifier(val id: String) {
   BUILTIN("builtin"),
   EXPORT("export"),
   INLINE("inline"),

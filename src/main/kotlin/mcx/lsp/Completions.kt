@@ -13,7 +13,7 @@ private val definitions: List<CompletionItem> = listOf(
 }
 
 private val modifiers: List<CompletionItem> = Modifier.values().map {
-  CompletionItem(it.token).apply {
+  CompletionItem(it.id).apply {
     kind = CompletionItemKind.Keyword
   }
 }

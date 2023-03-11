@@ -351,7 +351,7 @@ class Lift private constructor(
 
   companion object {
     private fun unexpectedModifier(modifier: Modifier): Nothing {
-      error("unexpected modifier: ${modifier.token}")
+      error("unexpected modifier: ${modifier.id}")
     }
 
     private fun unexpectedTerm(term: C.Term): Nothing {
