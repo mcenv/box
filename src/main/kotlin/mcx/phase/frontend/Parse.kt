@@ -414,20 +414,28 @@ class Parse private constructor(
     skipTrivia()
     while (canRead()) {
       pattern = ranging {
-        when (peek()) {
-          ':'  -> {
-            skip()
+        val char = peek()
+        when {
+          char.isWordPart() -> {
+            val name = parseRanged { readWord() }
             skipTrivia()
-            val type = parseTerm()
-            S.Pattern.Anno(pattern, type, until())
+            when (name.value) {
+              "as" -> {
+                skipTrivia()
+                val type = parseTerm()
+                S.Pattern.Anno(pattern, type, until())
+              }
+              else -> return pattern
+            }
           }
-          else -> return pattern
+          else              -> return pattern
         }
       }
       skipTrivia()
     }
     return pattern
   }
+
 
   private fun <R> parseRanged(parse: () -> R): Ranged<R> {
     return ranging { Ranged(parse(), until()) }
