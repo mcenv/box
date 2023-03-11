@@ -196,8 +196,9 @@ class Build(
               val resolved = fetch(Key.Resolved(location)) as Value<Resolve.Result>
               val results = resolved.value.module.imports
                 .map { async { fetch(Key.Elaborated(it.value.module)) } }
-                .plus(async { fetch(Key.Elaborated(prelude)) })
+                .plus(async { if (location == prelude) null else fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
+                .filterNotNull()
               val dependencies = results.map { it.value.module }
               val hash = Objects.hash(resolved.hash, results.map { it.hash })
               if (value == null || value.hash != hash || key.position != null) {
