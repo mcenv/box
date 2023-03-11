@@ -6,6 +6,6 @@ import {
 export builtin def size : Func (_ : String) -> Int;
 
 export const def repeat : Func (string : String, count : Int) -> string :=
-  \(string, count) -> if count = 0 then "" else string ++ repeat(string, count - 1);
+  \(string, count) -> if (count = 0) then "" else (string ++ repeat(string, count - 1));
 
 export def to_string : Func (_ : String) -> String = $identity(StringTag, `String);
