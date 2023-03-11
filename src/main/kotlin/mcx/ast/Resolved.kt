@@ -255,7 +255,7 @@ object Resolved {
       override val range: Range,
     ) : Pattern
 
-    data class Splice(
+    data class CodeOf(
       val element: Pattern,
       override val range: Range,
     ) : Pattern

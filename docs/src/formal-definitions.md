@@ -718,13 +718,13 @@ n_1 \ \texttt{<=} \ n_2
 }
 \\]
 
-#### Splice-\\(\synth\\)
+#### CodeOf-\\(\synth\\)
 
 \\[
 \infer{
-\relsp{ \Gamma }{ s+1 }{ p }{ \Code{A} }{ \Delta }
+\relsp{ \Gamma }{ s }{ p }{ \Code{A} }{ \Delta }
 }{
-\relsp{ \Gamma }{ s }{ \splice{p} }{ A }{ \Delta }
+\relsp{ \Gamma }{ s+1 }{ \code{p} }{ A }{ \Delta }
 }
 \\]
 
@@ -732,9 +732,9 @@ n_1 \ \texttt{<=} \ n_2
 
 \\[
 \infer{
-\relcp{ \Gamma }{ s+1 }{ p }{ \Code{A} }{ \Delta }
+\relcp{ \Gamma }{ s }{ p }{ \Code{A} }{ \Delta }
 }{
-\relcp{ \Gamma }{ s }{ \splice{p} }{ A }{ \Delta }
+\relcp{ \Gamma }{ s+1 }{ \code{p} }{ A }{ \Delta }
 }
 \\]
 

@@ -22,7 +22,7 @@ fun Int.collect(
     when (pattern) {
       is Pattern.IntOf      -> {}
       is Pattern.CompoundOf -> {}
-      is Pattern.Splice     -> go(pattern.element)
+      is Pattern.CodeOf     -> go(pattern.element)
       is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.type))
       is Pattern.Drop       -> {}
       is Pattern.Hole       -> {}
@@ -174,7 +174,7 @@ fun bind(
           binder.elements.forEach { go(it.value, value.elements[it.key]!!) }
         }
       }
-      is Pattern.Splice     -> {
+      is Pattern.CodeOf     -> {
         val value = value.value
         if (value is Value.CodeOf) {
           go(binder.element, value.element)
@@ -202,7 +202,7 @@ fun match(
       val value = value.value as? Value.CompoundOf ?: return null
       binder.elements.all { (key, element) -> value.elements[key]?.let { match(element, it) } ?: false }
     }
-    is Pattern.Splice     -> {
+    is Pattern.CodeOf     -> {
       val value = value.value as? Value.CodeOf ?: return null
       match(binder.element, value.element)
     }

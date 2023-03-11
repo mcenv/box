@@ -209,9 +209,9 @@ class Resolve private constructor(
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.CompoundOf(elements, pattern.range)
       }
-      is S.Pattern.Splice     -> {
+      is S.Pattern.CodeOf     -> {
         val element = resolvePattern(pattern.element)
-        R.Pattern.Splice(element, pattern.range)
+        R.Pattern.CodeOf(element, pattern.range)
       }
       is S.Pattern.Var        -> {
         bind(pattern.name)

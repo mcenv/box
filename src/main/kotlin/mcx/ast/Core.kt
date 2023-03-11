@@ -271,7 +271,7 @@ object Core {
       override val type: Value,
     ) : Pattern
 
-    data class Splice(
+    data class CodeOf(
       val element: Pattern,
       override val type: Value,
     ) : Pattern

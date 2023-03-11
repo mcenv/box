@@ -305,21 +305,21 @@ class Elaborate private constructor(
       pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type) -> {
         TODO()
       }
-      pattern is R.Pattern.Splice && synth(type)                       -> {
+      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)          -> {
         val type = meta.freshType(pattern.range)
-        val element = elaboratePattern(pattern.element, stage + 1, C.Value.Code(lazyOf(type)))
-        C.Pattern.Splice(element, type)
+        val element = elaboratePattern(pattern.element, stage - 1, C.Value.Code(lazyOf(type)))
+        C.Pattern.CodeOf(element, type)
       }
-      pattern is R.Pattern.Splice && check<C.Value.Code>(type)         -> {
-        val element = elaboratePattern(pattern.element, stage + 1, type.element.value)
-        C.Pattern.Splice(element, type)
+      pattern is R.Pattern.CodeOf && stage > 0 && check<C.Value.Code>(type) -> {
+        val element = elaboratePattern(pattern.element, stage - 1, type.element.value)
+        C.Pattern.CodeOf(element, type)
       }
-      pattern is R.Pattern.Var && synth(type)                          -> {
+      pattern is R.Pattern.Var && synth(type) -> {
         val type = meta.freshType(pattern.range)
         push(pattern.name, stage, type, null)
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
-      pattern is R.Pattern.Var && check<C.Value>(type)                 -> {
+      pattern is R.Pattern.Var && check<C.Value>(type) -> {
         push(pattern.name, stage, type, null)
         C.Pattern.Var(pattern.name, pattern.level, type)
       }

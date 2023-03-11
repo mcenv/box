@@ -383,11 +383,11 @@ class Parse private constructor(
             }
             S.Pattern.CompoundOf(elements, until())
           }
-          '$'  -> {
+          '`'  -> {
             skip()
             skipTrivia()
             val element = parsePatternAtom()
-            S.Pattern.Splice(element, until())
+            S.Pattern.CodeOf(element, until())
           }
           else -> {
             val word = parseRanged { readWord() }
