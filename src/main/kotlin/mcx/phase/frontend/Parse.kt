@@ -186,6 +186,7 @@ class Parse private constructor(
             skip()
             skipTrivia()
             val params = parseList(',', '(', ')') { parsePattern() }
+            expect("->")
             skipTrivia()
             val result = parseTerm()
             S.Term.FuncOf(params, result, until())
