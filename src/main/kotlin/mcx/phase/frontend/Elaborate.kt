@@ -79,14 +79,14 @@ class Elaborate private constructor(
       term is R.Term.Byte && synth(type)                              -> C.Term.Byte
       term is R.Term.BoolOf && synth(type)                            -> C.Term.BoolOf(term.value)
       term is R.Term.If && synth(type)                                -> {
-        val condition = elaborateTerm(term.condition, stage, C.Value.Byte)
+        val condition = elaborateTerm(term.condition, stage, C.Value.Bool)
         val thenBranch = elaborateTerm(term.thenBranch, stage, null)
         val elseBranch = elaborateTerm(term.elseBranch, stage, null)
         val type = C.Value.Union(listOf(lazyOf(thenBranch.type), lazyOf(elseBranch.type)))
         C.Term.If(condition, thenBranch, elseBranch, type)
       }
       term is R.Term.If && check<C.Value>(type)                       -> {
-        val condition = elaborateTerm(term.condition, stage, C.Value.Byte)
+        val condition = elaborateTerm(term.condition, stage, C.Value.Bool)
         val thenBranch = elaborateTerm(term.thenBranch, stage, type)
         val elseBranch = elaborateTerm(term.elseBranch, stage, type)
         C.Term.If(condition, thenBranch, elseBranch, type)
