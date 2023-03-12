@@ -22,7 +22,7 @@ class Meta {
     source: Range,
   ): Value {
     val tag = lazy { fresh(source, Value.Tag) }
-    return fresh(source, Value.Type(tag))
+    return Value.Type(tag)
   }
 
   tailrec fun force(

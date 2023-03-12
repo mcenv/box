@@ -240,7 +240,7 @@ class Elaborate private constructor(
         C.Term.CodeOf(element, type)
       }
       term is R.Term.Splice && synth(type)                            -> {
-        val type = meta.freshType(term.range)
+        val type = meta.fresh(term.range, meta.freshType(term.range))
         val element = elaborateTerm(term.element, stage + 1, C.Value.Code(lazyOf(type)))
         C.Term.Splice(element, type)
       }
@@ -286,7 +286,7 @@ class Elaborate private constructor(
         }
       }
       term is R.Term.Hole && synth(type)                              -> {
-        val type = meta.freshType(term.range)
+        val type = meta.fresh(term.range, meta.freshType(term.range))
         C.Term.Hole(type)
       }
       term is R.Term.Hole && check<C.Value>(type)                     -> C.Term.Hole(type)
@@ -414,7 +414,7 @@ class Elaborate private constructor(
     type: C.Value?,
   ): C.Term {
     diagnostics += diagnostic
-    return C.Term.Hole(type ?: meta.freshType(diagnostic.range))
+    return C.Term.Hole(type ?: meta.fresh(diagnostic.range, meta.freshType(diagnostic.range)))
   }
 
   private fun invalidPattern(
@@ -422,7 +422,7 @@ class Elaborate private constructor(
     type: C.Value?,
   ): C.Pattern {
     diagnostics += diagnostic
-    return C.Pattern.Hole(type ?: meta.freshType(diagnostic.range))
+    return C.Pattern.Hole(type ?: meta.fresh(diagnostic.range, meta.freshType(diagnostic.range)))
   }
 
   private class Ctx private constructor(
