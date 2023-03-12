@@ -2,5 +2,6 @@ export def End : Type EndTag := Union {};
 
 export builtin const def ++ : Func (_ : String, _ : String) -> String;
 
-export const def identity : Func (T : Tag, `A : Code Type T) -> Func (_ : A) -> A :=
-  \(_, _) -> `\(a) -> a;
+# TODO: use 2-ary func
+export const def identity : Func (τ : Tag) -> Code Func (A : Type τ) -> Func (_ : A) -> A :=
+  \(_) -> `\(_) -> \(a) -> a;

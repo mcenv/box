@@ -28,7 +28,7 @@ export builtin def to_byte : Func (_ : Int) -> Byte;
 
 export builtin def to_short : Func (_ : Int) -> Short;
 
-export def to_int : Func (_ : Int) -> Int := $identity(IntTag, `Int);
+export def to_int : Func (_ : Int) -> Int := $(identity(IntTag)(Int));
 
 export builtin def to_long : Func (_ : Int) -> Long;
 
