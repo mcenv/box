@@ -309,14 +309,15 @@ class Elaborate private constructor(
   ): C.Pattern {
     val type = type?.let { meta.force(type) }
     return when {
-      pattern is R.Pattern.IntOf && synth(type)                             -> C.Pattern.IntOf(pattern.value)
-      pattern is R.Pattern.CompoundOf && synth(type)                        -> {
+      stage > 0 && check<C.Value.Tag>(type)                            -> elaboratePattern(pattern, stage - 1, type)
+      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value)
+      pattern is R.Pattern.CompoundOf && synth(type)                   -> {
         TODO()
       }
-      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type)      -> {
+      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type) -> {
         TODO()
       }
-      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)               -> {
+      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)          -> {
         val element = elaboratePattern(pattern.element, stage - 1, null)
         val type = C.Value.Code(lazyOf(element.type))
         C.Pattern.CodeOf(element, type)

@@ -190,6 +190,18 @@ $$
 }
 \\]
 
+#### SubTag-\\(\check\\)
+
+\\[
+\infer{
+\rels{ \Gamma }{ s }{ t }{ \Tag }
+}{
+\relc{ \Gamma }{ s+1 }{ t }{ \Tag }
+}
+\\]
+
+> TODO: Use stage coercion instead?
+
 #### Type-\\(\synth\\)
 
 \\[
