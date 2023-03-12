@@ -242,7 +242,7 @@ object Core {
 
     data class Def(
       val name: DefinitionLocation,
-      val body: Term,
+      val body: Term?,
       override val type: Value,
     ) : Term
 
@@ -486,7 +486,7 @@ object Core {
 
     class Def(
       val name: DefinitionLocation,
-      val body: Term,
+      val body: Term?,
       val type: Value,
     ) : Value
 

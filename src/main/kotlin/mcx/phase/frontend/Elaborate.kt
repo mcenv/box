@@ -273,10 +273,7 @@ class Elaborate private constructor(
       }
       term is R.Term.Def && synth(type)           -> {
         when (val definition = definitions[term.name]) {
-          is C.Definition.Def -> {
-            val body = definition.body ?: TODO("builtin")
-            C.Term.Def(term.name, body, definition.type)
-          }
+          is C.Definition.Def -> C.Term.Def(term.name, definition.body, definition.type)
           else                -> TODO()
         }
       }

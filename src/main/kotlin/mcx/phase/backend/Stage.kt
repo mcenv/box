@@ -163,9 +163,19 @@ class Stage private constructor(
         Value.FuncOf(result, term.type)
       }
       is Term.Apply       -> {
-        val func = evalTerm(term.func, stage)
-        val args = term.args.map { lazy { evalTerm(it, stage) } }
-        Value.Apply(func, args, term.type)
+        if (stage == 0) {
+          val func = evalTerm(term.func, stage)
+          val args = term.args.map { lazy { evalTerm(it, stage) } }
+          Value.Apply(func, args, term.type)
+        } else {
+          val func = evalTerm(term.func, stage)
+          val args = term.args.map { lazy { evalTerm(it, stage) } }
+          when (func) {
+            is Value.FuncOf -> func.result(args)
+            is Value.Def    -> lookupBuiltin(func.name).eval(args) ?: Value.Apply(func, args, term.type)
+            else            -> Value.Apply(func, args, term.type)
+          }
+        }
       }
       is Term.Code        -> {
         if (stage == 0) {
@@ -215,9 +225,9 @@ class Stage private constructor(
       }
       is Term.Def         -> {
         if (stage == 0) {
-          Value.Def(term.name, term.body, term.type)
+          Value.Def(term.name, null, term.type)
         } else {
-          evalTerm(term.body, stage)
+          term.body?.let { evalTerm(it, stage) } ?: Value.Def(term.name, null, term.type)
         }
       }
       is Term.Meta        -> unexpectedTerm(term)

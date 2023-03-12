@@ -6,6 +6,10 @@ import mcx.ast.ModuleLocation
 import kotlin.math.max
 import kotlin.math.min
 
+fun lookupBuiltin(name: DefinitionLocation): Builtin {
+  return requireNotNull(builtins[name]) { "unknown builtin: $name" }
+}
+
 abstract class Builtin(val name: DefinitionLocation) {
   abstract fun eval(args: List<Lazy<Value>>): Value?
 
@@ -28,7 +32,7 @@ private val longArray: ModuleLocation = ModuleLocation("long_array")
 private val list: ModuleLocation = ModuleLocation("list")
 private val compound: ModuleLocation = ModuleLocation("compound")
 
-val BUILTINS: Map<DefinitionLocation, Builtin> = listOf(
+private val builtins: Map<DefinitionLocation, Builtin> = listOf(
   object : Builtin(prelude / "++") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.StringOf ?: return null
