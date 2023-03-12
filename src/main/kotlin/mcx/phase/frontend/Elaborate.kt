@@ -305,8 +305,8 @@ class Elaborate private constructor(
         TODO()
       }
       pattern is R.Pattern.CodeOf && stage > 0 && synth(type)               -> {
-        val type = meta.freshType(pattern.range)
-        val element = elaboratePattern(pattern.element, stage - 1, C.Value.Code(lazyOf(type)))
+        val element = elaboratePattern(pattern.element, stage - 1, null)
+        val type = C.Value.Code(lazyOf(element.type))
         C.Pattern.CodeOf(element, type)
       }
       pattern is R.Pattern.CodeOf && stage > 0 && check<C.Value.Code>(type) -> {
