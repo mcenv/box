@@ -39,7 +39,7 @@ fun PersistentList<Lazy<Value>>.eval(
     is Term.Tag         -> Value.Tag
     is Term.TagOf       -> Value.TagOf(term.value)
     is Term.Type        -> {
-      val tag = lazy { eval(term) }
+      val tag = lazy { eval(term.tag) }
       Value.Type(tag)
     }
     is Term.Bool        -> Value.Bool
