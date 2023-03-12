@@ -30,7 +30,8 @@ class Stage private constructor(
       is Definition.Def -> {
         if (
           Modifier.INLINE !in definition.modifiers &&
-          Modifier.CONST !in definition.modifiers
+          Modifier.CONST !in definition.modifiers &&
+          Modifier.BUILTIN !in definition.modifiers
         ) {
           val body = stageTerm(definition.body!!)
           Definition.Def(definition.modifiers, definition.name, definition.type, body)
