@@ -44,7 +44,7 @@ class Meta {
       is Term.Tag         -> term
       is Term.TagOf       -> term
       is Term.Type        -> {
-        val tag = zonk(term)
+        val tag = zonk(term.tag)
         Term.Type(tag)
       }
       is Term.Bool        -> term
