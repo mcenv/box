@@ -188,12 +188,11 @@ class Elaborate private constructor(
             val result = elaborateTerm(term.result, stage, type.result(size.collect(type.result.binders)))
             C.Term.FuncOf(params, result, type)
           } else {
-            diagnostics += arityMismatch(type.params.size, term.params.size, term.range)
-            C.Term.Hole(type)
+            invalidTerm(arityMismatch(type.params.size, term.params.size, term.range), type)
           }
         }
       }
-      term is R.Term.Apply && synth(type)         -> {
+      term is R.Term.Apply && synth(type)                             -> {
         val func = elaborateTerm(term.func, stage, null)
         when (val funcType = meta.force(func.type)) {
           is C.Value.Func -> {
@@ -203,9 +202,7 @@ class Elaborate private constructor(
               val type = funcType.result(args.map { lazy { values.eval(it) } })
               C.Term.Apply(func, args, type)
             } else {
-              diagnostics += arityMismatch(funcType.params.size, term.args.size, term.range)
-              val type = meta.freshType(term.range)
-              C.Term.Hole(type)
+              invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range), type)
             }
           }
           else            -> {
@@ -253,7 +250,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, body.type)
         }
       }
-      term is R.Term.Let && check<C.Value>(type)  -> {
+      term is R.Term.Let && check<C.Value>(type)                      -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -261,37 +258,35 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, type)
         }
       }
-      term is R.Term.Var && synth(type)           -> {
+      term is R.Term.Var && synth(type)                               -> {
         val level = this[term.name]
         val entry = entries[level]
         if (stage == entry.stage) {
           C.Term.Var(term.name, level, entry.type)
         } else {
-          diagnostics += stageMismatch(stage, entry.stage, term.range)
-          C.Term.Hole(entry.type)
+          invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
       }
-      term is R.Term.Def && synth(type)           -> {
+      term is R.Term.Def && synth(type)                               -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> C.Term.Def(term.name, definition.body, definition.type)
-          else                -> TODO()
+          else                -> invalidTerm(expectedDef(term.range), type)
         }
       }
-      term is R.Term.Hole && synth(type)          -> {
+      term is R.Term.Hole && synth(type)                              -> {
         val type = meta.freshType(term.range)
         C.Term.Hole(type)
       }
-      term is R.Term.Hole && check<C.Value>(type) -> C.Term.Hole(type)
-      check<C.Value>(type)                        -> {
+      term is R.Term.Hole && check<C.Value>(type)                     -> C.Term.Hole(type)
+      check<C.Value>(type)                                            -> {
         val synth = elaborateTerm(term, stage, null)
         if (size.sub(synth.type, type)) {
           synth
         } else {
-          diagnostics += size.typeMismatch(type, synth.type, term.range)
-          C.Term.Hole(type)
+          invalidTerm(size.typeMismatch(type, synth.type, term.range), type)
         }
       }
-      else                                        -> error("unreachable: $term $stage $type")
+      else                                                            -> error("unreachable: $term $stage $type")
     }
   }
 
@@ -342,8 +337,7 @@ class Elaborate private constructor(
         if (size.sub(synth.type, type)) {
           synth
         } else {
-          diagnostics += size.typeMismatch(type, synth.type, pattern.range)
-          C.Pattern.Hole(type)
+          invalidPattern(size.typeMismatch(type, synth.type, pattern.range), type)
         }
       }
       else                                                                  -> error("unreachable: $pattern $stage $type")
@@ -401,6 +395,22 @@ class Elaborate private constructor(
         """.trimIndent(),
       DiagnosticSeverity.Error,
     )
+  }
+
+  private fun invalidTerm(
+    diagnostic: Diagnostic,
+    type: C.Value?,
+  ): C.Term {
+    diagnostics += diagnostic
+    return C.Term.Hole(type ?: meta.freshType(diagnostic.range))
+  }
+
+  private fun invalidPattern(
+    diagnostic: Diagnostic,
+    type: C.Value?,
+  ): C.Pattern {
+    diagnostics += diagnostic
+    return C.Pattern.Hole(type ?: meta.freshType(diagnostic.range))
   }
 
   private class Ctx private constructor(
@@ -488,6 +498,16 @@ class Elaborate private constructor(
           |  expected: $expected
           |  actual  : $actual
         """.trimIndent(),
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun expectedDef(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "expected: def",
         DiagnosticSeverity.Error,
       )
     }
