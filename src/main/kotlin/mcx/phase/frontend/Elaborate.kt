@@ -180,6 +180,7 @@ class Elaborate private constructor(
         }
       }
       term is R.Term.FuncOf && check<C.Value.Func>(type)              -> {
+        val size = size
         restoring {
           if (type.params.size == term.params.size) {
             val params = term.params.mapIndexed { index, param ->
@@ -194,22 +195,27 @@ class Elaborate private constructor(
       }
       term is R.Term.Apply && synth(type)                             -> {
         val func = elaborateTerm(term.func, stage, null)
-        when (val funcType = meta.force(func.type)) {
-          is C.Value.Func -> {
-            if (funcType.params.size == term.args.size) {
-              val args = term.args.mapIndexed { index, arg -> elaborateTerm(arg, stage, funcType.params.getOrNull(index)?.value) }
-              val values = freeze()
-              val type = funcType.result(args.map { lazy { values.eval(it) } })
-              C.Term.Apply(func, args, type)
-            } else {
-              invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range), type)
-            }
-          }
+        val funcType = when (val funcType = meta.force(func.type)) {
+          is C.Value.Func -> funcType
           else            -> {
-            // TODO: unify
-            val type = meta.freshType(term.range)
-            C.Term.Hole(type)
+            val params = term.args.map { lazyOf(meta.freshType(term.func.range)) }
+            val result = C.Closure(
+              freeze(),
+              params.map { C.Pattern.Drop(it.value) },
+              size.quote(meta.freshType(term.func.range)),
+            )
+            C.Value.Func(params, result)
           }
+        }
+        if (funcType.params.size == term.args.size) {
+          val args = term.args.mapIndexed { index, arg ->
+            elaborateTerm(arg, stage, funcType.params.getOrNull(index)?.value)
+          }
+          val values = freeze()
+          val type = funcType.result(args.map { lazy { values.eval(it) } })
+          C.Term.Apply(func, args, type)
+        } else {
+          invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range), type)
         }
       }
       /*
@@ -269,8 +275,14 @@ class Elaborate private constructor(
       }
       term is R.Term.Def && synth(type)                               -> {
         when (val definition = definitions[term.name]) {
-          is C.Definition.Def -> C.Term.Def(term.name, definition.body, definition.type)
-          else                -> invalidTerm(expectedDef(term.range), type)
+          is C.Definition.Def -> {
+            if (stage == 0 && Modifier.CONST in definition.modifiers) {
+              invalidTerm(stageMismatch(1, 0, term.range), type)
+            } else {
+              C.Term.Def(term.name, definition.body, definition.type)
+            }
+          }
+          else                -> invalidTerm(unknownDef(term.name, term.range), type)
         }
       }
       term is R.Term.Hole && synth(type)                              -> {
@@ -390,9 +402,9 @@ class Elaborate private constructor(
     return diagnostic(
       range,
       """type mismatch:
-          |  expected: $expected
-          |  actual  : $actual
-        """.trimIndent(),
+        |  expected: $expected
+        |  actual  : $actual
+      """.trimMargin(),
       DiagnosticSeverity.Error,
     )
   }
@@ -482,7 +494,7 @@ class Elaborate private constructor(
         """stage mismatch:
           |  expected: $expected
           |  actual  : $actual
-        """.trimIndent(),
+        """.trimMargin(),
         DiagnosticSeverity.Error,
       )
     }
@@ -497,17 +509,18 @@ class Elaborate private constructor(
         """arity mismatch:
           |  expected: $expected
           |  actual  : $actual
-        """.trimIndent(),
+        """.trimMargin(),
         DiagnosticSeverity.Error,
       )
     }
 
-    private fun expectedDef(
+    private fun unknownDef(
+      name: DefinitionLocation,
       range: Range,
     ): Diagnostic {
       return diagnostic(
         range,
-        "expected: def",
+        "unknown def: '$name'",
         DiagnosticSeverity.Error,
       )
     }
