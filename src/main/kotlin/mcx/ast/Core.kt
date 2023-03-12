@@ -291,7 +291,7 @@ object Core {
     ) : Pattern
   }
 
-  class Closure(
+  data class Closure(
     val values: PersistentList<Lazy<Value>>,
     val binders: List<Pattern>,
     val body: Term,
@@ -300,13 +300,11 @@ object Core {
   sealed interface Value {
     object Tag : Value
 
-    @JvmInline
-    value class TagOf(
+    data class TagOf(
       val value: NbtType,
     ) : Value
 
-    @JvmInline
-    value class Type(
+    data class Type(
       val tag: Lazy<Value>,
     ) : Value {
       companion object {
@@ -328,176 +326,158 @@ object Core {
 
     object Bool : Value
 
-    @JvmInline
-    value class BoolOf(
+    data class BoolOf(
       val value: Boolean,
     ) : Value
 
-    class If(
+    data class If(
       val condition: Value,
       val thenBranch: Lazy<Value>,
       val elseBranch: Lazy<Value>,
       val type: Value,
     ) : Value
 
-    class Is(
+    data class Is(
       val scrutinee: Lazy<Value>,
       val scrutineer: Pattern,
     ) : Value
 
     object Byte : Value
 
-    @JvmInline
-    value class ByteOf(
+    data class ByteOf(
       val value: kotlin.Byte,
     ) : Value
 
     object Short : Value
 
-    @JvmInline
-    value class ShortOf(
+    data class ShortOf(
       val value: kotlin.Short,
     ) : Value
 
     object Int : Value
 
-    @JvmInline
-    value class IntOf(
+    data class IntOf(
       val value: kotlin.Int,
     ) : Value
 
     object Long : Value
 
-    @JvmInline
-    value class LongOf(
+    data class LongOf(
       val value: kotlin.Long,
     ) : Value
 
     object Float : Value
 
-    @JvmInline
-    value class FloatOf(
+    data class FloatOf(
       val value: kotlin.Float,
     ) : Value
 
     object Double : Value
 
-    @JvmInline
-    value class DoubleOf(
+    data class DoubleOf(
       val value: kotlin.Double,
     ) : Value
 
     object String : Value
 
-    @JvmInline
-    value class StringOf(
+    data class StringOf(
       val value: kotlin.String,
     ) : Value
 
     object ByteArray : Value
 
-    @JvmInline
-    value class ByteArrayOf(
+    data class ByteArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
     ) : Value
 
     object IntArray : Value
 
-    @JvmInline
-    value class IntArrayOf(
+    data class IntArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
     ) : Value
 
     object LongArray : Value
 
-    @JvmInline
-    value class LongArrayOf(
+    data class LongArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
     ) : Value
 
-    @JvmInline
-    value class List(
+    data class List(
       val element: Lazy<Value>,
     ) : Value
 
-    class ListOf(
+    data class ListOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
       val type: Value,
     ) : Value
 
-    @JvmInline
-    value class Compound(
+    data class Compound(
       val elements: Map<kotlin.String, Lazy<Value>>,
     ) : Value
 
-    @JvmInline
-    value class CompoundOf(
+    data class CompoundOf(
       val elements: Map<kotlin.String, Lazy<Value>>,
     ) : Value
 
-    @JvmInline
-    value class Union(
+    data class Union(
       val elements: kotlin.collections.List<Lazy<Value>>,
     ) : Value
 
-    class Func(
+    data class Func(
       val params: kotlin.collections.List<Lazy<Value>>,
       val result: Closure,
     ) : Value
 
-    class FuncOf(
+    data class FuncOf(
       val result: Closure,
       val type: Value,
     ) : Value
 
-    class Apply(
+    data class Apply(
       val func: Value,
       val args: kotlin.collections.List<Lazy<Value>>,
       val type: Value,
     ) : Value
 
-    @JvmInline
-    value class Code(
+    data class Code(
       val element: Lazy<Value>,
     ) : Value
 
-    @JvmInline
-    value class CodeOf(
+    data class CodeOf(
       val element: Lazy<Value>,
     ) : Value
 
-    class Splice(
+    data class Splice(
       val element: Value,
       val type: Value,
     ) : Value
 
-    class Let(
+    data class Let(
       val binder: Pattern,
       val init: Value,
       val body: Value,
       val type: Value,
     ) : Value
 
-    class Var(
+    data class Var(
       val name: kotlin.String,
       val level: kotlin.Int,
       val type: Value,
     ) : Value
 
-    class Def(
+    data class Def(
       val name: DefinitionLocation,
       val body: Term?,
       val type: Value,
     ) : Value
 
-    class Meta(
+    data class Meta(
       val index: kotlin.Int,
       val source: Range,
       val type: Value,
     ) : Value
 
-    @JvmInline
-    value class Hole(
+    data class Hole(
       val type: Value,
     ) : Value
   }
