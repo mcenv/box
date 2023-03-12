@@ -335,7 +335,6 @@ class Parse private constructor(
         val char = peek()
         when {
           char == '('       -> {
-            skip()
             val args = parseList(',', '(', ')') { parseTerm() }
             S.Term.Apply(term, args, until())
           }
@@ -370,6 +369,7 @@ class Parse private constructor(
         when (peek()) {
           '('  -> {
             skip()
+            skipTrivia()
             val term = parsePattern()
             expect(')')
             term
