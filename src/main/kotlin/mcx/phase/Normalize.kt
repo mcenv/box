@@ -138,7 +138,7 @@ fun PersistentList<Lazy<Value>>.eval(
       val element = lazy { eval(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf      -> {
+    is Term.CodeOf -> {
       val element = lazy { eval(term.element) }
       Value.CodeOf(element)
     }
@@ -152,7 +152,7 @@ fun PersistentList<Lazy<Value>>.eval(
       val init = lazy { eval(term.init) }
       (this + bind(term.binder, init)).eval(term.body)
     }
-    is Term.Var    -> this[term.level].value
+    is Term.Var    -> getOrNull(term.level)?.value ?: Value.Var(term.name, term.level, term.type)
     is Term.Def    -> term.body?.let { eval(it) } ?: Value.Def(term.name, null, term.type)
     is Term.Meta   -> Value.Meta(term.index, term.source, term.type)
     is Term.Hole   -> Value.Hole(term.type)
