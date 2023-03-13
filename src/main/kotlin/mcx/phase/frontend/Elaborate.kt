@@ -197,20 +197,17 @@ class Elaborate private constructor(
           }
         }
       }
-      term is R.Term.Apply && synth(type)                             -> {
-        val func = elaborateTerm(term.func, stage, null)
-        val funcType = when (val funcType = meta.force(func.type)) {
-          is C.Value.Func -> funcType
-          else            -> {
-            val params = term.args.map { lazyOf(meta.freshType(term.func.range)) }
-            val result = C.Closure(
-              freeze(),
-              params.map { C.Pattern.Drop(it.value) },
-              size.quote(meta.freshType(term.func.range)),
-            )
-            C.Value.Func(params, result)
-          }
+      term is R.Term.Apply && synth(type)         -> {
+        val funcType = run {
+          val params = term.args.map { lazyOf(meta.fresh(term.func.range, meta.freshType(term.func.range))) }
+          val result = C.Closure(
+            freeze(),
+            params.map { C.Pattern.Drop(it.value) },
+            size.quote(meta.fresh(term.func.range, meta.freshType(term.func.range))),
+          )
+          C.Value.Func(params, result)
         }
+        val func = elaborateTerm(term.func, stage, funcType)
         if (funcType.params.size == term.args.size) {
           val args = term.args.mapIndexed { index, arg ->
             elaborateTerm(arg, stage, funcType.params.getOrNull(index)?.value)
@@ -252,7 +249,7 @@ class Elaborate private constructor(
         val element = elaborateTerm(term.element, stage + 1, type.element.value)
         C.Term.Splice(element, type)
       }
-      term is R.Term.Let && synth(type)                               -> {
+      term is R.Term.Let && synth(type)           -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -260,7 +257,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, body.type)
         }
       }
-      term is R.Term.Let && check<C.Value>(type)                      -> {
+      term is R.Term.Let && check<C.Value>(type)  -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -268,7 +265,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, type)
         }
       }
-      term is R.Term.Var && synth(type)                               -> {
+      term is R.Term.Var && synth(type)           -> {
         val level = this[term.name]
         val entry = entries[level]
         if (stage == entry.stage) {
@@ -333,7 +330,7 @@ class Elaborate private constructor(
         C.Pattern.CodeOf(element, type)
       }
       pattern is R.Pattern.Var && synth(type)                               -> {
-        val type = meta.freshType(pattern.range)
+        val type = meta.fresh(pattern.range, meta.freshType(pattern.range))
         push(pattern.name, stage, type, null)
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
@@ -342,12 +339,12 @@ class Elaborate private constructor(
         C.Pattern.Var(pattern.name, pattern.level, type)
       }
       pattern is R.Pattern.Drop && synth(type)                              -> {
-        val type = meta.freshType(pattern.range)
+        val type = meta.fresh(pattern.range, meta.freshType(pattern.range))
         C.Pattern.Drop(type)
       }
       pattern is R.Pattern.Drop && check<C.Value>(type)                     -> C.Pattern.Drop(type)
       pattern is R.Pattern.Hole && synth(type)                              -> {
-        val type = meta.freshType(pattern.range)
+        val type = meta.fresh(pattern.range, meta.freshType(pattern.range))
         C.Pattern.Hole(type)
       }
       pattern is R.Pattern.Hole && check<C.Value>(type)                     -> C.Pattern.Hole(type)
