@@ -198,7 +198,7 @@ class Elaborate private constructor(
       }
       term is R.Term.Apply && synth(type)                             -> {
         val func = elaborateTerm(term.func, stage, null)
-        val funcType = when (val funcType = func.type) {
+        val funcType = when (val funcType = meta.force(func.type)) {
           is C.Value.Func -> funcType
           else            -> {
             val params = term.args.map { lazyOf(meta.fresh(term.func.range, meta.freshType(term.func.range))) }
