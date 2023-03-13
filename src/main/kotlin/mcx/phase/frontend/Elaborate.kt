@@ -3,6 +3,7 @@ package mcx.phase.frontend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.toPersistentList
 import mcx.ast.*
+import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.phase.*
 import mcx.phase.frontend.Elaborate.Ctx.Companion.emptyCtx
@@ -273,7 +274,7 @@ class Elaborate private constructor(
           invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
       }
-      term is R.Term.Def && synth(type)                               -> {
+      term is R.Term.Def && synth(type)           -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             if (stage == 0 && Modifier.CONST in definition.modifiers) {
@@ -285,12 +286,12 @@ class Elaborate private constructor(
           else                -> invalidTerm(unknownDef(term.name, term.range), type)
         }
       }
-      term is R.Term.Hole && synth(type)                              -> {
+      term is R.Term.Hole && synth(type)          -> {
         val type = meta.fresh(term.range, meta.freshType(term.range))
         C.Term.Hole(type)
       }
-      term is R.Term.Hole && check<C.Value>(type)                     -> C.Term.Hole(type)
-      check<C.Value>(type)                                            -> {
+      term is R.Term.Hole && check<C.Value>(type) -> C.Term.Hole(type)
+      check<C.Value>(type)                        -> {
         val synth = elaborateTerm(term, stage, null)
         if (size.sub(synth.type, type)) {
           synth
@@ -298,7 +299,9 @@ class Elaborate private constructor(
           invalidTerm(size.typeMismatch(type, synth.type, term.range), type)
         }
       }
-      else                                                            -> error("unreachable: $term $stage $type")
+      else                                        -> error("unreachable: $term $stage $type")
+    }.also {
+      size.hover(it.type, term.range)
     }
   }
 
@@ -309,15 +312,15 @@ class Elaborate private constructor(
   ): C.Pattern {
     val type = type?.let { meta.force(type) }
     return when {
-      stage > 0 && check<C.Value.Tag>(type)                            -> elaboratePattern(pattern, stage - 1, type)
-      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value)
-      pattern is R.Pattern.CompoundOf && synth(type)                   -> {
+      stage > 0 && check<C.Value.Tag>(type)                                 -> elaboratePattern(pattern, stage - 1, type)
+      pattern is R.Pattern.IntOf && synth(type)                             -> C.Pattern.IntOf(pattern.value)
+      pattern is R.Pattern.CompoundOf && synth(type)                        -> {
         TODO()
       }
-      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type) -> {
+      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type)      -> {
         TODO()
       }
-      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)          -> {
+      pattern is R.Pattern.CodeOf && stage > 0 && synth(type)               -> {
         val element = elaboratePattern(pattern.element, stage - 1, null)
         val type = C.Value.Code(lazyOf(element.type))
         C.Pattern.CodeOf(element, type)
@@ -354,6 +357,8 @@ class Elaborate private constructor(
         }
       }
       else                                                                  -> error("unreachable: $pattern $stage $type")
+    }.also {
+      size.hover(it.type, pattern.range)
     }
   }
 
@@ -391,6 +396,15 @@ class Elaborate private constructor(
       returns(true) implies (type is V?)
     }
     return type is V?
+  }
+
+  private fun Int.hover(
+    type: C.Value,
+    range: Range,
+  ) {
+    if (hover == null && position != null && position in range) {
+      hover = { prettyTerm(with(meta) { zonk(quote(type)) }) }
+    }
   }
 
   private fun Int.typeMismatch(
