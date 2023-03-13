@@ -329,39 +329,41 @@ class Parse private constructor(
   }
 
   private fun parseTerm(): S.Term {
-    var term = parseTermAtom()
-    skipTrivia()
-    while (canRead()) {
-      term = ranging {
-        val char = peek()
-        when {
-          char == '('       -> {
-            val args = parseList(',', '(', ')') { parseTerm() }
-            S.Term.Apply(term, args, until())
-          }
-          char.isWordPart() -> {
-            val name = parseRanged { readWord() }
-            skipTrivia()
-            when (name.value) {
-              "is" -> {
-                skipTrivia()
-                val scrutineer = parsePattern()
-                S.Term.Is(term, scrutineer, until())
-              }
-              else -> {
-                val func = S.Term.Var(name.value, name.range)
-                skipTrivia()
-                val arg = parseTerm()
-                S.Term.Apply(func, listOf(term, arg), until())
+    return ranging {
+      var term = parseTermAtom()
+      skipTrivia()
+      while (canRead()) {
+        term = run {
+          val char = peek()
+          when {
+            char == '('       -> {
+              val args = parseList(',', '(', ')') { parseTerm() }
+              S.Term.Apply(term, args, until())
+            }
+            char.isWordPart() -> {
+              val name = parseRanged { readWord() }
+              skipTrivia()
+              when (name.value) {
+                "is" -> {
+                  skipTrivia()
+                  val scrutineer = parsePattern()
+                  S.Term.Is(term, scrutineer, until())
+                }
+                else -> {
+                  val func = S.Term.Var(name.value, name.range)
+                  skipTrivia()
+                  val arg = parseTermAtom()
+                  S.Term.Apply(func, listOf(term, arg), until())
+                }
               }
             }
+            else              -> return term
           }
-          else              -> return term
         }
+        skipTrivia()
       }
-      skipTrivia()
+      term
     }
-    return term
   }
 
   private fun parsePatternAtom(): S.Pattern {
