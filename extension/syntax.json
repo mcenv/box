@@ -2,6 +2,129 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "mcx",
   "scopeName": "source.mcx",
-  "patterns": [],
-  "repository": {}
+  "patterns": [
+    {
+      "include": "#module"
+    },
+    {
+      "include": "#term"
+    }
+  ],
+  "repository": {
+    "module": {
+      "patterns": [
+        {
+          "begin": "\\b(import)\\s+\\{",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.import.mcx"
+            }
+          },
+          "end": "\\}",
+          "patterns": [
+            {
+              "include": "#location"
+            },
+            {
+              "match": ",",
+              "name": "keyword.control.mcx"
+            }
+          ]
+        },
+        {
+          "include": "#definition"
+        }
+      ]
+    },
+    "definition": {
+      "patterns": [
+        {
+          "include": "#modifier"
+        },
+        {
+          "begin": "\\b(def)\\s+([^:\\s;,()\\[\\]{}]+)\\s+(:)\\s+",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.mcx"
+            },
+            "2": {
+              "name": "entity.name.function.mcx"
+            },
+            "3": {
+              "name": "keyword.control.mcx"
+            }
+          },
+          "end": ";",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.mcx"
+            }
+          },
+          "patterns": [
+            {
+              "match": ":=",
+              "name": "keyword.control.mcx"
+            },
+            {
+              "include": "#term"
+            }
+          ]
+        }
+      ]
+    },
+    "term": {
+      "patterns": [
+        {
+          "match": "\\b(?:Tag|EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|StringTag|ByteArrayTag|IntArrayTag|LongArrayTag|ListTag|CompoundTag|Type|Bool|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Func|Code)\\b",
+          "name": "entity.name.type.mcx"
+        },
+        {
+          "match": "(?:\\b(?:if|then|else|is|let)\\b)|(?:->)|[\\\\`$]",
+          "name": "keyword.control.mcx"
+        },
+        {
+          "begin": "([^:\\s;,()\\[\\]{}]+)(?=\\()",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.name.function.mcx"
+            }
+          },
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#term"
+            },
+            {
+              "match": ",",
+              "name": "keyword.control.mcx"
+            }
+          ]
+        },
+        {
+          "match": "(?<=[^:\\s;,()\\[\\]{}])\\s+([^:\\s;,()\\[\\]{}]+)\\s+(?=[^:\\s;,()\\[\\]{}])",
+          "name": "keyword.mcx"
+        },
+        {
+          "match": "[^:\\s;,()\\[\\]{}]+",
+          "name": "variable.mcx"
+        }
+      ]
+    },
+    "modifier": {
+      "match": "\\b(?:builtin|export|rec|inline|const|world)\\b",
+      "name": "keyword.modifier.mcx"
+    },
+    "location": {
+      "patterns": [
+        {
+          "match": "[^:\\s;,()\\[\\]{}]+",
+          "name": "entity.name.function.mcx"
+        },
+        {
+          "match": "::",
+          "name": "keyword.control.mcx"
+        }
+      ]
+    }
+  }
 }
