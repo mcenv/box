@@ -418,30 +418,28 @@ class Parse private constructor(
   }
 
   private fun parsePattern(): S.Pattern {
-    var pattern = parsePattern0()
-    skipTrivia()
-    while (canRead()) {
-      pattern = ranging {
-        val char = peek()
-        when {
-          char.isWordPart() -> {
-            val name = parseRanged { readWord() }
-            skipTrivia()
-            when (name.value) {
-              "as" -> {
-                skipTrivia()
-                val type = parseTerm()
-                S.Pattern.Anno(pattern, type, until())
-              }
-              else -> return pattern
-            }
-          }
-          else              -> return pattern
-        }
-      }
+    return ranging {
+      var pattern = parsePattern0()
       skipTrivia()
+      while (canRead()) {
+        pattern = if (peek().isWordPart()) {
+          val name = parseRanged { readWord() }
+          skipTrivia()
+          when (name.value) {
+            "as" -> {
+              skipTrivia()
+              val type = parseTerm()
+              S.Pattern.Anno(pattern, type, until())
+            }
+            else -> return pattern
+          }
+        } else {
+          return pattern
+        }
+        skipTrivia()
+      }
+      pattern
     }
-    return pattern
   }
 
 
