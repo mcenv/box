@@ -56,6 +56,9 @@ class Elaborate private constructor(
         val ctx = emptyCtx()
         val stage = if (Modifier.CONST in modifiers) 1 else 0
         val type = ctx.freeze().eval(ctx.elaborateTerm(definition.type, stage, meta.freshType(definition.type.range)))
+        if (Modifier.REC in modifiers) {
+          definitions[name] = C.Definition.Def(modifiers, name, type, null)
+        }
         val body = definition.body?.let { ctx.elaborateTerm(it, stage, type) }
         C.Definition.Def(modifiers, name, type, body)
       }

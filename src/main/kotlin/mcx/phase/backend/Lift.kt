@@ -34,6 +34,7 @@ class Lift private constructor(
     return when (modifier) {
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
+      Modifier.REC     -> null
       Modifier.INLINE  -> unexpectedModifier(modifier)
       Modifier.CONST   -> unexpectedModifier(modifier)
       Modifier.WORLD   -> null

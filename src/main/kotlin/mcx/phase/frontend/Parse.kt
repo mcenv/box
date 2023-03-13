@@ -104,6 +104,7 @@ class Parse private constructor(
         when (val word = readWord()) {
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
+          "rec"     -> Ranged(Modifier.REC, until())
           "inline"  -> Ranged(Modifier.INLINE, until())
           "const"   -> Ranged(Modifier.CONST, until())
           "world"   -> Ranged(Modifier.WORLD, until())
