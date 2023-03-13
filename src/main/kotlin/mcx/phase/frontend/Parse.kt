@@ -118,7 +118,7 @@ class Parse private constructor(
     return modifiers to null
   }
 
-  private fun parseTermAtom(): S.Term {
+  private fun parseTerm0(): S.Term {
     return ranging {
       if (canRead()) {
         when (peek()) {
@@ -195,13 +195,13 @@ class Parse private constructor(
           '`'  -> {
             skip()
             skipTrivia()
-            val element = parseTermAtom()
+            val element = parseTerm0()
             S.Term.CodeOf(element, until())
           }
           '$'  -> {
             skip()
             skipTrivia()
-            val element = parseTermAtom()
+            val element = parseTerm0()
             S.Term.Splice(element, until())
           }
           else -> {
@@ -224,7 +224,7 @@ class Parse private constructor(
               "CompoundTag"  -> S.Term.TagOf(NbtType.COMPOUND, until())
               "Type"         -> {
                 skipTrivia()
-                val tag = parseTermAtom()
+                val tag = parseTerm0()
                 S.Term.Type(tag, until())
               }
               "Bool"         -> S.Term.Bool(until())
@@ -232,13 +232,13 @@ class Parse private constructor(
               "true"         -> S.Term.BoolOf(true, until())
               "if"           -> {
                 skipTrivia()
-                val condition = parseTermAtom()
+                val condition = parseTerm1()
                 expect("then")
                 skipTrivia()
-                val thenBranch = parseTermAtom()
+                val thenBranch = parseTerm1()
                 expect("else")
                 skipTrivia()
-                val elseBranch = parseTermAtom()
+                val elseBranch = parseTerm1()
                 S.Term.If(condition, thenBranch, elseBranch, until())
               }
               "Byte"         -> S.Term.Byte(until())
@@ -253,7 +253,7 @@ class Parse private constructor(
               "LongArray"    -> S.Term.LongArray(until())
               "List"         -> {
                 skipTrivia()
-                val element = parseTermAtom()
+                val element = parseTerm0()
                 S.Term.List(element, until())
               }
               "Compound"     -> {
@@ -289,7 +289,7 @@ class Parse private constructor(
               }
               "Code"         -> {
                 skipTrivia()
-                val element = parseTermAtom()
+                val element = parseTerm0()
                 S.Term.Code(element, until())
               }
               "let"          -> {
@@ -328,37 +328,41 @@ class Parse private constructor(
     }
   }
 
+  private fun parseTerm1(): S.Term {
+    return ranging {
+      val func = parseTerm0()
+      if (canRead() && peek() == '(') {
+        val args = parseList(',', '(', ')') { parseTerm() }
+        S.Term.Apply(func, args, until())
+      } else {
+        func
+      }
+    }
+  }
+
   private fun parseTerm(): S.Term {
     return ranging {
-      var term = parseTermAtom()
+      var term = parseTerm1()
       skipTrivia()
       while (canRead()) {
-        term = run {
-          val char = peek()
-          when {
-            char == '('       -> {
-              val args = parseList(',', '(', ')') { parseTerm() }
-              S.Term.Apply(term, args, until())
-            }
-            char.isWordPart() -> {
-              val name = parseRanged { readWord() }
+        term = if (peek().isWordPart()) {
+          val name = parseRanged { readWord() }
+          skipTrivia()
+          when (name.value) {
+            "is" -> {
               skipTrivia()
-              when (name.value) {
-                "is" -> {
-                  skipTrivia()
-                  val scrutineer = parsePattern()
-                  S.Term.Is(term, scrutineer, until())
-                }
-                else -> {
-                  val func = S.Term.Var(name.value, name.range)
-                  skipTrivia()
-                  val arg = parseTermAtom()
-                  S.Term.Apply(func, listOf(term, arg), until())
-                }
-              }
+              val scrutineer = parsePattern()
+              S.Term.Is(term, scrutineer, until())
             }
-            else              -> return term
+            else -> {
+              val func = S.Term.Var(name.value, name.range)
+              skipTrivia()
+              val arg = parseTerm1()
+              S.Term.Apply(func, listOf(term, arg), until())
+            }
           }
+        } else {
+          return term
         }
         skipTrivia()
       }
@@ -366,7 +370,7 @@ class Parse private constructor(
     }
   }
 
-  private fun parsePatternAtom(): S.Pattern {
+  private fun parsePattern0(): S.Pattern {
     return ranging {
       if (canRead()) {
         when (peek()) {
@@ -390,7 +394,7 @@ class Parse private constructor(
           '`'  -> {
             skip()
             skipTrivia()
-            val element = parsePatternAtom()
+            val element = parsePattern0()
             S.Pattern.CodeOf(element, until())
           }
           else -> {
@@ -414,7 +418,7 @@ class Parse private constructor(
   }
 
   private fun parsePattern(): S.Pattern {
-    var pattern = parsePatternAtom()
+    var pattern = parsePattern0()
     skipTrivia()
     while (canRead()) {
       pattern = ranging {
