@@ -1,7 +1,6 @@
 package mcx.phase.frontend
 
-import kotlinx.collections.immutable.PersistentList
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.*
 import mcx.ast.*
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
@@ -197,27 +196,33 @@ class Elaborate private constructor(
           }
         }
       }
-      term is R.Term.Apply && synth(type)         -> {
-        val funcType = run {
-          val params = term.args.map { lazyOf(meta.fresh(term.func.range, meta.freshType(term.func.range))) }
-          val result = C.Closure(
-            freeze(),
-            params.map { C.Pattern.Drop(it.value) },
-            size.quote(meta.fresh(term.func.range, meta.freshType(term.func.range))),
-          )
-          C.Value.Func(params, result)
-        }
-        val func = elaborateTerm(term.func, stage, funcType)
-        if (funcType.params.size == term.args.size) {
-          val args = term.args.mapIndexed { index, arg ->
-            elaborateTerm(arg, stage, funcType.params.getOrNull(index)?.value)
+      term is R.Term.Apply && synth(type)                             -> {
+        val func = elaborateTerm(term.func, stage, null)
+        val funcType = when (val funcType = func.type) {
+          is C.Value.Func -> funcType
+          else            -> {
+            val params = term.args.map { lazyOf(meta.fresh(term.func.range, meta.freshType(term.func.range))) }
+            val result = C.Closure(
+              freeze(),
+              params.map { C.Pattern.Drop(it.value) },
+              size.quote(meta.fresh(term.func.range, meta.freshType(term.func.range))),
+            )
+            C.Value.Func(params, result).also {
+              if (!size.sub(funcType, it)) {
+                return invalidTerm(size.typeMismatch(funcType, it, term.func.range), type)
+              }
+            }
           }
-          val values = freeze()
-          val type = funcType.result(args.map { lazy { values.eval(it) } })
-          C.Term.Apply(func, args, type)
-        } else {
-          invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range), type)
         }
+        if (funcType.params.size != term.args.size) {
+          return invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range), type)
+        }
+        val args = term.args.mapIndexed { index, arg ->
+          elaborateTerm(arg, stage, funcType.params.getOrNull(index)?.value)
+        }
+        val values = freeze()
+        val type = funcType.result(args.map { lazy { values.eval(it) } })
+        C.Term.Apply(func, args, type)
       }
       /*
       term is R.Term.Apply && check<C.Value>(type)                    -> {
@@ -249,7 +254,7 @@ class Elaborate private constructor(
         val element = elaborateTerm(term.element, stage + 1, type.element.value)
         C.Term.Splice(element, type)
       }
-      term is R.Term.Let && synth(type)           -> {
+      term is R.Term.Let && synth(type)                               -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -257,7 +262,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, body.type)
         }
       }
-      term is R.Term.Let && check<C.Value>(type)  -> {
+      term is R.Term.Let && check<C.Value>(type)                      -> {
         val init = elaborateTerm(term.init, stage, null)
         restoring {
           val binder = elaboratePattern(term.binder, stage, init.type)
@@ -265,7 +270,7 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, type)
         }
       }
-      term is R.Term.Var && synth(type)           -> {
+      term is R.Term.Var && synth(type)                               -> {
         val level = this[term.name]
         val entry = entries[level]
         if (stage == entry.stage) {
@@ -274,7 +279,7 @@ class Elaborate private constructor(
           invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
       }
-      term is R.Term.Def && synth(type)           -> {
+      term is R.Term.Def && synth(type)                               -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             if (stage == 0 && Modifier.CONST in definition.modifiers) {
@@ -286,12 +291,12 @@ class Elaborate private constructor(
           else                -> invalidTerm(unknownDef(term.name, term.range), type)
         }
       }
-      term is R.Term.Hole && synth(type)          -> {
+      term is R.Term.Hole && synth(type)                              -> {
         val type = meta.fresh(term.range, meta.freshType(term.range))
         C.Term.Hole(type)
       }
-      term is R.Term.Hole && check<C.Value>(type) -> C.Term.Hole(type)
-      check<C.Value>(type)                        -> {
+      term is R.Term.Hole && check<C.Value>(type)                     -> C.Term.Hole(type)
+      check<C.Value>(type)                                            -> {
         val synth = elaborateTerm(term, stage, null)
         if (size.sub(synth.type, type)) {
           synth
@@ -299,7 +304,7 @@ class Elaborate private constructor(
           invalidTerm(size.typeMismatch(type, synth.type, term.range), type)
         }
       }
-      else                                        -> error("unreachable: $term $stage $type")
+      else                                                            -> error("unreachable: $term $stage $type")
     }.also {
       size.hover(it.type, term.range)
     }
