@@ -250,8 +250,8 @@ class Elaborate private constructor(
         val element = elaborateTerm(term.element, stage + 1, C.Value.Code(lazyOf(type)))
         C.Term.Splice(element, type)
       }
-      term is R.Term.Splice && check<C.Value.Code>(type)              -> {
-        val element = elaborateTerm(term.element, stage + 1, type.element.value)
+      term is R.Term.Splice && check<C.Value>(type)                   -> {
+        val element = elaborateTerm(term.element, stage + 1, C.Value.Code(lazyOf(type)))
         C.Term.Splice(element, type)
       }
       term is R.Term.Let && synth(type)                               -> {
