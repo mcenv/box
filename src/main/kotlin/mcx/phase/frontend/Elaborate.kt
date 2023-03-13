@@ -23,7 +23,7 @@ class Elaborate private constructor(
   private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: (() -> String)? = null
-  private val definitions: Map<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap()
+  private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
 
   private fun elaborate(): Result {
     return Result(
@@ -58,8 +58,8 @@ class Elaborate private constructor(
         val body = definition.body?.let { ctx.elaborateTerm(it, stage, type) }
         C.Definition.Def(modifiers, name, type, body)
       }
-      is R.Definition.Hole -> null
-    }
+      is R.Definition.Hole -> error("unreachable")
+    }.also { definitions[name] = it }
   }
 
   private fun Ctx.elaborateTerm(
