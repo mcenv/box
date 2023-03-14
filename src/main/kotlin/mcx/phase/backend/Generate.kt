@@ -12,23 +12,23 @@ class Generate private constructor(
 ) {
   private fun generate(
     definition: P.Definition,
-  ): Pair<String, String> =
-    "data/${definition.location.namespace}/${definition.registry.string}/${definition.location.path}.${definition.registry.extension}" to generateDefinition(definition)
+  ): Pair<String, String> {
+    return "data/${definition.location.namespace}/functions/${definition.location.path}.mcfunction" to generateDefinition(definition)
+  }
 
   private fun generateDefinition(
     definition: P.Definition,
   ): String {
     return when (definition) {
       is Packed.Definition.Function ->
-        StringBuilder()
-          .apply {
-            definition.commands.forEachIndexed { index, command ->
-              if (index != 0) {
-                append('\n')
-              }
-              generateCommand(command)
+        StringBuilder().apply {
+          definition.commands.forEachIndexed { index, command ->
+            if (index != 0) {
+              append('\n')
             }
+            generateCommand(command)
           }
+        }
     }.toString()
   }
 

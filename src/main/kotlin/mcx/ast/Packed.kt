@@ -5,15 +5,12 @@ import mcx.data.ResourceLocation
 
 object Packed {
   sealed interface Definition {
-    val registry: Registry
     val location: ResourceLocation
 
     data class Function(
       override val location: ResourceLocation,
       val commands: List<Command>,
-    ) : Definition {
-      override val registry: Registry get() = Registry.FUNCTIONS
-    }
+    ) : Definition
   }
 
   sealed interface Command {
