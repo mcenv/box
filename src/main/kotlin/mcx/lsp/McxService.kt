@@ -69,6 +69,7 @@ class McxService : TextDocumentService,
     params: DidCloseTextDocumentParams,
   ) {
     runBlocking {
+      diagnosticsHashes -= params.textDocument.uri
       with(build) { fetchContext().closeText(params.textDocument.uri.toModuleLocation()) }
     }
   }
@@ -83,12 +84,12 @@ class McxService : TextDocumentService,
   ): CompletableFuture<DocumentDiagnosticReport> {
     return CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val zonked = with(build) { fetchContext().fetch(Build.Key.Elaborated(uri.toModuleLocation())) }
-      val newHash = zonked.value.diagnostics.hashCode()
+      val elaborated = with(build) { fetchContext().fetch(Build.Key.Elaborated(uri.toModuleLocation())) }
+      val newHash = elaborated.value.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
         diagnosticsHashes[uri] = newHash
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(zonked.value.diagnostics))
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(elaborated.value.diagnostics))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
@@ -97,14 +98,14 @@ class McxService : TextDocumentService,
 
   override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
     return CoroutineScope(Dispatchers.Default).future {
-      val zonked = with(build) {
+      val elaborated = with(build) {
         fetchContext().fetch(
           Build.Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
             position = params.position
           }
         )
       }
-      forLeft(zonked.value.completionItems + GLOBAL_COMPLETION_ITEMS)
+      forLeft(elaborated.value.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
   }
 
