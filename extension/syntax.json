@@ -75,7 +75,7 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:Tag|EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|StringTag|ByteArrayTag|IntArrayTag|LongArrayTag|ListTag|CompoundTag|Type|Bool|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Func|Code)\\b",
+          "match": "\\b(?:Tag|EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|StringTag|ByteArrayTag|IntArrayTag|LongArrayTag|ListTag|CompoundTag|Type|Byte|Bool|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Func|Code)\\b",
           "name": "entity.name.type.mcx"
         },
         {
