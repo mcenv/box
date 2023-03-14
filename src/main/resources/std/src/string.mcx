@@ -3,9 +3,9 @@ import {
   int::=,
 }
 
-export builtin def size : Func (_ : String) -> Int;
+export builtin def size : func (_ : string) -> int;
 
-export const rec def repeat : Func (string : String, count : Int) -> String :=
-  \(string, count) -> if (count = 0) then "" else (string ++ repeat(string, count - 1));
+export const rec def repeat : func (s : string, count : int) -> string :=
+  \(s, count) -> if (count = 0) then "" else (s ++ repeat(s, count - 1));
 
-export def to_string : Func (_ : String) -> String := $(identity(StringTag))(String);
+export def to_string : func (_ : string) -> string := $(identity(string_tag))(string);

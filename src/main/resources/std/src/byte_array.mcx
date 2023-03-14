@@ -1,1 +1,1 @@
-export builtin def size : Func (_ : ByteArray) -> Int;
+export builtin def size : func (_ : byte_array) -> int;

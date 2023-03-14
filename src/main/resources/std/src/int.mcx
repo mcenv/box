@@ -1,39 +1,39 @@
-export builtin def + : Func (_ : Int, _ : Int) -> Int;
+export builtin def + : func (_ : int, _ : int) -> int;
 
-export builtin def - : Func (_ : Int, _ : Int) -> Int;
+export builtin def - : func (_ : int, _ : int) -> int;
 
-export builtin def * : Func (_ : Int, _ : Int) -> Int;
+export builtin def * : func (_ : int, _ : int) -> int;
 
-export builtin def / : Func (_ : Int, _ : Int) -> Int;
+export builtin def / : func (_ : int, _ : int) -> int;
 
-export builtin def % : Func (_ : Int, _ : Int) -> Int;
+export builtin def % : func (_ : int, _ : int) -> int;
 
-export builtin def min : Func (_ : Int, _ : Int) -> Int;
+export builtin def min : func (_ : int, _ : int) -> int;
 
-export builtin def max : Func (_ : Int, _ : Int) -> Int;
+export builtin def max : func (_ : int, _ : int) -> int;
 
-export builtin def = : Func (_ : Int, _ : Int) -> Bool;
+export builtin def = : func (_ : int, _ : int) -> bool;
 
-export builtin def < : Func (_ : Int, _ : Int) -> Bool;
+export builtin def < : func (_ : int, _ : int) -> bool;
 
-export builtin def <= : Func (_ : Int, _ : Int) -> Bool;
+export builtin def <= : func (_ : int, _ : int) -> bool;
 
-export builtin def > : Func (_ : Int, _ : Int) -> Bool;
+export builtin def > : func (_ : int, _ : int) -> bool;
 
-export builtin def >= : Func (_ : Int, _ : Int) -> Bool;
+export builtin def >= : func (_ : int, _ : int) -> bool;
 
-export builtin def != : Func (_ : Int, _ : Int) -> Bool;
+export builtin def != : func (_ : int, _ : int) -> bool;
 
-export builtin def to_byte : Func (_ : Int) -> Byte;
+export builtin def to_byte : func (_ : int) -> byte;
 
-export builtin def to_short : Func (_ : Int) -> Short;
+export builtin def to_short : func (_ : int) -> short;
 
-export def to_int : Func (_ : Int) -> Int := $(identity(IntTag))(Int);
+export def to_int : func (_ : int) -> int := $(identity(int_tag))(int);
 
-export builtin def to_long : Func (_ : Int) -> Long;
+export builtin def to_long : func (_ : int) -> long;
 
-export builtin def to_float : Func (_ : Int) -> Float;
+export builtin def to_float : func (_ : int) -> float;
 
-export builtin def to_double : Func (_ : Int) -> Double;
+export builtin def to_double : func (_ : int) -> double;
 
-export builtin def to_string : Func (_ : Int) -> String;
+export builtin def to_string : func (_ : int) -> string;

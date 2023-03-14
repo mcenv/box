@@ -1,1 +1,1 @@
-export builtin def size : Func (_ : LongArray) -> Int;
+export builtin def size : func (_ : long_array) -> int;

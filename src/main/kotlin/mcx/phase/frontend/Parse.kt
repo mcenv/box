@@ -147,15 +147,15 @@ class Parse private constructor(
                   }
                   ';'  -> (first as? S.Term.Var)?.let { header ->
                     when (header.name) {
-                      "Byte" -> {
+                      "byte" -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.ByteArrayOf(elements, until())
                       }
-                      "Int"  -> {
+                      "int"  -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.IntArrayOf(elements, until())
                       }
-                      "Long" -> {
+                      "long" -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.LongArrayOf(elements, until())
                       }
@@ -207,30 +207,30 @@ class Parse private constructor(
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
-              ""             -> null
-              "Tag"          -> S.Term.Tag(until())
-              "EndTag"       -> S.Term.TagOf(NbtType.END, until())
-              "ByteTag"      -> S.Term.TagOf(NbtType.BYTE, until())
-              "ShortTag"     -> S.Term.TagOf(NbtType.SHORT, until())
-              "IntTag"       -> S.Term.TagOf(NbtType.INT, until())
-              "LongTag"      -> S.Term.TagOf(NbtType.LONG, until())
-              "FloatTag"     -> S.Term.TagOf(NbtType.FLOAT, until())
-              "DoubleTag"    -> S.Term.TagOf(NbtType.DOUBLE, until())
-              "StringTag"    -> S.Term.TagOf(NbtType.STRING, until())
-              "ByteArrayTag" -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
-              "IntArrayTag"  -> S.Term.TagOf(NbtType.INT_ARRAY, until())
-              "LongArrayTag" -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
-              "ListTag"      -> S.Term.TagOf(NbtType.LIST, until())
-              "CompoundTag"  -> S.Term.TagOf(NbtType.COMPOUND, until())
-              "Type"         -> {
+              ""               -> null
+              "tag"            -> S.Term.Tag(until())
+              "end_tag"        -> S.Term.TagOf(NbtType.END, until())
+              "byte_tag"       -> S.Term.TagOf(NbtType.BYTE, until())
+              "short_tag"      -> S.Term.TagOf(NbtType.SHORT, until())
+              "int_tag"        -> S.Term.TagOf(NbtType.INT, until())
+              "long_tag"       -> S.Term.TagOf(NbtType.LONG, until())
+              "float_tag"      -> S.Term.TagOf(NbtType.FLOAT, until())
+              "double_tag"     -> S.Term.TagOf(NbtType.DOUBLE, until())
+              "string_tag"     -> S.Term.TagOf(NbtType.STRING, until())
+              "byte_array_tag" -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
+              "int_array_tag"  -> S.Term.TagOf(NbtType.INT_ARRAY, until())
+              "long_array_tag" -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
+              "list_tag"       -> S.Term.TagOf(NbtType.LIST, until())
+              "compound_tag"   -> S.Term.TagOf(NbtType.COMPOUND, until())
+              "type"           -> {
                 skipTrivia()
                 val tag = parseTerm0()
                 S.Term.Type(tag, until())
               }
-              "Bool"         -> S.Term.Bool(until())
-              "false"        -> S.Term.BoolOf(false, until())
-              "true"         -> S.Term.BoolOf(true, until())
-              "if"           -> {
+              "bool"           -> S.Term.Bool(until())
+              "false"          -> S.Term.BoolOf(false, until())
+              "true"           -> S.Term.BoolOf(true, until())
+              "if"             -> {
                 skipTrivia()
                 val condition = parseTerm1()
                 expect("then")
@@ -241,22 +241,22 @@ class Parse private constructor(
                 val elseBranch = parseTerm1()
                 S.Term.If(condition, thenBranch, elseBranch, until())
               }
-              "Byte"         -> S.Term.Byte(until())
-              "Short"        -> S.Term.Short(until())
-              "Int"          -> S.Term.Int(until())
-              "Long"         -> S.Term.Long(until())
-              "Float"        -> S.Term.Float(until())
-              "Double"       -> S.Term.Double(until())
-              "String"       -> S.Term.String(until())
-              "ByteArray"    -> S.Term.ByteArray(until())
-              "IntArray"     -> S.Term.IntArray(until())
-              "LongArray"    -> S.Term.LongArray(until())
-              "List"         -> {
+              "byte"           -> S.Term.Byte(until())
+              "short"          -> S.Term.Short(until())
+              "int"            -> S.Term.Int(until())
+              "long"           -> S.Term.Long(until())
+              "float"          -> S.Term.Float(until())
+              "double"         -> S.Term.Double(until())
+              "string"         -> S.Term.String(until())
+              "byte_array"     -> S.Term.ByteArray(until())
+              "int_array"      -> S.Term.IntArray(until())
+              "long_array"     -> S.Term.LongArray(until())
+              "list"           -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.List(element, until())
               }
-              "Compound"     -> {
+              "compound"       -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -267,12 +267,12 @@ class Parse private constructor(
                 }
                 S.Term.Compound(elements, until())
               }
-              "Union"        -> {
+              "union"          -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())
               }
-              "Func"         -> {
+              "func"           -> {
                 skipTrivia()
                 val params = parseList(',', '(', ')') {
                   skipTrivia()
@@ -287,12 +287,12 @@ class Parse private constructor(
                 val result = parseTerm()
                 S.Term.Func(params, result, until())
               }
-              "Code"         -> {
+              "code"           -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Code(element, until())
               }
-              "let"          -> {
+              "let"            -> {
                 skipTrivia()
                 val name = parsePattern()
                 expect(":=")
