@@ -36,7 +36,7 @@ object ParseTests {
     val name = ModuleLocation("simple")
     val result = Parse(
       context, name,
-      """def a : Int := 0;
+      """def a : int := 0;
       """.trimIndent()
     )
     assertEquals(
