@@ -1,3 +1,1 @@
 export builtin def size : Func (_ : ByteArray) -> Int;
-
-export builtin const def get : Func (_ : Code ByteArray, index : Int) -> Code Byte;

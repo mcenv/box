@@ -1,3 +1,1 @@
 export builtin def size : Func (_ : LongArray) -> Int;
-
-export builtin const def get : Func (_ : Code LongArray, index : Int) -> Code Long;
