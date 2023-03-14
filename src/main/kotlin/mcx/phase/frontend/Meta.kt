@@ -13,15 +13,14 @@ class Meta {
 
   fun fresh(
     source: Range,
-    type: Value,
   ): Value {
-    return Value.Meta(values.size, source, type).also { values += null }
+    return Value.Meta(values.size, source).also { values += null }
   }
 
   fun freshType(
     source: Range,
   ): Value {
-    val tag = lazy { fresh(source, Value.Tag) }
+    val tag = lazy { fresh(source) }
     return Value.Type(tag)
   }
 
@@ -54,7 +53,7 @@ class Meta {
         val condition = zonk(term.condition)
         val thenBranch = zonk(term.thenBranch)
         val elseBranch = zonk(term.elseBranch)
-        Term.If(condition, thenBranch, elseBranch, term.type)
+        Term.If(condition, thenBranch, elseBranch)
       }
       is Term.Is          -> {
         val scrutinee = zonk(term.scrutinee)
@@ -95,7 +94,7 @@ class Meta {
       }
       is Term.ListOf      -> {
         val elements = term.elements.map { zonk(it) }
-        Term.ListOf(elements, term.type)
+        Term.ListOf(elements)
       }
       is Term.Compound    -> {
         val elements = term.elements.mapValues { zonk(it.value) }
@@ -103,11 +102,11 @@ class Meta {
       }
       is Term.CompoundOf  -> {
         val elements = term.elements.mapValues { zonk(it.value) }
-        Term.CompoundOf(elements, term.type)
+        Term.CompoundOf(elements)
       }
       is Term.Union       -> {
         val elements = term.elements.map { zonk(it) }
-        Term.Union(elements, term.type)
+        Term.Union(elements)
       }
       is Term.Func        -> {
         val params = term.params.map { (binder, type) -> binder to zonk(type) }
@@ -116,12 +115,12 @@ class Meta {
       }
       is Term.FuncOf      -> {
         val result = (this + collect(term.params).size).zonk(term.result)
-        Term.FuncOf(term.params, result, term.type)
+        Term.FuncOf(term.params, result)
       }
       is Term.Apply       -> {
         val func = zonk(term.func)
         val args = term.args.map { zonk(it) }
-        Term.Apply(func, args, term.type)
+        Term.Apply(func, args)
       }
       is Term.Code        -> {
         val element = zonk(term.element)
@@ -129,16 +128,16 @@ class Meta {
       }
       is Term.CodeOf      -> {
         val element = zonk(term.element)
-        Term.CodeOf(element, term.type)
+        Term.CodeOf(element)
       }
       is Term.Splice      -> {
         val element = zonk(term.element)
-        Term.Splice(element, term.type)
+        Term.Splice(element)
       }
       is Term.Let         -> {
         val init = zonk(term.init)
         val body = zonk(term.body)
-        Term.Let(term.binder, init, body, term.type)
+        Term.Let(term.binder, init, body)
       }
       is Term.Var         -> term
       is Term.Def         -> term

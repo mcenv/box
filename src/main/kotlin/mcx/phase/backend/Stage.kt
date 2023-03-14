@@ -75,7 +75,7 @@ class Stage private constructor(
           val condition = evalTerm(term.condition, stage)
           val thenBranch = lazy { evalTerm(term.thenBranch, stage) }
           val elseBranch = lazy { evalTerm(term.elseBranch, stage) }
-          Value.If(condition, thenBranch, elseBranch, term.type)
+          Value.If(condition, thenBranch, elseBranch)
         } else {
           when (val condition = evalTerm(term.condition, stage)) {
             is Value.BoolOf -> {
@@ -88,7 +88,7 @@ class Stage private constructor(
             else            -> {
               val thenBranch = lazy { evalTerm(term.thenBranch, stage) }
               val elseBranch = lazy { evalTerm(term.elseBranch, stage) }
-              Value.If(condition, thenBranch, elseBranch, term.type)
+              Value.If(condition, thenBranch, elseBranch)
             }
           }
         }
@@ -140,7 +140,7 @@ class Stage private constructor(
       }
       is Term.ListOf      -> {
         val elements = term.elements.map { lazy { evalTerm(it, stage) } }
-        Value.ListOf(elements, term.type)
+        Value.ListOf(elements)
       }
       is Term.Compound    -> {
         val elements = term.elements.mapValues { lazy { evalTerm(it.value, stage) } }
@@ -161,20 +161,20 @@ class Stage private constructor(
       }
       is Term.FuncOf      -> {
         val result = Core.Closure(this, term.params, term.result)
-        Value.FuncOf(result, term.type)
+        Value.FuncOf(result)
       }
       is Term.Apply       -> {
         if (stage == 0) {
           val func = evalTerm(term.func, stage)
           val args = term.args.map { lazy { evalTerm(it, stage) } }
-          Value.Apply(func, args, term.type)
+          Value.Apply(func, args)
         } else {
           val func = evalTerm(term.func, stage)
           val args = term.args.map { lazy { evalTerm(it, stage) } }
           when (func) {
             is Value.FuncOf -> func.result(args)
-            is Value.Def    -> lookupBuiltin(func.name).eval(args) ?: Value.Apply(func, args, term.type)
-            else            -> Value.Apply(func, args, term.type)
+            is Value.Def    -> lookupBuiltin(func.name).eval(args) ?: Value.Apply(func, args)
+            else            -> Value.Apply(func, args)
           }
         }
       }
@@ -203,7 +203,7 @@ class Stage private constructor(
         } else {
           when (val element = evalTerm(term.element, stage + 1)) {
             is Value.CodeOf -> element.element.value
-            else            -> Value.Splice(element, term.type)
+            else            -> Value.Splice(element)
           }
         }
       }
@@ -211,7 +211,7 @@ class Stage private constructor(
         if (stage == 0) {
           val init = evalTerm(term.init, stage)
           val body = (this + bind(term.binder, lazyOf(init))).evalTerm(term.body, stage)
-          Value.Let(term.binder, init, body, term.type)
+          Value.Let(term.binder, init, body)
         } else {
           val init = lazy { evalTerm(term.init, stage) }
           (this + bind(term.binder, init)).evalTerm(term.body, stage)
@@ -219,16 +219,16 @@ class Stage private constructor(
       }
       is Term.Var         -> {
         if (stage == 0) {
-          Value.Var(term.name, term.level, term.type)
+          Value.Var(term.name, term.level)
         } else {
           this[term.level].value
         }
       }
       is Term.Def         -> {
         if (stage == 0) {
-          Value.Def(term.name, null, term.type)
+          Value.Def(term.name, null)
         } else {
-          term.body?.let { evalTerm(it, stage) } ?: Value.Def(term.name, null, term.type)
+          term.body?.let { evalTerm(it, stage) } ?: Value.Def(term.name, null)
         }
       }
       is Term.Meta        -> unexpectedTerm(term)

@@ -2,7 +2,6 @@ package mcx.phase.frontend
 
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Module
-import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
 import mcx.lsp.diagnostic
@@ -53,12 +52,6 @@ class Zonk private constructor(
     term: Term,
   ): Term {
     return term // TODO
-  }
-
-  private fun zonkPattern(
-    pattern: Pattern,
-  ): Pattern {
-    return pattern // TODO
   }
 
   data class Result(

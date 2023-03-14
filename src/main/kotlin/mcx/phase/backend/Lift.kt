@@ -54,7 +54,7 @@ class Lift private constructor(
         val condition = liftTerm(term.condition)
         val thenFunction = createFreshFunction(liftTerm(term.thenBranch), 1)
         val elseFunction = createFreshFunction(liftTerm(term.elseBranch), null)
-        val type = liftType(term.type)
+        val type = liftType()
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
       is C.Term.Is          -> {
@@ -136,7 +136,7 @@ class Lift private constructor(
       is C.Term.Apply       -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = liftType(term.type)
+        val type = liftType()
         L.Term.Apply(func, args, type)
       }
       is C.Term.Code        -> unexpectedTerm(term)
@@ -151,11 +151,11 @@ class Lift private constructor(
         }
       }
       is C.Term.Var         -> {
-        val type = liftType(term.type)
+        val type = liftType()
         L.Term.Var(term.name, this[term.name], type)
       }
       is C.Term.Def         -> {
-        val type = liftType(term.type)
+        val type = liftType()
         L.Term.Def(term.name, type)
       }
       is C.Term.Meta        -> unexpectedTerm(term)
@@ -174,12 +174,12 @@ class Lift private constructor(
       }
       is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
       is C.Pattern.Var        -> {
-        val type = liftType(pattern.type)
+        val type = liftType()
         bind(pattern.name, type)
         L.Pattern.Var(pattern.name, types.lastIndex, type)
       }
       is C.Pattern.Drop       -> {
-        val type = liftType(pattern.type)
+        val type = liftType()
         L.Pattern.Drop(type)
       }
       is C.Pattern.Hole       -> unexpectedPattern(pattern)
@@ -218,21 +218,21 @@ class Lift private constructor(
       is C.Term.LongArray   -> linkedMapOf()
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.List        -> freeVars(term.element)
-      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Compound    -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Union       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code        -> unexpectedTerm(term)
-      is C.Term.CodeOf      -> unexpectedTerm(term)
-      is C.Term.Splice      -> unexpectedTerm(term)
-      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to (term.level to liftType(term.type)))
-      is C.Term.Def         -> linkedMapOf()
-      is C.Term.Meta        -> unexpectedTerm(term)
-      is C.Term.Hole        -> unexpectedTerm(term)
+      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Compound   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var        -> linkedMapOf(term.name to (term.level to liftType()))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 
@@ -249,10 +249,10 @@ class Lift private constructor(
     }
   }
 
-  // TODO: quote the type and get its tag?
-  private fun liftType(
-    type: C.Value,
-  ): NbtType {
+  // TODO: implement
+  private fun liftType(): NbtType {
+    TODO()
+    /*
     return when (type) {
       is C.Value.Tag         -> unexpectedType(type)
       is C.Value.TagOf       -> unexpectedType(type)
@@ -298,6 +298,7 @@ class Lift private constructor(
       is C.Value.Meta        -> unexpectedType(type)
       is C.Value.Hole        -> unexpectedType(type)
     }
+     */
   }
 
   private fun Ctx.createFreshFunction(
