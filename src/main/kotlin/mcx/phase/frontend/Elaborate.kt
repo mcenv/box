@@ -297,7 +297,7 @@ class Elaborate private constructor(
               C.Term.Def(term.name, definition.body) to persistentListOf<Lazy<C.Value>>().eval(definition.type)
             }
           }
-          else                -> invalidTerm(unknownDef(term.name, term.range), type)
+          else                -> invalidTerm(expectedDef(term.range), type)
         }
       }
       term is R.Term.Hole && match<C.Value>(type)                -> {
@@ -564,13 +564,12 @@ class Elaborate private constructor(
       )
     }
 
-    private fun unknownDef(
-      name: DefinitionLocation,
+    private fun expectedDef(
       range: Range,
     ): Diagnostic {
       return diagnostic(
         range,
-        "unknown def: '$name'",
+        "expected definition: def",
         DiagnosticSeverity.Error,
       )
     }

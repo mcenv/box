@@ -286,7 +286,7 @@ class Resolve private constructor(
   ): Diagnostic {
     return diagnostic(
       range,
-      "name not found: '$name'",
+      "name not found: $name",
       DiagnosticSeverity.Error,
     )
   }
@@ -297,7 +297,7 @@ class Resolve private constructor(
   ): Diagnostic {
     return diagnostic(
       range,
-      "ambiguous name: '$name'",
+      "ambiguous name: $name",
       DiagnosticSeverity.Error,
     )
   }

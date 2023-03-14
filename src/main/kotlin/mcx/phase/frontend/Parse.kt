@@ -695,16 +695,6 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedKind(
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "expected: kind",
-      DiagnosticSeverity.Error,
-    )
-  }
-
   private fun expectedTerm(
     range: Range,
   ): Diagnostic {
