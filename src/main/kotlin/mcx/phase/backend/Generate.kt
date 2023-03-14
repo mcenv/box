@@ -22,12 +22,10 @@ class Generate private constructor(
     return when (definition) {
       is Packed.Definition.Function ->
         StringBuilder().apply {
-          definition.commands.forEachIndexed { index, command ->
-            if (index != 0) {
-              append('\n')
-            }
-            generateCommand(command)
-          }
+          definition.commands.forEachSeparated(
+            separate = { append('\n') },
+            action = { generateCommand(it) },
+          )
         }
     }.toString()
   }
@@ -315,57 +313,53 @@ class Generate private constructor(
       is Nbt.Double    -> append(nbt.value.toString())
       is Nbt.ByteArray -> {
         append("[B;")
-        nbt.elements.forEachIndexed { index, element ->
-          if (index != 0) {
-            append(',')
-          }
-          append(element.toString())
-          append('b')
-        }
+        nbt.elements.forEachSeparated(
+          separate = { append(',') },
+          action = {
+            append(it.toString())
+            append('b')
+          },
+        )
         append(']')
       }
       is Nbt.IntArray  -> {
         append("[I;")
-        nbt.elements.forEachIndexed { index, element ->
-          if (index != 0) {
-            append(',')
-          }
-          append(element.toString())
-        }
+        nbt.elements.forEachSeparated(
+          separate = { append(',') },
+          action = { append(it.toString()) },
+        )
         append(']')
       }
       is Nbt.LongArray -> {
         append("[L;")
-        nbt.elements.forEachIndexed { index, element ->
-          if (index != 0) {
-            append(',')
-          }
-          append(element.toString())
-          append('l')
-        }
+        nbt.elements.forEachSeparated(
+          separate = { append(',') },
+          action = {
+            append(it.toString())
+            append('l')
+          },
+        )
         append(']')
       }
       is Nbt.String    -> append(nbt.value.quoted('"')) // TODO: optimize
       is Nbt.List<*>   -> {
         append('[')
-        nbt.elements.forEachIndexed { index, element ->
-          if (index != 0) {
-            append(',')
-          }
-          generateNbt(element)
-        }
+        nbt.elements.forEachSeparated(
+          separate = { append(',') },
+          action = { generateNbt(it) },
+        )
         append(']')
       }
       is Nbt.Compound  -> {
         append('{')
-        nbt.elements.entries.forEachIndexed { index, (key, element) ->
-          if (index != 0) {
-            append(',')
-          }
-          append(key.quoted('"')) // TODO: optimize
-          append(':')
-          generateNbt(element)
-        }
+        nbt.elements.entries.forEachSeparated(
+          separate = { append(',') },
+          action = { (key, element) ->
+            append(key.quoted('"')) // TODO: optimize
+            append(':')
+            generateNbt(element)
+          },
+        )
         append('}')
       }
     }
@@ -406,6 +400,22 @@ class Generate private constructor(
   }
 
   companion object {
+    private inline fun <T> Iterable<T>.forEachSeparated(
+      separate: () -> Unit,
+      action: (T) -> Unit,
+    ) {
+      val iterator = iterator()
+      if (iterator.hasNext()) {
+        action(iterator.next())
+      } else {
+        return
+      }
+      while (iterator.hasNext()) {
+        separate()
+        action(iterator.next())
+      }
+    }
+
     operator fun invoke(
       context: Context,
       definition: P.Definition,
