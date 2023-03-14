@@ -54,12 +54,6 @@ class Build(
       var position: Position? = null
     }
 
-    data class Zonked(
-      val location: ModuleLocation,
-    ) : Key<Zonk.Result> {
-      var position: Position? = null
-    }
-
     data class Staged(
       val location: DefinitionLocation,
     ) : Key<List<Core.Definition>>
@@ -112,7 +106,6 @@ class Build(
       close(Key.Parsed(location))
       close(Key.Resolved(location))
       close(Key.Elaborated(location))
-      close(Key.Zonked(location))
       definitions.forEach { (location, _) ->
         close(Key.Staged(location))
         close(Key.Lifted(location))
@@ -208,23 +201,13 @@ class Build(
               }
             }
 
-            is Key.Zonked     -> {
-              val core = fetch(Key.Elaborated(key.location).apply { position = key.position })
-              val hash = core.hash
-              if (value == null || value.hash != hash || key.position != null) {
-                Value(Zonk(this@fetch, core.value), hash)
-              } else {
-                value
-              }
-            }
-
             is Key.Staged     -> {
               val location = key.location
-              val zonked = fetch(Key.Zonked(location.module))
+              val zonked = fetch(Key.Elaborated(location.module))
               val definition = zonked.value.module.definitions.find { it.name == location }!!
               val results = transitiveImports(fetch(Key.Parsed(location.module)).value!!.module.name)
-                .map { async { fetch(Key.Zonked(it.module)) } }
-                .plus(async { fetch(Key.Zonked(prelude)) })
+                .map { async { fetch(Key.Elaborated(it.module)) } }
+                .plus(async { fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
               val dependencies = results
                 .flatMap { it.value.module.definitions }
@@ -335,7 +318,7 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val zonked = context.fetch(Key.Zonked(path.toModuleLocation()))
+            val zonked = context.fetch(Key.Elaborated(path.toModuleLocation()))
             if (zonked.value.diagnostics.isNotEmpty()) {
               diagnosticsByPath += path to zonked.value.diagnostics
             }

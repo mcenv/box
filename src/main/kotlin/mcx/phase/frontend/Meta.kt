@@ -10,6 +10,8 @@ import org.eclipse.lsp4j.Range
 @Suppress("NAME_SHADOWING")
 class Meta {
   private val values: MutableList<Value?> = mutableListOf()
+  private val _unsolvedMetas: MutableSet<Term.Meta> = hashSetOf()
+  val unsolvedMetas: Set<Term.Meta> get() = _unsolvedMetas
 
   fun fresh(
     source: Range,
@@ -35,6 +37,10 @@ class Meta {
         }
       else          -> value
     }
+  }
+
+  fun resetUnsolvedMetas() {
+    _unsolvedMetas.clear()
   }
 
   fun Int.zonk(
@@ -141,7 +147,15 @@ class Meta {
       }
       is Term.Var         -> term
       is Term.Def         -> term
-      is Term.Meta        -> values.getOrNull(term.index)?.let { quote(it) } ?: term
+      is Term.Meta        -> {
+        when (val solution = values.getOrNull(term.index)) {
+          null -> {
+            _unsolvedMetas += term
+            term
+          }
+          else -> quote(solution)
+        }
+      }
       is Term.Hole        -> term
     }
   }

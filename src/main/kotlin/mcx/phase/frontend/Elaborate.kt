@@ -7,6 +7,7 @@ import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.phase.*
 import mcx.phase.frontend.Elaborate.Ctx.Companion.emptyCtx
+import mcx.util.toSubscript
 import org.eclipse.lsp4j.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -27,9 +28,9 @@ class Elaborate private constructor(
   private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
 
   private fun elaborate(): Result {
+    val module = elaborateModule(input.module)
     return Result(
-      elaborateModule(input.module),
-      meta,
+      module,
       input.diagnostics + diagnostics,
       varCompletionItems + definitionCompletionItems,
       hover,
@@ -60,7 +61,15 @@ class Elaborate private constructor(
           definitions[name] = C.Definition.Def(modifiers, name, type, null)
         }
         val body = definition.body?.let { ctx.checkTerm(it, stage, ctx.freeze().eval(type)) }
-        C.Definition.Def(modifiers, name, type, body)
+        with(meta) {
+          resetUnsolvedMetas()
+          val type = 0.zonk(type)
+          val body = body?.let { 0.zonk(it) }
+          meta.unsolvedMetas.forEach {
+            diagnostics += unsolvedMeta(it.index, it.source)
+          }
+          C.Definition.Def(modifiers, name, type, body)
+        }
       }
       is R.Definition.Hole -> error("unreachable")
     }.also { definitions[name] = it }
@@ -525,14 +534,8 @@ class Elaborate private constructor(
     val type: C.Value,
   )
 
-  private data class Elaborated<T>(
-    val value: T,
-    val type: C.Value,
-  )
-
   data class Result(
     val module: C.Module,
-    val meta: Meta,
     val diagnostics: List<Diagnostic>,
     val completionItems: List<CompletionItem>,
     val hover: (() -> String)?,
@@ -590,6 +593,17 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "unknown def: '$name'",
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun unsolvedMeta(
+      index: Int,
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "unsolved meta: ?${index.toSubscript()}",
         DiagnosticSeverity.Error,
       )
     }

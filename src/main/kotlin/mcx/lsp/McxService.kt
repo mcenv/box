@@ -51,24 +51,27 @@ class McxService : TextDocumentService,
 
   override fun didOpen(
     params: DidOpenTextDocumentParams,
-  ): Unit =
+  ) {
     runBlocking {
       build.changeText(params.textDocument.uri.toModuleLocation(), params.textDocument.text)
     }
+  }
 
   override fun didChange(
     params: DidChangeTextDocumentParams,
-  ): Unit =
+  ) {
     runBlocking {
       build.changeText(params.textDocument.uri.toModuleLocation(), params.contentChanges.last().text)
     }
+  }
 
   override fun didClose(
     params: DidCloseTextDocumentParams,
-  ): Unit =
+  ) {
     runBlocking {
       with(build) { fetchContext().closeText(params.textDocument.uri.toModuleLocation()) }
     }
+  }
 
   override fun didSave(
     params: DidSaveTextDocumentParams,
@@ -77,10 +80,10 @@ class McxService : TextDocumentService,
 
   override fun diagnostic(
     params: DocumentDiagnosticParams,
-  ): CompletableFuture<DocumentDiagnosticReport> =
-    CoroutineScope(Dispatchers.Default).future {
+  ): CompletableFuture<DocumentDiagnosticReport> {
+    return CoroutineScope(Dispatchers.Default).future {
       val uri = params.textDocument.uri
-      val zonked = with(build) { fetchContext().fetch(Build.Key.Zonked(uri.toModuleLocation())) }
+      val zonked = with(build) { fetchContext().fetch(Build.Key.Elaborated(uri.toModuleLocation())) }
       val newHash = zonked.value.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -90,26 +93,28 @@ class McxService : TextDocumentService,
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
     }
+  }
 
-  override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> =
-    CoroutineScope(Dispatchers.Default).future {
+  override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
+    return CoroutineScope(Dispatchers.Default).future {
       val zonked = with(build) {
         fetchContext().fetch(
-          Build.Key
-            .Zonked(params.textDocument.uri.toModuleLocation())
-            .apply { position = params.position }
+          Build.Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
+            position = params.position
+          }
         )
       }
       forLeft(zonked.value.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
+  }
 
-  override fun hover(params: HoverParams): CompletableFuture<Hover> =
-    CoroutineScope(Dispatchers.Default).future {
+  override fun hover(params: HoverParams): CompletableFuture<Hover> {
+    return CoroutineScope(Dispatchers.Default).future {
       val zonked = with(build) {
         fetchContext().fetch(
-          Build.Key
-            .Zonked(params.textDocument.uri.toModuleLocation())
-            .apply { position = params.position }
+          Build.Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
+            position = params.position
+          }
         )
       }
       Hover(
@@ -119,6 +124,7 @@ class McxService : TextDocumentService,
         }
       )
     }
+  }
 
   override fun didChangeConfiguration(
     params: DidChangeConfigurationParams,
@@ -131,34 +137,34 @@ class McxService : TextDocumentService,
     updateContext()
   }
 
-  private fun fetchContext(): Context =
-    context ?: throw CancellationException()
+  private fun fetchContext(): Context {
+    return context ?: throw CancellationException()
+  }
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun updateContext() {
     val path = root.resolve("pack.json")
-    context =
-      if (path.exists() && path.isRegularFile()) {
-        try {
-          val config =
-            path
-              .inputStream()
-              .buffered()
-              .use { Json.decodeFromStream<Config>(it) }
-          Context(config)
-        } catch (_: SerializationException) {
-          null
-        }
-      } else {
+    context = if (path.exists() && path.isRegularFile()) {
+      try {
+        val config = path
+          .inputStream()
+          .buffered()
+          .use { Json.decodeFromStream<Config>(it) }
+        Context(config)
+      } catch (_: SerializationException) {
         null
       }
+    } else {
+      null
+    }
   }
 
-  private fun String.toModuleLocation(): ModuleLocation =
-    ModuleLocation(
+  private fun String.toModuleLocation(): ModuleLocation {
+    return ModuleLocation(
       root
         .resolve("src")
         .relativize(URI(dropLast(".mcx".length)).toPath())
         .map { it.toString() }
     )
+  }
 }
