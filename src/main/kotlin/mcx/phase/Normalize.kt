@@ -130,7 +130,7 @@ fun PersistentList<Lazy<Value>>.eval(
       val args = term.args.map { lazy { eval(it) } }
       when (func) {
         is Value.FuncOf -> func.result(args)
-        is Value.Def    -> lookupBuiltin(func.name).eval(args) ?: Value.Apply(func, args)
+        is Value.Def    -> lookupBuiltin(func.name)!!.eval(args) ?: Value.Apply(func, args)
         else            -> Value.Apply(func, args)
       }
     }

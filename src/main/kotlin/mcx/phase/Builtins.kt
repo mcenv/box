@@ -6,8 +6,8 @@ import mcx.ast.ModuleLocation
 import kotlin.math.max
 import kotlin.math.min
 
-fun lookupBuiltin(name: DefinitionLocation): Builtin {
-  return requireNotNull(builtins[name]) { "unknown builtin: $name" }
+fun lookupBuiltin(name: DefinitionLocation): Builtin? {
+  return builtins[name]
 }
 
 abstract class Builtin(val name: DefinitionLocation) {

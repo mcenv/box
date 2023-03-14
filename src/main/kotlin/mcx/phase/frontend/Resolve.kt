@@ -6,6 +6,7 @@ import mcx.ast.ModuleLocation
 import mcx.lsp.diagnostic
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
+import mcx.phase.lookupBuiltin
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Range
@@ -65,6 +66,10 @@ class Resolve private constructor(
     return when (definition) {
       is S.Definition.Def  -> {
         val name = definition.name.map { input.module.name / it }
+        val builtin = definition.modifiers.find { it.value == Modifier.BUILTIN }
+        if (builtin != null && lookupBuiltin(name.value) == null) {
+          diagnostics += undefinedBuiltin(name.value, builtin.range)
+        }
         val type = emptyEnv().resolveTerm(definition.type)
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
         R.Definition.Def(definition.modifiers, name, type, body, range)
@@ -298,6 +303,17 @@ class Resolve private constructor(
     return diagnostic(
       range,
       "ambiguous name: $name",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun undefinedBuiltin(
+    name: DefinitionLocation,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "undefined builtin: $name",
       DiagnosticSeverity.Error,
     )
   }

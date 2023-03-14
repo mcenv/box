@@ -170,7 +170,7 @@ class Stage private constructor() {
           val args = term.args.map { lazy { evalTerm(it, stage) } }
           when (func) {
             is Value.FuncOf -> func.result(args)
-            is Value.Def    -> lookupBuiltin(func.name).eval(args) ?: Value.Apply(func, args)
+            is Value.Def    -> lookupBuiltin(func.name)!!.eval(args) ?: Value.Apply(func, args)
             else            -> Value.Apply(func, args)
           }
         }
