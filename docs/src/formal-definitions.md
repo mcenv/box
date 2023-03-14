@@ -52,7 +52,6 @@ $$
 \newcommand{\code}[1]{\texttt{`} #1}
 \newcommand{\splice}[1]{\texttt{\\$} #1}
 \newcommand{\let}[3]{\texttt{let} \ #1 \ \texttt{=} \ #2 \texttt{;} \ #3}
-\newcommand{\intrange}[2]{#1 \texttt{..} #2}
 \newcommand{\drop}[0]{\texttt{_}}
 \newcommand{\synth}[0]{\color{red} \blacktriangle}
 \newcommand{\check}[0]{\color{blue} \blacktriangledown}
@@ -695,18 +694,6 @@ n \in \\{ \false, \true \\}
 \texttt{int} \ n
 }{
 \relsp{ \Gamma }{ s }{ n }{ \Int }{ \Delta }
-}
-\\]
-
-#### IntRangeOf-\\(\synth\\)
-
-\\[
-\infer{
-\texttt{int} \ n_1 \\\\
-\texttt{int} \ n_2 \\\\
-n_1 \ \texttt{<=} \ n_2
-}{
-\relsp{ \Gamma }{ s }{ \intrange{n_1}{n_2} }{ \Int }{ \Delta }
 }
 \\]
 
