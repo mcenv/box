@@ -79,8 +79,31 @@
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "(?:\\b(?:if|then|else|is|let|as)\\b)|(?:->)|[\\\\`$]",
+          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[\\\\`$]",
           "name": "keyword.control.mcx"
+        },
+        {
+          "begin": "\\blet\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.mcx"
+            }
+          },
+          "end": ";",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.mcx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#term"
+            },
+            {
+              "match": ":=",
+              "name": "keyword.control.mcx"
+            }
+          ]
         },
         {
           "match": "\\b(?:true|false)\\b",
