@@ -1,54 +1,54 @@
 # Formal Definitions
 
 $$
-\newcommand{\Tag}[0]{\texttt{Tag}}
-\newcommand{\EndTag}[0]{\texttt{EndTag}}
-\newcommand{\ByteTag}[0]{\texttt{ByteTag}}
-\newcommand{\ShortTag}[0]{\texttt{ShortTag}}
-\newcommand{\IntTag}[0]{\texttt{IntTag}}
-\newcommand{\LongTag}[0]{\texttt{LongTag}}
-\newcommand{\FloatTag}[0]{\texttt{FloatTag}}
-\newcommand{\DoubleTag}[0]{\texttt{DoubleTag}}
-\newcommand{\StringTag}[0]{\texttt{StringTag}}
-\newcommand{\ByteArrayTag}[0]{\texttt{ByteArrayTag}}
-\newcommand{\IntArrayTag}[0]{\texttt{IntArrayTag}}
-\newcommand{\LongArrayTag}[0]{\texttt{LongArrayTag}}
-\newcommand{\ListTag}[0]{\texttt{ListTag}}
-\newcommand{\CompoundTag}[0]{\texttt{CompoundTag}}
-\newcommand{\Type}[1]{\texttt{Type} \ #1}
-\newcommand{\Bool}[0]{\texttt{Bool}}
+\newcommand{\Tag}[0]{\texttt{tag}}
+\newcommand{\EndTag}[0]{\texttt{end_tag}}
+\newcommand{\ByteTag}[0]{\texttt{byte_tag}}
+\newcommand{\ShortTag}[0]{\texttt{short_tag}}
+\newcommand{\IntTag}[0]{\texttt{int_tag}}
+\newcommand{\LongTag}[0]{\texttt{long_tag}}
+\newcommand{\FloatTag}[0]{\texttt{float_tag}}
+\newcommand{\DoubleTag}[0]{\texttt{double_tag}}
+\newcommand{\StringTag}[0]{\texttt{string_tag}}
+\newcommand{\ByteArrayTag}[0]{\texttt{byte_array_tag}}
+\newcommand{\IntArrayTag}[0]{\texttt{int_array_tag}}
+\newcommand{\LongArrayTag}[0]{\texttt{long_array_tag}}
+\newcommand{\ListTag}[0]{\texttt{list_tag}}
+\newcommand{\CompoundTag}[0]{\texttt{compound_tag}}
+\newcommand{\Type}[1]{\texttt{type} \ #1}
+\newcommand{\Bool}[0]{\texttt{bool}}
 \newcommand{\false}[0]{\texttt{false}}
 \newcommand{\true}[0]{\texttt{true}}
 \newcommand{\if}[3]{\texttt{if} \ #1 \ \texttt{then} \ #2 \ \texttt{else} \ #3}
 \newcommand{\is}[2]{#1 \ \texttt{is} \ #2}
-\newcommand{\Byte}[0]{\texttt{Byte}}
+\newcommand{\Byte}[0]{\texttt{byte}}
 \newcommand{\byte}[1]{#1 \texttt{b}}
-\newcommand{\Short}[0]{\texttt{Short}}
+\newcommand{\Short}[0]{\texttt{short}}
 \newcommand{\short}[1]{#1 \texttt{s}}
-\newcommand{\Int}[0]{\texttt{Int}}
-\newcommand{\Long}[0]{\texttt{Long}}
-\newcommand{\long}[1]{#1 \texttt{L}}
-\newcommand{\Float}[0]{\texttt{Float}}
+\newcommand{\Int}[0]{\texttt{int}}
+\newcommand{\Long}[0]{\texttt{long}}
+\newcommand{\long}[1]{#1 \texttt{l}}
+\newcommand{\Float}[0]{\texttt{float}}
 \newcommand{\float}[1]{#1 \texttt{f}}
-\newcommand{\Double}[0]{\texttt{Double}}
+\newcommand{\Double}[0]{\texttt{double}}
 \newcommand{\double}[1]{#1 \texttt{d}}
-\newcommand{\String}[0]{\texttt{String}}
+\newcommand{\String}[0]{\texttt{string}}
 \newcommand{\string}[1]{\texttt{"} #1 \texttt{"}}
-\newcommand{\ByteArray}[0]{\texttt{ByteArray}}
-\newcommand{\bytearray}[1]{\texttt{[Byte;} #1 \texttt{]}}
-\newcommand{\IntArray}[0]{\texttt{IntArray}}
-\newcommand{\intarray}[1]{\texttt{[Int;} #1 \texttt{]}}
-\newcommand{\LongArray}[0]{\texttt{LongArray}}
-\newcommand{\longarray}[1]{\texttt{[Long;} #1 \texttt{]}}
-\newcommand{\List}[1]{\texttt{List} \ #1}
+\newcommand{\ByteArray}[0]{\texttt{byte_array}}
+\newcommand{\bytearray}[1]{\texttt{[byte;} #1 \texttt{]}}
+\newcommand{\IntArray}[0]{\texttt{int_array}}
+\newcommand{\intarray}[1]{\texttt{[int;} #1 \texttt{]}}
+\newcommand{\LongArray}[0]{\texttt{long_array}}
+\newcommand{\longarray}[1]{\texttt{[long;} #1 \texttt{]}}
+\newcommand{\List}[1]{\texttt{list} \ #1}
 \newcommand{\list}[1]{\texttt{[} #1 \texttt{]}}
-\newcommand{\Compound}[1]{\texttt{Compound\\{} \ #1 \ \texttt{\\}}}
+\newcommand{\Compound}[1]{\texttt{compound\\{} \ #1 \ \texttt{\\}}}
 \newcommand{\compound}[1]{\texttt{\\{} \ #1 \texttt{\\}}}
-\newcommand{\Union}[1]{\texttt{Union\\{} #1 \texttt{\\}}}
-\newcommand{\Func}[2]{\texttt{Func(} #1 \texttt{)} \rightarrow #2}
+\newcommand{\Union}[1]{\texttt{union\\{} #1 \texttt{\\}}}
+\newcommand{\Func}[2]{\texttt{func(} #1 \texttt{)} \rightarrow #2}
 \newcommand{\func}[2]{\texttt{\\\\(} #1 \texttt{)} \rightarrow #2}
 \newcommand{\apply}[2]{#1 \texttt{(} #2 \texttt{)}}
-\newcommand{\Code}[1]{\texttt{Code} \ #1}
+\newcommand{\Code}[1]{\texttt{code} \ #1}
 \newcommand{\code}[1]{\texttt{`} #1}
 \newcommand{\splice}[1]{\texttt{\\$} #1}
 \newcommand{\let}[3]{\texttt{let} \ #1 \ \texttt{=} \ #2 \texttt{;} \ #3}
