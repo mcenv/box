@@ -97,37 +97,37 @@ class Elaborate private constructor(
   ): Pair<C.Term, C.Value> {
     val type = type?.let { meta.force(type) }
     return when {
-      term is R.Term.Tag && synth(type)                          -> {
+      term is R.Term.Tag && synth(type)         -> {
         if (stage == 0) {
           invalidTerm(stageMismatch(1, 0, term.range), meta.fresh(term.range))
         } else {
           C.Term.Tag to TYPE_END
         }
       }
-      term is R.Term.TagOf && synth(type)                        -> C.Term.TagOf(term.value) to C.Value.Tag
-      term is R.Term.Type && synth(type)                         -> {
+      term is R.Term.TagOf && synth(type)       -> C.Term.TagOf(term.value) to C.Value.Tag
+      term is R.Term.Type && synth(type)        -> {
         val tag = checkTerm(term.tag, stage, C.Value.Tag)
         C.Term.Type(tag) to TYPE_BYTE
       }
-      term is R.Term.Bool && synth(type)                         -> C.Term.Bool to TYPE_BYTE
-      term is R.Term.BoolOf && synth(type)                       -> C.Term.BoolOf(term.value) to TYPE_BYTE
-      term is R.Term.If && match<C.Value>(type)                  -> {
+      term is R.Term.Bool && synth(type)        -> C.Term.Bool to TYPE_BYTE
+      term is R.Term.BoolOf && synth(type)      -> C.Term.BoolOf(term.value) to C.Value.Bool
+      term is R.Term.If && match<C.Value>(type) -> {
         val condition = checkTerm(term.condition, stage, C.Value.Bool)
         val (thenBranch, thenBranchType) = elaborateTerm(term.thenBranch, stage, type)
         val (elseBranch, elseBranchType) = elaborateTerm(term.elseBranch, stage, type)
         val type = type ?: C.Value.Union(listOf(lazyOf(thenBranchType), lazyOf(elseBranchType)))
         C.Term.If(condition, thenBranch, elseBranch) to type
       }
-      term is R.Term.Is && synth(type)                           -> {
+      term is R.Term.Is && synth(type)          -> {
         val (scrutineer, scrutineerType) = restoring { synthPattern(term.scrutineer, stage) }
         val scrutinee = checkTerm(term.scrutinee, stage, scrutineerType)
         C.Term.Is(scrutinee, scrutineer) to C.Value.Bool
       }
-      term is R.Term.Byte && synth(type)                         -> C.Term.Byte to TYPE_BYTE
-      term is R.Term.ByteOf && synth(type)                       -> C.Term.ByteOf(term.value) to C.Value.Byte
-      term is R.Term.Short && synth(type)                        -> C.Term.Short to TYPE_SHORT
-      term is R.Term.ShortOf && synth(type)                      -> C.Term.ShortOf(term.value) to C.Value.Short
-      term is R.Term.Int && synth(type)                          -> C.Term.Int to TYPE_INT
+      term is R.Term.Byte && synth(type)        -> C.Term.Byte to TYPE_BYTE
+      term is R.Term.ByteOf && synth(type)      -> C.Term.ByteOf(term.value) to C.Value.Byte
+      term is R.Term.Short && synth(type)       -> C.Term.Short to TYPE_SHORT
+      term is R.Term.ShortOf && synth(type)     -> C.Term.ShortOf(term.value) to C.Value.Short
+      term is R.Term.Int && synth(type)         -> C.Term.Int to TYPE_INT
       term is R.Term.IntOf && synth(type)                        -> C.Term.IntOf(term.value) to C.Value.Int
       term is R.Term.Long && synth(type)                         -> C.Term.Long to TYPE_LONG
       term is R.Term.LongOf && synth(type)                       -> C.Term.LongOf(term.value) to C.Value.Long
