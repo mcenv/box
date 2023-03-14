@@ -75,7 +75,7 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:Tag|EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|StringTag|ByteArrayTag|IntArrayTag|LongArrayTag|ListTag|CompoundTag|Type|Byte|Bool|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Func|Code)\\b",
+          "match": "\\b(?:Tag|EndTag|ByteTag|ShortTag|IntTag|LongTag|FloatTag|DoubleTag|StringTag|ByteArrayTag|IntArrayTag|LongArrayTag|ListTag|CompoundTag|Type|Byte|Bool|Short|Int|Long|Float|Double|String|ByteArray|IntArray|LongArray|List|Compound|Union|Func|Code)\\b",
           "name": "entity.name.type.mcx"
         },
         {
@@ -85,6 +85,21 @@
         {
           "match": "\\b(?:true|false)\\b",
           "name": "constant.language.mcx"
+        },
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.json",
+          "patterns": [
+            {
+              "match": "\\\\(?:[\"\\\\])",
+              "name": "constant.character.escape.mcx"
+            },
+            {
+              "match": "\\\\.",
+              "name": "invalid.illegal.mcx"
+            }
+          ]
         },
         {
           "begin": "([^:\\s;,()\\[\\]{}]+)(?=\\()",
