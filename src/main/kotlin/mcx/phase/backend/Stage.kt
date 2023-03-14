@@ -7,13 +7,10 @@ import mcx.ast.Core
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
-import mcx.ast.DefinitionLocation
 import mcx.ast.Modifier
 import mcx.phase.*
 
-class Stage private constructor(
-  private val definitions: Map<DefinitionLocation, Definition>,
-) {
+class Stage private constructor() {
   private val stagedDefinitions: MutableList<Definition> = mutableListOf()
 
   private fun stage(
@@ -243,9 +240,8 @@ class Stage private constructor(
 
     operator fun invoke(
       context: Context,
-      dependencies: Map<DefinitionLocation, Definition>,
       definition: Definition,
     ): List<Definition> =
-      Stage(dependencies).stage(definition)
+      Stage().stage(definition)
   }
 }

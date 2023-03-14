@@ -203,19 +203,15 @@ class Build(
 
             is Key.Staged     -> {
               val location = key.location
-              val zonked = fetch(Key.Elaborated(location.module))
-              val definition = zonked.value.module.definitions.find { it.name == location }!!
+              val elaborated = fetch(Key.Elaborated(location.module))
+              val definition = elaborated.value.module.definitions.find { it.name == location }!!
               val results = transitiveImports(fetch(Key.Parsed(location.module)).value!!.module.name)
                 .map { async { fetch(Key.Elaborated(it.module)) } }
                 .plus(async { fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
-              val dependencies = results
-                .flatMap { it.value.module.definitions }
-                .plus(zonked.value.module.definitions)
-                .associateBy { it.name }
-              val hash = Objects.hash(zonked.hash, results.map { it.hash })
+              val hash = Objects.hash(elaborated.hash, results.map { it.hash })
               if (value == null || value.hash != hash) {
-                Value(Stage(this@fetch, dependencies, definition), hash)
+                Value(Stage(this@fetch, definition), hash)
               } else {
                 value
               }
@@ -318,11 +314,11 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val zonked = context.fetch(Key.Elaborated(path.toModuleLocation()))
-            if (zonked.value.diagnostics.isNotEmpty()) {
-              diagnosticsByPath += path to zonked.value.diagnostics
+            val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation()))
+            if (elaborated.value.diagnostics.isNotEmpty()) {
+              diagnosticsByPath += path to elaborated.value.diagnostics
             }
-            zonked.value.module.definitions.map { it.name }
+            elaborated.value.module.definitions.map { it.name }
           }
         }
         .toList()
