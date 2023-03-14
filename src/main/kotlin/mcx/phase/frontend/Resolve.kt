@@ -178,11 +178,11 @@ class Resolve private constructor(
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, range)
       }
-      is S.Term.Splice      -> {
+      is S.Term.Splice -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, range)
       }
-      is S.Term.Let         -> {
+      is S.Term.Let    -> {
         val init = resolveTerm(term.init)
         restoring {
           val binder = resolvePattern(term.binder)
@@ -190,7 +190,7 @@ class Resolve private constructor(
           R.Term.Let(binder, init, body, range)
         }
       }
-      is S.Term.Var         -> {
+      is S.Term.Var    -> {
         when (val level = this[term.name]) {
           -1   -> {
             when (val name = resolveName(term.name, range)) {
@@ -201,34 +201,47 @@ class Resolve private constructor(
           else -> R.Term.Var(term.name, level, range)
         }
       }
-      is S.Term.Hole        -> R.Term.Hole(range)
+      is S.Term.As     -> {
+        val element = resolveTerm(term.element)
+        val type = resolveTerm(term.type)
+        R.Term.As(element, type, range)
+      }
+      is S.Term.Hole   -> R.Term.Hole(range)
     }
   }
 
   private fun Env.resolvePattern(
-    pattern: S.Pattern,
+    pattern: S.Term,
   ): R.Pattern {
     return when (pattern) {
-      is S.Pattern.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
-      is S.Pattern.CompoundOf -> {
+      is S.Term.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
+      is S.Term.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.CompoundOf(elements, pattern.range)
       }
-      is S.Pattern.CodeOf     -> {
+      is S.Term.CodeOf     -> {
         val element = resolvePattern(pattern.element)
         R.Pattern.CodeOf(element, pattern.range)
       }
-      is S.Pattern.Var        -> {
-        bind(pattern.name)
-        R.Pattern.Var(pattern.name, lastIndex, pattern.range)
+      is S.Term.Var        -> {
+        when (pattern.name) {
+          "_"  -> R.Pattern.Drop(pattern.range)
+          else -> {
+            bind(pattern.name)
+            R.Pattern.Var(pattern.name, lastIndex, pattern.range)
+          }
+        }
       }
-      is S.Pattern.Drop       -> R.Pattern.Drop(pattern.range)
-      is S.Pattern.Anno       -> {
-        val element = resolvePattern(pattern.element)
+      is S.Term.As         -> {
         val type = resolveTerm(pattern.type)
-        R.Pattern.Anno(element, type, pattern.range)
+        val element = resolvePattern(pattern.element)
+        R.Pattern.As(element, type, pattern.range)
       }
-      is S.Pattern.Hole       -> R.Pattern.Hole(pattern.range)
+      is S.Term.Hole       -> R.Pattern.Hole(pattern.range)
+      else                 -> {
+        diagnostics += unexpectedPattern(pattern.range)
+        R.Pattern.Hole(pattern.range)
+      }
     }
   }
 
@@ -314,6 +327,16 @@ class Resolve private constructor(
     return diagnostic(
       range,
       "undefined builtin: $name",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun unexpectedPattern(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "unexpected pattern",
       DiagnosticSeverity.Error,
     )
   }

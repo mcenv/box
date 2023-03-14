@@ -186,7 +186,7 @@ class Parse private constructor(
           '\\' -> {
             skip()
             skipTrivia()
-            val params = parseList(',', '(', ')') { parsePattern() }
+            val params = parseList(',', '(', ')') { parseTerm() }
             expect("->")
             skipTrivia()
             val result = parseTerm()
@@ -276,7 +276,7 @@ class Parse private constructor(
                 skipTrivia()
                 val params = parseList(',', '(', ')') {
                   skipTrivia()
-                  val binder = parsePattern()
+                  val binder = parseTerm()
                   expect(':')
                   skipTrivia()
                   val type = parseTerm()
@@ -294,7 +294,7 @@ class Parse private constructor(
               }
               "let"            -> {
                 skipTrivia()
-                val name = parsePattern()
+                val name = parseTerm()
                 expect(":=")
                 skipTrivia()
                 val init = parseTerm()
@@ -351,8 +351,13 @@ class Parse private constructor(
           when (name.value) {
             "is" -> {
               skipTrivia()
-              val scrutineer = parsePattern()
+              val scrutineer = parseTerm()
               S.Term.Is(term, scrutineer, until())
+            }
+            "as" -> {
+              skipTrivia()
+              val type = parseTerm()
+              S.Term.As(term, type, until())
             }
             else -> {
               val func = S.Term.Var(name.value, name.range)
@@ -369,79 +374,6 @@ class Parse private constructor(
       term
     }
   }
-
-  private fun parsePattern0(): S.Pattern {
-    return ranging {
-      if (canRead()) {
-        when (peek()) {
-          '('  -> {
-            skip()
-            skipTrivia()
-            val term = parsePattern()
-            expect(')')
-            term
-          }
-          '{'  -> {
-            val elements = parseList(',', '{', '}') {
-              val key = parseRanged { readString() }
-              expect(':')
-              skipTrivia()
-              val element = parsePattern()
-              key to element
-            }
-            S.Pattern.CompoundOf(elements, until())
-          }
-          '`'  -> {
-            skip()
-            skipTrivia()
-            val element = parsePattern0()
-            S.Pattern.CodeOf(element, until())
-          }
-          else -> {
-            val word = parseRanged { readWord() }
-            when (word.value) {
-              ""   -> null
-              "_"  -> S.Pattern.Drop(until())
-              else -> word.value.toIntOrNull()?.let { S.Pattern.IntOf(it, until()) }
-                      ?: S.Pattern.Var(word.value, until())
-            }
-          }
-        }
-      } else {
-        null
-      } ?: run {
-        val range = until()
-        diagnostics += expectedPattern(range)
-        S.Pattern.Hole(range)
-      }
-    }
-  }
-
-  private fun parsePattern(): S.Pattern {
-    return ranging {
-      var pattern = parsePattern0()
-      skipTrivia()
-      while (canRead()) {
-        pattern = if (peek().isWordPart()) {
-          val name = parseRanged { readWord() }
-          skipTrivia()
-          when (name.value) {
-            "as" -> {
-              skipTrivia()
-              val type = parseTerm()
-              S.Pattern.Anno(pattern, type, until())
-            }
-            else -> return pattern
-          }
-        } else {
-          return pattern
-        }
-        skipTrivia()
-      }
-      pattern
-    }
-  }
-
 
   private fun <R> parseRanged(parse: () -> R): Ranged<R> {
     return ranging { Ranged(parse(), until()) }

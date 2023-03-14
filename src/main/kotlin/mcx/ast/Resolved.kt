@@ -237,6 +237,12 @@ object Resolved {
       override val range: Range,
     ) : Term
 
+    data class As(
+      val element: Term,
+      val type: Term,
+      override val range: Range,
+    ) : Term
+
     data class Hole(
       override val range: Range,
     ) : Term
@@ -270,7 +276,7 @@ object Resolved {
       override val range: Range,
     ) : Pattern
 
-    data class Anno(
+    data class As(
       val element: Pattern,
       val type: Term,
       override val range: Range,

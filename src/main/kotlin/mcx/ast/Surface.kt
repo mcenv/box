@@ -67,7 +67,7 @@ object Surface {
 
     data class Is(
       val scrutinee: Term,
-      val scrutineer: Pattern,
+      val scrutineer: Term,
       override val range: Range,
     ) : Term
 
@@ -187,13 +187,13 @@ object Surface {
     ) : Term
 
     data class Func(
-      val params: kotlin.collections.List<Pair<Pattern, Term>>,
+      val params: kotlin.collections.List<Pair<Term, Term>>,
       val result: Term,
       override val range: Range,
     ) : Term
 
     data class FuncOf(
-      val params: kotlin.collections.List<Pattern>,
+      val params: kotlin.collections.List<Term>,
       val result: Term,
       override val range: Range,
     ) : Term
@@ -220,7 +220,7 @@ object Surface {
     ) : Term
 
     data class Let(
-      val binder: Pattern,
+      val binder: Term,
       val init: Term,
       val body: Term,
       override val range: Range,
@@ -231,46 +231,14 @@ object Surface {
       override val range: Range,
     ) : Term
 
+    data class As(
+      val element: Term,
+      val type: Term,
+      override val range: Range,
+    ) : Term
+
     data class Hole(
       override val range: Range,
     ) : Term
-  }
-
-  sealed interface Pattern {
-    val range: Range
-
-    data class IntOf(
-      val value: Int,
-      override val range: Range,
-    ) : Pattern
-
-    data class CompoundOf(
-      val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val range: Range,
-    ) : Pattern
-
-    data class CodeOf(
-      val element: Pattern,
-      override val range: Range,
-    ) : Pattern
-
-    data class Var(
-      val name: String,
-      override val range: Range,
-    ) : Pattern
-
-    data class Drop(
-      override val range: Range,
-    ) : Pattern
-
-    data class Anno(
-      val element: Pattern,
-      val type: Term,
-      override val range: Range,
-    ) : Pattern
-
-    data class Hole(
-      override val range: Range,
-    ) : Pattern
   }
 }
