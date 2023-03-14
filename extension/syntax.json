@@ -79,7 +79,7 @@
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[\\\\`$]",
+          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[\\\\`$_]",
           "name": "keyword.control.mcx"
         },
         {

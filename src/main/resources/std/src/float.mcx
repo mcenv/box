@@ -1,1 +1,1 @@
-export builtin def to_string : func (_ : float) -> string;
+export builtin def to_string : func (float) -> string;

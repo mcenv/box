@@ -276,11 +276,16 @@ class Parse private constructor(
                 skipTrivia()
                 val params = parseList(',', '(', ')') {
                   skipTrivia()
-                  val binder = parseTerm()
-                  expect(':')
+                  val binderOrType = parseTerm()
                   skipTrivia()
-                  val type = parseTerm()
-                  binder to type
+                  if (canRead() && peek() == ':') {
+                    skip()
+                    skipTrivia()
+                    val type = parseTerm()
+                    binderOrType to type
+                  } else {
+                    S.Term.Var("_", binderOrType.range) to binderOrType
+                  }
                 }
                 expect("->")
                 skipTrivia()
