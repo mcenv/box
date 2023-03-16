@@ -127,7 +127,7 @@ object Lifted {
     }
 
     data class FuncOf(
-      val types: List<Triple<String, Int, NbtType>>,
+      val types: List<Pair<String, NbtType>>,
       val tag: Int,
     ) : Term {
       override val type: NbtType get() = NbtType.COMPOUND
@@ -149,7 +149,7 @@ object Lifted {
 
     data class Var(
       val name: String,
-      val level: Int,
+      val idx: Idx,
       override val type: NbtType,
     ) : Term
 
@@ -176,7 +176,6 @@ object Lifted {
 
     data class Var(
       val name: String,
-      val level: Int,
       override val type: NbtType,
     ) : Pattern
 

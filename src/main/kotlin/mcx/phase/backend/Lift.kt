@@ -1,6 +1,8 @@
 package mcx.phase.backend
 
+import mcx.ast.Lvl
 import mcx.ast.Modifier
+import mcx.ast.toLvl
 import mcx.data.NbtType
 import mcx.phase.Context
 import mcx.phase.backend.Lift.Ctx.Companion.emptyCtx
@@ -52,9 +54,11 @@ class Lift private constructor(
       is C.Term.BoolOf      -> L.Term.BoolOf(term.value)
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
-        val thenFunction = createFreshFunction(liftTerm(term.thenBranch), 1)
-        val elseFunction = createFreshFunction(liftTerm(term.elseBranch), null)
-        val type = liftType()
+        val thenBranch = liftTerm(term.thenBranch)
+        val elseBranch = liftTerm(term.elseBranch)
+        val thenFunction = createFreshFunction(thenBranch, 1)
+        val elseFunction = createFreshFunction(elseBranch, null)
+        val type = thenBranch.type
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
       is C.Term.Is          -> {
@@ -106,15 +110,13 @@ class Lift private constructor(
       is C.Term.Union       -> L.Term.Unit
       is C.Term.Func        -> L.Term.Unit
       is C.Term.FuncOf      -> {
-        // remap levels
-        with(emptyCtx()) {
+        restoring { // ?
           val binders = term.params.map { liftPattern(it) }
-          val binderSize = types.size
           val freeVars = freeVars(term)
-          freeVars.forEach { (name, type) -> bind(name, type.second) }
+          freeVars.forEach { (name, type) -> bind(name, type) }
           val capture = L.Pattern.CompoundOf(
-            freeVars.entries.mapIndexed { index, (name, type) ->
-              name to L.Pattern.Var(name, binderSize + index, type.second)
+            freeVars.entries.map { (name, type) ->
+              name to L.Pattern.Var(name, type)
             }
           )
           val result = liftTerm(term.result)
@@ -129,14 +131,14 @@ class Lift private constructor(
             liftedDefinitions += it
             dispatchedDefinitions += it
           }
-          val types = freeVars.entries.map { (name, type) -> Triple(name, type.first, type.second) }
+          val types = freeVars.entries.map { (name, type) -> name to type }
           L.Term.FuncOf(types, tag)
         }
       }
       is C.Term.Apply       -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = liftType()
+        val type = NbtType.END // TODO
         L.Term.Apply(func, args, type)
       }
       is C.Term.Code        -> unexpectedTerm(term)
@@ -151,11 +153,11 @@ class Lift private constructor(
         }
       }
       is C.Term.Var         -> {
-        val type = liftType()
-        L.Term.Var(term.name, this[term.name], type)
+        val type = this[next.toLvl(term.idx)].second
+        L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
-        val type = liftType()
+        val type = NbtType.END // TODO
         L.Term.Def(term.name, type)
       }
       is C.Term.Meta        -> unexpectedTerm(term)
@@ -174,12 +176,12 @@ class Lift private constructor(
       }
       is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
       is C.Pattern.Var        -> {
-        val type = liftType()
+        val type = liftType(pattern.type)
         bind(pattern.name, type)
-        L.Pattern.Var(pattern.name, types.lastIndex, type)
+        L.Pattern.Var(pattern.name, type)
       }
       is C.Pattern.Drop       -> {
-        val type = liftType()
+        val type = NbtType.END // TODO
         L.Pattern.Drop(type)
       }
       is C.Pattern.Hole       -> unexpectedPattern(pattern)
@@ -188,7 +190,7 @@ class Lift private constructor(
 
   private fun freeVars(
     term: C.Term,
-  ): LinkedHashMap<String, Pair<Int, NbtType>> {
+  ): LinkedHashMap<String, NbtType> {
     return when (term) {
       is C.Term.Tag         -> unexpectedTerm(term)
       is C.Term.TagOf       -> linkedMapOf()
@@ -218,21 +220,21 @@ class Lift private constructor(
       is C.Term.LongArray   -> linkedMapOf()
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.List        -> freeVars(term.element)
-      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Compound   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to (term.idx.value to liftType()))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Compound    -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Union       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code        -> unexpectedTerm(term)
+      is C.Term.CodeOf      -> unexpectedTerm(term)
+      is C.Term.Splice      -> unexpectedTerm(term)
+      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var         -> linkedMapOf(term.name to liftType(term.type))
+      is C.Term.Def         -> linkedMapOf()
+      is C.Term.Meta        -> unexpectedTerm(term)
+      is C.Term.Hole        -> unexpectedTerm(term)
     }
   }
 
@@ -240,72 +242,70 @@ class Lift private constructor(
     pattern: C.Pattern,
   ): Set<String> {
     return when (pattern) {
-      is C.Pattern.IntOf -> emptySet()
+      is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.CompoundOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
-      is C.Pattern.CodeOf -> unexpectedPattern(pattern)
-      is C.Pattern.Var -> setOf(pattern.name)
-      is C.Pattern.Drop -> emptySet()
-      is C.Pattern.Hole -> unexpectedPattern(pattern)
+      is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
+      is C.Pattern.Var        -> setOf(pattern.name)
+      is C.Pattern.Drop       -> emptySet()
+      is C.Pattern.Hole       -> unexpectedPattern(pattern)
     }
   }
 
-  // TODO: implement
-  private fun liftType(): NbtType {
-    TODO()
-    /*
+  private fun liftType(
+    type: C.Term,
+  ): NbtType {
     return when (type) {
-      is C.Value.Tag         -> unexpectedType(type)
-      is C.Value.TagOf       -> unexpectedType(type)
-      is C.Value.Type        -> (type.tag.value as C.Value.TagOf).value
-      is C.Value.Bool        -> NbtType.BYTE
-      is C.Value.BoolOf      -> unexpectedType(type)
-      is C.Value.If          -> unexpectedType(type)
-      is C.Value.Is          -> unexpectedType(type)
-      is C.Value.Byte        -> NbtType.BYTE
-      is C.Value.ByteOf      -> unexpectedType(type)
-      is C.Value.Short       -> NbtType.SHORT
-      is C.Value.ShortOf     -> unexpectedType(type)
-      is C.Value.Int         -> NbtType.INT
-      is C.Value.IntOf       -> unexpectedType(type)
-      is C.Value.Long        -> NbtType.LONG
-      is C.Value.LongOf      -> unexpectedType(type)
-      is C.Value.Float       -> NbtType.FLOAT
-      is C.Value.FloatOf     -> unexpectedType(type)
-      is C.Value.Double      -> NbtType.DOUBLE
-      is C.Value.DoubleOf    -> unexpectedType(type)
-      is C.Value.String      -> NbtType.STRING
-      is C.Value.StringOf    -> unexpectedType(type)
-      is C.Value.ByteArray   -> NbtType.BYTE_ARRAY
-      is C.Value.ByteArrayOf -> unexpectedType(type)
-      is C.Value.IntArray    -> NbtType.INT_ARRAY
-      is C.Value.IntArrayOf  -> unexpectedType(type)
-      is C.Value.LongArray   -> NbtType.LONG_ARRAY
-      is C.Value.LongArrayOf -> unexpectedType(type)
-      is C.Value.List        -> NbtType.LIST
-      is C.Value.ListOf      -> unexpectedType(type)
-      is C.Value.Compound    -> NbtType.COMPOUND
-      is C.Value.CompoundOf  -> unexpectedType(type)
-      is C.Value.Union       -> type.elements.firstOrNull()?.value?.let { liftType(it) } ?: NbtType.END
-      is C.Value.Func        -> NbtType.COMPOUND
-      is C.Value.FuncOf      -> unexpectedType(type)
-      is C.Value.Apply       -> unexpectedType(type)
-      is C.Value.Code        -> unexpectedType(type)
-      is C.Value.CodeOf      -> unexpectedType(type)
-      is C.Value.Splice      -> unexpectedType(type)
-      is C.Value.Let         -> unexpectedType(type)
-      is C.Value.Var         -> unexpectedType(type)
-      is C.Value.Def         -> unexpectedType(type) // ?
-      is C.Value.Meta        -> unexpectedType(type)
-      is C.Value.Hole        -> unexpectedType(type)
+      is C.Term.Tag         -> unexpectedTerm(type)
+      is C.Term.TagOf       -> unexpectedTerm(type)
+      is C.Term.Type        -> (type.tag as C.Term.TagOf).value
+      is C.Term.Bool        -> NbtType.BYTE
+      is C.Term.BoolOf      -> unexpectedTerm(type)
+      is C.Term.If          -> unexpectedTerm(type)
+      is C.Term.Is          -> unexpectedTerm(type)
+      is C.Term.Byte        -> NbtType.BYTE
+      is C.Term.ByteOf      -> unexpectedTerm(type)
+      is C.Term.Short       -> NbtType.SHORT
+      is C.Term.ShortOf     -> unexpectedTerm(type)
+      is C.Term.Int         -> NbtType.INT
+      is C.Term.IntOf       -> unexpectedTerm(type)
+      is C.Term.Long        -> NbtType.LONG
+      is C.Term.LongOf      -> unexpectedTerm(type)
+      is C.Term.Float       -> NbtType.FLOAT
+      is C.Term.FloatOf     -> unexpectedTerm(type)
+      is C.Term.Double      -> NbtType.DOUBLE
+      is C.Term.DoubleOf    -> unexpectedTerm(type)
+      is C.Term.String      -> NbtType.STRING
+      is C.Term.StringOf    -> unexpectedTerm(type)
+      is C.Term.ByteArray   -> NbtType.BYTE_ARRAY
+      is C.Term.ByteArrayOf -> unexpectedTerm(type)
+      is C.Term.IntArray    -> NbtType.INT_ARRAY
+      is C.Term.IntArrayOf  -> unexpectedTerm(type)
+      is C.Term.LongArray   -> NbtType.LONG_ARRAY
+      is C.Term.LongArrayOf -> unexpectedTerm(type)
+      is C.Term.List        -> NbtType.LIST
+      is C.Term.ListOf      -> unexpectedTerm(type)
+      is C.Term.Compound    -> NbtType.COMPOUND
+      is C.Term.CompoundOf  -> unexpectedTerm(type)
+      is C.Term.Union       -> type.elements.firstOrNull()?.let { liftType(it) } ?: NbtType.END
+      is C.Term.Func        -> NbtType.COMPOUND
+      is C.Term.FuncOf      -> unexpectedTerm(type)
+      is C.Term.Apply       -> unexpectedTerm(type)
+      is C.Term.Code        -> unexpectedTerm(type)
+      is C.Term.CodeOf      -> unexpectedTerm(type)
+      is C.Term.Splice      -> unexpectedTerm(type)
+      is C.Term.Let         -> unexpectedTerm(type)
+      is C.Term.Var         -> liftType(type.type) // ?
+      is C.Term.Def         -> unexpectedTerm(type) // ?
+      is C.Term.Meta        -> unexpectedTerm(type)
+      is C.Term.Hole        -> unexpectedTerm(type)
     }
-     */
   }
 
   private fun Ctx.createFreshFunction(
     body: L.Term,
     restore: Int?,
   ): L.Definition.Function {
-    val params = types.mapIndexed { index, (name, type) -> L.Pattern.Var(name, index, type) }
+    val params = types.map { (name, type) -> L.Pattern.Var(name, type) }
     return L.Definition.Function(
       listOf(L.Modifier.NO_DROP),
       definition.name.module / "${definition.name.name}:${freshFunctionId++}",
@@ -318,9 +318,10 @@ class Lift private constructor(
   private class Ctx private constructor() {
     private val _types: MutableList<Pair<String, NbtType>> = mutableListOf()
     val types: List<Pair<String, NbtType>> get() = _types
+    val next: Lvl get() = Lvl(_types.size)
 
-    operator fun get(name: String): Int {
-      return _types.indexOfLast { it.first == name }
+    operator fun get(lvl: Lvl): Pair<String, NbtType> {
+      return _types[lvl.value]
     }
 
     fun bind(
