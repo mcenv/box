@@ -63,8 +63,8 @@ class Elaborate private constructor(
         val body = definition.body?.let { ctx.checkTerm(it, stage, ctx.freeze().eval(type)) }
         with(meta) {
           resetUnsolvedMetas()
-          val type = Lvl(0).zonk(type)
-          val body = body?.let { Lvl(0).zonk(it) }
+          val type = Lvl(0).zonkTerm(type)
+          val body = body?.let { Lvl(0).zonkTerm(it) }
           meta.unsolvedMetas.forEach {
             diagnostics += unsolvedMeta(it.index, it.source)
           }
@@ -285,7 +285,7 @@ class Elaborate private constructor(
       term is R.Term.Var && synth(type)                        -> {
         val entry = this[next.toLvl(term.idx)]
         if (stage == entry.stage) {
-          C.Term.Var(term.name, term.idx) to entry.type
+          C.Term.Var(term.name, term.idx, next.quote(entry.type)) to entry.type
         } else {
           invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
@@ -367,7 +367,7 @@ class Elaborate private constructor(
       pattern is R.Pattern.Var && match<Value>(type)                 -> {
         val type = type ?: meta.fresh(pattern.range)
         push(pattern.name, stage, type, null)
-        C.Pattern.Var(pattern.name) to type
+        C.Pattern.Var(pattern.name, next.quote(type)) to type
       }
       pattern is R.Pattern.Drop && match<Value>(type)                -> {
         val type = type ?: meta.fresh(pattern.range)
@@ -436,7 +436,7 @@ class Elaborate private constructor(
     range: Range,
   ) {
     if (hover == null && position != null && position in range) {
-      hover = { prettyTerm(with(meta) { zonk(quote(type)) }) }
+      hover = { prettyTerm(with(meta) { zonkTerm(quote(type)) }) }
     }
   }
 
@@ -445,8 +445,8 @@ class Elaborate private constructor(
     actual: Value,
     range: Range,
   ): Diagnostic {
-    val expected = prettyTerm(with(meta) { zonk(quote(expected)) })
-    val actual = prettyTerm(with(meta) { zonk(quote(actual)) })
+    val expected = prettyTerm(with(meta) { zonkTerm(quote(expected)) })
+    val actual = prettyTerm(with(meta) { zonkTerm(quote(actual)) })
     return diagnostic(
       range,
       """type mismatch:
@@ -490,7 +490,7 @@ class Elaborate private constructor(
       type: Value,
       value: Lazy<Value>?,
     ) {
-      _values += value ?: lazyOf(Value.Var(name, next))
+      _values += value ?: lazyOf(Value.Var(name, next, next.quote(type)))
       _entries += Entry(name, stage, type)
     }
 

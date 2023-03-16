@@ -177,6 +177,7 @@ sealed interface Value {
   class Var(
     val name: kotlin.String,
     val lvl: Lvl,
+    val type: Term,
   ) : Value
 
   class Def(

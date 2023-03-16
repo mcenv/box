@@ -24,7 +24,7 @@ fun Lvl.collect(
       is Pattern.IntOf      -> {}
       is Pattern.CompoundOf -> {}
       is Pattern.CodeOf     -> go(pattern.element)
-      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size))
+      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.type))
       is Pattern.Drop       -> {}
       is Pattern.Hole       -> {}
     }
@@ -303,26 +303,26 @@ fun Lvl.quote(
       val args = value.args.map { quote(it.value) }
       Term.Apply(func, args)
     }
-    is Value.Code    -> {
+    is Value.Code   -> {
       val element = quote(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf  -> {
+    is Value.CodeOf -> {
       val element = quote(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice  -> {
+    is Value.Splice -> {
       val element = quote(value.element)
       Term.Splice(element)
     }
-    is Value.Let     -> {
+    is Value.Let    -> {
       val init = quote(value.init)
       val body = collect(listOf(value.binder)).let { (this + it.size).quote(value.body) }
       Term.Let(value.binder, init, body)
     }
-    is Value.Var     -> Term.Var(value.name, toIdx(value.lvl))
-    is Value.Def     -> Term.Def(value.name, value.body)
-    is Value.Meta    -> Term.Meta(value.index, value.source)
-    is Value.Hole    -> Term.Hole
+    is Value.Var    -> Term.Var(value.name, toIdx(value.lvl), value.type)
+    is Value.Def    -> Term.Def(value.name, value.body)
+    is Value.Meta   -> Term.Meta(value.index, value.source)
+    is Value.Hole   -> Term.Hole
   }
 }

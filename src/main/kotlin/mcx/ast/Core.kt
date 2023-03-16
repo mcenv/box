@@ -168,6 +168,7 @@ object Core {
     data class Var(
       val name: kotlin.String,
       val idx: Idx,
+      val type: Term,
     ) : Term
 
     data class Def(
@@ -201,6 +202,7 @@ object Core {
 
     data class Var(
       val name: String,
+      val type: Term,
     ) : Pattern
 
     object Drop : Pattern
