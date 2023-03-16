@@ -296,7 +296,8 @@ class Elaborate private constructor(
             if (stage == 0 && Modifier.CONST in definition.modifiers) {
               invalidTerm(stageMismatch(1, 0, term.range), type)
             } else {
-              C.Term.Def(term.name, definition.body) to persistentListOf<Lazy<Value>>().eval(definition.type)
+              val type = freeze().eval(definition.type)
+              C.Term.Def(term.name, definition.body) to type
             }
           }
           else                -> invalidTerm(expectedDef(term.range), type)
