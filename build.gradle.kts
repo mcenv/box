@@ -1,11 +1,19 @@
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
   kotlin("jvm") version "1.8.10"
   kotlin("plugin.serialization") version "1.8.10"
+  id("org.jetbrains.dokka") version "1.8.10"
   id("org.jetbrains.kotlinx.kover") version "0.6.1"
   application
+}
+
+buildscript {
+  dependencies {
+    classpath("org.jetbrains.dokka:dokka-base:1.8.10")
+  }
 }
 
 version = "0.1.0"
@@ -78,4 +86,8 @@ tasks.register("kover") {
       node = node.nextSibling
     }
   }
+}
+
+tasks.withType<DokkaTask>().configureEach {
+  outputDirectory.set(projectDir.resolve("docs/book/api"))
 }

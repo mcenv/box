@@ -31,6 +31,14 @@ jobs:
         run: |
           cd docs
           mdbook build
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/gradle-build-action@v2
+        with:
+          arguments: dokkaHtml
       - name: Upload book
         uses: actions/upload-pages-artifact@v1
         with:
