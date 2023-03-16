@@ -12,7 +12,6 @@ version = "0.1.0"
 
 repositories {
   mavenCentral()
-  maven("https://libraries.minecraft.net")
 }
 
 dependencies {
@@ -22,8 +21,6 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
-  implementation("org.ow2.asm:asm:9.4")
-  compileOnly("com.mojang:brigadier:1.0.18")
   testImplementation(kotlin("test"))
 }
 
@@ -45,18 +42,10 @@ kotlin {
 
 tasks.withType<KotlinCompile> {
   kotlinOptions.jvmTarget = "17"
-  kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 }
 
 application {
   mainClass.set("mcx.cli.MainKt")
-  applicationDefaultJvmArgs += "-Djdk.attach.allowAttachSelf=true"
-}
-
-tasks.withType<Jar> {
-  manifest {
-    attributes("Agent-Class" to "mcx.script.Agent")
-  }
 }
 
 @Suppress("UnstableApiUsage")
