@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import mcx.ast.*
+import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
 import mcx.phase.backend.Generate
@@ -15,7 +16,6 @@ import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
 import mcx.phase.backend.Stage
 import mcx.phase.frontend.*
-import mcx.util.PACK_FORMAT
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
@@ -363,7 +363,7 @@ class Build(
           PackMetadata(
             pack = PackMetadataSection(
               description = config.description,
-              packFormat = PACK_FORMAT,
+              packFormat = DATA_PACK_FORMAT,
             )
           ),
           it,
