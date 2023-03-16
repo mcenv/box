@@ -43,7 +43,8 @@ class Stage private constructor() {
   private fun stageTerm(
     term: Term,
   ): Term {
-    return Lvl(0).quote(persistentListOf<Lazy<Value>>().evalTerm(term, 0))
+    val env: Env = persistentListOf()
+    return Lvl(env.size).quote(env.evalTerm(term, 0))
   }
 
   private fun Env.evalTerm(

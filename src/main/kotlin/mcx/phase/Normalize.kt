@@ -12,7 +12,7 @@ import mcx.ast.toLvl
 operator fun Closure.invoke(
   args: List<Lazy<Value>>,
 ): Value {
-  return (values + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).eval(body)
+  return (env + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).eval(body)
 }
 
 fun Lvl.collect(
