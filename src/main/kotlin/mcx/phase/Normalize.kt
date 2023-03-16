@@ -3,10 +3,8 @@
 package mcx.phase
 
 import kotlinx.collections.immutable.*
-import mcx.ast.Core.Closure
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.Core.Value
 import mcx.ast.Lvl
 import mcx.ast.toIdx
 import mcx.ast.toLvl
@@ -221,35 +219,35 @@ fun Lvl.quote(
   value: Value,
 ): Term {
   return when (value) {
-    is Value.Tag    -> Term.Tag
-    is Value.TagOf  -> Term.TagOf(value.value)
-    is Value.Type   -> {
+    is Value.Tag     -> Term.Tag
+    is Value.TagOf   -> Term.TagOf(value.value)
+    is Value.Type    -> {
       val tag = quote(value.tag.value)
       Term.Type(tag)
     }
-    is Value.Bool   -> Term.Bool
-    is Value.BoolOf -> Term.BoolOf(value.value)
-    is Value.If     -> {
+    is Value.Bool    -> Term.Bool
+    is Value.BoolOf  -> Term.BoolOf(value.value)
+    is Value.If      -> {
       val condition = quote(value.condition)
       val thenBranch = quote(value.thenBranch.value)
       val elseBranch = quote(value.elseBranch.value)
       Term.If(condition, thenBranch, elseBranch)
     }
-    is Value.Is     -> {
+    is Value.Is      -> {
       val scrutinee = quote(value.scrutinee.value)
       Term.Is(scrutinee, value.scrutineer)
     }
-    is Value.Byte        -> Term.Byte
-    is Value.ByteOf      -> Term.ByteOf(value.value)
-    is Value.Short       -> Term.Short
-    is Value.ShortOf     -> Term.ShortOf(value.value)
-    is Value.Int         -> Term.Int
-    is Value.IntOf       -> Term.IntOf(value.value)
-    is Value.Long        -> Term.Long
-    is Value.LongOf      -> Term.LongOf(value.value)
-    is Value.Float       -> Term.Float
-    is Value.FloatOf     -> Term.FloatOf(value.value)
-    is Value.Double      -> Term.Double
+    is Value.Byte    -> Term.Byte
+    is Value.ByteOf  -> Term.ByteOf(value.value)
+    is Value.Short   -> Term.Short
+    is Value.ShortOf -> Term.ShortOf(value.value)
+    is Value.Int     -> Term.Int
+    is Value.IntOf   -> Term.IntOf(value.value)
+    is Value.Long    -> Term.Long
+    is Value.LongOf  -> Term.LongOf(value.value)
+    is Value.Float   -> Term.Float
+    is Value.FloatOf -> Term.FloatOf(value.value)
+    is Value.Double  -> Term.Double
     is Value.DoubleOf    -> Term.DoubleOf(value.value)
     is Value.String      -> Term.String
     is Value.StringOf    -> Term.StringOf(value.value)
@@ -288,7 +286,7 @@ fun Lvl.quote(
       val elements = value.elements.map { quote(it.value) }
       Term.Union(elements)
     }
-    is Value.Func        -> {
+    is Value.Func    -> {
       val params = (value.result.binders zip value.params).map { (binder, param) ->
         val param = quote(param.value)
         binder to param
@@ -296,35 +294,35 @@ fun Lvl.quote(
       val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.Func(params, result)
     }
-    is Value.FuncOf      -> {
+    is Value.FuncOf  -> {
       val result = collect(value.result.binders).let { (this + it.size).quote(value.result(it)) }
       Term.FuncOf(value.result.binders, result)
     }
-    is Value.Apply       -> {
+    is Value.Apply   -> {
       val func = quote(value.func)
       val args = value.args.map { quote(it.value) }
       Term.Apply(func, args)
     }
-    is Value.Code   -> {
+    is Value.Code    -> {
       val element = quote(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf -> {
+    is Value.CodeOf  -> {
       val element = quote(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice -> {
+    is Value.Splice  -> {
       val element = quote(value.element)
       Term.Splice(element)
     }
-    is Value.Let    -> {
+    is Value.Let     -> {
       val init = quote(value.init)
       val body = collect(listOf(value.binder)).let { (this + it.size).quote(value.body) }
       Term.Let(value.binder, init, body)
     }
-    is Value.Var    -> Term.Var(value.name, toIdx(value.lvl))
-    is Value.Def    -> Term.Def(value.name, value.body)
-    is Value.Meta   -> Term.Meta(value.index, value.source)
-    is Value.Hole   -> Term.Hole
+    is Value.Var     -> Term.Var(value.name, toIdx(value.lvl))
+    is Value.Def     -> Term.Def(value.name, value.body)
+    is Value.Meta    -> Term.Meta(value.index, value.source)
+    is Value.Hole    -> Term.Hole
   }
 }

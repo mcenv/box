@@ -364,10 +364,6 @@ class Lift private constructor(
       error("unexpected pattern: ${prettyPattern(pattern)}")
     }
 
-    private fun unexpectedType(value: C.Value): Nothing {
-      error("unexpected type: $value")
-    }
-
     operator fun invoke(
       context: Context,
       definition: C.Definition,

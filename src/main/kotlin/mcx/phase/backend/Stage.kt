@@ -3,10 +3,8 @@ package mcx.phase.backend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
-import mcx.ast.Core
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Term
-import mcx.ast.Core.Value
 import mcx.ast.Lvl
 import mcx.ast.Modifier
 import mcx.ast.toLvl
@@ -154,11 +152,11 @@ class Stage private constructor() {
       }
       is Term.Func        -> {
         val params = term.params.map { (_, type) -> lazy { evalTerm(type, stage) } }
-        val result = Core.Closure(this, term.params.map { (binder, _) -> binder }, term.result)
+        val result = Closure(this, term.params.map { (binder, _) -> binder }, term.result)
         Value.Func(params, result)
       }
       is Term.FuncOf      -> {
-        val result = Core.Closure(this, term.params, term.result)
+        val result = Closure(this, term.params, term.result)
         Value.FuncOf(result)
       }
       is Term.Apply       -> {

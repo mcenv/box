@@ -32,6 +32,9 @@ object Resolved {
     }
   }
 
+  /**
+   * A well-scoped term.
+   */
   sealed interface Term {
     val range: Range
 
@@ -248,6 +251,9 @@ object Resolved {
     ) : Term
   }
 
+  /**
+   * A well-scoped pattern.
+   */
   sealed interface Pattern {
     val range: Range
 

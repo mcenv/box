@@ -1,6 +1,5 @@
 package mcx.ast
 
-import kotlinx.collections.immutable.PersistentList
 import mcx.data.NbtType
 import org.eclipse.lsp4j.Range
 
@@ -22,6 +21,9 @@ object Core {
     ) : Definition
   }
 
+  /**
+   * A well-typed term.
+   */
   sealed interface Term {
     object Tag : Term
 
@@ -181,6 +183,9 @@ object Core {
     object Hole : Term
   }
 
+  /**
+   * A well-typed pattern.
+   */
   sealed interface Pattern {
     data class IntOf(
       val value: Int,
@@ -201,169 +206,5 @@ object Core {
     object Drop : Pattern
 
     object Hole : Pattern
-  }
-
-  data class Closure(
-    val values: PersistentList<Lazy<Value>>,
-    val binders: List<Pattern>,
-    val body: Term,
-  )
-
-  sealed interface Value {
-    object Tag : Value
-
-    data class TagOf(
-      val value: NbtType,
-    ) : Value
-
-    data class Type(
-      val tag: Lazy<Value>,
-    ) : Value
-
-    object Bool : Value
-
-    data class BoolOf(
-      val value: Boolean,
-    ) : Value
-
-    data class If(
-      val condition: Value,
-      val thenBranch: Lazy<Value>,
-      val elseBranch: Lazy<Value>,
-    ) : Value
-
-    data class Is(
-      val scrutinee: Lazy<Value>,
-      val scrutineer: Pattern,
-    ) : Value
-
-    object Byte : Value
-
-    data class ByteOf(
-      val value: kotlin.Byte,
-    ) : Value
-
-    object Short : Value
-
-    data class ShortOf(
-      val value: kotlin.Short,
-    ) : Value
-
-    object Int : Value
-
-    data class IntOf(
-      val value: kotlin.Int,
-    ) : Value
-
-    object Long : Value
-
-    data class LongOf(
-      val value: kotlin.Long,
-    ) : Value
-
-    object Float : Value
-
-    data class FloatOf(
-      val value: kotlin.Float,
-    ) : Value
-
-    object Double : Value
-
-    data class DoubleOf(
-      val value: kotlin.Double,
-    ) : Value
-
-    object String : Value
-
-    data class StringOf(
-      val value: kotlin.String,
-    ) : Value
-
-    object ByteArray : Value
-
-    data class ByteArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    object IntArray : Value
-
-    data class IntArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    object LongArray : Value
-
-    data class LongArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    data class List(
-      val element: Lazy<Value>,
-    ) : Value
-
-    data class ListOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    data class Compound(
-      val elements: Map<kotlin.String, Lazy<Value>>,
-    ) : Value
-
-    data class CompoundOf(
-      val elements: Map<kotlin.String, Lazy<Value>>,
-    ) : Value
-
-    data class Union(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    data class Func(
-      val params: kotlin.collections.List<Lazy<Value>>,
-      val result: Closure,
-    ) : Value
-
-    data class FuncOf(
-      val result: Closure,
-    ) : Value
-
-    data class Apply(
-      val func: Value,
-      val args: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
-
-    data class Code(
-      val element: Lazy<Value>,
-    ) : Value
-
-    data class CodeOf(
-      val element: Lazy<Value>,
-    ) : Value
-
-    data class Splice(
-      val element: Value,
-    ) : Value
-
-    data class Let(
-      val binder: Pattern,
-      val init: Value,
-      val body: Value,
-    ) : Value
-
-    data class Var(
-      val name: kotlin.String,
-      val lvl: Lvl,
-    ) : Value
-
-    data class Def(
-      val name: DefinitionLocation,
-      val body: Term?,
-    ) : Value
-
-    data class Meta(
-      val index: kotlin.Int,
-      val source: Range,
-    ) : Value
-
-    object Hole : Value
   }
 }

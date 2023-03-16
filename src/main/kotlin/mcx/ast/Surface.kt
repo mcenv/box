@@ -32,6 +32,9 @@ object Surface {
     }
   }
 
+  /**
+   * A term or pattern that may not be well-typed.
+   */
   sealed interface Term {
     val range: Range
 
