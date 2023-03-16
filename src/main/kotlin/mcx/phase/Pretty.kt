@@ -82,7 +82,7 @@ fun prettyPattern(
 ): String {
   return when (pattern) {
     is Pattern.IntOf      -> pattern.value.toString()
-    is Pattern.CompoundOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
+    is Pattern.CompoundOf -> pattern.elements.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
     is Pattern.CodeOf     -> "`${prettyPattern(pattern.element)}"
     is Pattern.Var        -> pattern.name
     is Pattern.Drop       -> "_"

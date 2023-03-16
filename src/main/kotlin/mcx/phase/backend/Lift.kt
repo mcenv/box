@@ -113,9 +113,9 @@ class Lift private constructor(
           val freeVars = freeVars(term)
           freeVars.forEach { (name, type) -> bind(name, type.second) }
           val capture = L.Pattern.CompoundOf(
-            freeVars.entries
-              .mapIndexed { index, (name, type) -> name to L.Pattern.Var(name, binderSize + index, type.second) }
-              .toMap()
+            freeVars.entries.mapIndexed { index, (name, type) ->
+              name to L.Pattern.Var(name, binderSize + index, type.second)
+            }
           )
           val result = liftTerm(term.result)
           val tag = context.freshId()
@@ -169,7 +169,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value)
       is C.Pattern.CompoundOf -> {
-        val elements = pattern.elements.mapValues { liftPattern(it.value) }
+        val elements = pattern.elements.map { (key, element) -> key to liftPattern(element) }
         L.Pattern.CompoundOf(elements)
       }
       is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
@@ -240,12 +240,12 @@ class Lift private constructor(
     pattern: C.Pattern,
   ): Set<String> {
     return when (pattern) {
-      is C.Pattern.IntOf      -> emptySet()
-      is C.Pattern.CompoundOf -> pattern.elements.values.flatMapTo(hashSetOf()) { boundVars(it) }
-      is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
-      is C.Pattern.Var        -> setOf(pattern.name)
-      is C.Pattern.Drop       -> emptySet()
-      is C.Pattern.Hole       -> unexpectedPattern(pattern)
+      is C.Pattern.IntOf -> emptySet()
+      is C.Pattern.CompoundOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
+      is C.Pattern.CodeOf -> unexpectedPattern(pattern)
+      is C.Pattern.Var -> setOf(pattern.name)
+      is C.Pattern.Drop -> emptySet()
+      is C.Pattern.Hole -> unexpectedPattern(pattern)
     }
   }
 

@@ -192,7 +192,7 @@ object Core {
     ) : Pattern
 
     data class CompoundOf(
-      val elements: Map<String, Pattern>,
+      val elements: List<Pair<String, Pattern>>,
     ) : Pattern
 
     data class CodeOf(

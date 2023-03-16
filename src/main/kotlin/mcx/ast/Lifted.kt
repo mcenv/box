@@ -169,7 +169,7 @@ object Lifted {
     }
 
     data class CompoundOf(
-      val elements: Map<String, Pattern>,
+      val elements: List<Pair<String, Pattern>>,
     ) : Pattern {
       override val type: NbtType get() = NbtType.COMPOUND
     }

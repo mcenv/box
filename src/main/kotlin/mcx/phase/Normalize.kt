@@ -174,7 +174,7 @@ fun bind(
       is Pattern.CompoundOf -> {
         val value = value.value
         if (value is Value.CompoundOf) {
-          binder.elements.forEach { go(it.value, value.elements[it.key]!!) }
+          binder.elements.forEach { (key, element) -> go(element, value.elements[key]!!) }
         }
       }
       is Pattern.CodeOf     -> {
