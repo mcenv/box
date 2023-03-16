@@ -165,7 +165,7 @@ object Core {
 
     data class Var(
       val name: kotlin.String,
-      val level: kotlin.Int,
+      val idx: Idx,
     ) : Term
 
     data class Def(
@@ -196,7 +196,6 @@ object Core {
 
     data class Var(
       val name: String,
-      val level: Int,
     ) : Pattern
 
     object Drop : Pattern
@@ -352,7 +351,7 @@ object Core {
 
     data class Var(
       val name: kotlin.String,
-      val level: kotlin.Int,
+      val lvl: Lvl,
     ) : Value
 
     data class Def(

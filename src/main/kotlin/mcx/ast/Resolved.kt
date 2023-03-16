@@ -228,7 +228,7 @@ object Resolved {
 
     data class Var(
       val name: kotlin.String,
-      val level: kotlin.Int,
+      val idx: Idx,
       override val range: Range,
     ) : Term
 
@@ -268,7 +268,6 @@ object Resolved {
 
     data class Var(
       val name: String,
-      val level: Int,
       override val range: Range,
     ) : Pattern
 

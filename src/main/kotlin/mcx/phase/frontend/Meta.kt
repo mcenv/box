@@ -2,6 +2,7 @@ package mcx.phase.frontend
 
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
+import mcx.ast.Lvl
 import mcx.phase.collect
 import mcx.phase.invoke
 import mcx.phase.quote
@@ -43,7 +44,7 @@ class Meta {
     _unsolvedMetas.clear()
   }
 
-  fun Int.zonk(
+  fun Lvl.zonk(
     term: Term,
   ): Term {
     return when (term) {
@@ -160,14 +161,14 @@ class Meta {
     }
   }
 
-  fun Int.unify(
+  fun Lvl.unify(
     value1: Value,
     value2: Value,
   ): Boolean {
     val value1 = force(value1)
     val value2 = force(value2)
     return when {
-      value1 is Value.Meta                                       -> {
+      value1 is Value.Meta                             -> {
         when (val solution1 = values[value1.index]) {
           null -> {
             values[value1.index] = value2
@@ -176,7 +177,7 @@ class Meta {
           else -> unify(solution1, value2)
         }
       }
-      value2 is Value.Meta                                       -> {
+      value2 is Value.Meta                             -> {
         when (val solution2 = values[value2.index]) {
           null -> {
             values[value2.index] = value1
@@ -243,23 +244,23 @@ class Meta {
         }
       }
       value1 is Value.Union && value2 is Value.Union             -> false // TODO
-      value1 is Value.Func && value2 is Value.Func               -> {
+      value1 is Value.Func && value2 is Value.Func     -> {
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> unify(param1.value, param2.value) } &&
         unify(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf           -> false // TODO
-      value1 is Value.Apply && value2 is Value.Apply             -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf -> false // TODO
+      value1 is Value.Apply && value2 is Value.Apply   -> {
         unify(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unify(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code               -> unify(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf           -> unify(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice           -> unify(value1.element, value2.element)
-      value1 is Value.Var && value2 is Value.Var                 -> value1.level == value2.level
-      value1 is Value.Hole || value2 is Value.Hole               -> true // ?
-      else                                                       -> false
+      value1 is Value.Code && value2 is Value.Code     -> unify(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf -> unify(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice -> unify(value1.element, value2.element)
+      value1 is Value.Var && value2 is Value.Var       -> value1.lvl == value2.lvl
+      value1 is Value.Hole || value2 is Value.Hole     -> true // ?
+      else                                             -> false
     }
   }
 }

@@ -7,7 +7,9 @@ import mcx.ast.Core
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
+import mcx.ast.Lvl
 import mcx.ast.Modifier
+import mcx.ast.toLvl
 import mcx.phase.*
 
 class Stage private constructor() {
@@ -44,8 +46,7 @@ class Stage private constructor() {
   private fun stageTerm(
     term: Term,
   ): Term {
-    val values = persistentListOf<Lazy<Value>>()
-    return values.size.quote(values.evalTerm(term, 0))
+    return Lvl(0).quote(persistentListOf<Lazy<Value>>().evalTerm(term, 0))
   }
 
   private fun PersistentList<Lazy<Value>>.evalTerm(
@@ -195,7 +196,7 @@ class Stage private constructor() {
         if (stage == 0) {
           when (val element = evalTerm(term.element, 1)) {
             is Value.CodeOf -> element.element.value
-            else            -> unexpectedTerm(size.quote(element))
+            else            -> unexpectedTerm(Lvl(size).quote(element))
           }
         } else {
           when (val element = evalTerm(term.element, stage + 1)) {
@@ -216,9 +217,9 @@ class Stage private constructor() {
       }
       is Term.Var         -> {
         if (stage == 0) {
-          Value.Var(term.name, term.level)
+          Value.Var(term.name, Lvl(size).toLvl(term.idx))
         } else {
-          this[term.level].value
+          this[Lvl(size).toLvl(term.idx).value].value
         }
       }
       is Term.Def         -> {

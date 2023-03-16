@@ -1,8 +1,6 @@
 package mcx.phase.frontend
 
-import mcx.ast.DefinitionLocation
-import mcx.ast.Modifier
-import mcx.ast.ModuleLocation
+import mcx.ast.*
 import mcx.lsp.diagnostic
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
@@ -13,6 +11,7 @@ import org.eclipse.lsp4j.Range
 import mcx.ast.Resolved as R
 import mcx.ast.Surface as S
 
+@Suppress("NAME_SHADOWING")
 class Resolve private constructor(
   dependencies: List<Dependency>,
   private val input: Parse.Result,
@@ -153,7 +152,11 @@ class Resolve private constructor(
       }
       is S.Term.Func        -> {
         restoring {
-          val params = term.params.map { (binder, type) -> resolvePattern(binder) to resolveTerm(type) }
+          val params = term.params.map { (binder, type) ->
+            val type = resolveTerm(type)
+            val binder = resolvePattern(binder)
+            binder to type
+          }
           val result = resolveTerm(term.result)
           R.Term.Func(params, result, range)
         }
@@ -178,11 +181,11 @@ class Resolve private constructor(
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, range)
       }
-      is S.Term.Splice -> {
+      is S.Term.Splice      -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, range)
       }
-      is S.Term.Let    -> {
+      is S.Term.Let         -> {
         val init = resolveTerm(term.init)
         restoring {
           val binder = resolvePattern(term.binder)
@@ -190,23 +193,26 @@ class Resolve private constructor(
           R.Term.Let(binder, init, body, range)
         }
       }
-      is S.Term.Var    -> {
-        when (val level = this[term.name]) {
+      is S.Term.Var         -> {
+        when (val level = terms.lastIndexOf(term.name)) {
           -1   -> {
             when (val name = resolveName(term.name, range)) {
               null -> R.Term.Hole(range)
               else -> R.Term.Def(name, range)
             }
           }
-          else -> R.Term.Var(term.name, level, range)
+          else -> {
+            val index = Lvl(terms.size).toIdx(Lvl(level))
+            R.Term.Var(term.name, index, range)
+          }
         }
       }
-      is S.Term.As     -> {
+      is S.Term.As          -> {
         val element = resolveTerm(term.element)
         val type = resolveTerm(term.type)
         R.Term.As(element, type, range)
       }
-      is S.Term.Hole   -> R.Term.Hole(range)
+      is S.Term.Hole        -> R.Term.Hole(range)
     }
   }
 
@@ -228,7 +234,7 @@ class Resolve private constructor(
           "_"  -> R.Pattern.Drop(pattern.range)
           else -> {
             bind(pattern.name)
-            R.Pattern.Var(pattern.name, lastIndex, pattern.range)
+            R.Pattern.Var(pattern.name, pattern.range)
           }
         }
       }
@@ -269,24 +275,19 @@ class Resolve private constructor(
   }
 
   private class Env private constructor(
-    private val terms: MutableList<String>,
+    private val _terms: MutableList<String>,
   ) {
-    private var savedSize: Int = 0
-    val lastIndex: Int get() = terms.lastIndex
-
-    operator fun get(name: String): Int {
-      return terms.lastIndexOf(name)
-    }
+    val terms: List<String> get() = _terms
 
     fun bind(name: String) {
-      terms += name
+      _terms += name
     }
 
     inline fun <R> restoring(block: Env.() -> R): R {
-      savedSize = terms.size
+      val restore = _terms.size
       val result = this.block()
-      repeat(terms.size - savedSize) {
-        terms.removeLast()
+      repeat(_terms.size - restore) {
+        _terms.removeLast()
       }
       return result
     }

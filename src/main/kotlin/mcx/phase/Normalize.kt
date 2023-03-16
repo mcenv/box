@@ -7,6 +7,9 @@ import mcx.ast.Core.Closure
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Core.Value
+import mcx.ast.Lvl
+import mcx.ast.toIdx
+import mcx.ast.toLvl
 
 operator fun Closure.invoke(
   args: List<Lazy<Value>>,
@@ -14,7 +17,7 @@ operator fun Closure.invoke(
   return (values + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).eval(body)
 }
 
-fun Int.collect(
+fun Lvl.collect(
   patterns: List<Pattern>,
 ): List<Lazy<Value>> {
   val vars = mutableListOf<Lazy<Value>>()
@@ -148,14 +151,14 @@ fun PersistentList<Lazy<Value>>.eval(
         else            -> Value.Splice(element)
       }
     }
-    is Term.Let         -> {
+    is Term.Let    -> {
       val init = lazy { eval(term.init) }
       (this + bind(term.binder, init)).eval(term.body)
     }
-    is Term.Var         -> this[term.level].value
-    is Term.Def         -> term.body?.let { eval(it) } ?: Value.Def(term.name, null)
-    is Term.Meta        -> Value.Meta(term.index, term.source)
-    is Term.Hole        -> Value.Hole
+    is Term.Var    -> this[Lvl(size).toLvl(term.idx).value].value
+    is Term.Def    -> term.body?.let { eval(it) } ?: Value.Def(term.name, null)
+    is Term.Meta   -> Value.Meta(term.index, term.source)
+    is Term.Hole   -> Value.Hole
   }
 }
 
@@ -214,25 +217,25 @@ fun match(
   }
 }
 
-fun Int.quote(
+fun Lvl.quote(
   value: Value,
 ): Term {
   return when (value) {
-    is Value.Tag         -> Term.Tag
-    is Value.TagOf       -> Term.TagOf(value.value)
-    is Value.Type        -> {
+    is Value.Tag    -> Term.Tag
+    is Value.TagOf  -> Term.TagOf(value.value)
+    is Value.Type   -> {
       val tag = quote(value.tag.value)
       Term.Type(tag)
     }
-    is Value.Bool        -> Term.Bool
-    is Value.BoolOf      -> Term.BoolOf(value.value)
-    is Value.If          -> {
+    is Value.Bool   -> Term.Bool
+    is Value.BoolOf -> Term.BoolOf(value.value)
+    is Value.If     -> {
       val condition = quote(value.condition)
       val thenBranch = quote(value.thenBranch.value)
       val elseBranch = quote(value.elseBranch.value)
       Term.If(condition, thenBranch, elseBranch)
     }
-    is Value.Is          -> {
+    is Value.Is     -> {
       val scrutinee = quote(value.scrutinee.value)
       Term.Is(scrutinee, value.scrutineer)
     }
@@ -302,26 +305,26 @@ fun Int.quote(
       val args = value.args.map { quote(it.value) }
       Term.Apply(func, args)
     }
-    is Value.Code        -> {
+    is Value.Code   -> {
       val element = quote(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf      -> {
+    is Value.CodeOf -> {
       val element = quote(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice      -> {
+    is Value.Splice -> {
       val element = quote(value.element)
       Term.Splice(element)
     }
-    is Value.Let         -> {
+    is Value.Let    -> {
       val init = quote(value.init)
       val body = collect(listOf(value.binder)).let { (this + it.size).quote(value.body) }
       Term.Let(value.binder, init, body)
     }
-    is Value.Var         -> Term.Var(value.name, value.level)
-    is Value.Def         -> Term.Def(value.name, value.body)
-    is Value.Meta        -> Term.Meta(value.index, value.source)
-    is Value.Hole        -> Term.Hole
+    is Value.Var    -> Term.Var(value.name, toIdx(value.lvl))
+    is Value.Def    -> Term.Def(value.name, value.body)
+    is Value.Meta   -> Term.Meta(value.index, value.source)
+    is Value.Hole   -> Term.Hole
   }
 }

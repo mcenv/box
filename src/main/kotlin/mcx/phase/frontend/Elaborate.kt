@@ -63,8 +63,8 @@ class Elaborate private constructor(
         val body = definition.body?.let { ctx.checkTerm(it, stage, ctx.freeze().eval(type)) }
         with(meta) {
           resetUnsolvedMetas()
-          val type = 0.zonk(type)
-          val body = body?.let { 0.zonk(it) }
+          val type = Lvl(0).zonk(type)
+          val body = body?.let { Lvl(0).zonk(it) }
           meta.unsolvedMetas.forEach {
             diagnostics += unsolvedMeta(it.index, it.source)
           }
@@ -194,12 +194,12 @@ class Elaborate private constructor(
         restoring {
           val (params, paramsTypes) = term.params.map { synthPattern(it, stage) }.unzip()
           val (result, resultType) = synthTerm(term.result, stage)
-          val type = C.Value.Func(paramsTypes.map { lazyOf(it) }, C.Closure(freeze(), params, (size + size.collect(params).size).quote(resultType)))
+          val type = C.Value.Func(paramsTypes.map { lazyOf(it) }, C.Closure(freeze(), params, (next + next.collect(params).size).quote(resultType)))
           C.Term.FuncOf(params, result) to type
         }
       }
       term is R.Term.FuncOf && check<C.Value.Func>(type)         -> {
-        val size = size
+        val size = next
         restoring {
           if (type.params.size == term.params.size) {
             val (params, _) = term.params.mapIndexed { index, param ->
@@ -221,11 +221,11 @@ class Elaborate private constructor(
             val result = C.Closure(
               freeze(),
               params.map { C.Pattern.Drop },
-              size.quote(meta.fresh(term.func.range)),
+              next.quote(meta.fresh(term.func.range)),
             )
             C.Value.Func(params, result).also {
-              if (!size.sub(funcType, it)) {
-                return invalidTerm(size.typeMismatch(funcType, it, term.func.range), type)
+              if (!next.sub(funcType, it)) {
+                return invalidTerm(next.typeMismatch(funcType, it, term.func.range), type)
               }
             }
           }
@@ -274,8 +274,8 @@ class Elaborate private constructor(
         val (init, initType) = synthTerm(term.init, stage)
         restoring {
           val (binder, binderType) = synthPattern(term.binder, stage)
-          if (!size.sub(initType, binderType)) {
-            diagnostics += size.typeMismatch(initType, binderType, term.init.range)
+          if (!next.sub(initType, binderType)) {
+            diagnostics += next.typeMismatch(initType, binderType, term.init.range)
           }
           val (body, bodyType) = elaborateTerm(term.body, stage, type)
           val type = type ?: bodyType
@@ -283,10 +283,9 @@ class Elaborate private constructor(
         }
       }
       term is R.Term.Var && synth(type)           -> {
-        val level = this[term.name]
-        val entry = entries[level]
+        val entry = this[next.toLvl(term.idx)]
         if (stage == entry.stage) {
-          C.Term.Var(term.name, level) to entry.type
+          C.Term.Var(term.name, term.idx) to entry.type
         } else {
           invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
@@ -313,15 +312,15 @@ class Elaborate private constructor(
       }
       check<C.Value>(type)                        -> {
         val synth = synthTerm(term, stage)
-        if (size.sub(synth.second, type)) {
+        if (next.sub(synth.second, type)) {
           synth
         } else {
-          invalidTerm(size.typeMismatch(type, synth.second, term.range), type)
+          invalidTerm(next.typeMismatch(type, synth.second, term.range), type)
         }
       }
       else                                        -> error("unreachable: $term $stage $type")
     }.also { (_, type) ->
-      size.hover(type, term.range)
+      next.hover(type, term.range)
     }
   }
 
@@ -367,7 +366,7 @@ class Elaborate private constructor(
       pattern is R.Pattern.Var && match<C.Value>(type)                 -> {
         val type = type ?: meta.fresh(pattern.range)
         push(pattern.name, stage, type, null)
-        C.Pattern.Var(pattern.name, pattern.level) to type
+        C.Pattern.Var(pattern.name) to type
       }
       pattern is R.Pattern.Drop && match<C.Value>(type)                -> {
         val type = type ?: meta.fresh(pattern.range)
@@ -383,19 +382,19 @@ class Elaborate private constructor(
       }
       check<C.Value>(type)                                             -> {
         val synth = synthPattern(pattern, stage)
-        if (size.sub(synth.second, type)) {
+        if (next.sub(synth.second, type)) {
           synth
         } else {
-          invalidPattern(size.typeMismatch(type, synth.second, pattern.range), type)
+          invalidPattern(next.typeMismatch(type, synth.second, pattern.range), type)
         }
       }
       else                                                             -> error("unreachable: $pattern $stage $type")
     }.also { (_, type) ->
-      size.hover(type, pattern.range)
+      next.hover(type, pattern.range)
     }
   }
 
-  private fun Int.sub(
+  private fun Lvl.sub(
     value1: C.Value,
     value2: C.Value,
   ): Boolean {
@@ -431,7 +430,7 @@ class Elaborate private constructor(
     return type is V?
   }
 
-  private fun Int.hover(
+  private fun Lvl.hover(
     type: C.Value,
     range: Range,
   ) {
@@ -440,7 +439,7 @@ class Elaborate private constructor(
     }
   }
 
-  private fun Int.typeMismatch(
+  private fun Lvl.typeMismatch(
     expected: C.Value,
     actual: C.Value,
     range: Range,
@@ -478,10 +477,10 @@ class Elaborate private constructor(
     private val _values: MutableList<Lazy<C.Value>>,
   ) {
     val entries: List<Entry> get() = _entries
-    val size: Int get() = _entries.size
+    val next: Lvl get() = Lvl(_entries.size)
 
-    operator fun get(name: String): Int {
-      return _entries.indexOfLast { it.name == name }.also { require(it != -1) }
+    operator fun get(level: Lvl): Entry {
+      return _entries[level.value]
     }
 
     fun push(
@@ -490,7 +489,7 @@ class Elaborate private constructor(
       type: C.Value,
       value: Lazy<C.Value>?,
     ) {
-      _values += value ?: lazyOf(C.Value.Var(name, size))
+      _values += value ?: lazyOf(C.Value.Var(name, next))
       _entries += Entry(name, stage, type)
     }
 
@@ -504,9 +503,9 @@ class Elaborate private constructor(
     }
 
     inline fun <R> restoring(block: Ctx.() -> R): R {
-      val restore = size
+      val restore = next.value
       val result = block(this)
-      repeat(size - restore) { pop() }
+      repeat(next.value - restore) { pop() }
       return result
     }
 

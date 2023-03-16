@@ -229,7 +229,7 @@ class Lift private constructor(
       is C.Term.CodeOf     -> unexpectedTerm(term)
       is C.Term.Splice     -> unexpectedTerm(term)
       is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to (term.level to liftType()))
+      is C.Term.Var        -> linkedMapOf(term.name to (term.idx.value to liftType()))
       is C.Term.Def        -> linkedMapOf()
       is C.Term.Meta       -> unexpectedTerm(term)
       is C.Term.Hole       -> unexpectedTerm(term)
