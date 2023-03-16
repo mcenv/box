@@ -6,6 +6,7 @@ import mcx.ast.Core.Definition
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Modifier
+import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.phase.*
 
@@ -29,8 +30,9 @@ class Stage private constructor() {
           Modifier.CONST !in definition.modifiers &&
           Modifier.BUILTIN !in definition.modifiers
         ) {
+          val type = stageTerm(definition.type)
           val body = stageTerm(definition.body!!)
-          Definition.Def(definition.modifiers, definition.name, definition.type, body)
+          Definition.Def(definition.modifiers, definition.name, type, body)
         } else {
           null
         }
@@ -44,7 +46,7 @@ class Stage private constructor() {
     term: Term,
   ): Term {
     val env: Env = persistentListOf()
-    return Lvl(env.size).quote(env.evalTerm(term, 0))
+    return Lvl(env.size).quoteValue(env.evalTerm(term, 0), 0)
   }
 
   private fun Env.evalTerm(
@@ -52,16 +54,10 @@ class Stage private constructor() {
     stage: Int,
   ): Value {
     return when (term) {
-      is Term.Tag         -> {
-        if (stage == 0) {
-          unexpectedTerm(term)
-        } else {
-          Value.Tag
-        }
-      }
+      is Term.Tag         -> Value.Tag // ?
       is Term.TagOf       -> Value.TagOf(term.value)
       is Term.Type        -> {
-        val tag = lazy { evalTerm(term, stage) }
+        val tag = lazy { evalTerm(term.tag, stage) }
         Value.Type(tag)
       }
       is Term.Bool        -> Value.Bool
@@ -168,7 +164,7 @@ class Stage private constructor() {
           val func = evalTerm(term.func, stage)
           val args = term.args.map { lazy { evalTerm(it, stage) } }
           when (func) {
-            is Value.FuncOf -> func.result(args)
+            is Value.FuncOf -> func.result(args, stage)
             is Value.Def    -> lookupBuiltin(func.name)!!.eval(args) ?: Value.Apply(func, args)
             else            -> Value.Apply(func, args)
           }
@@ -194,7 +190,7 @@ class Stage private constructor() {
         if (stage == 0) {
           when (val element = evalTerm(term.element, 1)) {
             is Value.CodeOf -> element.element.value
-            else            -> unexpectedTerm(Lvl(size).quote(element))
+            else            -> unexpectedTerm(Lvl(size).quoteValue(element, stage))
           }
         } else {
           when (val element = evalTerm(term.element, stage + 1)) {
@@ -215,7 +211,7 @@ class Stage private constructor() {
       }
       is Term.Var         -> {
         if (stage == 0) {
-          Value.Var(term.name, Lvl(size).toLvl(term.idx))
+          Value.Var(term.name, Lvl(size).toLvl(term.idx), Lvl(size).quoteValue(evalTerm(term.type, stage), stage))
         } else {
           this[Lvl(size).toLvl(term.idx).value].value
         }
@@ -230,6 +226,127 @@ class Stage private constructor() {
       is Term.Meta        -> unexpectedTerm(term)
       is Term.Hole        -> unexpectedTerm(term)
     }
+  }
+
+  // TODO: check stage
+  private fun Lvl.quoteValue(
+    value: Value,
+    stage: Int,
+  ): Term {
+    return when (value) {
+      is Value.Tag         -> Term.Tag
+      is Value.TagOf       -> Term.TagOf(value.value)
+      is Value.Type        -> {
+        val tag = quoteValue(value.tag.value, stage)
+        Term.Type(tag)
+      }
+      is Value.Bool        -> Term.Bool
+      is Value.BoolOf      -> Term.BoolOf(value.value)
+      is Value.If          -> {
+        val condition = quoteValue(value.condition, stage)
+        val thenBranch = quoteValue(value.thenBranch.value, stage)
+        val elseBranch = quoteValue(value.elseBranch.value, stage)
+        Term.If(condition, thenBranch, elseBranch)
+      }
+      is Value.Is          -> {
+        val scrutinee = quoteValue(value.scrutinee.value, stage)
+        Term.Is(scrutinee, value.scrutineer)
+      }
+      is Value.Byte        -> Term.Byte
+      is Value.ByteOf      -> Term.ByteOf(value.value)
+      is Value.Short       -> Term.Short
+      is Value.ShortOf     -> Term.ShortOf(value.value)
+      is Value.Int         -> Term.Int
+      is Value.IntOf       -> Term.IntOf(value.value)
+      is Value.Long        -> Term.Long
+      is Value.LongOf      -> Term.LongOf(value.value)
+      is Value.Float       -> Term.Float
+      is Value.FloatOf     -> Term.FloatOf(value.value)
+      is Value.Double      -> Term.Double
+      is Value.DoubleOf    -> Term.DoubleOf(value.value)
+      is Value.String      -> Term.String
+      is Value.StringOf    -> Term.StringOf(value.value)
+      is Value.ByteArray   -> Term.ByteArray
+      is Value.ByteArrayOf -> {
+        val elements = value.elements.map { quoteValue(it.value, stage) }
+        Term.ByteArrayOf(elements)
+      }
+      is Value.IntArray    -> Term.IntArray
+      is Value.IntArrayOf  -> {
+        val elements = value.elements.map { quoteValue(it.value, stage) }
+        Term.IntArrayOf(elements)
+      }
+      is Value.LongArray   -> Term.LongArray
+      is Value.LongArrayOf -> {
+        val elements = value.elements.map { quoteValue(it.value, stage) }
+        Term.LongArrayOf(elements)
+      }
+      is Value.List        -> {
+        val element = quoteValue(value.element.value, stage)
+        Term.List(element)
+      }
+      is Value.ListOf      -> {
+        val elements = value.elements.map { quoteValue(it.value, stage) }
+        Term.ListOf(elements)
+      }
+      is Value.Compound    -> {
+        val elements = value.elements.mapValues { quoteValue(it.value.value, stage) }
+        Term.Compound(elements)
+      }
+      is Value.CompoundOf  -> {
+        val elements = value.elements.mapValues { quoteValue(it.value.value, stage) }
+        Term.CompoundOf(elements)
+      }
+      is Value.Union       -> {
+        val elements = value.elements.map { quoteValue(it.value, stage) }
+        Term.Union(elements)
+      }
+      is Value.Func        -> {
+        val params = (value.result.binders zip value.params).map { (binder, param) ->
+          val param = quoteValue(param.value, stage)
+          binder to param
+        }
+        val result = collect(value.result.binders).let { (this + it.size).quoteValue(value.result(it, stage), stage) }
+        Term.Func(params, result)
+      }
+      is Value.FuncOf      -> {
+        val result = collect(value.result.binders).let { (this + it.size).quoteValue(value.result(it, stage), stage) }
+        Term.FuncOf(value.result.binders, result)
+      }
+      is Value.Apply       -> {
+        val func = quoteValue(value.func, stage)
+        val args = value.args.map { quoteValue(it.value, stage) }
+        Term.Apply(func, args)
+      }
+      is Value.Code        -> {
+        val element = quoteValue(value.element.value, stage - 1)
+        Term.Code(element)
+      }
+      is Value.CodeOf      -> {
+        val element = quoteValue(value.element.value, stage - 1)
+        Term.CodeOf(element)
+      }
+      is Value.Splice      -> {
+        val element = quoteValue(value.element, stage + 1)
+        Term.Splice(element)
+      }
+      is Value.Let         -> {
+        val init = quoteValue(value.init, stage)
+        val body = collect(listOf(value.binder)).let { (this + it.size).quoteValue(value.body, stage) }
+        Term.Let(value.binder, init, body)
+      }
+      is Value.Var         -> Term.Var(value.name, toIdx(value.lvl), value.type)
+      is Value.Def         -> Term.Def(value.name, value.body)
+      is Value.Meta        -> Term.Meta(value.index, value.source)
+      is Value.Hole        -> Term.Hole
+    }
+  }
+
+  private operator fun Closure.invoke(
+    args: List<Lazy<Value>>,
+    stage: Int,
+  ): Value {
+    return (env + (binders zip args).flatMap { (binder, arg) -> bind(binder, arg) }).evalTerm(body, stage)
   }
 
   companion object {
