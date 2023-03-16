@@ -1,6 +1,5 @@
 package mcx.phase.backend
 
-import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Definition
@@ -47,7 +46,7 @@ class Stage private constructor() {
     return Lvl(0).quote(persistentListOf<Lazy<Value>>().evalTerm(term, 0))
   }
 
-  private fun PersistentList<Lazy<Value>>.evalTerm(
+  private fun Env.evalTerm(
     term: Term,
     stage: Int,
   ): Value {

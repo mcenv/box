@@ -33,7 +33,7 @@ fun Lvl.collect(
   return vars
 }
 
-fun PersistentList<Lazy<Value>>.eval(
+fun Env.eval(
   term: Term,
 ): Value {
   return when (term) {

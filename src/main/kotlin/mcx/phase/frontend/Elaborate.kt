@@ -498,7 +498,7 @@ class Elaborate private constructor(
       _entries.removeLast()
     }
 
-    fun freeze(): PersistentList<Lazy<Value>> {
+    fun freeze(): Env {
       return _values.toPersistentList()
     }
 

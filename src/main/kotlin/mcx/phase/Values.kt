@@ -192,8 +192,10 @@ sealed interface Value {
   object Hole : Value
 }
 
+typealias Env = PersistentList<Lazy<Value>>
+
 class Closure(
-  val values: PersistentList<Lazy<Value>>,
+  val values: Env,
   val binders: List<Pattern>,
   val body: Term,
 )
