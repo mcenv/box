@@ -290,7 +290,7 @@ class Elaborate private constructor(
       term is R.Term.Var && synth(type)                        -> {
         val entry = this[next.toLvl(term.idx)]
         if (stage == entry.stage) {
-          C.Term.Var(term.name, term.idx, next.quote(entry.type)) to entry.type
+          C.Term.Var(term.name, term.idx) to entry.type
         } else {
           invalidTerm(stageMismatch(stage, entry.stage, term.range), entry.type)
         }
@@ -371,8 +371,9 @@ class Elaborate private constructor(
       }
       pattern is R.Pattern.Var && match<Value>(type)                 -> {
         val type = type ?: meta.fresh(pattern.range)
+        val quotedType = next.quote(type)
         push(pattern.name, stage, type, null)
-        C.Pattern.Var(pattern.name, next.quote(type)) to type
+        C.Pattern.Var(pattern.name, quotedType) to type
       }
       pattern is R.Pattern.Drop && match<Value>(type)                -> {
         val type = type ?: meta.fresh(pattern.range)
@@ -516,7 +517,7 @@ class Elaborate private constructor(
       type: Value,
       value: Lazy<Value>?,
     ) {
-      _values += value ?: lazyOf(Value.Var(name, next, next.quote(type)))
+      _values += value ?: lazyOf(Value.Var(name, next))
       _entries += Entry(name, stage, type)
     }
 

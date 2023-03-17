@@ -133,29 +133,26 @@ class Meta {
         val args = term.args.map { zonkTerm(it) }
         Term.Apply(func, args)
       }
-      is Term.Code        -> {
+      is Term.Code   -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
-      is Term.CodeOf      -> {
+      is Term.CodeOf -> {
         val element = zonkTerm(term.element)
         Term.CodeOf(element)
       }
-      is Term.Splice      -> {
+      is Term.Splice -> {
         val element = zonkTerm(term.element)
         Term.Splice(element)
       }
-      is Term.Let         -> {
+      is Term.Let    -> {
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         Term.Let(term.binder, init, body)
       }
-      is Term.Var         -> {
-        val type = zonkTerm(term.type)
-        Term.Var(term.name, term.idx, type)
-      }
-      is Term.Def         -> term
-      is Term.Meta        -> {
+      is Term.Var    -> Term.Var(term.name, term.idx)
+      is Term.Def    -> term
+      is Term.Meta   -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
             _unsolvedMetas += term
@@ -164,7 +161,7 @@ class Meta {
           else -> quote(solution)
         }
       }
-      is Term.Hole        -> term
+      is Term.Hole   -> term
     }
   }
 
