@@ -1,8 +1,8 @@
-export def not : func (bool) -> bool :=
+export def not : func (a : bool) -> bool :=
   \(a) -> if a then false else true;
 
-export def and : func (bool, bool) -> bool :=
+export def and : func (a : bool, b : bool) -> bool :=
   \(a, b) -> if a then b else false;
 
-export def or : func (bool, bool) -> bool :=
+export def or : func (a : bool, b : bool) -> bool :=
   \(a, b) -> if a then true else b;

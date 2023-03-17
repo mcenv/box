@@ -2,5 +2,5 @@ export def end : type end_tag := union {};
 
 export builtin const def ++ : func (string, string) -> string;
 
-export const def identity : func (τ : tag) -> code func (α : type τ) -> func (α) -> α :=
-  \(_) -> `\(_) -> \(a) -> a;
+export const def identity : func (τ : tag) -> code func (α : type τ) -> func (a : α) -> α :=
+  \(τ) -> `\(α) -> \(a) -> a;

@@ -205,6 +205,11 @@ class Elaborate private constructor(
             val (params, _) = term.params.mapIndexed { index, param ->
               elaboratePattern(param, stage, type.params.getOrNull(index)?.value)
             }.unzip()
+            (params zip type.result.binders).forEachIndexed { index, (actual, expected) ->
+              if (!convPattern(actual, expected)) {
+                diagnostics += patternMismatch(expected, actual, term.params[index].range)
+              }
+            }
             val result = checkTerm(term.result, stage, type.result(size.collect(type.result.binders)))
             C.Term.FuncOf(params, result) to type
           } else {
@@ -395,6 +400,27 @@ class Elaborate private constructor(
     }
   }
 
+  private fun convPattern(
+    pattern1: C.Pattern,
+    pattern2: C.Pattern,
+  ): Boolean {
+    return when {
+      pattern1 is C.Pattern.IntOf && pattern2 is C.Pattern.IntOf           -> pattern1.value == pattern2.value
+      pattern1 is C.Pattern.CompoundOf && pattern2 is C.Pattern.CompoundOf -> {
+        pattern1.elements.size == pattern2.elements.size &&
+        (pattern1.elements zip pattern2.elements).all { (element1, element2) ->
+          element1.first == element2.first &&
+          convPattern(element1.second, element2.second)
+        }
+      }
+      pattern1 is C.Pattern.CodeOf && pattern2 is C.Pattern.CodeOf         -> convPattern(pattern1.element, pattern2.element)
+      pattern1 is C.Pattern.Var && pattern2 is C.Pattern.Var               -> pattern1.name == pattern2.name
+      pattern1 is C.Pattern.Drop && pattern2 is C.Pattern.Drop             -> true
+      pattern1 is C.Pattern.Hole || pattern2 is C.Pattern.Hole             -> false
+      else                                                                 -> false
+    }
+  }
+
   private fun Lvl.sub(
     value1: Value,
     value2: Value,
@@ -570,6 +596,21 @@ class Elaborate private constructor(
         """arity mismatch:
           |  expected: $expected
           |  actual  : $actual
+        """.trimMargin(),
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun patternMismatch(
+      expected: C.Pattern,
+      actual: C.Pattern,
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        """pattern mismatch:
+          |  expected: ${prettyPattern(expected)}
+          |  actual  : ${prettyPattern(actual)}
         """.trimMargin(),
         DiagnosticSeverity.Error,
       )
