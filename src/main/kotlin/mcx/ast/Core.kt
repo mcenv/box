@@ -25,7 +25,9 @@ object Core {
    * A well-typed term.
    */
   sealed interface Term {
-    object Tag : Term
+    object Tag : Term {
+      override fun toString(): kotlin.String = "Tag"
+    }
 
     data class TagOf(
       val value: NbtType,
@@ -35,7 +37,9 @@ object Core {
       val tag: Term,
     ) : Term
 
-    object Bool : Term
+    object Bool : Term {
+      override fun toString(): kotlin.String = "Bool"
+    }
 
     data class BoolOf(
       val value: Boolean,
@@ -52,61 +56,81 @@ object Core {
       val scrutineer: Pattern,
     ) : Term
 
-    object Byte : Term
+    object Byte : Term {
+      override fun toString(): kotlin.String = "Byte"
+    }
 
     data class ByteOf(
       val value: kotlin.Byte,
     ) : Term
 
-    object Short : Term
+    object Short : Term {
+      override fun toString(): kotlin.String = "Short"
+    }
 
     data class ShortOf(
       val value: kotlin.Short,
     ) : Term
 
-    object Int : Term
+    object Int : Term {
+      override fun toString(): kotlin.String = "Int"
+    }
 
     data class IntOf(
       val value: kotlin.Int,
     ) : Term
 
-    object Long : Term
+    object Long : Term {
+      override fun toString(): kotlin.String = "Long"
+    }
 
     data class LongOf(
       val value: kotlin.Long,
     ) : Term
 
-    object Float : Term
+    object Float : Term {
+      override fun toString(): kotlin.String = "Float"
+    }
 
     data class FloatOf(
       val value: kotlin.Float,
     ) : Term
 
-    object Double : Term
+    object Double : Term {
+      override fun toString(): kotlin.String = "Double"
+    }
 
     data class DoubleOf(
       val value: kotlin.Double,
     ) : Term
 
-    object String : Term
+    object String : Term {
+      override fun toString(): kotlin.String = "String"
+    }
 
     data class StringOf(
       val value: kotlin.String,
     ) : Term
 
-    object ByteArray : Term
+    object ByteArray : Term {
+      override fun toString(): kotlin.String = "ByteArray"
+    }
 
     data class ByteArrayOf(
       val elements: kotlin.collections.List<Term>,
     ) : Term
 
-    object IntArray : Term
+    object IntArray : Term {
+      override fun toString(): kotlin.String = "IntArray"
+    }
 
     data class IntArrayOf(
       val elements: kotlin.collections.List<Term>,
     ) : Term
 
-    object LongArray : Term
+    object LongArray : Term {
+      override fun toString(): kotlin.String = "LongArray"
+    }
 
     data class LongArrayOf(
       val elements: kotlin.collections.List<Term>,
@@ -168,7 +192,6 @@ object Core {
     data class Var(
       val name: kotlin.String,
       val idx: Idx,
-      val type: Term,
     ) : Term
 
     data class Def(
@@ -181,7 +204,9 @@ object Core {
       val source: Range,
     ) : Term
 
-    object Hole : Term
+    object Hole : Term {
+      override fun toString(): kotlin.String = "Hole"
+    }
   }
 
   /**
@@ -205,8 +230,12 @@ object Core {
       val type: Term,
     ) : Pattern
 
-    object Drop : Pattern
+    object Drop : Pattern {
+      override fun toString(): String = "Drop"
+    }
 
-    object Hole : Pattern
+    object Hole : Pattern {
+      override fun toString(): String = "Hole"
+    }
   }
 }
