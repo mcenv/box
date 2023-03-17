@@ -143,8 +143,7 @@ sealed interface Value {
     val result: Closure,
   ) : Value
 
-  @JvmInline
-  value class FuncOf(
+  class FuncOf(
     val result: Closure,
   ) : Value
 
@@ -153,28 +152,13 @@ sealed interface Value {
     val args: kotlin.collections.List<Lazy<Value>>,
   ) : Value
 
-  @JvmInline
-  value class Code(
-    val element: Lazy<Value>,
-  ) : Value
-
-  @JvmInline
-  value class CodeOf(
-    val element: Lazy<Value>,
-  ) : Value
-
-  @JvmInline
-  value class Splice(
-    val element: Value,
-  ) : Value
-
   class Let(
     val binder: Pattern,
     val init: Value,
     val body: Value,
   ) : Value
 
-  class Var(
+  data class Var(
     val name: kotlin.String,
     val lvl: Lvl,
   ) : Value

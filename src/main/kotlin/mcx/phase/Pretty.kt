@@ -64,9 +64,6 @@ fun prettyTerm(
       is Term.Func        -> "func ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${0.go(type)}" }} -> ${0.go(term.result)}"
       is Term.FuncOf      -> "\\${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${0.go(term.result)}"
       is Term.Apply       -> par(1, "${2.go(term.func)}${term.args.joinToString(", ", "(", ")") { 0.go(it) }}")
-      is Term.Code        -> "code ${2.go(term.element)}"
-      is Term.CodeOf      -> "`${2.go(term.element)}"
-      is Term.Splice      -> "$${2.go(term.element)}"
       is Term.Let         -> "let ${prettyPattern(term.binder)} = ${0.go(term.init)};\n${0.go(term.body)}"
       is Term.Var         -> term.name
       is Term.Def         -> term.name.toString()
@@ -83,7 +80,6 @@ fun prettyPattern(
   return when (pattern) {
     is Pattern.IntOf      -> pattern.value.toString()
     is Pattern.CompoundOf -> pattern.elements.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
-    is Pattern.CodeOf     -> "`${prettyPattern(pattern.element)}"
     is Pattern.Var        -> pattern.name
     is Pattern.Drop       -> "_"
     is Pattern.Hole       -> "??"

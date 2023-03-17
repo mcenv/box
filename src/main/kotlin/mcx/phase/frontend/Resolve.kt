@@ -82,7 +82,6 @@ class Resolve private constructor(
   ): R.Term {
     val range = term.range
     return when (term) {
-      is S.Term.Tag         -> R.Term.Tag(range)
       is S.Term.TagOf       -> R.Term.TagOf(term.value, range)
       is S.Term.Type        -> {
         val tag = resolveTerm(term.tag)
@@ -173,18 +172,6 @@ class Resolve private constructor(
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
-      is S.Term.Code        -> {
-        val element = resolveTerm(term.element)
-        R.Term.Code(element, range)
-      }
-      is S.Term.CodeOf      -> {
-        val element = resolveTerm(term.element)
-        R.Term.CodeOf(element, range)
-      }
-      is S.Term.Splice      -> {
-        val element = resolveTerm(term.element)
-        R.Term.Splice(element, range)
-      }
       is S.Term.Let         -> {
         val init = resolveTerm(term.init)
         restoring {
@@ -224,10 +211,6 @@ class Resolve private constructor(
       is S.Term.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.CompoundOf(elements, pattern.range)
-      }
-      is S.Term.CodeOf     -> {
-        val element = resolvePattern(pattern.element)
-        R.Pattern.CodeOf(element, pattern.range)
       }
       is S.Term.Var        -> {
         when (pattern.name) {

@@ -28,7 +28,7 @@ export builtin def to_byte : func (int) -> byte;
 
 export builtin def to_short : func (int) -> short;
 
-export def to_int : func (int) -> int := $(identity(int_tag))(int);
+export def to_int : func (int) -> int := \(self) -> self;
 
 export builtin def to_long : func (int) -> long;
 

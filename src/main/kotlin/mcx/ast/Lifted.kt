@@ -11,7 +11,7 @@ object Lifted {
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val params: List<Pattern>,
-      val body: Term,
+      val body: Term?,
       val restore: Int?,
     ) : Definition
   }

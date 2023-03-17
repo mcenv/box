@@ -38,10 +38,6 @@ object Resolved {
   sealed interface Term {
     val range: Range
 
-    data class Tag(
-      override val range: Range,
-    ) : Term
-
     data class TagOf(
       val value: NbtType,
       override val range: Range,
@@ -207,21 +203,6 @@ object Resolved {
       override val range: Range,
     ) : Term
 
-    data class Code(
-      val element: Term,
-      override val range: Range,
-    ) : Term
-
-    data class CodeOf(
-      val element: Term,
-      override val range: Range,
-    ) : Term
-
-    data class Splice(
-      val element: Term,
-      override val range: Range,
-    ) : Term
-
     data class Let(
       val binder: Pattern,
       val init: Term,
@@ -264,11 +245,6 @@ object Resolved {
 
     data class CompoundOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val range: Range,
-    ) : Pattern
-
-    data class CodeOf(
-      val element: Pattern,
       override val range: Range,
     ) : Pattern
 

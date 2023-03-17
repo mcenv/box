@@ -171,18 +171,6 @@ object Core {
       val args: kotlin.collections.List<Term>,
     ) : Term
 
-    data class Code(
-      val element: Term,
-    ) : Term
-
-    data class CodeOf(
-      val element: Term,
-    ) : Term
-
-    data class Splice(
-      val element: Term,
-    ) : Term
-
     data class Let(
       val binder: Pattern,
       val init: Term,
@@ -221,13 +209,8 @@ object Core {
       val elements: List<Pair<String, Pattern>>,
     ) : Pattern
 
-    data class CodeOf(
-      val element: Pattern,
-    ) : Pattern
-
     data class Var(
       val name: String,
-      val type: Term,
     ) : Pattern
 
     object Drop : Pattern {

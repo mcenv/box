@@ -1,11 +1,3 @@
-import {
-  int::-,
-  int::=,
-}
-
 export builtin def size : func (string) -> int;
 
-export const rec def repeat : func (self : string, count : int) -> string :=
-  \(self, count) -> if (count = 0) then "" else (self ++ repeat(self, count - 1));
-
-export def to_string : func (string) -> string := $(identity(string_tag))(string);
+export def to_string : func (string) -> string := \(self) -> self;

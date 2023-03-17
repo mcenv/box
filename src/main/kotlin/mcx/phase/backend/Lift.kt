@@ -1,11 +1,11 @@
 package mcx.phase.backend
 
+import mcx.ast.Idx
 import mcx.ast.Lvl
 import mcx.ast.Modifier
 import mcx.ast.toLvl
 import mcx.data.NbtType
 import mcx.phase.Context
-import mcx.phase.backend.Lift.Ctx.Companion.emptyCtx
 import mcx.phase.prettyPattern
 import mcx.phase.prettyTerm
 import mcx.ast.Core as C
@@ -23,8 +23,8 @@ class Lift private constructor(
     val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     when (definition) {
       is C.Definition.Def -> {
-        val body = emptyCtx().liftTerm(definition.body!!)
-        liftedDefinitions += L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
+        // val body = definition.body?.let { emptyCtx().liftTerm(it) }
+        // liftedDefinitions += L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
       }
     }
     return Result(liftedDefinitions, dispatchedDefinitions)
@@ -37,9 +37,6 @@ class Lift private constructor(
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
       Modifier.REC     -> null
-      Modifier.INLINE  -> unexpectedModifier(modifier)
-      Modifier.CONST   -> unexpectedModifier(modifier)
-      Modifier.WORLD   -> null
     }
   }
 
@@ -111,14 +108,13 @@ class Lift private constructor(
       is C.Term.Func        -> L.Term.Unit
       is C.Term.FuncOf      -> {
         restoring { // ?
-          val binders = term.params.map { liftPattern(it) }
           val freeVars = freeVars(term)
-          freeVars.forEach { (name, type) -> bind(name, type) }
           val capture = L.Pattern.CompoundOf(
             freeVars.entries.map { (name, type) ->
               name to L.Pattern.Var(name, type)
             }
           )
+          val binders = term.params.map { liftPattern(it) }
           val result = liftTerm(term.result)
           val tag = context.freshId()
           L.Definition.Function(
@@ -141,9 +137,6 @@ class Lift private constructor(
         val type = NbtType.END // TODO
         L.Term.Apply(func, args, type)
       }
-      is C.Term.Code        -> unexpectedTerm(term)
-      is C.Term.CodeOf      -> unexpectedTerm(term)
-      is C.Term.Splice      -> unexpectedTerm(term)
       is C.Term.Let         -> {
         val init = liftTerm(term.init)
         restoring {
@@ -153,7 +146,7 @@ class Lift private constructor(
         }
       }
       is C.Term.Var         -> {
-        val type = this[next.toLvl(term.idx)].second
+        val type = liftType(this[term.idx].second)
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
@@ -174,10 +167,9 @@ class Lift private constructor(
         val elements = pattern.elements.map { (key, element) -> key to liftPattern(element) }
         L.Pattern.CompoundOf(elements)
       }
-      is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
       is C.Pattern.Var        -> {
-        val type = liftType(pattern.type)
-        bind(pattern.name, type)
+        // bind(pattern.name, pattern.type)
+        val type = NbtType.END // liftType(pattern.type)
         L.Pattern.Var(pattern.name, type)
       }
       is C.Pattern.Drop       -> {
@@ -227,11 +219,8 @@ class Lift private constructor(
       is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
       is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
       is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code        -> unexpectedTerm(term)
-      is C.Term.CodeOf      -> unexpectedTerm(term)
-      is C.Term.Splice      -> unexpectedTerm(term)
       is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to liftType(term.type))
+      is C.Term.Var         -> linkedMapOf(term.name to NbtType.END /* TODO */)
       is C.Term.Def         -> linkedMapOf()
       is C.Term.Meta        -> unexpectedTerm(term)
       is C.Term.Hole        -> unexpectedTerm(term)
@@ -244,20 +233,19 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> emptySet()
       is C.Pattern.CompoundOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
-      is C.Pattern.CodeOf     -> unexpectedPattern(pattern)
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
       is C.Pattern.Hole       -> unexpectedPattern(pattern)
     }
   }
 
-  private fun liftType(
+  private fun Ctx.liftType(
     type: C.Term,
   ): NbtType {
     return when (type) {
       is C.Term.Tag         -> unexpectedTerm(type)
       is C.Term.TagOf       -> unexpectedTerm(type)
-      is C.Term.Type        -> (type.tag as C.Term.TagOf).value
+      is C.Term.Type        -> NbtType.BYTE
       is C.Term.Bool        -> NbtType.BYTE
       is C.Term.BoolOf      -> unexpectedTerm(type)
       is C.Term.If          -> unexpectedTerm(type)
@@ -290,11 +278,8 @@ class Lift private constructor(
       is C.Term.Func        -> NbtType.COMPOUND
       is C.Term.FuncOf      -> unexpectedTerm(type)
       is C.Term.Apply       -> unexpectedTerm(type)
-      is C.Term.Code        -> unexpectedTerm(type)
-      is C.Term.CodeOf      -> unexpectedTerm(type)
-      is C.Term.Splice      -> unexpectedTerm(type)
       is C.Term.Let         -> unexpectedTerm(type)
-      is C.Term.Var         -> liftType(type.type) // ?
+      is C.Term.Var         -> TODO()
       is C.Term.Def         -> unexpectedTerm(type) // ?
       is C.Term.Meta        -> unexpectedTerm(type)
       is C.Term.Hole        -> unexpectedTerm(type)
@@ -305,28 +290,27 @@ class Lift private constructor(
     body: L.Term,
     restore: Int?,
   ): L.Definition.Function {
-    val params = types.map { (name, type) -> L.Pattern.Var(name, type) }
+    // val params = types.map { (name, type) -> L.Pattern.Var(name, type) }
     return L.Definition.Function(
       listOf(L.Modifier.NO_DROP),
       definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-      params,
+      emptyList(), // params,
       body,
       restore,
     ).also { liftedDefinitions += it }
   }
 
   private class Ctx private constructor() {
-    private val _types: MutableList<Pair<String, NbtType>> = mutableListOf()
-    val types: List<Pair<String, NbtType>> get() = _types
-    val next: Lvl get() = Lvl(_types.size)
+    private val _types: MutableList<Pair<String, C.Term>> = mutableListOf()
+    val types: List<Pair<String, C.Term>> get() = _types
 
-    operator fun get(lvl: Lvl): Pair<String, NbtType> {
-      return _types[lvl.value]
+    operator fun get(idx: Idx): Pair<String, C.Term> {
+      return _types[Lvl(_types.size).toLvl(idx).value]
     }
 
     fun bind(
       name: String,
-      type: NbtType,
+      type: C.Term,
     ) {
       _types += name to type
     }
@@ -353,10 +337,6 @@ class Lift private constructor(
   )
 
   companion object {
-    private fun unexpectedModifier(modifier: Modifier): Nothing {
-      error("unexpected modifier: ${modifier.id}")
-    }
-
     private fun unexpectedTerm(term: C.Term): Nothing {
       error("unexpected term: ${prettyTerm(term)}")
     }

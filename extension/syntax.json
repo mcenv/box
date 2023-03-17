@@ -75,11 +75,15 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:tag|end_tag|byte_tag|short_tag|int_tag|long_tag|float_tag|double_tag|string_tag|byte_array_tag|int_array_tag|long_array_tag|list_tag|compound_tag|type|bool|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound|union|func|code)\\b",
+          "match": "\\b(?:tag|type|bool|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound|union|func)\\b",
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[\\\\`$_]",
+          "match": "\\b(?:true|false|end_tag|byte_tag|short_tag|int_tag|long_tag|float_tag|double_tag|string_tag|byte_array_tag|int_array_tag|long_array_tag|list_tag|compound_tag)\\b",
+          "name": "constant.language.mcx"
+        },
+        {
+          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[\\\\_]",
           "name": "keyword.control.mcx"
         },
         {
@@ -104,10 +108,6 @@
               "name": "keyword.control.mcx"
             }
           ]
-        },
-        {
-          "match": "\\b(?:true|false)\\b",
-          "name": "constant.language.mcx"
         },
         {
           "begin": "\"",
@@ -171,7 +171,7 @@
       ]
     },
     "modifier": {
-      "match": "\\b(?:builtin|export|rec|inline|const|world)\\b",
+      "match": "\\b(?:builtin|export|rec)\\b",
       "name": "keyword.modifier.mcx"
     },
     "location": {

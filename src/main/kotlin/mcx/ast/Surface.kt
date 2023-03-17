@@ -38,10 +38,6 @@ object Surface {
   sealed interface Term {
     val range: Range
 
-    data class Tag(
-      override val range: Range,
-    ) : Term
-
     data class TagOf(
       val value: NbtType,
       override val range: Range,
@@ -204,21 +200,6 @@ object Surface {
     data class Apply(
       val func: Term,
       val args: kotlin.collections.List<Term>,
-      override val range: Range,
-    ) : Term
-
-    data class Code(
-      val element: Term,
-      override val range: Range,
-    ) : Term
-
-    data class CodeOf(
-      val element: Term,
-      override val range: Range,
-    ) : Term
-
-    data class Splice(
-      val element: Term,
       override val range: Range,
     ) : Term
 

@@ -105,9 +105,6 @@ class Parse private constructor(
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "rec"     -> Ranged(Modifier.REC, until())
-          "inline"  -> Ranged(Modifier.INLINE, until())
-          "const"   -> Ranged(Modifier.CONST, until())
-          "world"   -> Ranged(Modifier.WORLD, until())
           else      -> return modifiers to word
         }
       }
@@ -192,23 +189,10 @@ class Parse private constructor(
             val result = parseTerm()
             S.Term.FuncOf(params, result, until())
           }
-          '`'  -> {
-            skip()
-            skipTrivia()
-            val element = parseTerm0()
-            S.Term.CodeOf(element, until())
-          }
-          '$'  -> {
-            skip()
-            skipTrivia()
-            val element = parseTerm0()
-            S.Term.Splice(element, until())
-          }
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
               ""               -> null
-              "tag"            -> S.Term.Tag(until())
               "end_tag"        -> S.Term.TagOf(NbtType.END, until())
               "byte_tag"       -> S.Term.TagOf(NbtType.BYTE, until())
               "short_tag"      -> S.Term.TagOf(NbtType.SHORT, until())
@@ -292,11 +276,6 @@ class Parse private constructor(
                 val result = parseTerm()
                 S.Term.Func(params, result, until())
               }
-              "code"           -> {
-                skipTrivia()
-                val element = parseTerm0()
-                S.Term.Code(element, until())
-              }
               "let"            -> {
                 skipTrivia()
                 val name = parseTerm()
@@ -335,13 +314,13 @@ class Parse private constructor(
 
   private fun parseTerm1(): S.Term {
     return ranging {
-      val func = parseTerm0()
-      if (canRead() && peek() == '(') {
+      var term = parseTerm0()
+      skipTrivia()
+      while (canRead() && peek() == '(') {
         val args = parseList(',', '(', ')') { parseTerm() }
-        S.Term.Apply(func, args, until())
-      } else {
-        func
+        term = S.Term.Apply(term, args, until())
       }
+      term
     }
   }
 
