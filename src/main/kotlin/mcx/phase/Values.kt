@@ -1,6 +1,7 @@
 package mcx.phase
 
 import kotlinx.collections.immutable.PersistentList
+import mcx.ast.Core.Kind
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.DefinitionLocation
@@ -22,7 +23,7 @@ sealed interface Value {
 
   @JvmInline
   value class Type(
-    val tag: Lazy<Value>,
+    val element: Lazy<Value>,
   ) : Value
 
   object Bool : Value
@@ -150,27 +151,25 @@ sealed interface Value {
   class Apply(
     val func: Value,
     val args: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
-
-  class Let(
-    val binder: Pattern,
-    val init: Value,
-    val body: Value,
+    val kind: Kind,
   ) : Value
 
   data class Var(
     val name: kotlin.String,
     val lvl: Lvl,
+    val kind: Kind,
   ) : Value
 
   class Def(
     val name: DefinitionLocation,
     val body: Term?,
+    val kind: Kind,
   ) : Value
 
   class Meta(
     val index: kotlin.Int,
     val source: Range,
+    val kind: Kind,
   ) : Value
 
   object Hole : Value

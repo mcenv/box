@@ -25,174 +25,239 @@ object Core {
    * A well-typed term.
    */
   sealed interface Term {
+    val kind: Kind
+
     object Tag : Term {
+      override val kind: Kind get() = Kind.END
       override fun toString(): kotlin.String = "Tag"
     }
 
     data class TagOf(
       val value: NbtType,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class Type(
-      val tag: Term,
-    ) : Term
+      val element: Term,
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     object Bool : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Bool"
     }
 
     data class BoolOf(
       val value: Boolean,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class If(
       val condition: Term,
       val thenBranch: Term,
       val elseBranch: Term,
-    ) : Term
+    ) : Term {
+      override val kind: Kind = thenBranch.kind
+    }
 
     data class Is(
       val scrutinee: Term,
       val scrutineer: Pattern,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     object Byte : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Byte"
     }
 
     data class ByteOf(
       val value: kotlin.Byte,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     object Short : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Short"
     }
 
     data class ShortOf(
       val value: kotlin.Short,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.SHORT
+    }
 
     object Int : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Int"
     }
 
     data class IntOf(
       val value: kotlin.Int,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.INT
+    }
 
     object Long : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Long"
     }
 
     data class LongOf(
       val value: kotlin.Long,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.LONG
+    }
 
     object Float : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Float"
     }
 
     data class FloatOf(
       val value: kotlin.Float,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.FLOAT
+    }
 
     object Double : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "Double"
     }
 
     data class DoubleOf(
       val value: kotlin.Double,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.DOUBLE
+    }
 
     object String : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "String"
     }
 
     data class StringOf(
       val value: kotlin.String,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.STRING
+    }
 
     object ByteArray : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "ByteArray"
     }
 
     data class ByteArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE_ARRAY
+    }
 
     object IntArray : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "IntArray"
     }
 
     data class IntArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.INT_ARRAY
+    }
 
     object LongArray : Term {
+      override val kind: Kind get() = Kind.BYTE
       override fun toString(): kotlin.String = "LongArray"
     }
 
     data class LongArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.LONG_ARRAY
+    }
 
     data class List(
       val element: Term,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class ListOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.LIST
+    }
 
     data class Compound(
       val elements: Map<kotlin.String, Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class CompoundOf(
       val elements: Map<kotlin.String, Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.COMPOUND
+    }
 
     data class Union(
       val elements: kotlin.collections.List<Term>,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class Func(
       val params: kotlin.collections.List<Pair<Pattern, Term>>,
       val result: Term,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.BYTE
+    }
 
     data class FuncOf(
       val params: kotlin.collections.List<Pattern>,
       val result: Term,
-    ) : Term
+    ) : Term {
+      override val kind: Kind get() = Kind.COMPOUND
+    }
 
     data class Apply(
       val func: Term,
       val args: kotlin.collections.List<Term>,
+      override val kind: Kind,
     ) : Term
 
     data class Let(
       val binder: Pattern,
       val init: Term,
       val body: Term,
-    ) : Term
+    ) : Term {
+      override val kind: Kind = body.kind
+    }
 
     data class Var(
       val name: kotlin.String,
       val idx: Idx,
+      override val kind: Kind,
     ) : Term
 
     data class Def(
       val name: DefinitionLocation,
       val body: Term?,
+      override val kind: Kind,
     ) : Term
 
     data class Meta(
       val index: kotlin.Int,
       val source: Range,
+      override val kind: Kind,
     ) : Term
 
     object Hole : Term {
+      override val kind: Kind get() = Kind.END
       override fun toString(): kotlin.String = "Hole"
     }
   }
@@ -201,24 +266,65 @@ object Core {
    * A well-typed pattern.
    */
   sealed interface Pattern {
+    val kind: Kind
+
     data class IntOf(
       val value: Int,
-    ) : Pattern
+    ) : Pattern {
+      override val kind: Kind get() = Kind.INT
+    }
 
     data class CompoundOf(
       val elements: List<Pair<String, Pattern>>,
-    ) : Pattern
+    ) : Pattern {
+      override val kind: Kind get() = Kind.COMPOUND
+    }
 
     data class Var(
       val name: String,
+      override val kind: Kind,
     ) : Pattern
 
-    object Drop : Pattern {
+    data class Drop(
+      override val kind: Kind,
+    ) : Pattern {
       override fun toString(): String = "Drop"
     }
 
     object Hole : Pattern {
+      override val kind: Kind get() = Kind.END
       override fun toString(): String = "Hole"
+    }
+  }
+
+  sealed interface Kind {
+    data class Tag(
+      val tag: NbtType,
+    ) : Kind
+
+    data class Type(
+      val element: Kind,
+    ) : Kind
+
+    data class Meta(
+      val index: Int,
+      val source: Range,
+    ) : Kind
+
+    companion object {
+      val END: Kind = Tag(NbtType.END)
+      val BYTE: Kind = Tag(NbtType.BYTE)
+      val SHORT: Kind = Tag(NbtType.SHORT)
+      val INT: Kind = Tag(NbtType.INT)
+      val LONG: Kind = Tag(NbtType.LONG)
+      val FLOAT: Kind = Tag(NbtType.FLOAT)
+      val DOUBLE: Kind = Tag(NbtType.DOUBLE)
+      val STRING: Kind = Tag(NbtType.STRING)
+      val BYTE_ARRAY: Kind = Tag(NbtType.BYTE_ARRAY)
+      val INT_ARRAY: Kind = Tag(NbtType.INT_ARRAY)
+      val LONG_ARRAY: Kind = Tag(NbtType.LONG_ARRAY)
+      val LIST: Kind = Tag(NbtType.LIST)
+      val COMPOUND: Kind = Tag(NbtType.COMPOUND)
     }
   }
 }

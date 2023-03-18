@@ -146,7 +146,7 @@ class Lift private constructor(
         }
       }
       is C.Term.Var         -> {
-        val type = liftType(this[term.idx].second)
+        val type = NbtType.END // TODO
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
@@ -184,20 +184,20 @@ class Lift private constructor(
     term: C.Term,
   ): LinkedHashMap<String, NbtType> {
     return when (term) {
-      is C.Term.Tag         -> unexpectedTerm(term)
-      is C.Term.TagOf       -> linkedMapOf()
-      is C.Term.Type        -> freeVars(term.tag)
-      is C.Term.Bool        -> linkedMapOf()
-      is C.Term.BoolOf      -> linkedMapOf()
-      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.Is          -> freeVars(term.scrutinee)
-      is C.Term.Byte        -> linkedMapOf()
-      is C.Term.ByteOf      -> linkedMapOf()
-      is C.Term.Short       -> linkedMapOf()
-      is C.Term.ShortOf     -> linkedMapOf()
-      is C.Term.Int         -> linkedMapOf()
-      is C.Term.IntOf       -> linkedMapOf()
-      is C.Term.Long        -> linkedMapOf()
+      is C.Term.Tag     -> unexpectedTerm(term)
+      is C.Term.TagOf   -> linkedMapOf()
+      is C.Term.Type    -> freeVars(term.element)
+      is C.Term.Bool    -> linkedMapOf()
+      is C.Term.BoolOf  -> linkedMapOf()
+      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.Is      -> freeVars(term.scrutinee)
+      is C.Term.Byte    -> linkedMapOf()
+      is C.Term.ByteOf  -> linkedMapOf()
+      is C.Term.Short   -> linkedMapOf()
+      is C.Term.ShortOf -> linkedMapOf()
+      is C.Term.Int     -> linkedMapOf()
+      is C.Term.IntOf   -> linkedMapOf()
+      is C.Term.Long    -> linkedMapOf()
       is C.Term.LongOf      -> linkedMapOf()
       is C.Term.Float       -> linkedMapOf()
       is C.Term.FloatOf     -> linkedMapOf()
@@ -236,53 +236,6 @@ class Lift private constructor(
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
       is C.Pattern.Hole       -> unexpectedPattern(pattern)
-    }
-  }
-
-  private fun Ctx.liftType(
-    type: C.Term,
-  ): NbtType {
-    return when (type) {
-      is C.Term.Tag         -> unexpectedTerm(type)
-      is C.Term.TagOf       -> unexpectedTerm(type)
-      is C.Term.Type        -> NbtType.BYTE
-      is C.Term.Bool        -> NbtType.BYTE
-      is C.Term.BoolOf      -> unexpectedTerm(type)
-      is C.Term.If          -> unexpectedTerm(type)
-      is C.Term.Is          -> unexpectedTerm(type)
-      is C.Term.Byte        -> NbtType.BYTE
-      is C.Term.ByteOf      -> unexpectedTerm(type)
-      is C.Term.Short       -> NbtType.SHORT
-      is C.Term.ShortOf     -> unexpectedTerm(type)
-      is C.Term.Int         -> NbtType.INT
-      is C.Term.IntOf       -> unexpectedTerm(type)
-      is C.Term.Long        -> NbtType.LONG
-      is C.Term.LongOf      -> unexpectedTerm(type)
-      is C.Term.Float       -> NbtType.FLOAT
-      is C.Term.FloatOf     -> unexpectedTerm(type)
-      is C.Term.Double      -> NbtType.DOUBLE
-      is C.Term.DoubleOf    -> unexpectedTerm(type)
-      is C.Term.String      -> NbtType.STRING
-      is C.Term.StringOf    -> unexpectedTerm(type)
-      is C.Term.ByteArray   -> NbtType.BYTE_ARRAY
-      is C.Term.ByteArrayOf -> unexpectedTerm(type)
-      is C.Term.IntArray    -> NbtType.INT_ARRAY
-      is C.Term.IntArrayOf  -> unexpectedTerm(type)
-      is C.Term.LongArray   -> NbtType.LONG_ARRAY
-      is C.Term.LongArrayOf -> unexpectedTerm(type)
-      is C.Term.List        -> NbtType.LIST
-      is C.Term.ListOf      -> unexpectedTerm(type)
-      is C.Term.Compound    -> NbtType.COMPOUND
-      is C.Term.CompoundOf  -> unexpectedTerm(type)
-      is C.Term.Union       -> type.elements.firstOrNull()?.let { liftType(it) } ?: NbtType.END
-      is C.Term.Func        -> NbtType.COMPOUND
-      is C.Term.FuncOf      -> unexpectedTerm(type)
-      is C.Term.Apply       -> unexpectedTerm(type)
-      is C.Term.Let         -> unexpectedTerm(type)
-      is C.Term.Var         -> TODO()
-      is C.Term.Def         -> unexpectedTerm(type) // ?
-      is C.Term.Meta        -> unexpectedTerm(type)
-      is C.Term.Hole        -> unexpectedTerm(type)
     }
   }
 

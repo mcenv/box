@@ -16,7 +16,7 @@ fun Env.eval(
     is Term.Tag         -> Value.Tag
     is Term.TagOf       -> Value.TagOf(term.value)
     is Term.Type        -> {
-      val tag = lazy { eval(term.tag) }
+      val tag = lazy { eval(term.element) }
       Value.Type(tag)
     }
     is Term.Bool        -> Value.Bool
@@ -108,18 +108,18 @@ fun Env.eval(
       val args = term.args.map { lazy { eval(it) } }
       when (func) {
         is Value.FuncOf -> func.result(args)
-        is Value.Def    -> lookupBuiltin(func.name)!!.eval(args) ?: Value.Apply(func, args)
-        else            -> Value.Apply(func, args)
-      }
+        is Value.Def    -> lookupBuiltin(func.name)!!.eval(args)
+        else            -> null
+      } ?: Value.Apply(func, args, term.kind)
     }
-    is Term.Let    -> {
+    is Term.Let         -> {
       val init = lazy { eval(term.init) }
       (this + bind(term.binder, init)).eval(term.body)
     }
-    is Term.Var    -> this[Lvl(size).toLvl(term.idx).value].value
-    is Term.Def    -> term.body?.let { eval(it) } ?: Value.Def(term.name, null)
-    is Term.Meta   -> Value.Meta(term.index, term.source)
-    is Term.Hole   -> Value.Hole
+    is Term.Var         -> this[Lvl(size).toLvl(term.idx).value].value
+    is Term.Def         -> term.body?.let { eval(it) } ?: Value.Def(term.name, null, term.kind)
+    is Term.Meta        -> Value.Meta(term.index, term.source, term.kind)
+    is Term.Hole        -> Value.Hole
   }
 }
 
@@ -130,7 +130,7 @@ fun Lvl.quote(
     is Value.Tag         -> Term.Tag
     is Value.TagOf       -> Term.TagOf(value.value)
     is Value.Type        -> {
-      val tag = quote(value.tag.value)
+      val tag = quote(value.element.value)
       Term.Type(tag)
     }
     is Value.Bool        -> Term.Bool
@@ -209,16 +209,11 @@ fun Lvl.quote(
     is Value.Apply       -> {
       val func = quote(value.func)
       val args = value.args.map { quote(it.value) }
-      Term.Apply(func, args)
+      Term.Apply(func, args, value.kind)
     }
-    is Value.Let         -> {
-      val init = quote(value.init)
-      val body = collect(listOf(value.binder)).let { (this + it.size).quote(value.body) }
-      Term.Let(value.binder, init, body)
-    }
-    is Value.Var         -> Term.Var(value.name, toIdx(value.lvl))
-    is Value.Def         -> Term.Def(value.name, value.body)
-    is Value.Meta        -> Term.Meta(value.index, value.source)
+    is Value.Var         -> Term.Var(value.name, toIdx(value.lvl), value.kind)
+    is Value.Def         -> Term.Def(value.name, value.body, value.kind)
+    is Value.Meta        -> Term.Meta(value.index, value.source, value.kind)
     is Value.Hole        -> Term.Hole
   }
 }
@@ -237,7 +232,7 @@ fun Lvl.collect(
     when (pattern) {
       is Pattern.IntOf      -> {}
       is Pattern.CompoundOf -> pattern.elements.forEach { (_, element) -> go(element) }
-      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size))
+      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.kind))
       is Pattern.Drop       -> {}
       is Pattern.Hole       -> {}
     }

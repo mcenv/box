@@ -84,7 +84,7 @@ class Resolve private constructor(
     return when (term) {
       is S.Term.TagOf       -> R.Term.TagOf(term.value, range)
       is S.Term.Type        -> {
-        val tag = resolveTerm(term.tag)
+        val tag = resolveTerm(term.element)
         R.Term.Type(tag, range)
       }
       is S.Term.Bool        -> R.Term.Bool(range)

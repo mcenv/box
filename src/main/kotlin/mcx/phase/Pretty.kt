@@ -31,7 +31,7 @@ fun prettyTerm(
           NbtType.COMPOUND   -> "compound_tag"
         }
       }
-      is Term.Type        -> "type ${2.go(term.tag)}"
+      is Term.Type        -> "type ${2.go(term.element)}"
       is Term.Bool        -> "bool"
       is Term.BoolOf      -> term.value.toString()
       is Term.If          -> "if ${1.go(term.condition)} then ${1.go(term.thenBranch)} else ${1.go(term.elseBranch)}"

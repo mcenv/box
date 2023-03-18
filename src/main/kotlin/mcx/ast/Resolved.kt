@@ -44,7 +44,7 @@ object Resolved {
     ) : Term
 
     data class Type(
-      val tag: Term,
+      val element: Term,
       override val range: Range,
     ) : Term
 
