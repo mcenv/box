@@ -91,12 +91,16 @@ class Elaborate private constructor(
     term: R.Term,
     type: Value?,
   ): Pair<C.Term, Value> {
-    val type = type?.let { meta.force(type) }
+    val type = type?.let { meta.forceValue(type) }
     return when {
       term is R.Term.TagOf && synth(type)                      -> C.Term.TagOf(term.value) to Value.Tag
       term is R.Term.Type && synth(type)                       -> {
         val tag = checkTerm(term.element, Value.Tag)
-        C.Term.Type(tag) to TYPE_BYTE
+        val kind = when (val tag = freeze().eval(tag)) {
+          is Value.TagOf -> C.Kind.Type(C.Kind.Type(C.Kind.Tag(tag.value)))
+          else           -> C.Kind.Type(C.Kind.Type(meta.freshKind(term.range)))
+        }
+        C.Term.Type(tag, kind) to TYPE_BYTE
       }
       term is R.Term.Bool && synth(type)                       -> C.Term.Bool to TYPE_BYTE
       term is R.Term.BoolOf && synth(type)                     -> C.Term.BoolOf(term.value) to Value.Bool
@@ -169,10 +173,11 @@ class Elaborate private constructor(
         C.Term.Union(elements) to type
       }
       term is R.Term.Func && synth(type)                       -> {
+        val env = freeze()
         restoring {
           val params = term.params.map { (pattern, term) ->
             val term = checkTerm(term, meta.freshType(term.range))
-            val pattern = checkPattern(pattern, /* TODO: optimize */ freeze().eval(term))
+            val pattern = checkPattern(pattern, env.eval(term))
             pattern to term
           }
           val result = checkTerm(term.result, meta.freshType(term.result.range))
@@ -180,6 +185,7 @@ class Elaborate private constructor(
         }
       }
       term is R.Term.FuncOf && synth(type)                     -> {
+        val next = next
         restoring {
           val (params, paramsTypes) = term.params.map { synthPattern(it) }.unzip()
           val (result, resultType) = synthTerm(term.result)
@@ -191,6 +197,7 @@ class Elaborate private constructor(
         }
       }
       term is R.Term.FuncOf && check<Value.Func>(type)         -> {
+        val next = next
         restoring {
           if (type.params.size == term.params.size) {
             val (params, _) = term.params.mapIndexed { index, param ->
@@ -205,7 +212,7 @@ class Elaborate private constructor(
       }
       term is R.Term.Apply && synth(type)                      -> {
         val (func, maybeFuncType) = synthTerm(term.func)
-        val funcType = when (val funcType = meta.force(maybeFuncType)) {
+        val funcType = when (val funcType = meta.forceValue(maybeFuncType)) {
           is Value.Func -> funcType
           else          -> {
             val kinds = term.args.map { meta.freshKind(term.func.range) }
@@ -268,7 +275,8 @@ class Elaborate private constructor(
         val type = freeze().eval(checkTerm(term.type, meta.freshType(term.type.range)))
         checkTerm(term.element, type) to type
       }
-      term is R.Term.Hole && match<Value>(type)                -> C.Term.Hole to (type ?: END)
+      term is R.Term.Hole && match<Value>(type)                -> C.Term.Hole to (type ?: meta.freshValue(term.range))
+      synth(type)                                              -> invalidTerm(cannotSynthesize(term.range), type)
       check<Value>(type)                                       -> {
         val synth = synthTerm(term)
         if (next.sub(synth.second, type)) {
@@ -300,7 +308,7 @@ class Elaborate private constructor(
     pattern: R.Pattern,
     type: Value?,
   ): Pair<C.Pattern, Value> {
-    val type = type?.let { meta.force(type) }
+    val type = type?.let { meta.forceValue(type) }
     return when {
       pattern is R.Pattern.IntOf && synth(type)                      -> C.Pattern.IntOf(pattern.value) to Value.Int
       pattern is R.Pattern.CompoundOf && synth(type)                 -> {
@@ -310,8 +318,8 @@ class Elaborate private constructor(
         TODO()
       }
       pattern is R.Pattern.Var && synth(type)                        -> {
-        val kind = meta.freshKind(pattern.range)
-        val type = meta.freshValue(pattern.range, kind)
+        val type = meta.freshValue(pattern.range)
+        val kind = eraseType(type)
         push(pattern.name, type, kind, null)
         C.Pattern.Var(pattern.name, kind) to type
       }
@@ -333,7 +341,8 @@ class Elaborate private constructor(
         val type = freeze().eval(checkTerm(pattern.type, meta.freshType(pattern.type.range)))
         checkPattern(pattern.element, type) to type
       }
-      pattern is R.Pattern.Hole && match<Value>(type)                -> C.Pattern.Hole to END
+      pattern is R.Pattern.Hole && match<Value>(type)                -> C.Pattern.Hole to (type ?: meta.freshValue(pattern.range))
+      synth(type)                                                    -> invalidPattern(cannotSynthesize(pattern.range), type)
       check<Value>(type)                                             -> {
         val synth = synthPattern(pattern)
         if (next.sub(synth.second, type)) {
@@ -352,59 +361,23 @@ class Elaborate private constructor(
     value1: Value,
     value2: Value,
   ): Boolean {
-    val value1 = meta.force(value1)
-    val value2 = meta.force(value2)
-    return with(meta) { unify(value1, value2) } // TODO: subtyping
+    val value1 = meta.forceValue(value1)
+    val value2 = meta.forceValue(value2)
+    return with(meta) { unifyValue(value1, value2) } // TODO: subtyping
   }
 
   private fun eraseType(
     type: Value,
   ): C.Kind {
-    return when (val type = meta.force(type)) {
-      is Value.Tag         -> C.Kind.END
-      is Value.TagOf       -> TODO()
-      is Value.Type        -> {
-        when (val element = meta.force(type.element.value)) {
-          is Value.TagOf -> C.Kind.Type(C.Kind.Tag(element.value))
-          else           -> C.Kind.Type(C.Kind.END)
-        }
+    return when (val kind = type.kind) {
+      is C.Kind.Type -> kind.element
+      is C.Kind.Tag  -> error("unexpected kind: $kind")
+      is C.Kind.Meta -> {
+        val element = meta.freshKind(kind.source)
+        meta.unifyKind(kind, C.Kind.Type(element))
+        element
       }
-      is Value.Bool        -> C.Kind.BYTE
-      is Value.BoolOf      -> TODO()
-      is Value.If          -> eraseType(type.thenBranch.value)
-      is Value.Is          -> TODO()
-      is Value.Byte        -> C.Kind.BYTE
-      is Value.ByteOf      -> TODO()
-      is Value.Short       -> C.Kind.SHORT
-      is Value.ShortOf     -> TODO()
-      is Value.Int         -> C.Kind.INT
-      is Value.IntOf       -> TODO()
-      is Value.Long        -> C.Kind.LONG
-      is Value.LongOf      -> TODO()
-      is Value.Float       -> C.Kind.FLOAT
-      is Value.FloatOf     -> TODO()
-      is Value.Double      -> C.Kind.DOUBLE
-      is Value.DoubleOf    -> TODO()
-      is Value.String      -> C.Kind.STRING
-      is Value.StringOf    -> TODO()
-      is Value.ByteArray   -> C.Kind.BYTE_ARRAY
-      is Value.ByteArrayOf -> TODO()
-      is Value.IntArray    -> C.Kind.INT_ARRAY
-      is Value.IntArrayOf  -> TODO()
-      is Value.LongArray   -> C.Kind.LONG_ARRAY
-      is Value.LongArrayOf -> TODO()
-      is Value.List        -> C.Kind.LIST
-      is Value.ListOf      -> TODO()
-      is Value.Compound    -> C.Kind.COMPOUND
-      is Value.CompoundOf  -> TODO()
-      is Value.Union       -> type.elements.firstOrNull()?.value?.let { eraseType(it) } ?: C.Kind.END
-      is Value.Func        -> C.Kind.COMPOUND
-      is Value.FuncOf      -> TODO()
-      is Value.Apply       -> (type.kind as C.Kind.Type).element
-      is Value.Var         -> (type.kind as C.Kind.Type).element
-      is Value.Def         -> (type.kind as C.Kind.Type).element
-      is Value.Meta        -> (type.kind as C.Kind.Type).element
-      is Value.Hole        -> C.Kind.END
+      is C.Kind.Hole -> kind
     }
   }
 
@@ -466,7 +439,7 @@ class Elaborate private constructor(
     type: Value?,
   ): Pair<C.Term, Value> {
     diagnostics += diagnostic
-    return C.Term.Hole to (type ?: END)
+    return C.Term.Hole to (type ?: meta.freshValue(diagnostic.range))
   }
 
   private fun invalidPattern(
@@ -474,7 +447,7 @@ class Elaborate private constructor(
     type: Value?,
   ): Pair<C.Pattern, Value> {
     diagnostics += diagnostic
-    return C.Pattern.Hole to (type ?: END)
+    return C.Pattern.Hole to (type ?: meta.freshValue(diagnostic.range))
   }
 
   private class Ctx private constructor(
@@ -533,20 +506,19 @@ class Elaborate private constructor(
   )
 
   companion object {
-    private val END: Value = Value.Union(emptyList())
-    private val TYPE_END: Value = Value.Type(lazyOf(Value.TagOf(NbtType.END)))
-    private val TYPE_BYTE: Value = Value.Type(lazyOf(Value.TagOf(NbtType.BYTE)))
-    private val TYPE_SHORT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.SHORT)))
-    private val TYPE_INT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.INT)))
-    private val TYPE_LONG: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LONG)))
-    private val TYPE_FLOAT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.FLOAT)))
-    private val TYPE_DOUBLE: Value = Value.Type(lazyOf(Value.TagOf(NbtType.DOUBLE)))
-    private val TYPE_BYTE_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.BYTE_ARRAY)))
-    private val TYPE_INT_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.INT_ARRAY)))
-    private val TYPE_LONG_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LONG_ARRAY)))
-    private val TYPE_STRING: Value = Value.Type(lazyOf(Value.TagOf(NbtType.STRING)))
-    private val TYPE_LIST: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LIST)))
-    private val TYPE_COMPOUND: Value = Value.Type(lazyOf(Value.TagOf(NbtType.COMPOUND)))
+    private val TYPE_END: Value = Value.Type(lazyOf(Value.TagOf(NbtType.END)), C.Kind.Type(C.Kind.TYPE_END))
+    private val TYPE_BYTE: Value = Value.Type(lazyOf(Value.TagOf(NbtType.BYTE)), C.Kind.Type(C.Kind.TYPE_BYTE))
+    private val TYPE_SHORT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.SHORT)), C.Kind.Type(C.Kind.TYPE_SHORT))
+    private val TYPE_INT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.INT)), C.Kind.Type(C.Kind.TYPE_INT))
+    private val TYPE_LONG: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LONG)), C.Kind.Type(C.Kind.TYPE_LONG))
+    private val TYPE_FLOAT: Value = Value.Type(lazyOf(Value.TagOf(NbtType.FLOAT)), C.Kind.Type(C.Kind.TYPE_FLOAT))
+    private val TYPE_DOUBLE: Value = Value.Type(lazyOf(Value.TagOf(NbtType.DOUBLE)), C.Kind.Type(C.Kind.TYPE_DOUBLE))
+    private val TYPE_BYTE_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.BYTE_ARRAY)), C.Kind.Type(C.Kind.TYPE_BYTE_ARRAY))
+    private val TYPE_INT_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.INT_ARRAY)), C.Kind.Type(C.Kind.TYPE_INT_ARRAY))
+    private val TYPE_LONG_ARRAY: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LONG_ARRAY)), C.Kind.Type(C.Kind.TYPE_LONG_ARRAY))
+    private val TYPE_STRING: Value = Value.Type(lazyOf(Value.TagOf(NbtType.STRING)), C.Kind.Type(C.Kind.TYPE_STRING))
+    private val TYPE_LIST: Value = Value.Type(lazyOf(Value.TagOf(NbtType.LIST)), C.Kind.Type(C.Kind.TYPE_LIST))
+    private val TYPE_COMPOUND: Value = Value.Type(lazyOf(Value.TagOf(NbtType.COMPOUND)), C.Kind.Type(C.Kind.TYPE_COMPOUND))
 
     private fun arityMismatch(
       expected: Int,
@@ -569,6 +541,16 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "expected definition: def",
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun cannotSynthesize(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "cannot synthesize",
         DiagnosticSeverity.Error,
       )
     }

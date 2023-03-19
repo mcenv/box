@@ -14,165 +14,235 @@ import org.eclipse.lsp4j.Range
  * [Value]s should only be used for calculations, not for storage.
  */
 sealed interface Value {
-  object Tag : Value
+  val kind: Kind
+
+  object Tag : Value {
+    override val kind: Kind get() = Kind.TYPE_BYTE
+  }
 
   @JvmInline
   value class TagOf(
     val value: NbtType,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.BYTE
+  }
 
-  @JvmInline
-  value class Type(
+  class Type(
     val element: Lazy<Value>,
+    override val kind: Kind,
   ) : Value
 
-  object Bool : Value
+  object Bool : Value {
+    override val kind: Kind get() = Kind.TYPE_BYTE
+  }
 
   @JvmInline
   value class BoolOf(
     val value: Boolean,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.BYTE
+  }
 
   class If(
     val condition: Value,
     val thenBranch: Lazy<Value>,
     val elseBranch: Lazy<Value>,
+    override val kind: Kind,
   ) : Value
 
   class Is(
     val scrutinee: Lazy<Value>,
     val scrutineer: Pattern,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.BYTE
+  }
 
-  object Byte : Value
+  object Byte : Value {
+    override val kind: Kind get() = Kind.TYPE_BYTE
+  }
 
   @JvmInline
   value class ByteOf(
     val value: kotlin.Byte,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.BYTE
+  }
 
-  object Short : Value
+  object Short : Value {
+    override val kind: Kind get() = Kind.TYPE_SHORT
+  }
 
   @JvmInline
   value class ShortOf(
     val value: kotlin.Short,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.SHORT
+  }
 
-  object Int : Value
+  object Int : Value {
+    override val kind: Kind get() = Kind.TYPE_INT
+  }
 
   @JvmInline
   value class IntOf(
     val value: kotlin.Int,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.INT
+  }
 
-  object Long : Value
+  object Long : Value {
+    override val kind: Kind get() = Kind.TYPE_LONG
+  }
 
   @JvmInline
   value class LongOf(
     val value: kotlin.Long,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.LONG
+  }
 
-  object Float : Value
+  object Float : Value {
+    override val kind: Kind get() = Kind.TYPE_FLOAT
+  }
 
   @JvmInline
   value class FloatOf(
     val value: kotlin.Float,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.FLOAT
+  }
 
-  object Double : Value
+  object Double : Value {
+    override val kind: Kind get() = Kind.TYPE_DOUBLE
+  }
 
   @JvmInline
   value class DoubleOf(
     val value: kotlin.Double,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.DOUBLE
+  }
 
-  object String : Value
+  object String : Value {
+    override val kind: Kind get() = Kind.TYPE_STRING
+  }
 
   @JvmInline
   value class StringOf(
     val value: kotlin.String,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.STRING
+  }
 
-  object ByteArray : Value
+  object ByteArray : Value {
+    override val kind: Kind get() = Kind.TYPE_BYTE_ARRAY
+  }
 
   @JvmInline
   value class ByteArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.BYTE_ARRAY
+  }
 
-  object IntArray : Value
+  object IntArray : Value {
+    override val kind: Kind get() = Kind.TYPE_INT_ARRAY
+  }
 
   @JvmInline
   value class IntArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.INT_ARRAY
+  }
 
-  object LongArray : Value
+  object LongArray : Value {
+    override val kind: Kind get() = Kind.TYPE_LONG_ARRAY
+  }
 
   @JvmInline
   value class LongArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.LONG_ARRAY
+  }
 
   @JvmInline
   value class List(
     val element: Lazy<Value>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.TYPE_LIST
+  }
 
   @JvmInline
   value class ListOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.LIST
+  }
 
   @JvmInline
   value class Compound(
     val elements: Map<kotlin.String, Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.TYPE_COMPOUND
+  }
 
   @JvmInline
   value class CompoundOf(
     val elements: Map<kotlin.String, Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.COMPOUND
+  }
 
   @JvmInline
   value class Union(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = elements.firstOrNull()?.value?.kind ?: Kind.TYPE_END
+  }
 
   class Func(
     val params: kotlin.collections.List<Lazy<Value>>,
     val result: Closure,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.TYPE_COMPOUND
+  }
 
-  class FuncOf(
+  @JvmInline
+  value class FuncOf(
     val result: Closure,
-  ) : Value
+  ) : Value {
+    override val kind: Kind get() = Kind.COMPOUND
+  }
 
   class Apply(
     val func: Value,
     val args: kotlin.collections.List<Lazy<Value>>,
-    val kind: Kind,
+    override val kind: Kind,
   ) : Value
 
-  data class Var(
+  class Var(
     val name: kotlin.String,
     val lvl: Lvl,
-    val kind: Kind,
+    override val kind: Kind,
   ) : Value
 
   class Def(
     val name: DefinitionLocation,
     val body: Term?,
-    val kind: Kind,
+    override val kind: Kind,
   ) : Value
 
   class Meta(
     val index: kotlin.Int,
     val source: Range,
-    val kind: Kind,
+    override val kind: Kind,
   ) : Value
 
-  object Hole : Value
+  object Hole : Value {
+    override val kind: Kind get() = Kind.Hole
+  }
 }
 
 typealias Env = PersistentList<Lazy<Value>>

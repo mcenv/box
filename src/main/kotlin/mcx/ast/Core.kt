@@ -40,12 +40,11 @@ object Core {
 
     data class Type(
       val element: Term,
-    ) : Term {
-      override val kind: Kind get() = Kind.BYTE
-    }
+      override val kind: Kind,
+    ) : Term
 
     object Bool : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_BYTE
       override fun toString(): kotlin.String = "Bool"
     }
 
@@ -71,7 +70,7 @@ object Core {
     }
 
     object Byte : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_BYTE
       override fun toString(): kotlin.String = "Byte"
     }
 
@@ -82,7 +81,7 @@ object Core {
     }
 
     object Short : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_SHORT
       override fun toString(): kotlin.String = "Short"
     }
 
@@ -93,7 +92,7 @@ object Core {
     }
 
     object Int : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_INT
       override fun toString(): kotlin.String = "Int"
     }
 
@@ -104,7 +103,7 @@ object Core {
     }
 
     object Long : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_LONG
       override fun toString(): kotlin.String = "Long"
     }
 
@@ -115,7 +114,7 @@ object Core {
     }
 
     object Float : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_FLOAT
       override fun toString(): kotlin.String = "Float"
     }
 
@@ -126,7 +125,7 @@ object Core {
     }
 
     object Double : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_DOUBLE
       override fun toString(): kotlin.String = "Double"
     }
 
@@ -137,7 +136,7 @@ object Core {
     }
 
     object String : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_STRING
       override fun toString(): kotlin.String = "String"
     }
 
@@ -148,7 +147,7 @@ object Core {
     }
 
     object ByteArray : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_BYTE_ARRAY
       override fun toString(): kotlin.String = "ByteArray"
     }
 
@@ -159,7 +158,7 @@ object Core {
     }
 
     object IntArray : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_INT_ARRAY
       override fun toString(): kotlin.String = "IntArray"
     }
 
@@ -170,7 +169,7 @@ object Core {
     }
 
     object LongArray : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_LONG_ARRAY
       override fun toString(): kotlin.String = "LongArray"
     }
 
@@ -183,7 +182,7 @@ object Core {
     data class List(
       val element: Term,
     ) : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_LIST
     }
 
     data class ListOf(
@@ -195,7 +194,7 @@ object Core {
     data class Compound(
       val elements: Map<kotlin.String, Term>,
     ) : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_COMPOUND
     }
 
     data class CompoundOf(
@@ -207,14 +206,14 @@ object Core {
     data class Union(
       val elements: kotlin.collections.List<Term>,
     ) : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind = elements.firstOrNull()?.kind ?: Kind.TYPE_END
     }
 
     data class Func(
       val params: kotlin.collections.List<Pair<Pattern, Term>>,
       val result: Term,
     ) : Term {
-      override val kind: Kind get() = Kind.BYTE
+      override val kind: Kind get() = Kind.TYPE_COMPOUND
     }
 
     data class FuncOf(
@@ -257,7 +256,7 @@ object Core {
     ) : Term
 
     object Hole : Term {
-      override val kind: Kind get() = Kind.END
+      override val kind: Kind get() = Kind.Hole
       override fun toString(): kotlin.String = "Hole"
     }
   }
@@ -292,24 +291,28 @@ object Core {
     }
 
     object Hole : Pattern {
-      override val kind: Kind get() = Kind.END
+      override val kind: Kind get() = Kind.Hole
       override fun toString(): String = "Hole"
     }
   }
 
   sealed interface Kind {
-    data class Tag(
-      val tag: NbtType,
-    ) : Kind
-
     data class Type(
       val element: Kind,
+    ) : Kind
+
+    data class Tag(
+      val tag: NbtType,
     ) : Kind
 
     data class Meta(
       val index: Int,
       val source: Range,
     ) : Kind
+
+    object Hole : Kind {
+      override fun toString(): String = "Hole"
+    }
 
     companion object {
       val END: Kind = Tag(NbtType.END)
@@ -325,6 +328,19 @@ object Core {
       val LONG_ARRAY: Kind = Tag(NbtType.LONG_ARRAY)
       val LIST: Kind = Tag(NbtType.LIST)
       val COMPOUND: Kind = Tag(NbtType.COMPOUND)
+      val TYPE_END: Kind = Type(END)
+      val TYPE_BYTE: Kind = Type(BYTE)
+      val TYPE_SHORT: Kind = Type(SHORT)
+      val TYPE_INT: Kind = Type(INT)
+      val TYPE_LONG: Kind = Type(LONG)
+      val TYPE_FLOAT: Kind = Type(FLOAT)
+      val TYPE_DOUBLE: Kind = Type(DOUBLE)
+      val TYPE_STRING: Kind = Type(STRING)
+      val TYPE_BYTE_ARRAY: Kind = Type(BYTE_ARRAY)
+      val TYPE_INT_ARRAY: Kind = Type(INT_ARRAY)
+      val TYPE_LONG_ARRAY: Kind = Type(LONG_ARRAY)
+      val TYPE_LIST: Kind = Type(LIST)
+      val TYPE_COMPOUND: Kind = Type(COMPOUND)
     }
   }
 }

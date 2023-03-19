@@ -24,13 +24,7 @@ object Lifted {
   sealed interface Term {
     val type: NbtType
 
-    data class TagOf(
-      val value: NbtType,
-    ) : Term {
-      override val type: NbtType get() = NbtType.BYTE
-    }
-
-    object Unit : Term {
+    object UnitOf : Term {
       override val type: NbtType get() = NbtType.BYTE
     }
 

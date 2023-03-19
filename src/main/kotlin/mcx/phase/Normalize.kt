@@ -17,7 +17,7 @@ fun Env.eval(
     is Term.TagOf       -> Value.TagOf(term.value)
     is Term.Type        -> {
       val tag = lazy { eval(term.element) }
-      Value.Type(tag)
+      Value.Type(tag, term.kind)
     }
     is Term.Bool        -> Value.Bool
     is Term.BoolOf      -> Value.BoolOf(term.value)
@@ -33,7 +33,7 @@ fun Env.eval(
         else            -> {
           val thenBranch = lazy { eval(term.thenBranch) }
           val elseBranch = lazy { eval(term.elseBranch) }
-          Value.If(condition, thenBranch, elseBranch)
+          Value.If(condition, thenBranch, elseBranch, term.kind)
         }
       }
     }
@@ -131,7 +131,7 @@ fun Lvl.quote(
     is Value.TagOf       -> Term.TagOf(value.value)
     is Value.Type        -> {
       val tag = quote(value.element.value)
-      Term.Type(tag)
+      Term.Type(tag, value.kind)
     }
     is Value.Bool        -> Term.Bool
     is Value.BoolOf      -> Term.BoolOf(value.value)

@@ -16,16 +16,17 @@ class Meta {
 
   fun freshValue(
     source: Range,
-    kind: Kind,
+    kind: Kind = freshKind(source),
   ): Value {
     return Value.Meta(values.size, source, kind).also { values += null }
   }
 
   fun freshType(
     source: Range,
+    kind: Kind = freshKind(source),
   ): Value {
     val tag = lazy { freshValue(source, Kind.BYTE) }
-    return Value.Type(tag)
+    return Value.Type(tag, kind)
   }
 
   fun freshKind(
@@ -34,16 +35,29 @@ class Meta {
     return Kind.Meta(kinds.size, source).also { kinds += null }
   }
 
-  tailrec fun force(
+  tailrec fun forceValue(
     value: Value,
   ): Value {
     return when (value) {
       is Value.Meta ->
         when (val forced = values.getOrNull(value.index)) {
           null -> value
-          else -> force(forced)
+          else -> forceValue(forced)
         }
       else          -> value
+    }
+  }
+
+  tailrec fun forceKind(
+    kind: Kind,
+  ): Kind {
+    return when (kind) {
+      is Kind.Meta ->
+        when (val forced = kinds.getOrNull(kind.index)) {
+          null -> kind
+          else -> forceKind(forced)
+        }
+      else         -> kind
     }
   }
 
@@ -59,7 +73,8 @@ class Meta {
       is Term.TagOf       -> term
       is Term.Type        -> {
         val tag = zonkTerm(term.element)
-        Term.Type(tag)
+        val kind = zonkKind(term.kind)
+        Term.Type(tag, kind)
       }
       is Term.Bool        -> term
       is Term.BoolOf      -> term
@@ -163,14 +178,14 @@ class Meta {
             val kind = zonkKind(term.kind)
             Term.Meta(term.index, term.source, kind).also { _unsolvedMetas += it.index to it.source }
           }
-          else -> quote(solution)
+          else -> zonkTerm(quote(solution))
         }
       }
       is Term.Hole        -> term
     }
   }
 
-  fun zonkPattern(
+  private fun zonkPattern(
     pattern: Pattern,
   ): Pattern {
     return when (pattern) {
@@ -203,49 +218,50 @@ class Meta {
       is Kind.Meta -> {
         when (val solution = kinds.getOrNull(kind.index)) {
           null -> kind.also { _unsolvedMetas += kind.index to kind.source }
-          else -> solution
+          else -> zonkKind(solution)
         }
       }
+      is Kind.Hole -> kind
     }
   }
 
-  fun Lvl.unify(
+  fun Lvl.unifyValue(
     value1: Value,
     value2: Value,
   ): Boolean {
-    val value1 = force(value1)
-    val value2 = force(value2)
-    return when {
-      value1 is Value.Meta                             -> {
+    val value1 = forceValue(value1)
+    val value2 = forceValue(value2)
+    return unifyKind(value1.kind, value2.kind) && when {
+      value1 is Value.Meta                                       -> {
         when (val solution1 = values[value1.index]) {
           null -> {
             values[value1.index] = value2
             true
           }
-          else -> unify(solution1, value2)
+          else -> unifyValue(solution1, value2)
         }
       }
-      value2 is Value.Meta                             -> {
+      value2 is Value.Meta                                       -> {
         when (val solution2 = values[value2.index]) {
           null -> {
             values[value2.index] = value1
             true
           }
-          else -> unify(value1, solution2)
+          else -> unifyValue(value1, solution2)
         }
       }
-      value1 is Value.Tag && value2 is Value.Tag       -> true
-      value1 is Value.TagOf && value2 is Value.TagOf   -> value1.value == value2.value
-      value1 is Value.Type && value2 is Value.Type     -> unify(value1.element.value, value2.element.value)
-      value1 is Value.Bool && value2 is Value.Bool     -> true
-      value1 is Value.BoolOf && value2 is Value.BoolOf -> value1.value == value2.value
-      value1 is Value.If && value2 is Value.If         -> {
-        unify(value1.condition, value2.condition) &&
-        unify(value1.thenBranch.value, value2.elseBranch.value) &&
-        unify(value1.elseBranch.value, value2.elseBranch.value)
+      value1 is Value.Tag && value2 is Value.Tag                 -> true
+      value1 is Value.TagOf && value2 is Value.TagOf             -> value1.value == value2.value
+      value1 is Value.Type && value2 is Value.Type               -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Bool && value2 is Value.Bool               -> true
+      value1 is Value.BoolOf && value2 is Value.BoolOf           -> value1.value == value2.value
+      value1 is Value.If && value2 is Value.If                   -> {
+        unifyValue(value1.condition, value2.condition) &&
+        unifyValue(value1.thenBranch.value, value2.elseBranch.value) &&
+        unifyValue(value1.elseBranch.value, value2.elseBranch.value)
       }
-      value1 is Value.Is && value2 is Value.Is         -> {
-        unify(value1.scrutinee.value, value2.scrutinee.value) &&
+      value1 is Value.Is && value2 is Value.Is                   -> {
+        unifyValue(value1.scrutinee.value, value2.scrutinee.value) &&
         value1.scrutineer == value2.scrutineer // TODO: unify patterns
       }
       value1 is Value.Byte && value2 is Value.Byte               -> true
@@ -265,47 +281,82 @@ class Meta {
       value1 is Value.ByteArray && value2 is Value.ByteArray     -> true
       value1 is Value.ByteArrayOf && value2 is Value.ByteArrayOf -> {
         value1.elements.size == value2.elements.size &&
-        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+        (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
       value1 is Value.IntArray && value2 is Value.IntArray       -> true
       value1 is Value.IntArrayOf && value2 is Value.IntArrayOf   -> {
         value1.elements.size == value2.elements.size &&
-        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+        (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
       value1 is Value.LongArray && value2 is Value.LongArray     -> true
       value1 is Value.LongArrayOf && value2 is Value.LongArrayOf -> {
         value1.elements.size == value2.elements.size &&
-        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+        (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
-      value1 is Value.List && value2 is Value.List               -> unify(value1.element.value, value2.element.value)
+      value1 is Value.List && value2 is Value.List               -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.ListOf && value2 is Value.ListOf           -> {
         value1.elements.size == value2.elements.size &&
-        (value1.elements zip value2.elements).all { (element1, element2) -> unify(element1.value, element2.value) }
+        (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
       value1 is Value.Compound && value2 is Value.Compound       -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           when (val element2 = value2.elements[key1]) {
             null -> false
-            else -> unify(element1.value, element2.value)
+            else -> unifyValue(element1.value, element2.value)
           }
         }
       }
-      value1 is Value.Union && value2 is Value.Union             -> false // TODO
+      value1 is Value.Union && value2 is Value.Union             -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
       value1 is Value.Func && value2 is Value.Func               -> {
         value1.params.size == value2.params.size &&
-        (value1.params zip value2.params).all { (param1, param2) -> unify(param1.value, param2.value) } &&
-        unify(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
+        (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
+        unifyValue(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf           -> false // TODO
+      value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
+        unifyValue(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
+      }
       value1 is Value.Apply && value2 is Value.Apply             -> {
-        unify(value1.func, value2.func) &&
+        unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
-        (value1.args zip value2.args).all { (arg1, arg2) -> unify(arg1.value, arg2.value) }
+        (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
       value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
+      // TODO: unify [Value.Def]s
       value1 is Value.Hole || value2 is Value.Hole               -> true // ?
       else                                                       -> false
+    }
+  }
+
+  fun unifyKind(
+    kind1: Kind,
+    kind2: Kind,
+  ): Boolean {
+    val kind1 = forceKind(kind1)
+    val kind2 = forceKind(kind2)
+    return when {
+      kind1 is Kind.Meta                       -> {
+        when (val solution1 = kinds[kind1.index]) {
+          null -> {
+            kinds[kind1.index] = kind2
+            true
+          }
+          else -> unifyKind(solution1, kind2)
+        }
+      }
+      kind2 is Kind.Meta                       -> {
+        when (val solution2 = kinds[kind2.index]) {
+          null -> {
+            kinds[kind2.index] = kind1
+            true
+          }
+          else -> unifyKind(kind1, solution2)
+        }
+      }
+      kind1 is Kind.Type && kind2 is Kind.Type -> unifyKind(kind1.element, kind2.element)
+      kind1 is Kind.Tag && kind2 is Kind.Tag   -> kind1.tag == kind2.tag
+      kind1 is Kind.Hole || kind2 is Kind.Hole -> false
+      else                                     -> false
     }
   }
 }
