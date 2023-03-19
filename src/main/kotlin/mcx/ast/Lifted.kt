@@ -24,16 +24,6 @@ object Lifted {
   sealed interface Term {
     val type: NbtType
 
-    object UnitOf : Term {
-      override val type: NbtType get() = NbtType.BYTE
-    }
-
-    data class BoolOf(
-      val value: Boolean,
-    ) : Term {
-      override val type: NbtType get() = NbtType.BYTE
-    }
-
     data class If(
       val condition: Term,
       val thenName: DefinitionLocation,
@@ -121,10 +111,15 @@ object Lifted {
     }
 
     data class FuncOf(
-      val types: List<Pair<String, NbtType>>,
+      val entries: List<Entry>,
       val tag: Int,
     ) : Term {
       override val type: NbtType get() = NbtType.COMPOUND
+
+      data class Entry(
+        val name: String,
+        val type: NbtType,
+      )
     }
 
     data class Apply(

@@ -1,9 +1,6 @@
 package mcx.phase.backend
 
-import mcx.ast.Idx
-import mcx.ast.Lvl
 import mcx.ast.Modifier
-import mcx.ast.toLvl
 import mcx.data.NbtType
 import mcx.phase.Context
 import mcx.phase.backend.Lift.Ctx.Companion.emptyCtx
@@ -46,10 +43,10 @@ class Lift private constructor(
   ): L.Term {
     return when (term) {
       is C.Term.Tag         -> unexpectedTerm(term)
-      is C.Term.TagOf       -> L.Term.UnitOf
-      is C.Term.Type        -> L.Term.UnitOf
-      is C.Term.Bool        -> L.Term.UnitOf
-      is C.Term.BoolOf      -> L.Term.BoolOf(term.value)
+      is C.Term.TagOf       -> UNIT
+      is C.Term.Type        -> UNIT
+      is C.Term.Bool        -> UNIT
+      is C.Term.BoolOf      -> L.Term.ByteOf(if (term.value) 1 else 0)
       is C.Term.If          -> {
         val condition = liftTerm(term.condition)
         val thenBranch = liftTerm(term.thenBranch)
@@ -66,49 +63,49 @@ class Lift private constructor(
           L.Term.Is(scrutinee, scrutineer)
         }
       }
-      is C.Term.Byte        -> L.Term.UnitOf
+      is C.Term.Byte        -> UNIT
       is C.Term.ByteOf      -> L.Term.ByteOf(term.value)
-      is C.Term.Short       -> L.Term.UnitOf
+      is C.Term.Short       -> UNIT
       is C.Term.ShortOf     -> L.Term.ShortOf(term.value)
-      is C.Term.Int         -> L.Term.UnitOf
+      is C.Term.Int         -> UNIT
       is C.Term.IntOf       -> L.Term.IntOf(term.value)
-      is C.Term.Long        -> L.Term.UnitOf
+      is C.Term.Long        -> UNIT
       is C.Term.LongOf      -> L.Term.LongOf(term.value)
-      is C.Term.Float       -> L.Term.UnitOf
+      is C.Term.Float       -> UNIT
       is C.Term.FloatOf     -> L.Term.FloatOf(term.value)
-      is C.Term.Double      -> L.Term.UnitOf
+      is C.Term.Double      -> UNIT
       is C.Term.DoubleOf    -> L.Term.DoubleOf(term.value)
-      is C.Term.String      -> L.Term.UnitOf
+      is C.Term.String      -> UNIT
       is C.Term.StringOf    -> L.Term.StringOf(term.value)
-      is C.Term.ByteArray   -> L.Term.UnitOf
+      is C.Term.ByteArray   -> UNIT
       is C.Term.ByteArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.ByteArrayOf(elements)
       }
-      is C.Term.IntArray    -> L.Term.UnitOf
+      is C.Term.IntArray    -> UNIT
       is C.Term.IntArrayOf  -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.IntArrayOf(elements)
       }
-      is C.Term.LongArray   -> L.Term.UnitOf
+      is C.Term.LongArray   -> UNIT
       is C.Term.LongArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.LongArrayOf(elements)
       }
-      is C.Term.List        -> L.Term.UnitOf
+      is C.Term.List        -> UNIT
       is C.Term.ListOf      -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.ListOf(elements)
       }
-      is C.Term.Compound    -> L.Term.UnitOf
+      is C.Term.Compound    -> UNIT
       is C.Term.CompoundOf  -> {
         val elements = term.elements.mapValues { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
-      is C.Term.Union       -> L.Term.UnitOf
-      is C.Term.Func        -> L.Term.UnitOf
+      is C.Term.Union       -> UNIT
+      is C.Term.Func        -> UNIT
       is C.Term.FuncOf      -> {
-        restoring { // ?
+        with(emptyCtx()) {
           val freeVars = freeVars(term)
           val capture = L.Pattern.CompoundOf(
             freeVars.entries.map { (name, type) ->
@@ -128,8 +125,10 @@ class Lift private constructor(
             liftedDefinitions += it
             dispatchedDefinitions += it
           }
-          val types = freeVars.entries.map { (name, type) -> name to type }
-          L.Term.FuncOf(types, tag)
+          val entries = freeVars.entries.map { (name, type) ->
+            L.Term.FuncOf.Entry(name, type)
+          }
+          L.Term.FuncOf(entries, tag)
         }
       }
       is C.Term.Apply       -> {
@@ -267,10 +266,6 @@ class Lift private constructor(
     private val _types: MutableList<Pair<String, NbtType>> = mutableListOf()
     val types: List<Pair<String, NbtType>> get() = _types
 
-    operator fun get(idx: Idx): Pair<String, NbtType> {
-      return _types[Lvl(_types.size).toLvl(idx).value]
-    }
-
     fun bind(
       name: String,
       type: NbtType,
@@ -300,6 +295,8 @@ class Lift private constructor(
   )
 
   companion object {
+    private val UNIT: L.Term = L.Term.ByteOf(0)
+
     private fun unexpectedTerm(term: C.Term): Nothing {
       error("unexpected term: ${prettyTerm(term)}")
     }

@@ -6,10 +6,12 @@ import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
 import mcx.ast.Packed.Command.Execute.ConditionalScore.Comparator.*
 import mcx.ast.Packed.Command.Execute.Mode.*
+import mcx.ast.Packed.Command.Execute.StoreStorage.Type
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
+import mcx.data.Nbt
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.phase.*
@@ -22,7 +24,7 @@ class Pack private constructor(
   private val context: Context,
 ) {
   private val commands: MutableList<Command> = mutableListOf()
-  private val entries: Map<NbtType, MutableList<Int?>> = NbtType.values().associateWith { mutableListOf() }
+  private val entries: Map<NbtType, MutableList<String?>> = NbtType.values().associateWith { mutableListOf() }
 
   private fun packDefinition(
     definition: L.Definition,
@@ -32,34 +34,32 @@ class Pack private constructor(
       is L.Definition.Function -> {
         !{ Raw("# function ${definition.name}") }
 
-        /*
-        val binderTypes = eraseTypes(definition.binder.type)
-        binderTypes.forEach { push(it, null) }
-        packPattern(definition.binder)
+        if (L.Modifier.BUILTIN in definition.modifiers) {
+          // lookupBuiltin(definition.name)!!.pack()
+        } else {
+          definition.params.forEach { push(it.type, null) }
+          definition.params.forEach { packPattern(it) }
 
-        packTerm(definition.body)
+          packTerm(definition.body!!)
 
-        if (L.Modifier.NO_DROP !in definition.modifiers) {
-          val resultTypes = eraseTypes(definition.body.type)
-          dropPattern(definition.binder, resultTypes)
+          if (L.Modifier.NO_DROP !in definition.modifiers) {
+            definition.params.forEach { dropPattern(it, listOf(definition.body.type)) }
+          }
+
+          if (definition.restore != null) {
+            +SetScore(REG_0, REG, definition.restore)
+          }
         }
-
-        if (definition.restore != null) {
-          +SetScore(REG_0, REG, definition.restore)
-        }
-        */
 
         P.Definition.Function(path, commands)
       }
     }
   }
 
-  /*
   private fun packTerm(
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.BoolOf      -> push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(if (term.value) 1 else 0)))
       is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(term.value)))
       is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(Nbt.Short(term.value)))
       is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(Nbt.Int(term.value)))
@@ -103,7 +103,7 @@ class Pack private constructor(
       is L.Term.ListOf      -> {
         push(NbtType.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
-          val elementType = eraseSingleType(term.elements.first().type)
+          val elementType = term.elements.first().type
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == NbtType.LIST) -2 else -1
@@ -116,24 +116,27 @@ class Pack private constructor(
         push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
           packTerm(element)
-          val valueType = eraseSingleType(element.type)
+          val valueType = element.type
           val index = if (valueType == NbtType.COMPOUND) -2 else -1
           +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.id)(-1) }))))
           drop(valueType)
         }
       }
       is L.Term.FuncOf      -> {
-        push(NbtType.INT, SourceProvider.Value(Nbt.Int(term.tag)))
-      }
-      is L.Term.ClosOf      -> {
         push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
-        term.vars.forEach { (name, level, type) ->
-          val stack = eraseSingleType(type)
-          val index = this[level, stack]
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) }))))
+        term.entries.forEach { (name, type) ->
+          val index = this[name, type]
+          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) }))))
         }
       }
-      is L.Term.Apply       -> TODO()
+      is L.Term.Apply       -> {
+        term.args.forEach { packTerm(it) }
+        packTerm(term.func)
+        +RunFunction(packDefinitionLocation(DISPATCH))
+        val keeps = listOf(term.type)
+        term.args.forEach { drop(it.type, keeps, false) }
+        push(term.type, null)
+      }
       is L.Term.If          -> {
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
@@ -150,26 +153,23 @@ class Pack private constructor(
             RunFunction(packDefinitionLocation(term.elseName))
           )
         )
-        eraseTypes(term.type).forEach { push(it, null) }
+        push(term.type, null)
       }
       is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
 
-        val bodyTypes = eraseTypes(term.body.type)
-        dropPattern(term.binder, bodyTypes)
+        dropPattern(term.binder, listOf(term.body.type))
       }
       is L.Term.Var         -> {
-        val stacks = eraseTypes(term.type)
-        stacks.forEachIndexed { offset, stack ->
-          val index = this[term.level, stack] - stacks.size + offset + 1
-          push(stack, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(stack.id)(index) })))
-        }
+        val type = term.type
+        val index = this[term.name, term.type]
+        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
       }
       is L.Term.Def         -> {
         +RunFunction(packDefinitionLocation(term.name))
-        eraseTypes(term.type).forEach { push(it, null) }
+        push(term.type, null)
       }
       is L.Term.Is          -> {
         packTerm(term.scrutinee)
@@ -182,15 +182,15 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.IntOf      -> Unit
+      is L.Pattern.IntOf      -> {}
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(eraseSingleType(element.type), SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
+          push(element.type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
           packPattern(element)
         }
       }
-      is L.Pattern.Var        -> eraseTypes(pattern.type).forEach { bind(pattern.level, it) }
-      is L.Pattern.Drop       -> Unit
+      is L.Pattern.Var        -> bind(pattern.name, pattern.type)
+      is L.Pattern.Drop       -> {}
     }
   }
 
@@ -206,8 +206,8 @@ class Pack private constructor(
           .forEach { (_, element) -> dropPattern(element, keeps) }
         drop(NbtType.COMPOUND, keeps)
       }
-      is L.Pattern.Var        -> eraseTypes(pattern.type).forEach { drop(it, keeps) }
-      is L.Pattern.Drop       -> eraseTypes(pattern.type).forEach { drop(it, keeps) }
+      is L.Pattern.Var        -> drop(pattern.type, keeps)
+      is L.Pattern.Drop       -> drop(pattern.type, keeps)
     }
   }
 
@@ -235,8 +235,8 @@ class Pack private constructor(
           )
         }
         is L.Pattern.CompoundOf -> TODO()
-        is L.Pattern.Var        -> eraseTypes(scrutineer.type).forEach { drop(it) }
-        is L.Pattern.Drop       -> eraseTypes(scrutineer.type).forEach { drop(it) }
+        is L.Pattern.Var        -> drop(scrutineer.type)
+        is L.Pattern.Drop       -> drop(scrutineer.type)
       }
     }
     visit(scrutineer)
@@ -248,7 +248,6 @@ class Pack private constructor(
       )
     )
   }
-  */
 
   private fun push(
     stack: NbtType,
@@ -258,7 +257,7 @@ class Pack private constructor(
       !{ Raw("# push ${stack.id}") }
       +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(stack.id) }), DataManipulator.Append(source))
     }
-    entry(stack) += null
+    getEntry(stack) += null
   }
 
   private fun drop(
@@ -271,31 +270,32 @@ class Pack private constructor(
       !{ Raw("# drop ${drop.id} under ${keeps.joinToString(", ", "[", "]") { it.id }}") }
       +RemoveData(DataAccessor.Storage(MCX, nbtPath { it(drop.id)(index) }))
     }
-    val entry = entry(drop)
+    val entry = getEntry(drop)
     entry.removeAt(entry.size + index)
   }
 
   private fun bind(
-    level: Int,
+    name: String,
     stack: NbtType,
   ) {
-    val entry = entry(stack)
+    val entry = getEntry(stack)
     val index = entry.indexOfLast { it == null }
-    entry[index] = level
+    entry[index] = name
   }
 
   operator fun get(
-    level: Int,
+    name: String,
     stack: NbtType,
   ): Int {
-    val entry = entry(stack)
-    return entry.indexOfLast { it == level }.also { require(it != -1) } - entry.size
+    val entry = getEntry(stack)
+    return entry.indexOfLast { it == name }.also { require(it != -1) } - entry.size
   }
 
-  private fun entry(
+  private fun getEntry(
     stack: NbtType,
-  ): MutableList<Int?> =
-    entries[stack]!!
+  ): MutableList<String?> {
+    return entries[stack]!!
+  }
 
   @Suppress("NOTHING_TO_INLINE")
   private inline operator fun Command.unaryPlus() {
