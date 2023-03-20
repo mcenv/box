@@ -17,6 +17,9 @@
     "module": {
       "patterns": [
         {
+          "include": "#comment"
+        },
+        {
           "begin": "\\b(import)\\s+\\{",
           "beginCaptures": {
             "1": {
@@ -25,6 +28,9 @@
           },
           "end": "\\}",
           "patterns": [
+            {
+              "include": "#comment"
+            },
             {
               "include": "#location"
             },
@@ -41,6 +47,9 @@
     },
     "definition": {
       "patterns": [
+        {
+          "include": "#comment"
+        },
         {
           "include": "#modifier"
         },
@@ -64,6 +73,9 @@
             }
           },
           "patterns": [
+            {
+              "include": "#comment"
+            },
             {
               "match": ":=",
               "name": "keyword.control.mcx"
@@ -103,6 +115,9 @@
             }
           },
           "patterns": [
+            {
+              "include": "#comment"
+            },
             {
               "include": "#term"
             },
@@ -174,7 +189,7 @@
       ]
     },
     "modifier": {
-      "match": "\\b(?:builtin|export|rec)\\b",
+      "match": "\\b(?:builtin|export|rec|const)\\b",
       "name": "keyword.modifier.mcx"
     },
     "location": {
