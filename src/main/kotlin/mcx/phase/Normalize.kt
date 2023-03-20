@@ -13,17 +13,25 @@ import mcx.ast.toLvl
 
 typealias Env = PersistentList<Lazy<Value>>
 
+fun emptyEnv(): Env {
+  return persistentListOf()
+}
+
+fun Env.normalize(term: Term): Term {
+  return Lvl(size).quote(eval(term))
+}
+
 fun Env.eval(term: Term): Value {
   return when (term) {
-    is Term.Tag        -> Value.Tag
-    is Term.TagOf      -> Value.TagOf(term.value)
-    is Term.Type       -> {
+    is Term.Tag         -> Value.Tag
+    is Term.TagOf       -> Value.TagOf(term.value)
+    is Term.Type        -> {
       val tag = lazy { eval(term.element) }
       Value.Type(tag)
     }
-    is Term.Bool       -> Value.Bool
-    is Term.BoolOf     -> Value.BoolOf(term.value)
-    is Term.If         -> {
+    is Term.Bool        -> Value.Bool
+    is Term.BoolOf      -> Value.BoolOf(term.value)
+    is Term.If          -> {
       when (val condition = eval(term.condition)) {
         is Value.BoolOf -> {
           if (condition.value) {
@@ -39,7 +47,7 @@ fun Env.eval(term: Term): Value {
         }
       }
     }
-    is Term.Is         -> {
+    is Term.Is          -> {
       val scrutinee = lazy { eval(term.scrutinee) }
       when (val result = term.scrutineer matches scrutinee) {
         null -> Value.Is(scrutinee, term.scrutineer)
@@ -79,7 +87,7 @@ fun Env.eval(term: Term): Value {
       val element = lazy { eval(term.element) }
       Value.List(element)
     }
-    is Term.ListOf     -> {
+    is Term.ListOf      -> {
       val elements = term.elements.map { lazy { eval(it) } }
       Value.ListOf(elements, term.type)
     }
@@ -87,25 +95,25 @@ fun Env.eval(term: Term): Value {
       val elements = term.elements.mapValues { lazy { eval(it.value) } }
       Value.Compound(elements)
     }
-    is Term.CompoundOf -> {
+    is Term.CompoundOf  -> {
       val elements = term.elements.mapValues { lazy { eval(it.value) } }
       Value.CompoundOf(elements, term.type)
     }
-    is Term.Union      -> {
+    is Term.Union       -> {
       val elements = term.elements.map { lazy { eval(it) } }
       Value.Union(elements, term.type)
     }
-    is Term.Func       -> {
+    is Term.Func        -> {
       val params = term.params.map { (_, type) -> lazy { eval(type) } }
       val binders = term.params.map { (param, _) -> param }
       val result = Closure(this, binders, term.result)
       Value.Func(params, result)
     }
-    is Term.FuncOf     -> {
+    is Term.FuncOf      -> {
       val result = Closure(this, term.params, term.result)
       Value.FuncOf(result, term.type)
     }
-    is Term.Apply      -> {
+    is Term.Apply       -> {
       val func = eval(term.func)
       val args = term.args.map { lazy { eval(it) } }
       when (func) {
@@ -114,28 +122,28 @@ fun Env.eval(term: Term): Value {
         else            -> null
       } ?: Value.Apply(func, args, term.type)
     }
-    is Term.Code       -> {
+    is Term.Code        -> {
       val element = lazy { eval(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf     -> {
+    is Term.CodeOf      -> {
       val element = lazy { eval(term.element) }
       Value.CodeOf(element, term.type)
     }
-    is Term.Splice     -> {
+    is Term.Splice      -> {
       when (val element = eval(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> Value.Splice(element, term.type)
       }
     }
-    is Term.Let        -> {
+    is Term.Let         -> {
       val init = lazy { eval(term.init) }
       (this + (term.binder binds init)).eval(term.body)
     }
-    is Term.Var        -> this[Lvl(size).toLvl(term.idx).value].value
-    is Term.Def        -> term.body?.let { eval(it) } ?: Value.Def(term.name, null, term.type)
-    is Term.Meta       -> Value.Meta(term.index, term.source, term.type)
-    is Term.Hole       -> Value.Hole
+    is Term.Var         -> this[Lvl(size).toLvl(term.idx).value].value
+    is Term.Def         -> term.body?.let { eval(it) } ?: Value.Def(term.name, null, term.type)
+    is Term.Meta        -> Value.Meta(term.index, term.source, term.type)
+    is Term.Hole        -> Value.Hole
   }
 }
 

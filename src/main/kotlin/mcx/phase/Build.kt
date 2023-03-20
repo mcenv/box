@@ -14,6 +14,7 @@ import mcx.data.PackMetadataSection
 import mcx.phase.backend.Generate
 import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
+import mcx.phase.backend.Stage
 import mcx.phase.frontend.*
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.Position
@@ -54,9 +55,13 @@ class Build(
       var position: Position? = null
     }
 
+    data class Staged(
+      val location: DefinitionLocation,
+    ) : Key<Core.Definition?>
+
     data class Lifted(
       val location: DefinitionLocation,
-    ) : Key<Lift.Result>
+    ) : Key<Lift.Result?>
 
     object Packed : Key<List<mcx.ast.Packed.Definition>> {
       lateinit var locations: List<DefinitionLocation>
@@ -196,7 +201,7 @@ class Build(
               }
             }
 
-            is Key.Lifted -> {
+            is Key.Staged     -> {
               val location = key.location
               val elaborated = fetch(Key.Elaborated(location.module))
               val definition = elaborated.value.module.definitions.find { it.name == location }!!
@@ -206,19 +211,29 @@ class Build(
                 .awaitAll()
               val hash = Objects.hash(elaborated.hash, results.map { it.hash })
               if (value == null || value.hash != hash) {
-                Value(Lift(this@fetch, definition), hash)
+                Value(Stage(this@fetch, definition), hash)
               } else {
                 value
               }
             }
 
-            is Key.Packed -> {
+            is Key.Lifted     -> {
+              val staged = fetch(Key.Staged(key.location))
+              val hash = staged.hash
+              if (value == null || value.hash != hash) {
+                Value(staged.value?.let { Lift(this@fetch, it) }, hash)
+              } else {
+                value
+              }
+            }
+
+            is Key.Packed     -> {
               val results = key.locations.map { fetch(Key.Lifted(it)) }
               val hash = results.map { it.hash }.hashCode()
               if (value == null || value.hash != hash) {
                 val definitions = results
-                  .flatMap { result -> result.value.liftedDefinitions.map { async { Pack(this@fetch, it) } } }
-                  .plus(async { Pack.packDispatch(results.flatMap { result -> result.value.dispatchedDefinitions }) })
+                  .flatMap { result -> result.value?.liftedDefinitions?.map { async { Pack(this@fetch, it) } } ?: emptyList() }
+                  .plus(async { Pack.packDispatch(results.flatMap { result -> result.value?.dispatchedDefinitions ?: emptyList() }) })
                   .awaitAll()
                 Value(definitions, hash)
               } else {
