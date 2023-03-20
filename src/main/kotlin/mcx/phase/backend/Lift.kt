@@ -35,6 +35,7 @@ class Lift private constructor(
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
       Modifier.REC     -> null
+      Modifier.CONST   -> error("unexpected modifier: ${modifier.id}")
     }
   }
 

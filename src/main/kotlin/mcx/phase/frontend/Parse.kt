@@ -105,6 +105,7 @@ class Parse private constructor(
           "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "rec"     -> Ranged(Modifier.REC, until())
+          "const"   -> Ranged(Modifier.CONST, until())
           else      -> return modifiers to word
         }
       }

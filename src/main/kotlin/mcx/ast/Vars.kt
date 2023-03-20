@@ -11,4 +11,3 @@ value class Lvl(val value: Int) {
 fun Lvl.toLvl(idx: Idx): Lvl = Lvl(this.value - idx.value - 1)
 
 fun Lvl.toIdx(lvl: Lvl): Idx = Idx(this.value - lvl.value - 1)
-
