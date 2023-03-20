@@ -246,50 +246,7 @@ class Lift private constructor(
   }
 
   private fun eraseType(type: C.Value): NbtType {
-    return when (type) {
-      is C.Value.Tag         -> unexpectedType(type)
-      is C.Value.TagOf       -> unexpectedType(type)
-      is C.Value.Type        -> NbtType.BYTE
-      is C.Value.Bool        -> NbtType.BYTE
-      is C.Value.BoolOf      -> unexpectedType(type)
-      is C.Value.If          -> eraseType(type.thenBranch.value)
-      is C.Value.Is          -> unexpectedType(type)
-      is C.Value.Byte        -> NbtType.BYTE
-      is C.Value.ByteOf      -> unexpectedType(type)
-      is C.Value.Short       -> NbtType.SHORT
-      is C.Value.ShortOf     -> unexpectedType(type)
-      is C.Value.Int         -> NbtType.INT
-      is C.Value.IntOf       -> unexpectedType(type)
-      is C.Value.Long        -> NbtType.LONG
-      is C.Value.LongOf      -> unexpectedType(type)
-      is C.Value.Float       -> NbtType.FLOAT
-      is C.Value.FloatOf     -> unexpectedType(type)
-      is C.Value.Double      -> NbtType.DOUBLE
-      is C.Value.DoubleOf    -> unexpectedType(type)
-      is C.Value.String      -> NbtType.STRING
-      is C.Value.StringOf    -> unexpectedType(type)
-      is C.Value.ByteArray   -> NbtType.BYTE_ARRAY
-      is C.Value.ByteArrayOf -> unexpectedType(type)
-      is C.Value.IntArray    -> NbtType.INT_ARRAY
-      is C.Value.IntArrayOf  -> unexpectedType(type)
-      is C.Value.LongArray   -> NbtType.LONG_ARRAY
-      is C.Value.LongArrayOf -> unexpectedType(type)
-      is C.Value.List        -> NbtType.LIST
-      is C.Value.ListOf      -> unexpectedType(type)
-      is C.Value.Compound    -> NbtType.COMPOUND
-      is C.Value.CompoundOf  -> unexpectedType(type)
-      is C.Value.Union       -> type.elements.firstOrNull()?.let { eraseType(it.value) } ?: NbtType.END
-      is C.Value.Func        -> NbtType.COMPOUND
-      is C.Value.FuncOf      -> unexpectedType(type)
-      is C.Value.Apply       -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
-      is C.Value.Code        -> unexpectedType(type)
-      is C.Value.CodeOf      -> unexpectedType(type)
-      is C.Value.Splice      -> unexpectedType(type)
-      is C.Value.Var         -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
-      is C.Value.Def         -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
-      is C.Value.Meta        -> unexpectedType(type)
-      is C.Value.Hole        -> unexpectedType(type)
-    }
+    return ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
   }
 
   private fun Ctx.createFreshFunction(

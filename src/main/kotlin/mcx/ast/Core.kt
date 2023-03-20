@@ -307,17 +307,23 @@ object Core {
    * A well-typed term in weak-head normal form or neutral form.
    */
   sealed interface Value {
+    val type: Value
+
     object Tag : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Tag"
     }
 
     data class TagOf(
       val value: NbtType,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Tag
+    }
 
     data class Type(
       val element: Lazy<Value>,
     ) : Value {
+      override val type: Value get() = BYTE
       companion object {
         val END: Value = Type(lazyOf(TagOf(NbtType.END)))
         val BYTE: Value = Type(lazyOf(TagOf(NbtType.BYTE)))
@@ -336,177 +342,221 @@ object Core {
     }
 
     object Bool : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Bool"
     }
 
     data class BoolOf(
       val value: Boolean,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Bool
+    }
 
     data class If(
       val condition: Value,
       val thenBranch: Lazy<Value>,
       val elseBranch: Lazy<Value>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Is(
       val scrutinee: Lazy<Value>,
       val scrutineer: Pattern,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Bool
+    }
 
     object Byte : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Byte"
     }
 
     data class ByteOf(
       val value: kotlin.Byte,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Byte
+    }
 
     object Short : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Short"
     }
 
     data class ShortOf(
       val value: kotlin.Short,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Short
+    }
 
     object Int : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Int"
     }
 
     data class IntOf(
       val value: kotlin.Int,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Int
+    }
 
     object Long : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Long"
     }
 
     data class LongOf(
       val value: kotlin.Long,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Long
+    }
 
     object Float : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Float"
     }
 
     data class FloatOf(
       val value: kotlin.Float,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Float
+    }
 
     object Double : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "Double"
     }
 
     data class DoubleOf(
       val value: kotlin.Double,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Double
+    }
 
     object String : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "String"
     }
 
     data class StringOf(
       val value: kotlin.String,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = String
+    }
 
     object ByteArray : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "ByteArray"
     }
 
     data class ByteArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = ByteArray
+    }
 
     object IntArray : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "IntArray"
     }
 
     data class IntArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = IntArray
+    }
 
     object LongArray : Value {
+      override val type: Value get() = Type.BYTE
       override fun toString(): kotlin.String = "LongArray"
     }
 
     data class LongArrayOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = LongArray
+    }
 
     data class List(
       val element: Lazy<Value>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Type.BYTE
+    }
 
     data class ListOf(
       val elements: kotlin.collections.List<Lazy<Value>>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Compound(
       val elements: Map<kotlin.String, Lazy<Value>>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Type.BYTE
+    }
 
     data class CompoundOf(
       val elements: Map<kotlin.String, Lazy<Value>>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Union(
       val elements: kotlin.collections.List<Lazy<Value>>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Func(
       val params: kotlin.collections.List<Lazy<Value>>,
       val result: Closure,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Type.COMPOUND
+    }
 
     data class FuncOf(
       val result: Closure,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Apply(
       val func: Value,
       val args: kotlin.collections.List<Lazy<Value>>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Code(
       val element: Lazy<Value>,
-    ) : Value
+    ) : Value {
+      override val type: Value get() = Type.END
+    }
 
     data class CodeOf(
       val element: Lazy<Value>,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Splice(
       val element: Value,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Var(
       val name: kotlin.String,
       val lvl: Lvl,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Def(
       val name: DefinitionLocation,
       val body: Term?,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     data class Meta(
       val index: kotlin.Int,
       val source: Range,
-      val type: Value,
+      override val type: Value,
     ) : Value
 
     object Hole : Value {
+      override val type: Value get() = Hole
       override fun toString(): kotlin.String = "Hole"
     }
   }
