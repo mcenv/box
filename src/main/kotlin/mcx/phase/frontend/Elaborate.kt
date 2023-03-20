@@ -92,14 +92,15 @@ class Elaborate private constructor(
   ): C.Term {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      term is R.Term.TagOf && synth(type)                        -> C.Term.TagOf(term.value)
-      term is R.Term.Type && synth(type)                         -> {
+      term is R.Term.Tag && synth(type)                  -> C.Term.Tag
+      term is R.Term.TagOf && synth(type)                -> C.Term.TagOf(term.value)
+      term is R.Term.Type && synth(type)                 -> {
         val tag = checkTerm(term.element, C.Value.Tag)
         C.Term.Type(tag)
       }
-      term is R.Term.Bool && synth(type)                         -> C.Term.Bool
-      term is R.Term.BoolOf && synth(type)                       -> C.Term.BoolOf(term.value)
-      term is R.Term.If && match<C.Value>(type)                  -> {
+      term is R.Term.Bool && synth(type)                 -> C.Term.Bool
+      term is R.Term.BoolOf && synth(type)               -> C.Term.BoolOf(term.value)
+      term is R.Term.If && match<C.Value>(type)          -> {
         val condition = checkTerm(term.condition, C.Value.Bool)
         val thenBranch = elaborateTerm(term.thenBranch, type)
         val elseBranch = elaborateTerm(term.elseBranch, type)
@@ -206,7 +207,7 @@ class Elaborate private constructor(
           }
         }
       }
-      term is R.Term.Apply && synth(type)                        -> {
+      term is R.Term.Apply && synth(type)                -> {
         val func = synthTerm(term.func)
         val funcType = when (val funcType = meta.forceValue(func.type)) {
           is C.Value.Func -> funcType
@@ -238,7 +239,21 @@ class Elaborate private constructor(
         C.Term.Apply(func, args, type)
       }
       */
-      term is R.Term.Let && match<C.Value>(type)                 -> {
+      term is R.Term.Code && synth(type)                 -> {
+        val element = checkTerm(term.element, meta.freshType(term.element.range))
+        C.Term.Code(element)
+      }
+      term is R.Term.CodeOf && match<C.Value.Code>(type) -> {
+        val element = elaborateTerm(term.element, type?.element?.value)
+        val type = type ?: C.Value.Code(lazyOf(element.type))
+        C.Term.CodeOf(element, type)
+      }
+      term is R.Term.Splice && match<C.Value>(type)      -> {
+        val type = type ?: meta.freshValue(term.range)
+        val element = checkTerm(term.element, C.Value.Code(lazyOf(type)))
+        C.Term.Splice(element, type)
+      }
+      term is R.Term.Let && match<C.Value>(type)         -> {
         val init = synthTerm(term.init)
         restoring {
           val binder = synthPattern(term.binder)
@@ -250,11 +265,11 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body, type)
         }
       }
-      term is R.Term.Var && synth(type)                          -> {
+      term is R.Term.Var && synth(type)                  -> {
         val entry = this[next.toLvl(term.idx)]
         C.Term.Var(term.name, term.idx, entry.type)
       }
-      term is R.Term.Def && synth(type)                          -> {
+      term is R.Term.Def && synth(type)                  -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             val type = freeze().eval(definition.type)
