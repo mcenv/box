@@ -134,9 +134,12 @@ class Lift private constructor(
       is C.Term.Apply       -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = eraseKind(term.kind)
+        val type = eraseType(term.type)
         L.Term.Apply(func, args, type)
       }
+      is C.Term.Code        -> unexpectedTerm(term)
+      is C.Term.CodeOf      -> unexpectedTerm(term)
+      is C.Term.Splice      -> unexpectedTerm(term)
       is C.Term.Let         -> {
         val init = liftTerm(term.init)
         restoring {
@@ -146,11 +149,11 @@ class Lift private constructor(
         }
       }
       is C.Term.Var         -> {
-        val type = eraseKind(term.kind)
+        val type = eraseType(term.type)
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
-        val type = eraseKind(term.kind)
+        val type = eraseType(term.type)
         L.Term.Def(term.name, type)
       }
       is C.Term.Meta        -> unexpectedTerm(term)
@@ -168,12 +171,12 @@ class Lift private constructor(
         L.Pattern.CompoundOf(elements)
       }
       is C.Pattern.Var        -> {
-        val type = eraseKind(pattern.kind)
+        val type = eraseType(pattern.type)
         bind(pattern.name, type)
         L.Pattern.Var(pattern.name, type)
       }
       is C.Pattern.Drop       -> {
-        val type = eraseKind(pattern.kind)
+        val type = eraseType(pattern.type)
         L.Pattern.Drop(type)
       }
       is C.Pattern.Hole       -> unexpectedPattern(pattern)
@@ -184,20 +187,20 @@ class Lift private constructor(
     term: C.Term,
   ): LinkedHashMap<String, NbtType> {
     return when (term) {
-      is C.Term.Tag     -> unexpectedTerm(term)
-      is C.Term.TagOf   -> linkedMapOf()
-      is C.Term.Type    -> freeVars(term.element)
-      is C.Term.Bool    -> linkedMapOf()
-      is C.Term.BoolOf  -> linkedMapOf()
-      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.Is      -> freeVars(term.scrutinee)
-      is C.Term.Byte    -> linkedMapOf()
-      is C.Term.ByteOf  -> linkedMapOf()
-      is C.Term.Short   -> linkedMapOf()
-      is C.Term.ShortOf -> linkedMapOf()
-      is C.Term.Int     -> linkedMapOf()
-      is C.Term.IntOf   -> linkedMapOf()
-      is C.Term.Long    -> linkedMapOf()
+      is C.Term.Tag         -> unexpectedTerm(term)
+      is C.Term.TagOf       -> linkedMapOf()
+      is C.Term.Type        -> freeVars(term.element)
+      is C.Term.Bool        -> linkedMapOf()
+      is C.Term.BoolOf      -> linkedMapOf()
+      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.Is          -> freeVars(term.scrutinee)
+      is C.Term.Byte        -> linkedMapOf()
+      is C.Term.ByteOf      -> linkedMapOf()
+      is C.Term.Short       -> linkedMapOf()
+      is C.Term.ShortOf     -> linkedMapOf()
+      is C.Term.Int         -> linkedMapOf()
+      is C.Term.IntOf       -> linkedMapOf()
+      is C.Term.Long        -> linkedMapOf()
       is C.Term.LongOf      -> linkedMapOf()
       is C.Term.Float       -> linkedMapOf()
       is C.Term.FloatOf     -> linkedMapOf()
@@ -219,8 +222,11 @@ class Lift private constructor(
       is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
       is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
       is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code        -> unexpectedTerm(term)
+      is C.Term.CodeOf      -> unexpectedTerm(term)
+      is C.Term.Splice      -> unexpectedTerm(term)
       is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to eraseKind(term.kind))
+      is C.Term.Var         -> linkedMapOf(term.name to eraseType(term.type))
       is C.Term.Def         -> linkedMapOf()
       is C.Term.Meta        -> unexpectedTerm(term)
       is C.Term.Hole        -> unexpectedTerm(term)
@@ -239,12 +245,50 @@ class Lift private constructor(
     }
   }
 
-  private fun eraseKind(kind: C.Kind): NbtType {
-    return when (kind) {
-      is C.Kind.Type -> NbtType.BYTE
-      is C.Kind.Tag  -> kind.tag
-      is C.Kind.Meta -> unexpectedKind(kind)
-      is C.Kind.Hole -> unexpectedKind(kind)
+  private fun eraseType(type: C.Value): NbtType {
+    return when (type) {
+      is C.Value.Tag         -> unexpectedType(type)
+      is C.Value.TagOf       -> unexpectedType(type)
+      is C.Value.Type        -> NbtType.BYTE
+      is C.Value.Bool        -> NbtType.BYTE
+      is C.Value.BoolOf      -> unexpectedType(type)
+      is C.Value.If          -> eraseType(type.thenBranch.value)
+      is C.Value.Is          -> unexpectedType(type)
+      is C.Value.Byte        -> NbtType.BYTE
+      is C.Value.ByteOf      -> unexpectedType(type)
+      is C.Value.Short       -> NbtType.SHORT
+      is C.Value.ShortOf     -> unexpectedType(type)
+      is C.Value.Int         -> NbtType.INT
+      is C.Value.IntOf       -> unexpectedType(type)
+      is C.Value.Long        -> NbtType.LONG
+      is C.Value.LongOf      -> unexpectedType(type)
+      is C.Value.Float       -> NbtType.FLOAT
+      is C.Value.FloatOf     -> unexpectedType(type)
+      is C.Value.Double      -> NbtType.DOUBLE
+      is C.Value.DoubleOf    -> unexpectedType(type)
+      is C.Value.String      -> NbtType.STRING
+      is C.Value.StringOf    -> unexpectedType(type)
+      is C.Value.ByteArray   -> NbtType.BYTE_ARRAY
+      is C.Value.ByteArrayOf -> unexpectedType(type)
+      is C.Value.IntArray    -> NbtType.INT_ARRAY
+      is C.Value.IntArrayOf  -> unexpectedType(type)
+      is C.Value.LongArray   -> NbtType.LONG_ARRAY
+      is C.Value.LongArrayOf -> unexpectedType(type)
+      is C.Value.List        -> NbtType.LIST
+      is C.Value.ListOf      -> unexpectedType(type)
+      is C.Value.Compound    -> NbtType.COMPOUND
+      is C.Value.CompoundOf  -> unexpectedType(type)
+      is C.Value.Union       -> type.elements.firstOrNull()?.let { eraseType(it.value) } ?: NbtType.END
+      is C.Value.Func        -> NbtType.COMPOUND
+      is C.Value.FuncOf      -> unexpectedType(type)
+      is C.Value.Apply       -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
+      is C.Value.Code        -> unexpectedType(type)
+      is C.Value.CodeOf      -> unexpectedType(type)
+      is C.Value.Splice      -> unexpectedType(type)
+      is C.Value.Var         -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
+      is C.Value.Def         -> ((type.type as C.Value.Type).element.value as C.Value.TagOf).value
+      is C.Value.Meta        -> unexpectedType(type)
+      is C.Value.Hole        -> unexpectedType(type)
     }
   }
 
@@ -305,8 +349,8 @@ class Lift private constructor(
       error("unexpected pattern: ${prettyPattern(pattern)}")
     }
 
-    private fun unexpectedKind(kind: C.Kind): Nothing {
-      error("unexpected kind: $kind")
+    private fun unexpectedType(type: C.Value): Nothing {
+      error("unexpected type: $type")
     }
 
     operator fun invoke(

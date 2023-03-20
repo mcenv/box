@@ -189,10 +189,23 @@ class Parse private constructor(
             val result = parseTerm()
             S.Term.FuncOf(params, result, until())
           }
+          '`'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.CodeOf(element, until())
+          }
+          '$'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.Splice(element, until())
+          }
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
               ""               -> null
+              "tag"            -> S.Term.Tag(until())
               "end_tag"        -> S.Term.TagOf(NbtType.END, until())
               "byte_tag"       -> S.Term.TagOf(NbtType.BYTE, until())
               "short_tag"      -> S.Term.TagOf(NbtType.SHORT, until())
@@ -276,6 +289,11 @@ class Parse private constructor(
                 val result = parseTerm()
                 S.Term.Func(params, result, until())
               }
+              "code"           -> {
+                skipTrivia()
+                val element = parseTerm0()
+                S.Term.Code(element, until())
+              }
               "let"            -> {
                 skipTrivia()
                 val name = parseTerm()
@@ -287,7 +305,7 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              else           ->
+              else             ->
                 word.value.lastOrNull()?.let { suffix ->
                   when (suffix) {
                     'b'  -> word.value.dropLast(1).toByteOrNull()?.let { S.Term.ByteOf(it, until()) }

@@ -1,8 +1,8 @@
 package mcx.phase.frontend
 
-import mcx.ast.Core.Kind
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
+import mcx.ast.Core.Value
 import mcx.ast.Lvl
 import mcx.phase.*
 import org.eclipse.lsp4j.Range
@@ -10,29 +10,21 @@ import org.eclipse.lsp4j.Range
 @Suppress("NAME_SHADOWING")
 class Meta {
   private val values: MutableList<Value?> = mutableListOf()
-  private val kinds: MutableList<Kind?> = mutableListOf()
   private val _unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
   val unsolvedMetas: Set<Pair<Int, Range>> get() = _unsolvedMetas
 
   fun freshValue(
     source: Range,
-    kind: Kind = freshKind(source),
+    type: Value = freshType(source),
   ): Value {
-    return Value.Meta(values.size, source, kind).also { values += null }
+    return Value.Meta(values.size, source, type).also { values += null }
   }
 
   fun freshType(
     source: Range,
-    kind: Kind = freshKind(source),
   ): Value {
-    val tag = lazy { freshValue(source, Kind.BYTE) }
-    return Value.Type(tag, kind)
-  }
-
-  fun freshKind(
-    source: Range,
-  ): Kind {
-    return Kind.Meta(kinds.size, source).also { kinds += null }
+    val tag = lazy { freshValue(source, Value.Tag) }
+    return Value.Type(tag)
   }
 
   tailrec fun forceValue(
@@ -48,19 +40,6 @@ class Meta {
     }
   }
 
-  tailrec fun forceKind(
-    kind: Kind,
-  ): Kind {
-    return when (kind) {
-      is Kind.Meta ->
-        when (val forced = kinds.getOrNull(kind.index)) {
-          null -> kind
-          else -> forceKind(forced)
-        }
-      else         -> kind
-    }
-  }
-
   fun resetUnsolvedMetas() {
     _unsolvedMetas.clear()
   }
@@ -68,21 +47,21 @@ class Meta {
   fun Lvl.zonkTerm(
     term: Term,
   ): Term {
+    // TODO: zonk type
     return when (term) {
       is Term.Tag         -> term
       is Term.TagOf       -> term
-      is Term.Type        -> {
+      is Term.Type       -> {
         val tag = zonkTerm(term.element)
-        val kind = zonkKind(term.kind)
-        Term.Type(tag, kind)
+        Term.Type(tag)
       }
       is Term.Bool        -> term
       is Term.BoolOf      -> term
-      is Term.If          -> {
+      is Term.If         -> {
         val condition = zonkTerm(term.condition)
         val thenBranch = zonkTerm(term.thenBranch)
         val elseBranch = zonkTerm(term.elseBranch)
-        Term.If(condition, thenBranch, elseBranch)
+        Term.If(condition, thenBranch, elseBranch, term.type)
       }
       is Term.Is          -> {
         val scrutinee = zonkTerm(term.scrutinee)
@@ -122,23 +101,23 @@ class Meta {
         val element = zonkTerm(term.element)
         Term.List(element)
       }
-      is Term.ListOf      -> {
+      is Term.ListOf     -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.ListOf(elements)
+        Term.ListOf(elements, term.type)
       }
       is Term.Compound    -> {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
         Term.Compound(elements)
       }
-      is Term.CompoundOf  -> {
+      is Term.CompoundOf -> {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
-        Term.CompoundOf(elements)
+        Term.CompoundOf(elements, term.type)
       }
-      is Term.Union       -> {
+      is Term.Union      -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.Union(elements)
+        Term.Union(elements, term.type)
       }
-      is Term.Func        -> {
+      is Term.Func       -> {
         val params = term.params.map { (param, type) ->
           val param = zonkPattern(param)
           val type = zonkTerm(type)
@@ -147,36 +126,44 @@ class Meta {
         val result = (this + collect(params.map { (param, _) -> param }).size).zonkTerm(term.result)
         Term.Func(params, result)
       }
-      is Term.FuncOf      -> {
+      is Term.FuncOf     -> {
         val params = term.params.map { zonkPattern(it) }
         val result = (this + collect(params).size).zonkTerm(term.result)
-        Term.FuncOf(params, result)
+        Term.FuncOf(params, result, term.type)
       }
-      is Term.Apply       -> {
+      is Term.Apply      -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
-        val kind = zonkKind(term.kind)
-        Term.Apply(func, args, kind)
+        Term.Apply(func, args, term.type)
       }
-      is Term.Let         -> {
+      is Term.Code       -> {
+        val element = zonkTerm(term.element)
+        Term.Code(element)
+      }
+      is Term.CodeOf     -> {
+        val element = zonkTerm(term.element)
+        Term.CodeOf(element, term.type)
+      }
+      is Term.Splice     -> {
+        val element = zonkTerm(term.element)
+        Term.Splice(element, term.type)
+      }
+      is Term.Let        -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
-        Term.Let(binder, init, body)
+        Term.Let(binder, init, body, term.type)
       }
-      is Term.Var         -> {
-        val kind = zonkKind(term.kind)
-        Term.Var(term.name, term.idx, kind)
+      is Term.Var        -> {
+        Term.Var(term.name, term.idx, term.type)
       }
-      is Term.Def         -> {
-        val kind = zonkKind(term.kind)
-        Term.Def(term.name, term.body, kind)
+      is Term.Def        -> {
+        Term.Def(term.name, term.body, term.type)
       }
-      is Term.Meta        -> {
+      is Term.Meta       -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
-            val kind = zonkKind(term.kind)
-            Term.Meta(term.index, term.source, kind).also { _unsolvedMetas += it.index to it.source }
+            Term.Meta(term.index, term.source, term.type).also { _unsolvedMetas += it.index to it.source }
           }
           else -> zonkTerm(quote(solution))
         }
@@ -188,40 +175,16 @@ class Meta {
   private fun zonkPattern(
     pattern: Pattern,
   ): Pattern {
+    // TODO: zonk type
     return when (pattern) {
       is Pattern.IntOf      -> pattern
       is Pattern.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to zonkPattern(element) }
-        Pattern.CompoundOf(elements)
+        Pattern.CompoundOf(elements, pattern.type)
       }
-      is Pattern.Var        -> {
-        val kind = zonkKind(pattern.kind)
-        Pattern.Var(pattern.name, kind)
-      }
-      is Pattern.Drop       -> {
-        val kind = zonkKind(pattern.kind)
-        Pattern.Drop(kind)
-      }
+      is Pattern.Var        -> Pattern.Var(pattern.name, pattern.type)
+      is Pattern.Drop       -> Pattern.Drop(pattern.type)
       is Pattern.Hole       -> pattern
-    }
-  }
-
-  fun zonkKind(
-    kind: Kind
-  ): Kind {
-    return when (kind) {
-      is Kind.Tag  -> kind
-      is Kind.Type -> {
-        val element = zonkKind(kind.element)
-        Kind.Type(element)
-      }
-      is Kind.Meta -> {
-        when (val solution = kinds.getOrNull(kind.index)) {
-          null -> kind.also { _unsolvedMetas += kind.index to kind.source }
-          else -> zonkKind(solution)
-        }
-      }
-      is Kind.Hole -> kind
     }
   }
 
@@ -231,7 +194,7 @@ class Meta {
   ): Boolean {
     val value1 = forceValue(value1)
     val value2 = forceValue(value2)
-    return unifyKind(value1.kind, value2.kind) && when {
+    return when {
       value1 is Value.Meta                                       -> {
         when (val solution1 = values[value1.index]) {
           null -> {
@@ -321,42 +284,13 @@ class Meta {
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
+      value1 is Value.Code && value2 is Value.Code               -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf           -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice           -> unifyValue(value1.element, value2.element)
       value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
       // TODO: unify [Value.Def]s
       value1 is Value.Hole || value2 is Value.Hole               -> true // ?
       else                                                       -> false
-    }
-  }
-
-  fun unifyKind(
-    kind1: Kind,
-    kind2: Kind,
-  ): Boolean {
-    val kind1 = forceKind(kind1)
-    val kind2 = forceKind(kind2)
-    return when {
-      kind1 is Kind.Meta                       -> {
-        when (val solution1 = kinds[kind1.index]) {
-          null -> {
-            kinds[kind1.index] = kind2
-            true
-          }
-          else -> unifyKind(solution1, kind2)
-        }
-      }
-      kind2 is Kind.Meta                       -> {
-        when (val solution2 = kinds[kind2.index]) {
-          null -> {
-            kinds[kind2.index] = kind1
-            true
-          }
-          else -> unifyKind(kind1, solution2)
-        }
-      }
-      kind1 is Kind.Type && kind2 is Kind.Type -> unifyKind(kind1.element, kind2.element)
-      kind1 is Kind.Tag && kind2 is Kind.Tag   -> kind1.tag == kind2.tag
-      kind1 is Kind.Hole || kind2 is Kind.Hole -> false
-      else                                     -> false
     }
   }
 }

@@ -6,10 +6,12 @@ import mcx.data.NbtType
 import mcx.util.quoted
 import mcx.util.toSubscript
 
+// TODO: Remove redundant parentheses.
+
 fun prettyTerm(
   term: Term,
 ): String {
-  fun Int.go(
+  fun go(
     term: Term,
   ): String {
     return when (term) {
@@ -31,11 +33,11 @@ fun prettyTerm(
           NbtType.COMPOUND   -> "compound_tag"
         }
       }
-      is Term.Type        -> "type ${2.go(term.element)}"
+      is Term.Type        -> "(type ${go(term.element)})"
       is Term.Bool        -> "bool"
       is Term.BoolOf      -> term.value.toString()
-      is Term.If          -> "if ${1.go(term.condition)} then ${1.go(term.thenBranch)} else ${1.go(term.elseBranch)}"
-      is Term.Is          -> par(0, "${1.go(term.scrutinee)} is ${prettyPattern(term.scrutineer)}")
+      is Term.If          -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
+      is Term.Is          -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
       is Term.Byte        -> "byte"
       is Term.ByteOf      -> "${term.value}b"
       is Term.Short       -> "short"
@@ -51,27 +53,30 @@ fun prettyTerm(
       is Term.String      -> "string"
       is Term.StringOf    -> term.value.quoted('"')
       is Term.ByteArray   -> "byte_array"
-      is Term.ByteArrayOf -> term.elements.joinToString(", ", "[byte; ", "]") { 0.go(it) }
+      is Term.ByteArrayOf -> term.elements.joinToString(", ", "[byte; ", "]") { go(it) }
       is Term.IntArray    -> "int_array"
-      is Term.IntArrayOf  -> term.elements.joinToString(", ", "[int; ", "]") { 0.go(it) }
+      is Term.IntArrayOf  -> term.elements.joinToString(", ", "[int; ", "]") { go(it) }
       is Term.LongArray   -> "long_array"
-      is Term.LongArrayOf -> term.elements.joinToString(", ", "[long; ", "]") { 0.go(it) }
-      is Term.List        -> "list ${2.go(term.element)}"
-      is Term.ListOf      -> term.elements.joinToString(", ", "[", "]") { 0.go(it) }
-      is Term.Compound    -> term.elements.entries.joinToString(", ", "compound {", "}") { (key, element) -> "$key : ${0.go(element)}" }
-      is Term.CompoundOf  -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${0.go(element)}" }
-      is Term.Union       -> term.elements.joinToString(", ", "union {", "}") { 0.go(it) }
-      is Term.Func        -> "func ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${0.go(type)}" }} -> ${0.go(term.result)}"
-      is Term.FuncOf      -> "\\${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${0.go(term.result)}"
-      is Term.Apply       -> par(1, "${2.go(term.func)}${term.args.joinToString(", ", "(", ")") { 0.go(it) }}")
-      is Term.Let         -> "let ${prettyPattern(term.binder)} = ${0.go(term.init)};\n${0.go(term.body)}"
+      is Term.LongArrayOf -> term.elements.joinToString(", ", "[long; ", "]") { go(it) }
+      is Term.List        -> "(list ${go(term.element)})"
+      is Term.ListOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
+      is Term.Compound    -> term.elements.entries.joinToString(", ", "compound{", "}") { (key, element) -> "$key : ${go(element)}" }
+      is Term.CompoundOf  -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
+      is Term.Union       -> term.elements.joinToString(", ", "union{", "}") { go(it) }
+      is Term.Func        -> "(func ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
+      is Term.FuncOf      -> "(\\${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
+      is Term.Apply       -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
+      is Term.Code        -> "(code ${go(term.element)})"
+      is Term.CodeOf      -> "(`${go(term.element)})"
+      is Term.Splice      -> "($${go(term.element)})"
+      is Term.Let         -> "let ${prettyPattern(term.binder)} = ${go(term.init)};\n${go(term.body)}"
       is Term.Var         -> term.name
       is Term.Def         -> term.name.toString()
       is Term.Meta        -> "?${term.index.toSubscript()}"
       is Term.Hole        -> "??"
     }
   }
-  return 0.go(term)
+  return go(term)
 }
 
 fun prettyPattern(
@@ -84,11 +89,4 @@ fun prettyPattern(
     is Pattern.Drop       -> "_"
     is Pattern.Hole       -> "??"
   }
-}
-
-private fun Int.par(
-  prec: Int,
-  string: String,
-): String {
-  return if (prec < this) "($string)" else string
 }
