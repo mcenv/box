@@ -148,11 +148,11 @@ sealed interface Value {
   ) : Value
 
   data class Compound(
-    val elements: Map<kotlin.String, Lazy<Value>>,
+    val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
   ) : Value
 
   data class CompoundOf(
-    val elements: Map<kotlin.String, Lazy<Value>>,
+    val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
   ) : Value
 
   data class Point(

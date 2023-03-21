@@ -2,7 +2,6 @@ package mcx.phase
 
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.data.NbtType
 import mcx.util.quoted
 import mcx.util.toSubscript
 
@@ -15,35 +14,19 @@ fun prettyTerm(
     term: Term,
   ): String {
     return when (term) {
-      is Term.Tag         -> "tag"
-      is Term.TagOf       -> {
-        when (term.value) {
-          NbtType.END        -> "end_tag"
-          NbtType.BYTE       -> "byte_tag"
-          NbtType.SHORT      -> "short_tag"
-          NbtType.INT        -> "int_tag"
-          NbtType.LONG       -> "long_tag"
-          NbtType.FLOAT      -> "float_tag"
-          NbtType.DOUBLE     -> "double_tag"
-          NbtType.STRING     -> "string_tag"
-          NbtType.BYTE_ARRAY -> "byte_array_tag"
-          NbtType.INT_ARRAY  -> "int_array_tag"
-          NbtType.LONG_ARRAY -> "long_array_tag"
-          NbtType.LIST       -> "list_tag"
-          NbtType.COMPOUND   -> "compound_tag"
-        }
-      }
-      is Term.Type        -> "(type ${go(term.element)})"
-      is Term.Bool        -> "bool"
-      is Term.BoolOf      -> term.value.toString()
-      is Term.If          -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
-      is Term.Is          -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
-      is Term.Byte        -> "byte"
-      is Term.ByteOf      -> "${term.value}b"
-      is Term.Short       -> "short"
-      is Term.ShortOf     -> "${term.value}s"
-      is Term.Int         -> "int"
-      is Term.IntOf       -> term.value.toString()
+      is Term.Tag     -> "tag"
+      is Term.TagOf   -> "${term.value}_tag"
+      is Term.Type    -> "(type ${go(term.element)})"
+      is Term.Bool    -> "bool"
+      is Term.BoolOf  -> term.value.toString()
+      is Term.If      -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
+      is Term.Is      -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
+      is Term.Byte    -> "byte"
+      is Term.ByteOf  -> "${term.value}b"
+      is Term.Short   -> "short"
+      is Term.ShortOf -> "${term.value}s"
+      is Term.Int     -> "int"
+      is Term.IntOf   -> term.value.toString()
       is Term.Long        -> "long"
       is Term.LongOf      -> "${term.value}L"
       is Term.Float       -> "float"
@@ -85,7 +68,7 @@ fun prettyPattern(
 ): String {
   return when (pattern) {
     is Pattern.IntOf      -> pattern.value.toString()
-    is Pattern.CompoundOf -> pattern.elements.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
+    is Pattern.CompoundOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
     is Pattern.Var        -> pattern.name
     is Pattern.Drop       -> "_"
     is Pattern.Hole       -> "??"

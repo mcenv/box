@@ -145,11 +145,11 @@ object Core {
     ) : Term
 
     data class Compound(
-      val elements: Map<kotlin.String, Term>,
+      val elements: LinkedHashMap<kotlin.String, Term>,
     ) : Term
 
     data class CompoundOf(
-      val elements: Map<kotlin.String, Term>,
+      val elements: LinkedHashMap<kotlin.String, Term>,
     ) : Term
 
     data class Point(
@@ -224,7 +224,7 @@ object Core {
     ) : Pattern<Nothing>
 
     data class CompoundOf<T>(
-      val elements: List<Pair<String, Pattern<T>>>,
+      val elements: LinkedHashMap<String, Pattern<T>>,
     ) : Pattern<T>
 
     data class Var<T>(

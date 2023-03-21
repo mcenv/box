@@ -166,17 +166,25 @@ class Elaborate private constructor(
         C.Term.ListOf(elements) to type
       }
       term is R.Term.Compound && synth(type)                      -> {
-        val elements = term.elements.associate { (key, element) ->
+        val elements = term.elements.associateTo(linkedMapOf()) { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
         }
         C.Term.Compound(elements) to Value.Type.COMPOUND
       }
       term is R.Term.CompoundOf && synth(type)                    -> {
-        TODO()
+        val elements = linkedMapOf<String, C.Term>()
+        val elementsTypes = linkedMapOf<String, Lazy<Value>>()
+        term.elements.forEach { (key, element) ->
+          val (element, elementType) = synthTerm(element, phase)
+          elements[key.value] = element
+          elementsTypes[key.value] = lazyOf(elementType)
+        }
+        val type = Value.Compound(elementsTypes)
+        C.Term.CompoundOf(elements) to type
       }
       term is R.Term.CompoundOf && check<Value.Compound>(type)    -> {
-        TODO()
+        TODO("implement")
       }
       term is R.Term.Point && match<Value.Type>(type)             -> { // TODO: unify tags
         val (element, elementType) = synthTerm(term.element, phase)
@@ -342,10 +350,18 @@ class Elaborate private constructor(
     return when {
       pattern is R.Pattern.IntOf && synth(type)                      -> C.Pattern.IntOf(pattern.value) to Value.Int
       pattern is R.Pattern.CompoundOf && synth(type)                 -> {
-        TODO()
+        val elements = linkedMapOf<String, C.Pattern<C.Term>>()
+        val elementsTypes = linkedMapOf<String, Lazy<Value>>()
+        pattern.elements.forEach { (key, element) ->
+          val (element, elementType) = synthPattern(element, phase)
+          elements[key.value] = element
+          elementsTypes[key.value] = lazyOf(elementType)
+        }
+        val type = Value.Compound(elementsTypes)
+        C.Pattern.CompoundOf(elements) to type
       }
       pattern is R.Pattern.CompoundOf && check<Value.Compound>(type) -> {
-        TODO()
+        TODO("implement")
       }
       pattern is R.Pattern.Var && match<Value>(type)                 -> {
         val next = next()
@@ -385,7 +401,12 @@ class Elaborate private constructor(
     val value2 = meta.forceValue(value2)
     return when {
       value1 is Value.List && value2 is Value.List         -> sub(value1.element.value, value2.element.value)
-      value1 is Value.Compound && value2 is Value.Compound -> TODO()
+      value1 is Value.Compound && value2 is Value.Compound -> {
+        value1.elements.size == value2.elements.size &&
+        value1.elements.all { (key1, element1) ->
+          value2.elements[key1]?.let { element2 -> sub(element1.value, element2.value) } ?: false
+        }
+      }
       value1 is Value.Point && value2 !is Value.Point      -> sub(value1.elementType, value2)
       value1 is Value.Union                                -> value1.elements.all { sub(it.value, value2) }
       value2 is Value.Union                                -> value2.elements.any { sub(value1, it.value) }
@@ -408,9 +429,8 @@ class Elaborate private constructor(
       pattern1 is C.Pattern.IntOf && pattern2 is C.Pattern.IntOf           -> pattern1.value == pattern2.value
       pattern1 is C.Pattern.CompoundOf && pattern2 is C.Pattern.CompoundOf -> {
         pattern1.elements.size == pattern2.elements.size &&
-        (pattern1.elements zip pattern2.elements).all { (element1, element2) ->
-          element1.first == element2.first &&
-          conv(element1.second, element2.second)
+        pattern1.elements.all { (key1, element1) ->
+          pattern2.elements[key1]?.let { element2 -> conv(element1, element2) } ?: false
         }
       }
       pattern1 is C.Pattern.Var && pattern2 is C.Pattern.Var               -> pattern1.name == pattern2.name

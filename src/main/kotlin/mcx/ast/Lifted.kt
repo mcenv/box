@@ -105,7 +105,7 @@ object Lifted {
     }
 
     data class CompoundOf(
-      val elements: Map<String, Term>,
+      val elements: LinkedHashMap<String, Term>,
     ) : Term {
       override val type: NbtType get() = NbtType.COMPOUND
     }
@@ -158,7 +158,7 @@ object Lifted {
     }
 
     data class CompoundOf(
-      val elements: List<Pair<String, Pattern>>,
+      val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern {
       override val type: NbtType get() = NbtType.COMPOUND
     }

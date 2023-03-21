@@ -96,7 +96,7 @@ class Lift private constructor(
       }
       is C.Term.Compound    -> UNIT
       is C.Term.CompoundOf  -> {
-        val elements = term.elements.mapValues { liftTerm(it.value) }
+        val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
       is C.Term.Point       -> UNIT
@@ -105,27 +105,15 @@ class Lift private constructor(
       is C.Term.FuncOf      -> {
         with(emptyCtx()) {
           val freeVars = freeVars(term)
-          val capture = L.Pattern.CompoundOf(
-            freeVars.entries.map { (name, type) ->
-              name to L.Pattern.Var(name, type)
-            }
-          )
+          val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
           val binders = term.params.map { liftPattern(it) }
           val result = liftTerm(term.result)
           val tag = context.freshId()
-          L.Definition.Function(
-            emptyList(),
-            definition.name.module / "${definition.name.name}:${freshFunctionId++}",
-            binders + capture,
-            result,
-            tag,
-          ).also {
+          L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders + capture, result, tag).also {
             liftedDefinitions += it
             dispatchedDefinitions += it
           }
-          val entries = freeVars.entries.map { (name, type) ->
-            L.Term.FuncOf.Entry(name, type)
-          }
+          val entries = freeVars.map { (name, type) -> L.Term.FuncOf.Entry(name, type) }
           L.Term.FuncOf(entries, tag)
         }
       }
@@ -163,7 +151,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.IntOf      -> L.Pattern.IntOf(pattern.value)
       is C.Pattern.CompoundOf -> {
-        val elements = pattern.elements.map { (key, element) -> key to liftPattern(element) }
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> liftPattern(element) }
         L.Pattern.CompoundOf(elements)
       }
       is C.Pattern.Var        -> {

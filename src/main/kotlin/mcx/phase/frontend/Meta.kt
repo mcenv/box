@@ -96,11 +96,11 @@ class Meta {
         Term.ListOf(elements)
       }
       is Term.Compound    -> {
-        val elements = term.elements.mapValues { zonkTerm(it.value) }
+        val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.Compound(elements)
       }
       is Term.CompoundOf  -> {
-        val elements = term.elements.mapValues { zonkTerm(it.value) }
+        val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.CompoundOf(elements)
       }
       is Term.Point       -> {
@@ -172,7 +172,7 @@ class Meta {
     return when (pattern) {
       is Pattern.IntOf      -> pattern
       is Pattern.CompoundOf -> {
-        val elements = pattern.elements.map { (key, element) -> key to zonkPattern(element) }
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> zonkPattern(element) }
         Pattern.CompoundOf(elements)
       }
       is Pattern.Var        -> {
@@ -263,10 +263,13 @@ class Meta {
       value1 is Value.Compound && value2 is Value.Compound       -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
-          when (val element2 = value2.elements[key1]) {
-            null -> false
-            else -> unifyValue(element1.value, element2.value)
-          }
+          value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
+        }
+      }
+      value1 is Value.CompoundOf && value2 is Value.CompoundOf   -> {
+        value1.elements.size == value2.elements.size &&
+        value1.elements.all { (key1, element1) ->
+          value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
       value1 is Value.Point && value2 is Value.Point             -> unifyValue(value1.element.value, value2.element.value)

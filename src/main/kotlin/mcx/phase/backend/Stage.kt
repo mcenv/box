@@ -128,11 +128,11 @@ class Stage private constructor() {
         Value.ListOf(elements)
       }
       is Term.Compound    -> {
-        val elements = term.elements.mapValues { lazy { evalTerm(it.value, phase) } }
+        val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
         Value.Compound(elements)
       }
       is Term.CompoundOf  -> {
-        val elements = term.elements.mapValues { lazy { evalTerm(it.value, phase) } }
+        val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
         Value.CompoundOf(elements)
       }
       is Term.Point       -> {
@@ -272,11 +272,11 @@ class Stage private constructor() {
         Term.ListOf(elements)
       }
       is Value.Compound    -> {
-        val elements = value.elements.mapValues { quoteValue(it.value.value, phase) }
+        val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         Term.Compound(elements)
       }
       is Value.CompoundOf  -> {
-        val elements = value.elements.mapValues { quoteValue(it.value.value, phase) }
+        val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         Term.CompoundOf(elements)
       }
       is Value.Point       -> {
@@ -336,7 +336,7 @@ class Stage private constructor() {
     return when (pattern) {
       is Pattern.IntOf      -> pattern
       is Pattern.CompoundOf -> {
-        val elements = pattern.elements.map { (key, element) -> key to evalPattern(element, phase) }
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> evalPattern(element, phase) }
         Pattern.CompoundOf(elements)
       }
       is Pattern.Var        -> {
@@ -358,7 +358,7 @@ class Stage private constructor() {
     return when (pattern) {
       is Pattern.IntOf      -> pattern
       is Pattern.CompoundOf -> {
-        val elements = pattern.elements.map { (key, element) -> key to quotePattern(element, phase) }
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> quotePattern(element, phase) }
         Pattern.CompoundOf(elements)
       }
       is Pattern.Var        -> {

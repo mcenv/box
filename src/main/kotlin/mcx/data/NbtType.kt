@@ -13,5 +13,7 @@ enum class NbtType(val id: String) {
   LIST("list"),
   COMPOUND("compound"),
   INT_ARRAY("int_array"),
-  LONG_ARRAY("long_array"),
+  LONG_ARRAY("long_array");
+
+  override fun toString(): String = id
 }

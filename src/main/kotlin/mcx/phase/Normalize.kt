@@ -85,11 +85,11 @@ fun Env.evalTerm(term: Term): Value {
       Value.ListOf(elements)
     }
     is Term.Compound    -> {
-      val elements = term.elements.mapValues { lazy { evalTerm(it.value) } }
+      val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       Value.Compound(elements)
     }
     is Term.CompoundOf  -> {
-      val elements = term.elements.mapValues { lazy { evalTerm(it.value) } }
+      val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       Value.CompoundOf(elements)
     }
     is Term.Point       -> {
@@ -206,11 +206,11 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.ListOf(elements)
     }
     is Value.Compound    -> {
-      val elements = value.elements.mapValues { quoteValue(it.value.value) }
+      val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       Term.Compound(elements)
     }
     is Value.CompoundOf  -> {
-      val elements = value.elements.mapValues { quoteValue(it.value.value) }
+      val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       Term.CompoundOf(elements)
     }
     is Value.Point       -> {
@@ -267,7 +267,7 @@ fun Env.evalPattern(pattern: Pattern<Term>): Pattern<Value> {
   return when (pattern) {
     is Pattern.IntOf      -> pattern
     is Pattern.CompoundOf -> {
-      val elements = pattern.elements.map { (key, element) -> key to evalPattern(element) }
+      val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> evalPattern(element) }
       Pattern.CompoundOf(elements)
     }
     is Pattern.Var        -> {
@@ -286,7 +286,7 @@ fun Lvl.quotePattern(pattern: Pattern<Value>): Pattern<Term> {
   return when (pattern) {
     is Pattern.IntOf      -> pattern
     is Pattern.CompoundOf -> {
-      val elements = pattern.elements.map { (key, element) -> key to quotePattern(element) }
+      val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> quotePattern(element) }
       Pattern.CompoundOf(elements)
     }
     is Pattern.Var        -> {

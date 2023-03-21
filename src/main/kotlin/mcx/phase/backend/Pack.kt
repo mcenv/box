@@ -201,9 +201,7 @@ class Pack private constructor(
     when (pattern) {
       is L.Pattern.IntOf      -> drop(NbtType.INT, keeps)
       is L.Pattern.CompoundOf -> {
-        pattern.elements
-          .asReversed()
-          .forEach { (_, element) -> dropPattern(element, keeps) }
+        pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(NbtType.COMPOUND, keeps)
       }
       is L.Pattern.Var        -> drop(pattern.type, keeps)
