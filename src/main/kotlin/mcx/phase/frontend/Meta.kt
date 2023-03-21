@@ -91,7 +91,7 @@ class Meta {
         val element = zonkTerm(term.element)
         Term.List(element)
       }
-      is Term.ListOf     -> {
+      is Term.ListOf      -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.ListOf(elements)
       }
@@ -99,15 +99,20 @@ class Meta {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
         Term.Compound(elements)
       }
-      is Term.CompoundOf -> {
+      is Term.CompoundOf  -> {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
         Term.CompoundOf(elements)
       }
-      is Term.Union      -> {
+      is Term.Point       -> {
+        val element = zonkTerm(term.element)
+        val elementType = zonkTerm(term.elementType)
+        Term.Point(element, elementType)
+      }
+      is Term.Union       -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.Union(elements)
       }
-      is Term.Func       -> {
+      is Term.Func        -> {
         val params = term.params.map { (param, type) ->
           val param = zonkPattern(param)
           val type = zonkTerm(type)
@@ -116,42 +121,42 @@ class Meta {
         val result = (this + Lvl(size).collect(params.map { (param, _) -> evalPattern(param) })).zonkTerm(term.result)
         Term.Func(params, result)
       }
-      is Term.FuncOf     -> {
+      is Term.FuncOf      -> {
         val params = term.params.map { zonkPattern(it) }
         val result = (this + Lvl(size).collect(params.map { evalPattern(it) })).zonkTerm(term.result)
         Term.FuncOf(params, result)
       }
-      is Term.Apply      -> {
+      is Term.Apply       -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         Term.Apply(func, args)
       }
-      is Term.Code       -> {
+      is Term.Code        -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
-      is Term.CodeOf     -> {
+      is Term.CodeOf      -> {
         val element = zonkTerm(term.element)
         Term.CodeOf(element)
       }
-      is Term.Splice     -> {
+      is Term.Splice      -> {
         val element = zonkTerm(term.element)
         Term.Splice(element)
       }
-      is Term.Let        -> {
+      is Term.Let         -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         Term.Let(binder, init, body)
       }
-      is Term.Var        -> {
+      is Term.Var         -> {
         val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
-      is Term.Def        -> {
+      is Term.Def         -> {
         Term.Def(term.name, term.body)
       }
-      is Term.Meta       -> {
+      is Term.Meta        -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
             Term.Meta(term.index, term.source).also { _unsolvedMetas += it.index to it.source }
@@ -264,6 +269,7 @@ class Meta {
           }
         }
       }
+      value1 is Value.Point && value2 is Value.Point             -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union             -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
       value1 is Value.Func && value2 is Value.Func               -> {
         value1.params.size == value2.params.size &&

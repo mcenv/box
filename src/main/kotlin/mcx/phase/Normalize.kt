@@ -92,6 +92,11 @@ fun Env.evalTerm(term: Term): Value {
       val elements = term.elements.mapValues { lazy { evalTerm(it.value) } }
       Value.CompoundOf(elements)
     }
+    is Term.Point       -> {
+      val element = lazy { evalTerm(term.element) }
+      val elementType = evalTerm(term.elementType)
+      Value.Point(element, elementType)
+    }
     is Term.Union       -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.Union(elements)
@@ -207,6 +212,11 @@ fun Lvl.quoteValue(value: Value): Term {
     is Value.CompoundOf  -> {
       val elements = value.elements.mapValues { quoteValue(it.value.value) }
       Term.CompoundOf(elements)
+    }
+    is Value.Point       -> {
+      val element = quoteValue(value.element.value)
+      val elementType = quoteValue(value.elementType)
+      Term.Point(element, elementType)
     }
     is Value.Union       -> {
       val elements = value.elements.map { quoteValue(it.value) }

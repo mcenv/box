@@ -135,6 +135,11 @@ class Stage private constructor() {
         val elements = term.elements.mapValues { lazy { evalTerm(it.value, phase) } }
         Value.CompoundOf(elements)
       }
+      is Term.Point       -> {
+        val element = lazy { evalTerm(term.element, phase) }
+        val elementType = evalTerm(term.elementType, phase)
+        Value.Point(element, elementType)
+      }
       is Term.Union       -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         Value.Union(elements)
@@ -273,6 +278,11 @@ class Stage private constructor() {
       is Value.CompoundOf  -> {
         val elements = value.elements.mapValues { quoteValue(it.value.value, phase) }
         Term.CompoundOf(elements)
+      }
+      is Value.Point       -> {
+        val element = quoteValue(value.element.value)
+        val elementType = quoteValue(value.elementType)
+        Term.Point(element, elementType)
       }
       is Value.Union       -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }

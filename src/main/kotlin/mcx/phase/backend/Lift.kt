@@ -99,6 +99,7 @@ class Lift private constructor(
         val elements = term.elements.mapValues { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
+      is C.Term.Point       -> UNIT
       is C.Term.Union       -> UNIT
       is C.Term.Func        -> UNIT
       is C.Term.FuncOf      -> {
@@ -211,6 +212,7 @@ class Lift private constructor(
       is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Compound    -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Point       -> freeVars(term.element)
       is C.Term.Union       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
       is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
@@ -269,6 +271,7 @@ class Lift private constructor(
       is C.Term.ListOf      -> unexpectedTerm(type)
       is C.Term.Compound    -> NbtType.COMPOUND
       is C.Term.CompoundOf  -> unexpectedTerm(type)
+      is C.Term.Point       -> eraseType(type.elementType)
       is C.Term.Union       -> type.elements.firstOrNull()?.let { eraseType(it) } ?: NbtType.END
       is C.Term.Func        -> NbtType.COMPOUND
       is C.Term.FuncOf      -> unexpectedTerm(type)

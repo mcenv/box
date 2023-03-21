@@ -90,7 +90,7 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:tag|type|bool|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound|union|func|code)\\b",
+          "match": "\\b(?:tag|type|bool|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound|union|point|func|code)\\b",
           "name": "entity.name.type.mcx"
         },
         {

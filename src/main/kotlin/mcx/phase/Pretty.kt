@@ -62,6 +62,7 @@ fun prettyTerm(
       is Term.ListOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
       is Term.Compound    -> term.elements.entries.joinToString(", ", "compound{", "}") { (key, element) -> "$key : ${go(element)}" }
       is Term.CompoundOf  -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
+      is Term.Point       -> "(point ${prettyTerm(term.element)})"
       is Term.Union       -> term.elements.joinToString(", ", "union{", "}") { go(it) }
       is Term.Func        -> "(func ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
       is Term.FuncOf      -> "(\\${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"

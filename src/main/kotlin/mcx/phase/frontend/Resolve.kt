@@ -146,11 +146,15 @@ class Resolve private constructor(
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.CompoundOf(elements, range)
       }
+      is S.Term.Point       -> {
+        val element = resolveTerm(term.element)
+        R.Term.Point(element, range)
+      }
       is S.Term.Union       -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.Union(elements, range)
       }
-      is S.Term.Func   -> {
+      is S.Term.Func        -> {
         restoring {
           val params = term.params.map { (binder, type) ->
             val type = resolveTerm(type)
@@ -161,7 +165,7 @@ class Resolve private constructor(
           R.Term.Func(params, result, range)
         }
       }
-      is S.Term.FuncOf -> {
+      is S.Term.FuncOf      -> {
         restoring {
           val params = term.params.map { resolvePattern(it) }
           val result = resolveTerm(term.result)

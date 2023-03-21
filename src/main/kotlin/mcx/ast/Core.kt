@@ -152,6 +152,11 @@ object Core {
       val elements: Map<kotlin.String, Term>,
     ) : Term
 
+    data class Point(
+      val element: Term,
+      val elementType: Term,
+    ) : Term
+
     data class Union(
       val elements: kotlin.collections.List<Term>,
     ) : Term

@@ -155,6 +155,11 @@ sealed interface Value {
     val elements: Map<kotlin.String, Lazy<Value>>,
   ) : Value
 
+  data class Point(
+    val element: Lazy<Value>,
+    val elementType: Value,
+  ) : Value
+
   data class Union(
     val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value

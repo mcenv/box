@@ -184,6 +184,11 @@ object Surface {
       override val range: Range,
     ) : Term
 
+    data class Point(
+      val element: Term,
+      override val range: Range,
+    ) : Term
+
     data class Union(
       val elements: kotlin.collections.List<Term>,
       override val range: Range,
