@@ -1,8 +1,8 @@
 package mcx.phase.frontend
 
+import kotlinx.collections.immutable.*
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.Core.Value
 import mcx.ast.Lvl
 import mcx.phase.*
 import org.eclipse.lsp4j.Range
@@ -13,23 +13,16 @@ class Meta {
   private val _unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
   val unsolvedMetas: Set<Pair<Int, Range>> get() = _unsolvedMetas
 
-  fun freshValue(
-    source: Range,
-    type: Value = freshType(source),
-  ): Value {
-    return Value.Meta(values.size, source, type).also { values += null }
+  fun freshValue(source: Range): Value {
+    return Value.Meta(values.size, source).also { values += null }
   }
 
-  fun freshType(
-    source: Range,
-  ): Value {
-    val tag = lazy { freshValue(source, Value.Tag) }
+  fun freshType(source: Range): Value {
+    val tag = lazy { freshValue(source) }
     return Value.Type(tag)
   }
 
-  tailrec fun forceValue(
-    value: Value,
-  ): Value {
+  tailrec fun forceValue(value: Value): Value {
     return when (value) {
       is Value.Meta ->
         when (val forced = values.getOrNull(value.index)) {
@@ -44,24 +37,21 @@ class Meta {
     _unsolvedMetas.clear()
   }
 
-  fun Lvl.zonkTerm(
-    term: Term,
-  ): Term {
-    // TODO: zonk type
+  fun Env.zonkTerm(term: Term): Term {
     return when (term) {
       is Term.Tag         -> term
       is Term.TagOf       -> term
-      is Term.Type       -> {
+      is Term.Type        -> {
         val tag = zonkTerm(term.element)
         Term.Type(tag)
       }
       is Term.Bool        -> term
       is Term.BoolOf      -> term
-      is Term.If         -> {
+      is Term.If          -> {
         val condition = zonkTerm(term.condition)
         val thenBranch = zonkTerm(term.thenBranch)
         val elseBranch = zonkTerm(term.elseBranch)
-        Term.If(condition, thenBranch, elseBranch, term.type)
+        Term.If(condition, thenBranch, elseBranch)
       }
       is Term.Is          -> {
         val scrutinee = zonkTerm(term.scrutinee)
@@ -103,7 +93,7 @@ class Meta {
       }
       is Term.ListOf     -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.ListOf(elements, term.type)
+        Term.ListOf(elements)
       }
       is Term.Compound    -> {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
@@ -111,11 +101,11 @@ class Meta {
       }
       is Term.CompoundOf -> {
         val elements = term.elements.mapValues { zonkTerm(it.value) }
-        Term.CompoundOf(elements, term.type)
+        Term.CompoundOf(elements)
       }
       is Term.Union      -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.Union(elements, term.type)
+        Term.Union(elements)
       }
       is Term.Func       -> {
         val params = term.params.map { (param, type) ->
@@ -123,18 +113,18 @@ class Meta {
           val type = zonkTerm(type)
           param to type
         }
-        val result = (this + collect(params.map { (param, _) -> param }).size).zonkTerm(term.result)
+        val result = (this + Lvl(size).collect(params.map { (param, _) -> evalPattern(param) })).zonkTerm(term.result)
         Term.Func(params, result)
       }
       is Term.FuncOf     -> {
         val params = term.params.map { zonkPattern(it) }
-        val result = (this + collect(params).size).zonkTerm(term.result)
-        Term.FuncOf(params, result, term.type)
+        val result = (this + Lvl(size).collect(params.map { evalPattern(it) })).zonkTerm(term.result)
+        Term.FuncOf(params, result)
       }
       is Term.Apply      -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
-        Term.Apply(func, args, term.type)
+        Term.Apply(func, args)
       }
       is Term.Code       -> {
         val element = zonkTerm(term.element)
@@ -142,48 +132,52 @@ class Meta {
       }
       is Term.CodeOf     -> {
         val element = zonkTerm(term.element)
-        Term.CodeOf(element, term.type)
+        Term.CodeOf(element)
       }
       is Term.Splice     -> {
         val element = zonkTerm(term.element)
-        Term.Splice(element, term.type)
+        Term.Splice(element)
       }
       is Term.Let        -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
-        Term.Let(binder, init, body, term.type)
+        Term.Let(binder, init, body)
       }
       is Term.Var        -> {
-        Term.Var(term.name, term.idx, term.type)
+        val type = zonkTerm(term.type)
+        Term.Var(term.name, term.idx, type)
       }
       is Term.Def        -> {
-        Term.Def(term.name, term.body, term.type)
+        Term.Def(term.name, term.body)
       }
       is Term.Meta       -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
-            Term.Meta(term.index, term.source, term.type).also { _unsolvedMetas += it.index to it.source }
+            Term.Meta(term.index, term.source).also { _unsolvedMetas += it.index to it.source }
           }
-          else -> zonkTerm(quote(solution))
+          else -> zonkTerm(Lvl(size).quoteValue(solution))
         }
       }
       is Term.Hole        -> term
     }
   }
 
-  private fun zonkPattern(
-    pattern: Pattern,
-  ): Pattern {
-    // TODO: zonk type
+  fun Env.zonkPattern(pattern: Pattern<Term>): Pattern<Term> {
     return when (pattern) {
       is Pattern.IntOf      -> pattern
       is Pattern.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to zonkPattern(element) }
-        Pattern.CompoundOf(elements, pattern.type)
+        Pattern.CompoundOf(elements)
       }
-      is Pattern.Var        -> Pattern.Var(pattern.name, pattern.type)
-      is Pattern.Drop       -> Pattern.Drop(pattern.type)
+      is Pattern.Var        -> {
+        val type = zonkTerm(pattern.type)
+        Pattern.Var(pattern.name, type)
+      }
+      is Pattern.Drop       -> {
+        val type = zonkTerm(pattern.type)
+        Pattern.Drop(type)
+      }
       is Pattern.Hole       -> pattern
     }
   }
@@ -274,10 +268,10 @@ class Meta {
       value1 is Value.Func && value2 is Value.Func               -> {
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
-        unifyValue(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
+        unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
       value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
-        unifyValue(value1.result(collect(value1.result.binders)), value2.result(collect(value2.result.binders)))
+        unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
       value1 is Value.Apply && value2 is Value.Apply             -> {
         unifyValue(value1.func, value2.func) &&

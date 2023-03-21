@@ -1,7 +1,6 @@
 package mcx.ast
 
 import mcx.data.NbtType
-import mcx.phase.Env
 import org.eclipse.lsp4j.Range
 
 object Core {
@@ -26,544 +25,214 @@ object Core {
    * A well-typed term.
    */
   sealed interface Term {
-    val type: Value
-
     object Tag : Term {
-      override val type: Value get() = Value.Type.BYTE
       override fun toString(): kotlin.String = "Tag"
     }
 
     data class TagOf(
       val value: NbtType,
-    ) : Term {
-      override val type: Value get() = Value.Tag
-    }
+    ) : Term
 
     data class Type(
       val element: Term,
-    ) : Term {
-      override val type: Value get() = Value.Type.BYTE
-    }
+    ) : Term
 
     object Bool : Term {
-      override val type: Value get() = Value.Type.BYTE
       override fun toString(): kotlin.String = "Bool"
     }
 
     data class BoolOf(
       val value: Boolean,
-    ) : Term {
-      override val type: Value get() = Value.Bool
-    }
+    ) : Term
 
     data class If(
       val condition: Term,
       val thenBranch: Term,
       val elseBranch: Term,
-      override val type: Value,
     ) : Term
 
     data class Is(
       val scrutinee: Term,
-      val scrutineer: Pattern,
-    ) : Term {
-      override val type: Value get() = Value.Bool
-    }
+      val scrutineer: Pattern<Term>,
+    ) : Term
 
     object Byte : Term {
-      override val type: Value get() = Value.Type.BYTE
       override fun toString(): kotlin.String = "Byte"
     }
 
     data class ByteOf(
       val value: kotlin.Byte,
-    ) : Term {
-      override val type: Value get() = Value.Byte
-    }
+    ) : Term
 
     object Short : Term {
-      override val type: Value get() = Value.Type.SHORT
       override fun toString(): kotlin.String = "Short"
     }
 
     data class ShortOf(
       val value: kotlin.Short,
-    ) : Term {
-      override val type: Value get() = Value.Short
-    }
+    ) : Term
 
     object Int : Term {
-      override val type: Value get() = Value.Type.INT
       override fun toString(): kotlin.String = "Int"
     }
 
     data class IntOf(
       val value: kotlin.Int,
-    ) : Term {
-      override val type: Value get() = Value.Int
-    }
+    ) : Term
 
     object Long : Term {
-      override val type: Value get() = Value.Type.LONG
       override fun toString(): kotlin.String = "Long"
     }
 
     data class LongOf(
       val value: kotlin.Long,
-    ) : Term {
-      override val type: Value get() = Value.Long
-    }
+    ) : Term
 
     object Float : Term {
-      override val type: Value get() = Value.Type.FLOAT
       override fun toString(): kotlin.String = "Float"
     }
 
     data class FloatOf(
       val value: kotlin.Float,
-    ) : Term {
-      override val type: Value get() = Value.Float
-    }
+    ) : Term
 
     object Double : Term {
-      override val type: Value get() = Value.Type.DOUBLE
       override fun toString(): kotlin.String = "Double"
     }
 
     data class DoubleOf(
       val value: kotlin.Double,
-    ) : Term {
-      override val type: Value get() = Value.Double
-    }
+    ) : Term
 
     object String : Term {
-      override val type: Value get() = Value.Type.STRING
       override fun toString(): kotlin.String = "String"
     }
 
     data class StringOf(
       val value: kotlin.String,
-    ) : Term {
-      override val type: Value get() = Value.String
-    }
+    ) : Term
 
     object ByteArray : Term {
-      override val type: Value get() = Value.Type.BYTE_ARRAY
       override fun toString(): kotlin.String = "ByteArray"
     }
 
     data class ByteArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term {
-      override val type: Value get() = Value.ByteArray
-    }
+    ) : Term
 
     object IntArray : Term {
-      override val type: Value get() = Value.Type.INT_ARRAY
       override fun toString(): kotlin.String = "IntArray"
     }
 
     data class IntArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term {
-      override val type: Value get() = Value.IntArray
-    }
+    ) : Term
 
     object LongArray : Term {
-      override val type: Value get() = Value.Type.LONG_ARRAY
       override fun toString(): kotlin.String = "LongArray"
     }
 
     data class LongArrayOf(
       val elements: kotlin.collections.List<Term>,
-    ) : Term {
-      override val type: Value get() = Value.LongArray
-    }
+    ) : Term
 
     data class List(
       val element: Term,
-    ) : Term {
-      override val type: Value get() = Value.Type.LIST
-    }
+    ) : Term
 
     data class ListOf(
       val elements: kotlin.collections.List<Term>,
-      override val type: Value,
     ) : Term
 
     data class Compound(
       val elements: Map<kotlin.String, Term>,
-    ) : Term {
-      override val type: Value get() = Value.Type.COMPOUND
-    }
+    ) : Term
 
     data class CompoundOf(
       val elements: Map<kotlin.String, Term>,
-      override val type: Value,
     ) : Term
 
     data class Union(
       val elements: kotlin.collections.List<Term>,
-      override val type: Value,
     ) : Term
 
     data class Func(
-      val params: kotlin.collections.List<Pair<Pattern, Term>>,
+      val params: kotlin.collections.List<Pair<Pattern<Term>, Term>>,
       val result: Term,
-    ) : Term {
-      override val type: Value get() = Value.Type.COMPOUND
-    }
+    ) : Term
 
     data class FuncOf(
-      val params: kotlin.collections.List<Pattern>,
+      val params: kotlin.collections.List<Pattern<Term>>,
       val result: Term,
-      override val type: Value,
     ) : Term
 
     data class Apply(
       val func: Term,
       val args: kotlin.collections.List<Term>,
-      override val type: Value,
     ) : Term
 
     data class Code(
       val element: Term,
-    ) : Term {
-      override val type: Value get() = Value.Type.END
-    }
+    ) : Term
 
     data class CodeOf(
       val element: Term,
-      override val type: Value,
     ) : Term
 
     data class Splice(
       val element: Term,
-      override val type: Value,
     ) : Term
 
     data class Let(
-      val binder: Pattern,
+      val binder: Pattern<Term>,
       val init: Term,
       val body: Term,
-      override val type: Value,
     ) : Term
 
     data class Var(
       val name: kotlin.String,
       val idx: Idx,
-      override val type: Value,
+      val type: Term,
     ) : Term
 
     data class Def(
       val name: DefinitionLocation,
       val body: Term?,
-      override val type: Value,
     ) : Term
 
     data class Meta(
       val index: kotlin.Int,
       val source: Range,
-      override val type: Value,
     ) : Term
 
     object Hole : Term {
-      override val type: Value get() = Value.Hole
+      override fun toString(): kotlin.String = "Hole"
     }
   }
 
   /**
    * A well-typed pattern.
    */
-  sealed interface Pattern {
-    val type: Value
-
+  sealed interface Pattern<out T> {
     data class IntOf(
       val value: Int,
-    ) : Pattern {
-      override val type: Value get() = Value.Int
-    }
+    ) : Pattern<Nothing>
 
-    data class CompoundOf(
-      val elements: List<Pair<String, Pattern>>,
-      override val type: Value,
-    ) : Pattern
+    data class CompoundOf<T>(
+      val elements: List<Pair<String, Pattern<T>>>,
+    ) : Pattern<T>
 
-    data class Var(
+    data class Var<T>(
       val name: String,
-      override val type: Value,
-    ) : Pattern
+      val type: T,
+    ) : Pattern<T>
 
-    data class Drop(
-      override val type: Value,
-    ) : Pattern
+    data class Drop<T>(
+      val type: T,
+    ) : Pattern<T>
 
-    object Hole : Pattern {
-      override val type: Value get() = Value.Hole
+    object Hole : Pattern<Nothing> {
+      override fun toString(): String = "Hole"
     }
   }
-
-  /**
-   * A well-typed term in weak-head normal form or neutral form.
-   */
-  sealed interface Value {
-    val type: Value
-
-    object Tag : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Tag"
-    }
-
-    data class TagOf(
-      val value: NbtType,
-    ) : Value {
-      override val type: Value get() = Tag
-    }
-
-    data class Type(
-      val element: Lazy<Value>,
-    ) : Value {
-      override val type: Value get() = BYTE
-      companion object {
-        val END: Value = Type(lazyOf(TagOf(NbtType.END)))
-        val BYTE: Value = Type(lazyOf(TagOf(NbtType.BYTE)))
-        val SHORT: Value = Type(lazyOf(TagOf(NbtType.SHORT)))
-        val INT: Value = Type(lazyOf(TagOf(NbtType.INT)))
-        val LONG: Value = Type(lazyOf(TagOf(NbtType.LONG)))
-        val FLOAT: Value = Type(lazyOf(TagOf(NbtType.FLOAT)))
-        val DOUBLE: Value = Type(lazyOf(TagOf(NbtType.DOUBLE)))
-        val STRING: Value = Type(lazyOf(TagOf(NbtType.STRING)))
-        val BYTE_ARRAY: Value = Type(lazyOf(TagOf(NbtType.BYTE_ARRAY)))
-        val INT_ARRAY: Value = Type(lazyOf(TagOf(NbtType.INT_ARRAY)))
-        val LONG_ARRAY: Value = Type(lazyOf(TagOf(NbtType.LONG_ARRAY)))
-        val LIST: Value = Type(lazyOf(TagOf(NbtType.LIST)))
-        val COMPOUND: Value = Type(lazyOf(TagOf(NbtType.COMPOUND)))
-      }
-    }
-
-    object Bool : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Bool"
-    }
-
-    data class BoolOf(
-      val value: Boolean,
-    ) : Value {
-      override val type: Value get() = Bool
-    }
-
-    data class If(
-      val condition: Value,
-      val thenBranch: Lazy<Value>,
-      val elseBranch: Lazy<Value>,
-      override val type: Value,
-    ) : Value
-
-    data class Is(
-      val scrutinee: Lazy<Value>,
-      val scrutineer: Pattern,
-    ) : Value {
-      override val type: Value get() = Bool
-    }
-
-    object Byte : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Byte"
-    }
-
-    data class ByteOf(
-      val value: kotlin.Byte,
-    ) : Value {
-      override val type: Value get() = Byte
-    }
-
-    object Short : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Short"
-    }
-
-    data class ShortOf(
-      val value: kotlin.Short,
-    ) : Value {
-      override val type: Value get() = Short
-    }
-
-    object Int : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Int"
-    }
-
-    data class IntOf(
-      val value: kotlin.Int,
-    ) : Value {
-      override val type: Value get() = Int
-    }
-
-    object Long : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Long"
-    }
-
-    data class LongOf(
-      val value: kotlin.Long,
-    ) : Value {
-      override val type: Value get() = Long
-    }
-
-    object Float : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Float"
-    }
-
-    data class FloatOf(
-      val value: kotlin.Float,
-    ) : Value {
-      override val type: Value get() = Float
-    }
-
-    object Double : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "Double"
-    }
-
-    data class DoubleOf(
-      val value: kotlin.Double,
-    ) : Value {
-      override val type: Value get() = Double
-    }
-
-    object String : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "String"
-    }
-
-    data class StringOf(
-      val value: kotlin.String,
-    ) : Value {
-      override val type: Value get() = String
-    }
-
-    object ByteArray : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "ByteArray"
-    }
-
-    data class ByteArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value {
-      override val type: Value get() = ByteArray
-    }
-
-    object IntArray : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "IntArray"
-    }
-
-    data class IntArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value {
-      override val type: Value get() = IntArray
-    }
-
-    object LongArray : Value {
-      override val type: Value get() = Type.BYTE
-      override fun toString(): kotlin.String = "LongArray"
-    }
-
-    data class LongArrayOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-    ) : Value {
-      override val type: Value get() = LongArray
-    }
-
-    data class List(
-      val element: Lazy<Value>,
-    ) : Value {
-      override val type: Value get() = Type.BYTE
-    }
-
-    data class ListOf(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-      override val type: Value,
-    ) : Value
-
-    data class Compound(
-      val elements: Map<kotlin.String, Lazy<Value>>,
-    ) : Value {
-      override val type: Value get() = Type.BYTE
-    }
-
-    data class CompoundOf(
-      val elements: Map<kotlin.String, Lazy<Value>>,
-      override val type: Value,
-    ) : Value
-
-    data class Union(
-      val elements: kotlin.collections.List<Lazy<Value>>,
-      override val type: Value,
-    ) : Value
-
-    data class Func(
-      val params: kotlin.collections.List<Lazy<Value>>,
-      val result: Closure,
-    ) : Value {
-      override val type: Value get() = Type.COMPOUND
-    }
-
-    data class FuncOf(
-      val result: Closure,
-      override val type: Value,
-    ) : Value
-
-    data class Apply(
-      val func: Value,
-      val args: kotlin.collections.List<Lazy<Value>>,
-      override val type: Value,
-    ) : Value
-
-    data class Code(
-      val element: Lazy<Value>,
-    ) : Value {
-      override val type: Value get() = Type.END
-    }
-
-    data class CodeOf(
-      val element: Lazy<Value>,
-      override val type: Value,
-    ) : Value
-
-    data class Splice(
-      val element: Value,
-      override val type: Value,
-    ) : Value
-
-    data class Var(
-      val name: kotlin.String,
-      val lvl: Lvl,
-      override val type: Value,
-    ) : Value
-
-    data class Def(
-      val name: DefinitionLocation,
-      val body: Term?,
-      override val type: Value,
-    ) : Value
-
-    data class Meta(
-      val index: kotlin.Int,
-      val source: Range,
-      override val type: Value,
-    ) : Value
-
-    object Hole : Value {
-      override val type: Value get() = Hole
-      override fun toString(): kotlin.String = "Hole"
-    }
-  }
-
-  data class Closure(
-    val env: Env,
-    val binders: List<Pattern>,
-    val body: Term,
-  )
 }

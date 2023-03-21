@@ -1,6 +1,5 @@
 package mcx.phase
 
-import mcx.ast.Core.Value
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import kotlin.math.max

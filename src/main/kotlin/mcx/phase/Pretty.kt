@@ -80,7 +80,7 @@ fun prettyTerm(
 }
 
 fun prettyPattern(
-  pattern: Pattern,
+  pattern: Pattern<*>,
 ): String {
   return when (pattern) {
     is Pattern.IntOf      -> pattern.value.toString()

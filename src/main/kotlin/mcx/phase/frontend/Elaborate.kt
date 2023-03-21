@@ -59,11 +59,11 @@ class Elaborate private constructor(
         if (Modifier.REC in modifiers) {
           definitions[name] = C.Definition.Def(modifiers, name, type, null)
         }
-        val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.freeze().eval(type)) }
+        val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.freeze().evalTerm(type)) }
         with(meta) {
           resetUnsolvedMetas()
-          val type = Lvl(0).zonkTerm(type)
-          val body = body?.let { Lvl(0).zonkTerm(it) }
+          val type = emptyEnv().zonkTerm(type)
+          val body = body?.let { emptyEnv().zonkTerm(it) }
           meta.unsolvedMetas.forEach { (index, source) ->
             diagnostics += unsolvedMeta(index, source)
           }
@@ -77,153 +77,153 @@ class Elaborate private constructor(
   private inline fun Ctx.synthTerm(
     term: R.Term,
     phase: Phase,
-  ): C.Term {
+  ): Pair<C.Term, Value> {
     return elaborateTerm(term, phase, null)
   }
 
   private inline fun Ctx.checkTerm(
     term: R.Term,
     phase: Phase,
-    type: C.Value,
+    type: Value,
   ): C.Term {
-    return elaborateTerm(term, phase, type)
+    return elaborateTerm(term, phase, type).first
   }
 
   private fun Ctx.elaborateTerm(
     term: R.Term,
     phase: Phase,
-    type: C.Value?,
-  ): C.Term {
+    type: Value?,
+  ): Pair<C.Term, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      term is R.Term.Tag && phase == Phase.CONST && synth(type)                  -> C.Term.Tag
-      term is R.Term.TagOf && phase == Phase.CONST && synth(type)                -> C.Term.TagOf(term.value)
-      term is R.Term.Type && synth(type)                                         -> {
-        val tag = checkTerm(term.element, Phase.CONST, C.Value.Tag)
-        C.Term.Type(tag)
+      term is R.Term.Tag && phase == Phase.CONST && synth(type)                -> C.Term.Tag to Value.Type.BYTE
+      term is R.Term.TagOf && phase == Phase.CONST && synth(type)              -> C.Term.TagOf(term.value) to Value.Tag
+      term is R.Term.Type && synth(type)                                       -> {
+        val tag = checkTerm(term.element, Phase.CONST, Value.Tag)
+        C.Term.Type(tag) to Value.Type.BYTE
       }
-      term is R.Term.Bool && synth(type)                                         -> C.Term.Bool
-      term is R.Term.BoolOf && synth(type)                                       -> C.Term.BoolOf(term.value)
-      term is R.Term.If && match<C.Value>(type)                                  -> {
-        val condition = checkTerm(term.condition, phase, C.Value.Bool)
-        val thenBranch = elaborateTerm(term.thenBranch, phase, type)
-        val elseBranch = elaborateTerm(term.elseBranch, phase, type)
-        val type = type ?: C.Value.Union(listOf(lazyOf(thenBranch.type), lazyOf(elseBranch.type)), meta.freshType(term.range))
-        C.Term.If(condition, thenBranch, elseBranch, type)
+      term is R.Term.Bool && synth(type)                                       -> C.Term.Bool to Value.Type.BYTE
+      term is R.Term.BoolOf && synth(type)                                     -> C.Term.BoolOf(term.value) to Value.Bool
+      term is R.Term.If && match<Value>(type)                                  -> {
+        val condition = checkTerm(term.condition, phase, Value.Bool)
+        val (thenBranch, thenBranchType) = elaborateTerm(term.thenBranch, phase, type)
+        val (elseBranch, elseBranchType) = elaborateTerm(term.elseBranch, phase, type)
+        val type = type ?: Value.Union(listOf(lazyOf(thenBranchType), lazyOf(elseBranchType)))
+        C.Term.If(condition, thenBranch, elseBranch) to type
       }
-      term is R.Term.Is && synth(type)                                           -> {
-        val scrutineer = restoring { synthPattern(term.scrutineer, phase) }
-        val scrutinee = checkTerm(term.scrutinee, phase, scrutineer.type)
-        C.Term.Is(scrutinee, scrutineer)
+      term is R.Term.Is && synth(type)                                         -> {
+        val (scrutineer, scrutineerType) = restoring { synthPattern(term.scrutineer, phase) }
+        val scrutinee = checkTerm(term.scrutinee, phase, scrutineerType)
+        C.Term.Is(scrutinee, scrutineer) to Value.Bool
       }
-      term is R.Term.Byte && synth(type)                                         -> C.Term.Byte
-      term is R.Term.ByteOf && synth(type)                                       -> C.Term.ByteOf(term.value)
-      term is R.Term.Short && synth(type)                                        -> C.Term.Short
-      term is R.Term.ShortOf && synth(type)                                      -> C.Term.ShortOf(term.value)
-      term is R.Term.Int && synth(type)                                          -> C.Term.Int
-      term is R.Term.IntOf && synth(type)                                        -> C.Term.IntOf(term.value)
-      term is R.Term.Long && synth(type)                                         -> C.Term.Long
-      term is R.Term.LongOf && synth(type)                                       -> C.Term.LongOf(term.value)
-      term is R.Term.Float && synth(type)                                        -> C.Term.Float
-      term is R.Term.FloatOf && synth(type)                                      -> C.Term.FloatOf(term.value)
-      term is R.Term.Double && synth(type)                                       -> C.Term.Double
-      term is R.Term.DoubleOf && synth(type)                                     -> C.Term.DoubleOf(term.value)
-      term is R.Term.String && synth(type)                                       -> C.Term.String
-      term is R.Term.StringOf && synth(type)                                     -> C.Term.StringOf(term.value)
-      term is R.Term.ByteArray && synth(type)                                    -> C.Term.ByteArray
-      term is R.Term.ByteArrayOf && synth(type)                                  -> {
-        val elements = term.elements.map { checkTerm(it, phase, C.Value.Byte) }
-        C.Term.ByteArrayOf(elements)
+      term is R.Term.Byte && synth(type)                                       -> C.Term.Byte to Value.Type.BYTE
+      term is R.Term.ByteOf && synth(type)                                     -> C.Term.ByteOf(term.value) to Value.Byte
+      term is R.Term.Short && synth(type)                                      -> C.Term.Short to Value.Type.SHORT
+      term is R.Term.ShortOf && synth(type)                                    -> C.Term.ShortOf(term.value) to Value.Short
+      term is R.Term.Int && synth(type)                                        -> C.Term.Int to Value.Type.INT
+      term is R.Term.IntOf && synth(type)                                      -> C.Term.IntOf(term.value) to Value.Int
+      term is R.Term.Long && synth(type)                                       -> C.Term.Long to Value.Type.LONG
+      term is R.Term.LongOf && synth(type)                                     -> C.Term.LongOf(term.value) to Value.Long
+      term is R.Term.Float && synth(type)                                      -> C.Term.Float to Value.Type.FLOAT
+      term is R.Term.FloatOf && synth(type)                                    -> C.Term.FloatOf(term.value) to Value.Float
+      term is R.Term.Double && synth(type)                                     -> C.Term.Double to Value.Type.DOUBLE
+      term is R.Term.DoubleOf && synth(type)                                   -> C.Term.DoubleOf(term.value) to Value.Double
+      term is R.Term.String && synth(type)                                     -> C.Term.String to Value.Type.STRING
+      term is R.Term.StringOf && synth(type)                                   -> C.Term.StringOf(term.value) to Value.String
+      term is R.Term.ByteArray && synth(type)                                  -> C.Term.ByteArray to Value.Type.BYTE_ARRAY
+      term is R.Term.ByteArrayOf && synth(type)                                -> {
+        val elements = term.elements.map { checkTerm(it, phase, Value.Byte) }
+        C.Term.ByteArrayOf(elements) to Value.ByteArray
       }
-      term is R.Term.IntArray && synth(type)                                     -> C.Term.IntArray
-      term is R.Term.IntArrayOf && synth(type)                                   -> {
-        val elements = term.elements.map { checkTerm(it, phase, C.Value.Int) }
-        C.Term.IntArrayOf(elements)
+      term is R.Term.IntArray && synth(type)                                   -> C.Term.IntArray to Value.Type.INT_ARRAY
+      term is R.Term.IntArrayOf && synth(type)                                 -> {
+        val elements = term.elements.map { checkTerm(it, phase, Value.Int) }
+        C.Term.IntArrayOf(elements) to Value.IntArray
       }
-      term is R.Term.LongArray && synth(type)                                    -> C.Term.LongArray
-      term is R.Term.LongArrayOf && synth(type)                                  -> {
-        val elements = term.elements.map { checkTerm(it, phase, C.Value.Long) }
-        C.Term.LongArrayOf(elements)
+      term is R.Term.LongArray && synth(type)                                  -> C.Term.LongArray to Value.Type.LONG_ARRAY
+      term is R.Term.LongArrayOf && synth(type)                                -> {
+        val elements = term.elements.map { checkTerm(it, phase, Value.Long) }
+        C.Term.LongArrayOf(elements) to Value.LongArray
       }
-      term is R.Term.List && synth(type)                                         -> {
+      term is R.Term.List && synth(type)                                       -> {
         val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
-        C.Term.List(element)
+        C.Term.List(element) to Value.Type.LIST
       }
-      term is R.Term.ListOf && match<C.Value.List>(type)                         -> {
+      term is R.Term.ListOf && match<Value.List>(type)                         -> {
         val elementType = type?.element?.value
-        val elements = term.elements.map { elaborateTerm(it, phase, elementType) }
-        val type = type ?: C.Value.List(lazyOf(C.Value.Union(elements.map { lazyOf(it.type) }, meta.freshType(term.range))))
-        C.Term.ListOf(elements, type)
+        val (elements, elementsTypes) = term.elements.map { elaborateTerm(it, phase, elementType) }.unzip()
+        val type = type ?: Value.List(lazyOf(Value.Union(elementsTypes.map { lazyOf(it) })))
+        C.Term.ListOf(elements) to type
       }
-      term is R.Term.Compound && synth(type)                                     -> {
+      term is R.Term.Compound && synth(type)                                   -> {
         val elements = term.elements.associate { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
         }
-        C.Term.Compound(elements)
+        C.Term.Compound(elements) to Value.Type.COMPOUND
       }
-      term is R.Term.CompoundOf && synth(type)                                   -> {
+      term is R.Term.CompoundOf && synth(type)                                 -> {
         TODO()
       }
-      term is R.Term.CompoundOf && check<C.Value.Compound>(type)                 -> {
+      term is R.Term.CompoundOf && check<Value.Compound>(type)                 -> {
         TODO()
       }
-      term is R.Term.Union && match<C.Value.Type>(type)                          -> {
+      term is R.Term.Union && match<Value.Type>(type)                          -> {
         val type = type ?: meta.freshType(term.range)
         val elements = term.elements.map { checkTerm(it, phase, type) }
-        C.Term.Union(elements, type)
+        C.Term.Union(elements) to type
       }
-      term is R.Term.Func && synth(type)                                         -> {
+      term is R.Term.Func && synth(type)                                       -> {
         val env = freeze()
         restoring {
           val params = term.params.map { (pattern, term) ->
             val term = checkTerm(term, phase, meta.freshType(term.range))
-            val pattern = checkPattern(pattern, phase, env.eval(term))
+            val pattern = checkPattern(pattern, phase, env.evalTerm(term))
             pattern to term
           }
           val result = checkTerm(term.result, phase, meta.freshType(term.result.range))
-          C.Term.Func(params, result)
+          C.Term.Func(params, result) to Value.Type.COMPOUND
         }
       }
-      term is R.Term.FuncOf && synth(type)               -> {
+      term is R.Term.FuncOf && synth(type)                                     -> {
         val next = next()
         restoring {
-          val params = term.params.map { synthPattern(it, phase) }
-          val result = synthTerm(term.result, phase)
-          val type = C.Value.Func(
-            params.map { lazyOf(it.type) },
-            C.Closure(freeze(), params, (next + next.collect(params).size).quote(result.type)),
+          val (params, paramsTypes) = term.params.map { synthPattern(it, phase) }.unzip()
+          val (result, resultType) = synthTerm(term.result, phase)
+          val env = freeze()
+          val vParams = params.map { env.evalPattern(it) }
+          val type = Value.Func(
+            paramsTypes.map { lazyOf(it) },
+            Closure(env, vParams, (next + next.collect(vParams).size).quoteValue(resultType)),
           )
-          C.Term.FuncOf(params, result, type)
+          C.Term.FuncOf(params, result) to type
         }
       }
-      term is R.Term.FuncOf && check<C.Value.Func>(type) -> {
+      term is R.Term.FuncOf && check<Value.Func>(type)                         -> {
         val next = next()
         restoring {
           if (type.params.size == term.params.size) {
-            val params = (term.params zip type.params).map { (param, type) ->
-              elaboratePattern(param, phase, type.value)
+            val params = term.params.mapIndexed { index, param ->
+              val actual = checkPattern(param, phase, type.params[index].value)
+              val expected = type.result.binders[index]
+              if (conv(expected, actual)) {
+                actual
+              } else {
+                return invalidTerm(patternMismatch(expected, actual, param.range))
+              }
             }
-            val result = checkTerm(term.result, phase, type.result(next.collect(type.result.binders)))
-            C.Term.FuncOf(params, result, type)
+            val result = checkTerm(term.result, phase, next.evalClosure(type.result))
+            C.Term.FuncOf(params, result) to type
           } else {
             invalidTerm(arityMismatch(type.params.size, term.params.size, term.range))
           }
         }
       }
-      term is R.Term.Apply && synth(type)                -> {
-        val func = synthTerm(term.func, phase)
-        val funcType = when (val funcType = meta.forceValue(func.type)) {
-          is C.Value.Func -> funcType
-          else            -> {
-            val params = term.args.map { lazyOf(meta.freshValue(term.func.range)) }
-            val result = C.Closure(freeze(), params.map { C.Pattern.Drop(it.value) }, next().quote(meta.freshValue(term.func.range)))
-            C.Value.Func(params, result).also {
-              if (!next().sub(funcType, it)) {
-                return invalidTerm(next().typeMismatch(funcType, it, term.func.range))
-              }
-            }
-          }
+      term is R.Term.Apply && synth(type)                                      -> {
+        val (func, maybeFuncType) = synthTerm(term.func, phase)
+        val funcType = when (val funcType = meta.forceValue(maybeFuncType)) {
+          is Value.Func -> funcType
+          else          -> return invalidTerm(cannotSynthesize(term.func.range)) // TODO: unify?
         }
         if (funcType.params.size != term.args.size) {
           return invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range))
@@ -232,50 +232,50 @@ class Elaborate private constructor(
           checkTerm(arg, phase, param.value)
         }
         val values = freeze()
-        val type = funcType.result(args.map { lazy { values.eval(it) } })
-        C.Term.Apply(func, args, type)
+        val type = funcType.result(args.map { lazy { values.evalTerm(it) } })
+        C.Term.Apply(func, args) to type
       }
-      term is R.Term.Code && phase == Phase.CONST && synth(type)                 -> {
+      term is R.Term.Code && phase == Phase.CONST && synth(type)               -> {
         val element = checkTerm(term.element, Phase.WORLD, meta.freshType(term.element.range))
-        C.Term.Code(element)
+        C.Term.Code(element) to Value.Type.END
       }
-      term is R.Term.CodeOf && phase == Phase.CONST && match<C.Value.Code>(type) -> {
-        val element = elaborateTerm(term.element, Phase.WORLD, type?.element?.value)
-        val type = type ?: C.Value.Code(lazyOf(element.type))
-        C.Term.CodeOf(element, type)
+      term is R.Term.CodeOf && phase == Phase.CONST && match<Value.Code>(type) -> {
+        val (element, elementType) = elaborateTerm(term.element, Phase.WORLD, type?.element?.value)
+        val type = type ?: Value.Code(lazyOf(elementType))
+        C.Term.CodeOf(element) to type
       }
-      term is R.Term.Splice && match<C.Value>(type)                              -> {
+      term is R.Term.Splice && match<Value>(type)                              -> {
         val type = type ?: meta.freshValue(term.range)
-        val element = checkTerm(term.element, Phase.CONST, C.Value.Code(lazyOf(type)))
-        C.Term.Splice(element, type)
+        val element = checkTerm(term.element, Phase.CONST, Value.Code(lazyOf(type)))
+        C.Term.Splice(element) to type
       }
-      term is R.Term.Let && match<C.Value>(type)         -> {
-        val init = synthTerm(term.init, phase)
+      term is R.Term.Let && match<Value>(type)                                 -> {
+        val (init, initType) = synthTerm(term.init, phase)
         restoring {
-          val binder = synthPattern(term.binder, phase)
-          if (!next().sub(init.type, binder.type)) {
-            diagnostics += next().typeMismatch(init.type, binder.type, term.init.range)
+          val (binder, binderType) = synthPattern(term.binder, phase)
+          if (!next().sub(initType, binderType)) {
+            diagnostics += freeze().typeMismatch(initType, binderType, term.init.range)
           }
-          val body = elaborateTerm(term.body, phase, type)
-          val type = type ?: body.type
-          C.Term.Let(binder, init, body, type)
+          val (body, bodyType) = elaborateTerm(term.body, phase, type)
+          val type = type ?: bodyType
+          C.Term.Let(binder, init, body) to type
         }
       }
-      term is R.Term.Var && synth(type)                  -> {
+      term is R.Term.Var && synth(type)                                        -> {
         val entry = this[next().toLvl(term.idx)]
         if (phase == entry.phase) {
-          C.Term.Var(term.name, term.idx, entry.type)
+          C.Term.Var(term.name, term.idx, next().quoteValue(entry.type)) to entry.type
         } else {
           invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
-      term is R.Term.Def && synth(type)                  -> {
+      term is R.Term.Def && synth(type)                                        -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             when (val actualPhase = getPhase(definition.modifiers)) {
               phase -> {
-                val type = freeze().eval(definition.type)
-                C.Term.Def(term.name, definition.body, type)
+                val type = freeze().evalTerm(definition.type)
+                C.Term.Def(term.name, definition.body) to type
               }
               else  -> invalidTerm(phaseMismatch(phase, actualPhase, term.range))
             }
@@ -283,91 +283,111 @@ class Elaborate private constructor(
           else                -> invalidTerm(expectedDef(term.range))
         }
       }
-      term is R.Term.As && synth(type)                   -> {
-        val type = freeze().eval(checkTerm(term.type, phase, meta.freshType(term.type.range)))
-        checkTerm(term.element, phase, type)
+      term is R.Term.As && synth(type)                                         -> {
+        val type = freeze().evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
+        checkTerm(term.element, phase, type) to type
       }
-      term is R.Term.Hole && match<C.Value>(type)        -> C.Term.Hole
-      synth(type)                                        -> invalidTerm(cannotSynthesize(term.range))
-      check<C.Value>(type)                               -> {
+      term is R.Term.Hole && match<Value>(type)                                -> C.Term.Hole to Value.Hole
+      synth(type)                                                              -> invalidTerm(cannotSynthesize(term.range))
+      check<Value>(type)                                                       -> {
         val synth = synthTerm(term, phase)
-        if (next().sub(synth.type, type)) {
+        if (next().sub(synth.second, type)) {
           synth
         } else {
-          invalidTerm(next().typeMismatch(type, synth.type, term.range))
+          invalidTerm(freeze().typeMismatch(type, synth.second, term.range))
         }
       }
-      else                                               -> error("unreachable")
-    }.also {
-      hover(it.type, term.range)
+      else                                                                     -> error("unreachable")
+    }.also { (_, type) ->
+      hover(type, term.range)
     }
   }
 
   private inline fun Ctx.synthPattern(
     pattern: R.Pattern,
     phase: Phase,
-  ): C.Pattern {
+  ): Pair<C.Pattern<C.Term>, Value> {
     return elaboratePattern(pattern, phase, null)
   }
 
   private inline fun Ctx.checkPattern(
     pattern: R.Pattern,
     phase: Phase,
-    type: C.Value,
-  ): C.Pattern {
-    return elaboratePattern(pattern, phase, type)
+    type: Value,
+  ): C.Pattern<C.Term> {
+    return elaboratePattern(pattern, phase, type).first
   }
 
   private fun Ctx.elaboratePattern(
     pattern: R.Pattern,
     phase: Phase,
-    type: C.Value?,
-  ): C.Pattern {
+    type: Value?,
+  ): Pair<C.Pattern<C.Term>, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      pattern is R.Pattern.IntOf && synth(type)                        -> C.Pattern.IntOf(pattern.value)
-      pattern is R.Pattern.CompoundOf && synth(type)                   -> {
+      pattern is R.Pattern.IntOf && synth(type)                      -> C.Pattern.IntOf(pattern.value) to Value.Int
+      pattern is R.Pattern.CompoundOf && synth(type)                 -> {
         TODO()
       }
-      pattern is R.Pattern.CompoundOf && check<C.Value.Compound>(type) -> {
+      pattern is R.Pattern.CompoundOf && check<Value.Compound>(type) -> {
         TODO()
       }
-      pattern is R.Pattern.Var && match<C.Value>(type)                 -> {
+      pattern is R.Pattern.Var && match<Value>(type)                 -> {
+        val next = next()
         val type = type ?: meta.freshValue(pattern.range)
         push(pattern.name, phase, type, null)
-        C.Pattern.Var(pattern.name, type)
+        C.Pattern.Var(pattern.name, next.quoteValue(type)) to type
       }
-      pattern is R.Pattern.Drop && match<C.Value>(type) -> {
+      pattern is R.Pattern.Drop && match<Value>(type)                -> {
         val type = type ?: meta.freshValue(pattern.range)
-        C.Pattern.Drop(type)
+        C.Pattern.Drop(next().quoteValue(type)) to type
       }
-      pattern is R.Pattern.As && synth(type)            -> {
-        val type = freeze().eval(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
-        checkPattern(pattern.element, phase, type)
+      pattern is R.Pattern.As && synth(type)                         -> {
+        val type = freeze().evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
+        checkPattern(pattern.element, phase, type) to type
       }
-      pattern is R.Pattern.Hole && match<C.Value>(type) -> C.Pattern.Hole
-      synth(type)                                       -> invalidPattern(cannotSynthesize(pattern.range))
-      check<C.Value>(type)                              -> {
+      pattern is R.Pattern.Hole && match<Value>(type)                -> C.Pattern.Hole to Value.Hole
+      synth(type)                                                    -> invalidPattern(cannotSynthesize(pattern.range))
+      check<Value>(type)                                             -> {
         val synth = synthPattern(pattern, phase)
-        if (next().sub(synth.type, type)) {
+        if (next().sub(synth.second, type)) {
           synth
         } else {
-          invalidPattern(next().typeMismatch(type, synth.type, pattern.range))
+          invalidPattern(freeze().typeMismatch(type, synth.second, pattern.range))
         }
       }
-      else                                              -> error("unreachable")
-    }.also {
-      hover(it.type, pattern.range)
+      else                                                           -> error("unreachable")
+    }.also { (_, type) ->
+      hover(type, pattern.range)
     }
   }
 
   private fun Lvl.sub(
-    value1: C.Value,
-    value2: C.Value,
+    value1: Value,
+    value2: Value,
   ): Boolean {
     val value1 = meta.forceValue(value1)
     val value2 = meta.forceValue(value2)
     return with(meta) { unifyValue(value1, value2) } // TODO: subtyping
+  }
+
+  private fun conv(
+    pattern1: C.Pattern<*>,
+    pattern2: C.Pattern<*>,
+  ): Boolean {
+    return when {
+      pattern1 is C.Pattern.IntOf && pattern2 is C.Pattern.IntOf           -> pattern1.value == pattern2.value
+      pattern1 is C.Pattern.CompoundOf && pattern2 is C.Pattern.CompoundOf -> {
+        pattern1.elements.size == pattern2.elements.size &&
+        (pattern1.elements zip pattern2.elements).all { (element1, element2) ->
+          element1.first == element2.first &&
+          conv(element1.second, element2.second)
+        }
+      }
+      pattern1 is C.Pattern.Var && pattern2 is C.Pattern.Var               -> pattern1.name == pattern2.name
+      pattern1 is C.Pattern.Drop && pattern2 is C.Pattern.Drop             -> true
+      else                                                                 -> false
+    }
   }
 
   private fun getPhase(modifiers: Collection<Modifier>): Phase {
@@ -375,7 +395,7 @@ class Elaborate private constructor(
   }
 
   @OptIn(ExperimentalContracts::class)
-  private inline fun synth(type: C.Value?): Boolean {
+  private inline fun synth(type: Value?): Boolean {
     contract {
       returns(false) implies (type != null)
       returns(true) implies (type == null)
@@ -384,7 +404,7 @@ class Elaborate private constructor(
   }
 
   @OptIn(ExperimentalContracts::class)
-  private inline fun <reified V : C.Value> check(type: C.Value?): Boolean {
+  private inline fun <reified V : Value> check(type: Value?): Boolean {
     contract {
       returns(false) implies (type !is V)
       returns(true) implies (type is V)
@@ -393,7 +413,7 @@ class Elaborate private constructor(
   }
 
   @OptIn(ExperimentalContracts::class)
-  private inline fun <reified V : C.Value> match(type: C.Value?): Boolean {
+  private inline fun <reified V : Value> match(type: Value?): Boolean {
     contract {
       returns(false) implies (type !is V?)
       returns(true) implies (type is V?)
@@ -402,18 +422,18 @@ class Elaborate private constructor(
   }
 
   private fun Ctx.hover(
-    type: C.Value,
+    type: Value,
     range: Range,
   ) {
     if (hover == null && position != null && position in range) {
-      val next = next()
-      hover = { next.prettyValue(type) }
+      val env = freeze()
+      hover = { env.prettyValue(type) }
     }
   }
 
-  private fun Lvl.typeMismatch(
-    expected: C.Value,
-    actual: C.Value,
+  private fun Env.typeMismatch(
+    expected: Value,
+    actual: Value,
     range: Range,
   ): Diagnostic {
     val expected = prettyValue(expected)
@@ -428,29 +448,29 @@ class Elaborate private constructor(
     )
   }
 
-  private fun Lvl.prettyValue(
-    value: C.Value,
+  private fun Env.prettyValue(
+    value: Value,
   ): String {
-    return prettyTerm(with(meta) { zonkTerm(quote(value)) })
+    return prettyTerm(with(meta) { zonkTerm(Lvl(size).quoteValue(value)) })
   }
 
   private fun invalidTerm(
     diagnostic: Diagnostic,
-  ): C.Term {
+  ): Pair<C.Term, Value> {
     diagnostics += diagnostic
-    return C.Term.Hole
+    return C.Term.Hole to Value.Hole
   }
 
   private fun invalidPattern(
     diagnostic: Diagnostic,
-  ): C.Pattern {
+  ): Pair<C.Pattern<Nothing>, Value> {
     diagnostics += diagnostic
-    return C.Pattern.Hole
+    return C.Pattern.Hole to Value.Hole
   }
 
   private class Ctx private constructor(
     private val _entries: MutableList<Entry>,
-    private val _values: MutableList<Lazy<C.Value>>,
+    private val _values: MutableList<Lazy<Value>>,
   ) {
     fun next(): Lvl {
       return Lvl(_entries.size)
@@ -463,10 +483,10 @@ class Elaborate private constructor(
     fun push(
       name: String,
       phase: Phase,
-      type: C.Value,
-      value: Lazy<C.Value>?,
+      type: Value,
+      value: Lazy<Value>?,
     ) {
-      _values += value ?: lazyOf(C.Value.Var(name, next(), type))
+      _values += value ?: lazyOf(Value.Var(name, next(), type))
       _entries += Entry(name, phase, type)
     }
 
@@ -496,7 +516,7 @@ class Elaborate private constructor(
   private data class Entry(
     val name: String,
     val phase: Phase,
-    val type: C.Value,
+    val type: Value,
   )
 
   data class Result(
@@ -507,6 +527,23 @@ class Elaborate private constructor(
   )
 
   companion object {
+    private fun patternMismatch(
+      expected: C.Pattern<*>,
+      actual: C.Pattern<*>,
+      range: Range,
+    ): Diagnostic {
+      val expected = prettyPattern(expected)
+      val actual = prettyPattern(actual)
+      return diagnostic(
+        range,
+        """pattern mismatch:
+          |  expected: $expected
+          |  actual  : $actual
+        """.trimMargin(),
+        DiagnosticSeverity.Error,
+      )
+    }
+
     private fun arityMismatch(
       expected: Int,
       actual: Int,
