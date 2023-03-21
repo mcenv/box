@@ -368,7 +368,19 @@ class Elaborate private constructor(
   ): Boolean {
     val value1 = meta.forceValue(value1)
     val value2 = meta.forceValue(value2)
-    return with(meta) { unifyValue(value1, value2) } // TODO: subtyping
+    return when {
+      value1 is Value.List && value2 is Value.List         -> sub(value1.element.value, value2.element.value)
+      value1 is Value.Compound && value2 is Value.Compound -> TODO()
+      value1 is Value.Union                                -> value1.elements.all { sub(it.value, value2) }
+      value2 is Value.Union                                -> value2.elements.any { sub(value1, it.value) }
+      value1 is Value.Func && value2 is Value.Func         -> {
+        value1.params.size == value2.params.size &&
+        (value1.params zip value2.params).all { (param1, param2) -> sub(param1.value, param2.value) } &&
+        sub(evalClosure(value1.result), evalClosure(value2.result))
+      }
+      value1 is Value.Code && value2 is Value.Code         -> sub(value1.element.value, value2.element.value)
+      else                                                 -> with(meta) { unifyValue(value1, value2) }
+    }
   }
 
   private fun conv(
