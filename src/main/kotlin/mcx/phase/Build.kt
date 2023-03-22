@@ -26,12 +26,17 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.io.path.*
-import kotlin.system.exitProcess
 
 // TODO: redesign
 class Build(
   private val root: Path,
+  noStd: Boolean = false,
 ) {
+  private val std: Path? = if (noStd) null else {
+    val uri = Build::class.java.getResource("/std/src")!!.toURI()
+    FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
+    Paths.get(uri)
+  }
   private val src: Path = root.resolve("src").also { it.createDirectories() }
   private val values: ConcurrentMap<Key<*>, Value<*>> = ConcurrentHashMap()
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
@@ -114,9 +119,7 @@ class Build(
   }
 
   @Suppress("UNCHECKED_CAST")
-  suspend fun <V> Context.fetch(
-    key: Key<V>,
-  ): Value<V> {
+  suspend fun <V> Context.fetch(key: Key<V>): Value<V> {
     return coroutineScope {
       mutexes
         .computeIfAbsent(key) { Mutex() }
@@ -125,20 +128,16 @@ class Build(
           when (key) {
             is Key.Text       -> {
               value ?: withContext(Dispatchers.IO) {
-                src
-                  .resolve(key.location.parts.joinToString("/", postfix = ".mcx"))
-                  .let { path ->
-                    if (path.exists() && path.isRegularFile()) {
-                      return@withContext Value(path.readText(), 0)
-                    }
+                src.resolve(key.location.parts.joinToString("/", postfix = ".mcx")).let { path ->
+                  if (path.exists() && path.isRegularFile()) {
+                    return@withContext Value(path.readText(), 0)
                   }
-                STD_SRC
-                  .resolve(key.location.parts.joinToString("/", postfix = ".mcx"))
-                  .let { path ->
-                    if (path.exists()) {
-                      return@withContext Value(path.readText(), 0)
-                    }
+                }
+                std?.resolve(key.location.parts.joinToString("/", postfix = ".mcx"))?.let { path ->
+                  if (path.exists()) {
+                    return@withContext Value(path.readText(), 0)
                   }
+                }
                 Value.NULL
               }
             }
@@ -263,50 +262,33 @@ class Build(
 
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
     val imports = mutableListOf<DefinitionLocation>()
-    suspend fun visit(location: ModuleLocation) {
+    suspend fun go(location: ModuleLocation) {
       fetch(Key.Parsed(location)).value!!.module.imports.forEach { (import) ->
         imports += import
-        visit(import.module)
+        go(import.module)
       }
     }
-    visit(location)
+    go(location)
     return imports
   }
 
   @OptIn(ExperimentalSerializationApi::class)
-  suspend operator fun invoke() {
+  suspend operator fun invoke(): List<Pair<Path, List<Diagnostic>>> {
     val serverProperties = Properties().apply {
-      load(
-        root
-          .resolve("server.properties")
-          .inputStream()
-          .buffered()
-      )
+      load(root.resolve("server.properties").inputStream().buffered())
     }
     val levelName = serverProperties.getProperty("level-name")
-    val datapacks = root
-      .resolve(levelName)
-      .resolve("datapacks")
-      .also { it.createDirectories() }
+    val datapacks = root.resolve(levelName).resolve("datapacks").also { it.createDirectories() }
 
-    val config = root
-      .resolve("pack.json")
-      .inputStream()
-      .buffered()
-      .use { Json.decodeFromStream<Config>(it) }
+    val config = root.resolve("pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
 
-    fun Path.toModuleLocation(): ModuleLocation =
-      ModuleLocation(
-        src.relativize(this).invariantSeparatorsPathString
-          .dropLast(".mcx".length)
-          .split('/')
-      )
+    fun Path.toModuleLocation(): ModuleLocation {
+      return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
+    }
 
-    val datapackRoot = datapacks
-      .resolve(config.name)
-      .also { it.createDirectories() }
+    val datapackRoot = datapacks.resolve(config.name).also { it.createDirectories() }
 
-    val outputModules = runBlocking {
+    return runBlocking {
       val context = Context(config)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
       val locations = Files
@@ -326,15 +308,10 @@ class Build(
         .flatten()
 
       if (diagnosticsByPath.isNotEmpty()) {
-        diagnosticsByPath.forEach { (path, diagnostics) ->
-          diagnostics.forEach {
-            println("[${it.severity.name.lowercase()}] ${path.invariantSeparatorsPathString}:${it.range.start.line + 1}:${it.range.start.character + 1} ${it.message}")
-          }
-        }
-        exitProcess(1)
+        return@runBlocking diagnosticsByPath
       }
 
-      context.fetch(Key.Generated.apply { this.locations = locations }).value
+      val outputModules = context.fetch(Key.Generated.apply { this.locations = locations }).value
         .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
           name
@@ -342,43 +319,29 @@ class Build(
             .bufferedWriter()
             .use { it.write(definition) }
         }
-    }
 
-    Files
-      .walk(datapackRoot)
-      .filter { it.isRegularFile() }
-      .forEach {
-        if (it !in outputModules) {
-          it.deleteExisting()
+      Files
+        .walk(datapackRoot)
+        .filter { it.isRegularFile() && it !in outputModules }
+        .forEach { it.deleteExisting() }
+
+      datapackRoot
+        .resolve("pack.mcmeta")
+        .outputStream()
+        .buffered()
+        .use {
+          Json.encodeToStream(
+            PackMetadata(
+              pack = PackMetadataSection(
+                description = config.description,
+                packFormat = DATA_PACK_FORMAT,
+              )
+            ),
+            it,
+          )
         }
-      }
 
-    datapackRoot
-      .resolve("pack.mcmeta")
-      .outputStream()
-      .buffered()
-      .use {
-        Json.encodeToStream(
-          PackMetadata(
-            pack = PackMetadataSection(
-              description = config.description,
-              packFormat = DATA_PACK_FORMAT,
-            )
-          ),
-          it,
-        )
-      }
-  }
-
-  companion object {
-    private val STD_SRC: Path
-
-    init {
-      val uri = Build::class.java
-        .getResource("/std/src")!!
-        .toURI()
-      FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
-      STD_SRC = Paths.get(uri)
+      emptyList()
     }
   }
 }
