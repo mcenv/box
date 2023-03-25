@@ -42,17 +42,17 @@ class Build(
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
 
   sealed interface Key<V> {
-    data class Text(
+    data class Read(
       val location: ModuleLocation,
-    ) : Key<String?>
+    ) : Key<String>
 
     data class Parsed(
       val location: ModuleLocation,
-    ) : Key<Parse.Result?>
+    ) : Key<Parse.Result>
 
     data class Resolved(
       val location: ModuleLocation,
-    ) : Key<Resolve.Result?>
+    ) : Key<Resolve.Result>
 
     data class Elaborated(
       val location: ModuleLocation,
@@ -80,17 +80,13 @@ class Build(
   data class Value<V>(
     val value: V,
     val hash: Int,
-  ) {
-    companion object {
-      val NULL: Value<*> = Value(null, 0)
-    }
-  }
+  )
 
   suspend fun changeText(
     location: ModuleLocation,
     text: String,
   ) {
-    val key = Key.Text(location)
+    val key = Key.Read(location)
     mutexes
       .computeIfAbsent(key) { Mutex() }
       .withLock { values[key] = Value(text, 0) }
@@ -108,7 +104,7 @@ class Build(
 
     val definitions = fetch(Key.Resolved(location)).value!!.module.definitions
     return coroutineScope {
-      close(Key.Text(location))
+      close(Key.Read(location))
       close(Key.Parsed(location))
       close(Key.Resolved(location))
       close(Key.Elaborated(location))
@@ -126,7 +122,7 @@ class Build(
         .withLock {
           val value = values[key]
           when (key) {
-            is Key.Text       -> {
+            is Key.Read     -> {
               value ?: withContext(Dispatchers.IO) {
                 src.pathOf(key.location).takeIf { it.isRegularFile() }?.let {
                   return@withContext Value(it.readText(), 0)
@@ -134,29 +130,23 @@ class Build(
                 std?.pathOf(key.location)?.takeIf { it.exists() }?.let {
                   return@withContext Value(it.readText(), 0)
                 }
-                Value.NULL
+                Value("", 0)
               }
             }
 
-            is Key.Parsed     -> {
-              val text = fetch(Key.Text(key.location))
-              if (text.value == null) {
-                return@coroutineScope Value.NULL
-              }
-              val hash = text.value.hashCode()
+            is Key.Parsed   -> {
+              val read = fetch(Key.Read(key.location))
+              val hash = read.value.hashCode()
               if (value == null || value.hash != hash) {
-                Value(Parse(this@fetch, key.location, text.value), hash)
+                Value(Parse(this@fetch, key.location, read.value), hash)
               } else {
                 value
               }
             }
 
-            is Key.Resolved   -> {
+            is Key.Resolved -> {
               val location = key.location
               val surface = fetch(Key.Parsed(location))
-              if (surface.value == null) {
-                return@coroutineScope Value.NULL
-              }
               val dependencyHashes = surface.value.module.imports
                 .map { async { fetch(Key.Resolved(it.value.module)) } }
                 .plus(async { if (location == prelude) null else fetch(Key.Resolved(prelude)) })
