@@ -102,7 +102,7 @@ class Build(
       }
     }
 
-    val definitions = fetch(Key.Resolved(location)).value!!.module.definitions
+    val definitions = fetch(Key.Resolved(location)).value.module.definitions
     return coroutineScope {
       close(Key.Read(location))
       close(Key.Parsed(location))
@@ -154,9 +154,9 @@ class Build(
                 .filterNotNull()
                 .map { it.hash }
               val dependencies = surface.value.module.imports
-                .map { async { Resolve.Dependency(it.value, fetch(Key.Resolved(it.value.module)).value?.module?.definitions?.get(it.value), it.range) } }
+                .map { async { Resolve.Dependency(it.value, fetch(Key.Resolved(it.value.module)).value.module.definitions.get(it.value), it.range) } }
                 .plus(
-                  if (location == prelude) emptyList() else fetch(Key.Resolved(prelude)).value!!.module.definitions.map {
+                  if (location == prelude) emptyList() else fetch(Key.Resolved(prelude)).value.module.definitions.map {
                     async { Resolve.Dependency(it.key, it.value, null) }
                   }
                 )
@@ -171,7 +171,7 @@ class Build(
 
             is Key.Elaborated -> {
               val location = key.location
-              val resolved = fetch(Key.Resolved(location)) as Value<Resolve.Result>
+              val resolved = fetch(Key.Resolved(location))
               val results = resolved.value.module.imports
                 .map { async { fetch(Key.Elaborated(it.value.module)) } }
                 .plus(async { if (location == prelude) null else fetch(Key.Elaborated(prelude)) })
@@ -190,7 +190,7 @@ class Build(
               val location = key.location
               val elaborated = fetch(Key.Elaborated(location.module))
               val definition = elaborated.value.module.definitions.find { it.name == location }!!
-              val results = transitiveImports(fetch(Key.Parsed(location.module)).value!!.module.name)
+              val results = transitiveImports(fetch(Key.Parsed(location.module)).value.module.name)
                 .map { async { fetch(Key.Elaborated(it.module)) } }
                 .plus(async { fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
@@ -249,7 +249,7 @@ class Build(
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
     val imports = mutableListOf<DefinitionLocation>()
     suspend fun go(location: ModuleLocation) {
-      fetch(Key.Parsed(location)).value!!.module.imports.forEach { (import) ->
+      fetch(Key.Parsed(location)).value.module.imports.forEach { (import) ->
         imports += import
         go(import.module)
       }
