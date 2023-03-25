@@ -4,11 +4,14 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-lan
 let client: LanguageClient | undefined;
 
 export function activate(context: ExtensionContext) {
+  const folder = workspace.workspaceFolders!![0];
   const serverOptions: ServerOptions = {
     command: `mcx${process.platform === "win32" ? ".bat" : ""}`,
     args: ["lsp"],
+    options: {
+      cwd: folder.uri.fsPath,
+    },
   };
-  const folder = workspace.workspaceFolders!![0];
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{
       scheme: "file",

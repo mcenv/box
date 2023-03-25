@@ -128,15 +128,11 @@ class Build(
           when (key) {
             is Key.Text       -> {
               value ?: withContext(Dispatchers.IO) {
-                src.resolve(key.location.parts.joinToString("/", postfix = ".mcx")).let { path ->
-                  if (path.exists() && path.isRegularFile()) {
-                    return@withContext Value(path.readText(), 0)
-                  }
+                src.pathOf(key.location).takeIf { it.isRegularFile() }?.let {
+                  return@withContext Value(it.readText(), 0)
                 }
-                std?.resolve(key.location.parts.joinToString("/", postfix = ".mcx"))?.let { path ->
-                  if (path.exists()) {
-                    return@withContext Value(path.readText(), 0)
-                  }
+                std?.pathOf(key.location)?.takeIf { it.exists() }?.let {
+                  return@withContext Value(it.readText(), 0)
                 }
                 Value.NULL
               }
@@ -270,6 +266,10 @@ class Build(
     }
     go(location)
     return imports
+  }
+
+  private fun Path.pathOf(location: ModuleLocation): Path {
+    return resolve(location.parts.joinToString("/", postfix = ".mcx"))
   }
 
   @OptIn(ExperimentalSerializationApi::class)

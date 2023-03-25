@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.ModuleLocation
 import mcx.phase.Build
-import mcx.phase.Config
 import mcx.phase.Context
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.services.LanguageClient
@@ -18,33 +17,23 @@ import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
 import org.eclipse.lsp4j.services.WorkspaceService
 import java.net.URI
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.io.path.exists
-import kotlin.io.path.inputStream
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.toPath
+import kotlin.io.path.*
 
 class McxService : TextDocumentService,
                    WorkspaceService,
                    LanguageClientAware {
   private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
   private lateinit var client: LanguageClient
-  private lateinit var root: Path
-  private lateinit var build: Build
+  private val build: Build = Build(Path(""))
   private var context: Context? = null
   private val diagnosticsHashes: ConcurrentMap<String, Int> = ConcurrentHashMap()
 
   override fun connect(client: LanguageClient) {
     this.client = client
-  }
-
-  fun setup(folder: WorkspaceFolder) {
-    root = URI(folder.uri).toPath()
-    build = Build(root)
     updateContext()
   }
 
@@ -130,14 +119,10 @@ class McxService : TextDocumentService,
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun updateContext() {
-    val path = root.resolve("pack.json")
-    context = if (path.exists() && path.isRegularFile()) {
+    val path = Path("pack.json")
+    context = if (path.isRegularFile()) {
       try {
-        val config = path
-          .inputStream()
-          .buffered()
-          .use { Json.decodeFromStream<Config>(it) }
-        Context(config)
+        Context(path.inputStream().buffered().use { Json.decodeFromStream(it) })
       } catch (_: SerializationException) {
         null
       }
@@ -148,8 +133,8 @@ class McxService : TextDocumentService,
 
   private fun String.toModuleLocation(): ModuleLocation {
     return ModuleLocation(
-      root
-        .resolve("src")
+      Path("src")
+        .absolute()
         .relativize(URI(dropLast(".mcx".length)).toPath())
         .map { it.toString() }
     )
