@@ -31,6 +31,7 @@ import kotlin.io.path.toPath
 class McxService : TextDocumentService,
                    WorkspaceService,
                    LanguageClientAware {
+  private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
   private lateinit var client: LanguageClient
   private lateinit var root: Path
   private lateinit var build: Build
@@ -80,7 +81,7 @@ class McxService : TextDocumentService,
   override fun diagnostic(
     params: DocumentDiagnosticParams,
   ): CompletableFuture<DocumentDiagnosticReport> {
-    return CoroutineScope(Dispatchers.Default).future {
+    return scope.future {
       val uri = params.textDocument.uri
       val elaborated = with(build) { fetchContext().fetch(Build.Key.Elaborated(uri.toModuleLocation())) }
       val newHash = elaborated.value.diagnostics.hashCode()
@@ -95,7 +96,7 @@ class McxService : TextDocumentService,
   }
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {
-    return CoroutineScope(Dispatchers.Default).future {
+    return scope.future {
       val zonked = with(build) {
         fetchContext().fetch(
           Build.Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
