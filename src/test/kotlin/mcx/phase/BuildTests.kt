@@ -2,6 +2,7 @@ package mcx.phase
 
 import kotlinx.coroutines.runBlocking
 import mcx.lsp.diagnosticMessage
+import mcx.phase.build.Build
 import kotlin.io.path.Path
 import kotlin.test.Test
 

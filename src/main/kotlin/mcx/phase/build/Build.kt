@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.phase.build
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -11,13 +11,15 @@ import mcx.ast.*
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
+import mcx.phase.Config
+import mcx.phase.Context
 import mcx.phase.backend.Generate
 import mcx.phase.backend.Lift
 import mcx.phase.backend.Pack
 import mcx.phase.backend.Stage
 import mcx.phase.frontend.*
+import mcx.phase.prelude
 import org.eclipse.lsp4j.Diagnostic
-import org.eclipse.lsp4j.Position
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -38,49 +40,8 @@ class Build(
     Paths.get(uri)
   }
   private val src: Path = root.resolve("src").also { it.createDirectories() }
-  private val values: ConcurrentMap<Key<*>, Value<*>> = ConcurrentHashMap()
+  private val traces: ConcurrentMap<Key<*>, Trace<*>> = ConcurrentHashMap()
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
-
-  sealed interface Key<V> {
-    data class Read(
-      val location: ModuleLocation,
-    ) : Key<String>
-
-    data class Parsed(
-      val location: ModuleLocation,
-    ) : Key<Parse.Result>
-
-    data class Resolved(
-      val location: ModuleLocation,
-    ) : Key<Resolve.Result>
-
-    data class Elaborated(
-      val location: ModuleLocation,
-    ) : Key<Elaborate.Result> {
-      var position: Position? = null
-    }
-
-    data class Staged(
-      val location: DefinitionLocation,
-    ) : Key<Core.Definition?>
-
-    data class Lifted(
-      val location: DefinitionLocation,
-    ) : Key<Lift.Result?>
-
-    object Packed : Key<List<mcx.ast.Packed.Definition>> {
-      lateinit var locations: List<DefinitionLocation>
-    }
-
-    object Generated : Key<Map<String, String>> {
-      lateinit var locations: List<DefinitionLocation>
-    }
-  }
-
-  data class Value<V>(
-    val value: V,
-    val hash: Int,
-  )
 
   suspend fun changeText(
     location: ModuleLocation,
@@ -89,7 +50,7 @@ class Build(
     val key = Key.Read(location)
     mutexes
       .computeIfAbsent(key) { Mutex() }
-      .withLock { values[key] = Value(text, 0) }
+      .withLock { traces[key] = Trace(text, 0) }
   }
 
   suspend fun Context.closeText(
@@ -97,7 +58,7 @@ class Build(
   ) {
     suspend fun close(key: Key<*>) {
       mutexes[key]?.withLock {
-        values -= key
+        traces -= key
         mutexes -= key
       }
     }
@@ -115,36 +76,36 @@ class Build(
   }
 
   @Suppress("UNCHECKED_CAST")
-  suspend fun <V> Context.fetch(key: Key<V>): Value<V> {
+  suspend fun <V> Context.fetch(key: Key<V>): Trace<V> {
     return coroutineScope {
       mutexes
         .computeIfAbsent(key) { Mutex() }
         .withLock {
-          val value = values[key]
+          val trace = traces[key]
           when (key) {
-            is Key.Read     -> {
-              value ?: withContext(Dispatchers.IO) {
+            is Key.Read       -> {
+              trace ?: withContext(Dispatchers.IO) {
                 src.pathOf(key.location).takeIf { it.isRegularFile() }?.let {
-                  return@withContext Value(it.readText(), 0)
+                  return@withContext Trace(it.readText(), 0)
                 }
                 std?.pathOf(key.location)?.takeIf { it.exists() }?.let {
-                  return@withContext Value(it.readText(), 0)
+                  return@withContext Trace(it.readText(), 0)
                 }
-                Value("", 0)
+                Trace("", 0)
               }
             }
 
-            is Key.Parsed   -> {
+            is Key.Parsed     -> {
               val read = fetch(Key.Read(key.location))
               val hash = read.value.hashCode()
-              if (value == null || value.hash != hash) {
-                Value(Parse(this@fetch, key.location, read.value), hash)
+              if (trace == null || trace.hash != hash) {
+                Trace(Parse(this@fetch, key.location, read.value), hash)
               } else {
-                value
+                trace
               }
             }
 
-            is Key.Resolved -> {
+            is Key.Resolved   -> {
               val location = key.location
               val surface = fetch(Key.Parsed(location))
               val dependencyHashes = surface.value.module.imports
@@ -162,10 +123,10 @@ class Build(
                 )
                 .awaitAll()
               val hash = Objects.hash(surface.hash, dependencyHashes)
-              if (value == null || value.hash != hash) {
-                Value(Resolve(this@fetch, dependencies, surface.value), hash)
+              if (trace == null || trace.hash != hash) {
+                Trace(Resolve(this@fetch, dependencies, surface.value), hash)
               } else {
-                value
+                trace
               }
             }
 
@@ -179,10 +140,10 @@ class Build(
                 .filterNotNull()
               val dependencies = results.map { it.value.module }
               val hash = Objects.hash(resolved.hash, results.map { it.hash })
-              if (value == null || value.hash != hash || key.position != null) {
-                Value(Elaborate(this@fetch, dependencies, resolved.value, key.position), hash)
+              if (trace == null || trace.hash != hash || key.position != null) {
+                Trace(Elaborate(this@fetch, dependencies, resolved.value, key.position), hash)
               } else {
-                value
+                trace
               }
             }
 
@@ -195,55 +156,55 @@ class Build(
                 .plus(async { fetch(Key.Elaborated(prelude)) })
                 .awaitAll()
               val hash = Objects.hash(elaborated.hash, results.map { it.hash })
-              if (value == null || value.hash != hash) {
-                Value(Stage(this@fetch, definition), hash)
+              if (trace == null || trace.hash != hash) {
+                Trace(Stage(this@fetch, definition), hash)
               } else {
-                value
+                trace
               }
             }
 
             is Key.Lifted     -> {
               val staged = fetch(Key.Staged(key.location))
               val hash = staged.hash
-              if (value == null || value.hash != hash) {
-                Value(staged.value?.let { Lift(this@fetch, it) }, hash)
+              if (trace == null || trace.hash != hash) {
+                Trace(staged.value?.let { Lift(this@fetch, it) }, hash)
               } else {
-                value
+                trace
               }
             }
 
             is Key.Packed     -> {
-              val results = key.locations.map { fetch(Key.Lifted(it)) }
+              val results = Key.Packed.locations.map { fetch(Key.Lifted(it)) }
               val hash = results.map { it.hash }.hashCode()
-              if (value == null || value.hash != hash) {
+              if (trace == null || trace.hash != hash) {
                 val definitions = results
                   .flatMap { result -> result.value?.liftedDefinitions?.map { async { Pack(this@fetch, it) } } ?: emptyList() }
                   .plus(async { Pack.packDispatch(results.flatMap { result -> result.value?.dispatchedDefinitions ?: emptyList() }) })
                   .awaitAll()
-                Value(definitions, hash)
+                Trace(definitions, hash)
               } else {
-                value
+                trace
               }
             }
 
             is Key.Generated  -> {
-              val packed = fetch(Key.Packed.apply { locations = key.locations })
+              val packed = fetch(Key.Packed.apply { locations = Key.Generated.locations })
               val hash = packed.hash
-              if (value == null || value.hash != hash) {
+              if (trace == null || trace.hash != hash) {
                 val definitions = packed.value
                   .map { async { Generate(this@fetch, it) } }
                   .awaitAll()
                   .toMap()
-                Value(definitions, hash)
+                Trace(definitions, hash)
               } else {
-                value
+                trace
               }
             }
           }.also {
-            values[key] = it as Value<V>
+            traces[key] = it as Trace<V>
           }
         }
-    } as Value<V>
+    } as Trace<V>
   }
 
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
@@ -259,7 +220,11 @@ class Build(
   }
 
   private fun Path.pathOf(location: ModuleLocation): Path {
-    return resolve(location.parts.joinToString("/", postfix = ".mcx"))
+    return resolve(location.parts.joinToString("/", postfix = EXTENSION))
+  }
+
+  private fun Path.toModuleLocation(): ModuleLocation {
+    return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
   }
 
   @OptIn(ExperimentalSerializationApi::class)
@@ -271,10 +236,6 @@ class Build(
     val datapacks = root.resolve(levelName).resolve("datapacks").also { it.createDirectories() }
 
     val config = root.resolve("pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
-
-    fun Path.toModuleLocation(): ModuleLocation {
-      return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
-    }
 
     val datapackRoot = datapacks.resolve(config.name).also { it.createDirectories() }
 
@@ -301,7 +262,7 @@ class Build(
         return@runBlocking diagnosticsByPath
       }
 
-      val outputModules = context.fetch(Key.Generated.apply { this.locations = locations }).value
+      val outputModules = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
         .mapKeys { (name, _) -> datapackRoot.resolve(name) }
         .onEach { (name, definition) ->
           name
@@ -333,5 +294,9 @@ class Build(
 
       emptyList()
     }
+  }
+
+  companion object {
+    const val EXTENSION: String = ".mcx"
   }
 }
