@@ -13,8 +13,6 @@ import mcx.phase.Build
 import mcx.phase.Config
 import mcx.phase.Context
 import org.eclipse.lsp4j.*
-import org.eclipse.lsp4j.jsonrpc.messages.Either
-import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
@@ -93,19 +91,6 @@ class McxService : TextDocumentService,
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }
-    }
-  }
-
-  override fun completion(params: CompletionParams): CompletableFuture<Either<List<CompletionItem>, CompletionList>> {
-    return CoroutineScope(Dispatchers.Default).future {
-      val elaborated = with(build) {
-        fetchContext().fetch(
-          Build.Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
-            position = params.position
-          }
-        )
-      }
-      forLeft(elaborated.value.completionItems + GLOBAL_COMPLETION_ITEMS)
     }
   }
 

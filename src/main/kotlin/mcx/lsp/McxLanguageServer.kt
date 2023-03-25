@@ -22,21 +22,23 @@ class McxLanguageServer : LanguageServer,
         capabilities = ServerCapabilities().apply {
           setTextDocumentSync(TextDocumentSyncKind.Full)
           diagnosticProvider = DiagnosticRegistrationOptions(true, false)
-          completionProvider = CompletionOptions()
           setHoverProvider(true)
         }
       },
     )
   }
 
-  override fun shutdown(): CompletableFuture<Any> =
-    completedFuture(null)
+  override fun shutdown(): CompletableFuture<Any> {
+    return completedFuture(null)
+  }
 
   override fun exit() {}
 
-  override fun getTextDocumentService(): TextDocumentService =
-    service
+  override fun getTextDocumentService(): TextDocumentService {
+    return service
+  }
 
-  override fun getWorkspaceService(): WorkspaceService =
-    service
+  override fun getWorkspaceService(): WorkspaceService {
+    return service
+  }
 }
