@@ -1,0 +1,1 @@
+def zero : int := $(identity(int_tag))(int)(0);

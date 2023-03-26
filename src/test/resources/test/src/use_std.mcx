@@ -1,0 +1,5 @@
+import {
+  int::+,
+}
+
+def two : int := 1 + 1;
