@@ -20,10 +20,7 @@ import mcx.phase.backend.Stage
 import mcx.phase.frontend.*
 import mcx.phase.prelude
 import org.eclipse.lsp4j.Diagnostic
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
+import java.nio.file.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -85,7 +82,7 @@ class Build(
           when (key) {
             is Key.Read       -> {
               trace ?: withContext(Dispatchers.IO) {
-                src.pathOf(key.location).takeIf { it.isRegularFile() }?.let {
+                src.pathOf(key.location)?.takeIf { it.isRegularFile() }?.let {
                   return@withContext Trace(it.readText(), 0)
                 }
                 std?.pathOf(key.location)?.takeIf { it.exists() }?.let {
@@ -219,8 +216,12 @@ class Build(
     return imports
   }
 
-  private fun Path.pathOf(location: ModuleLocation): Path {
-    return resolve(location.parts.joinToString("/", postfix = EXTENSION))
+  private fun Path.pathOf(location: ModuleLocation): Path? {
+    return try {
+      resolve(location.parts.joinToString("/", postfix = EXTENSION))
+    } catch (_: InvalidPathException) {
+      null
+    }
   }
 
   private fun Path.toModuleLocation(): ModuleLocation {
