@@ -3,11 +3,11 @@ package mcx.phase.build
 import mcx.ast.Core
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
+import mcx.lsp.Instruction
 import mcx.phase.backend.Lift
 import mcx.phase.frontend.Elaborate
 import mcx.phase.frontend.Parse
 import mcx.phase.frontend.Resolve
-import org.eclipse.lsp4j.Position
 
 sealed interface Key<V> {
   data class Read(
@@ -20,13 +20,13 @@ sealed interface Key<V> {
 
   data class Resolved(
     val location: ModuleLocation,
+    val instruction: Instruction? = null
   ) : Key<Resolve.Result>
 
   data class Elaborated(
     val location: ModuleLocation,
-  ) : Key<Elaborate.Result> {
-    var position: Position? = null
-  }
+    val instruction: Instruction? = null
+  ) : Key<Elaborate.Result>
 
   data class Staged(
     val location: DefinitionLocation,

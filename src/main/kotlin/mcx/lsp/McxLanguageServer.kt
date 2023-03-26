@@ -22,6 +22,7 @@ class McxLanguageServer : LanguageServer,
           setTextDocumentSync(TextDocumentSyncKind.Full)
           diagnosticProvider = DiagnosticRegistrationOptions(true, false)
           setHoverProvider(true)
+          setDefinitionProvider(true)
         }
       },
     )

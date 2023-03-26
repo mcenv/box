@@ -112,7 +112,7 @@ class Build(
                 .filterNotNull()
                 .map { it.hash }
               val dependencies = surface.value.module.imports
-                .map { async { Resolve.Dependency(it.value, fetch(Key.Resolved(it.value.module)).value.module.definitions.get(it.value), it.range) } }
+                .map { async { Resolve.Dependency(it.value, fetch(Key.Resolved(it.value.module)).value.module.definitions[it.value], it.range) } }
                 .plus(
                   if (location == prelude) emptyList() else fetch(Key.Resolved(prelude)).value.module.definitions.map {
                     async { Resolve.Dependency(it.key, it.value, null) }
@@ -120,8 +120,8 @@ class Build(
                 )
                 .awaitAll()
               val hash = Objects.hash(surface.hash, dependencyHashes)
-              if (trace == null || trace.hash != hash) {
-                Trace(Resolve(this@fetch, dependencies, surface.value), hash)
+              if (trace == null || trace.hash != hash || key.instruction != null) {
+                Trace(Resolve(this@fetch, dependencies, surface.value, key.instruction), hash)
               } else {
                 trace
               }
@@ -137,8 +137,8 @@ class Build(
                 .filterNotNull()
               val dependencies = results.map { it.value.module }
               val hash = Objects.hash(resolved.hash, results.map { it.hash })
-              if (trace == null || trace.hash != hash || key.position != null) {
-                Trace(Elaborate(this@fetch, dependencies, resolved.value, key.position), hash)
+              if (trace == null || trace.hash != hash || key.instruction != null) {
+                Trace(Elaborate(this@fetch, dependencies, resolved.value, key.instruction), hash)
               } else {
                 trace
               }

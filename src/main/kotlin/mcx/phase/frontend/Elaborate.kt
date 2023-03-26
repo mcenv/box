@@ -2,6 +2,7 @@ package mcx.phase.frontend
 
 import kotlinx.collections.immutable.*
 import mcx.ast.*
+import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.phase.*
@@ -17,12 +18,10 @@ import mcx.ast.Resolved as R
 class Elaborate private constructor(
   dependencies: List<C.Module>,
   private val input: Resolve.Result,
-  private val position: Position?,
+  private val instruction: Instruction?,
 ) {
   private val meta: Meta = Meta()
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
-  private var varCompletionItems: MutableList<CompletionItem> = mutableListOf()
-  private var definitionCompletionItems: MutableList<CompletionItem> = mutableListOf()
   private var hover: (() -> String)? = null
   private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
 
@@ -31,7 +30,6 @@ class Elaborate private constructor(
     return Result(
       module,
       input.diagnostics + diagnostics,
-      varCompletionItems + definitionCompletionItems,
       hover,
     )
   }
@@ -474,7 +472,7 @@ class Elaborate private constructor(
     type: Value,
     range: Range,
   ) {
-    if (hover == null && position != null && position in range) {
+    if (hover == null && instruction is Instruction.Hover && instruction.position in range) {
       val env = freeze()
       hover = { env.prettyValue(type) }
     }
@@ -571,7 +569,6 @@ class Elaborate private constructor(
   data class Result(
     val module: C.Module,
     val diagnostics: List<Diagnostic>,
-    val completionItems: List<CompletionItem>,
     val hover: (() -> String)?,
   )
 
@@ -658,8 +655,8 @@ class Elaborate private constructor(
       context: Context,
       dependencies: List<C.Module>,
       input: Resolve.Result,
-      position: Position? = null,
+      instruction: Instruction?,
     ): Result =
-      Elaborate(dependencies, input, position).elaborate()
+      Elaborate(dependencies, input, instruction).elaborate()
   }
 }

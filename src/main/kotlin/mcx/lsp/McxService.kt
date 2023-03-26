@@ -14,6 +14,8 @@ import mcx.phase.build.Build
 import mcx.phase.build.Build.Companion.EXTENSION
 import mcx.phase.build.Key
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
@@ -89,19 +91,24 @@ class McxService : TextDocumentService,
 
   override fun hover(params: HoverParams): CompletableFuture<Hover> {
     return scope.future {
-      val zonked = with(build) {
-        fetchContext().fetch(
-          Key.Elaborated(params.textDocument.uri.toModuleLocation()).apply {
-            position = params.position
-          }
-        )
+      val elaborated = with(build) {
+        fetchContext().fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(), Instruction.Hover(params.position)))
       }
       Hover(
-        when (val hover = zonked.value.hover) {
+        when (val hover = elaborated.value.hover) {
           null -> throw CancellationException()
           else -> highlight(hover())
         }
       )
+    }
+  }
+
+  override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
+    return scope.future {
+      val resolved = with(build) {
+        fetchContext().fetch(Key.Resolved(params.textDocument.uri.toModuleLocation(), Instruction.Definition(params.position)))
+      }
+      forLeft(resolved.value.definition?.let { listOf(it) } ?: emptyList())
     }
   }
 

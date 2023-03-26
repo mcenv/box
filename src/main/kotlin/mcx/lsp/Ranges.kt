@@ -4,6 +4,8 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.util.Ranges
 
+val HEADER: Range = Range(Position(0, 0), Position(0, 0))
+
 @Suppress("NOTHING_TO_INLINE")
 inline operator fun Position.rangeTo(end: Position): Range =
   Range(this, end)

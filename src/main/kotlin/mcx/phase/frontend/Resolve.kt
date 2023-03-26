@@ -1,13 +1,18 @@
 package mcx.phase.frontend
 
 import mcx.ast.*
+import mcx.lsp.HEADER
+import mcx.lsp.Instruction
+import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.phase.Context
 import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
 import mcx.phase.lookupBuiltin
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
+import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.Range
+import kotlin.io.path.Path
 import mcx.ast.Resolved as R
 import mcx.ast.Surface as S
 
@@ -15,8 +20,8 @@ import mcx.ast.Surface as S
 class Resolve private constructor(
   dependencies: List<Dependency>,
   private val input: Parse.Result,
+  private val instruction: Instruction?,
 ) {
-  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private val locations: List<DefinitionLocation> =
     input.module.definitions.mapNotNull { definition ->
       if (definition is S.Definition.Hole) {
@@ -40,12 +45,15 @@ class Resolve private constructor(
         }
       }
     }
+  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private var definition: Location? = null
 
   private fun resolve(): Result {
     val module = resolveModule(input.module)
     return Result(
       module,
       input.diagnostics + diagnostics,
+      definition,
     )
   }
 
@@ -202,7 +210,10 @@ class Resolve private constructor(
           -1   -> {
             when (val name = resolveName(term.name, range)) {
               null -> R.Term.Hole(range)
-              else -> R.Term.Def(name, range)
+              else -> {
+                definition(name, range)
+                R.Term.Def(name, range)
+              }
             }
           }
           else -> {
@@ -271,6 +282,17 @@ class Resolve private constructor(
         diagnostics += ambiguousName(name, range)
         null
       }
+    }
+  }
+
+  // TODO: support goto definitions in module
+  private fun definition(
+    name: DefinitionLocation,
+    range: Range,
+  ) {
+    if (definition == null && instruction is Instruction.Definition && instruction.position in range) {
+      // TODO: goto prelude
+      definition = Location(Path(name.module.parts.joinToString("/", "src/", ".mcx")).toUri().toString(), HEADER)
     }
   }
 
@@ -351,6 +373,7 @@ class Resolve private constructor(
   data class Result(
     val module: R.Module,
     val diagnostics: List<Diagnostic>,
+    val definition: Location?,
   )
 
   companion object {
@@ -358,7 +381,8 @@ class Resolve private constructor(
       context: Context,
       dependencies: List<Dependency>,
       input: Parse.Result,
+      instruction: Instruction?,
     ): Result =
-      Resolve(dependencies, input).resolve()
+      Resolve(dependencies, input, instruction).resolve()
   }
 }
