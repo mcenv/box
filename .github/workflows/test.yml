@@ -25,12 +25,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: installDist
-      - name: Build std pack
-        run: ../../../../build/install/mcx/bin/mcx build
-        working-directory: ./src/main/resources/std
       - name: Upload std pack
         uses: actions/upload-artifact@v3
         with:
           name: std
           path: ./src/main/resources/std/out/datapacks/std
+          if-no-files-found: error
+      - name: Upload test pack
+        uses: actions/upload-artifact@v3
+        with:
+          name: test
+          path: ./src/test/resources/test/out/datapacks/test
           if-no-files-found: error
