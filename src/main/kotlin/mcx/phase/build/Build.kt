@@ -29,9 +29,9 @@ import kotlin.io.path.*
 // TODO: redesign
 class Build(
   private val root: Path,
-  noStd: Boolean = false,
+  std: Path? = null,
 ) {
-  private val std: Path? = if (noStd) null else {
+  private val std: Path? = std ?: run {
     val uri = Build::class.java.getResource("/std/src")!!.toURI()
     FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
     Paths.get(uri)
