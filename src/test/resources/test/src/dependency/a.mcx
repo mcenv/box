@@ -1,0 +1,11 @@
+import {
+  dependency::b::b,
+  dependency::c::c,
+  dependency::d::d,
+}
+
+def a : list int := [
+  b,
+  c,
+  d,
+];

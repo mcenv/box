@@ -1,0 +1,1 @@
+export def c : int := 2;

@@ -16,4 +16,14 @@ object BuildTests {
     }
     assert(diagnosticsByPath.isEmpty())
   }
+
+  @Test
+  fun test() {
+    val diagnosticsByPath = runBlocking {
+      Build(Path("src", "test", "resources", "test"), false)()
+    }.onEach { (path, diagnostics) ->
+      diagnostics.forEach { println(diagnosticMessage(path, it)) }
+    }
+    assert(diagnosticsByPath.isEmpty())
+  }
 }
