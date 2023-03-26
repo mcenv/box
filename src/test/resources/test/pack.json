@@ -1,5 +1,5 @@
 {
-  "name": "std",
-  "description": "The mcx standard pack",
+  "name": "test",
+  "description": "The mcx test pack",
   "debug": true
 }
