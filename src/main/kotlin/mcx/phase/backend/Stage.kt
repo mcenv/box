@@ -280,8 +280,8 @@ class Stage private constructor() {
         Term.CompoundOf(elements)
       }
       is Value.Point       -> {
-        val element = quoteValue(value.element.value)
-        val elementType = quoteValue(value.elementType)
+        val element = quoteValue(value.element.value, phase)
+        val elementType = quoteValue(value.elementType, phase)
         Term.Point(element, elementType)
       }
       is Value.Union       -> {
