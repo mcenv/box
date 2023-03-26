@@ -31,7 +31,7 @@ class Build(
   private val root: Path,
   std: Path? = null,
 ) {
-  private val std: Path? = std ?: run {
+  private val std: Path? = std?.resolve("src") ?: run {
     val uri = Build::class.java.getResource("/std/src")!!.toURI()
     FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
     Paths.get(uri)

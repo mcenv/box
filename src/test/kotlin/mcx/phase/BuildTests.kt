@@ -13,7 +13,7 @@ object BuildTests {
   @Test
   fun std() {
     val diagnosticsByPath = runBlocking {
-      Build(std, null)()
+      Build(std, std)()
     }.onEach { (path, diagnostics) ->
       diagnostics.forEach { println(diagnosticMessage(path, it)) }
     }
