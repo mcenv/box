@@ -32,22 +32,38 @@ class Pack private constructor(
     val path = packDefinitionLocation(definition.name)
     return when (definition) {
       is L.Definition.Function -> {
-        !{ Raw("# function ${definition.name}") }
+        !{ Raw("# function ${definition.name}\n") }
 
         if (L.Modifier.BUILTIN in definition.modifiers) {
           // lookupBuiltin(definition.name)!!.pack()
         } else {
-          definition.params.forEach { push(it.type, null) }
-          definition.params.forEach { packPattern(it) }
+          definition.params.forEach {
+            push(it.type, null)
+            packPattern(it)
+          }
 
-          packTerm(definition.body!!)
+          val body = definition.body!!
+          packTerm(body)
 
-          if (L.Modifier.NO_DROP !in definition.modifiers) {
-            definition.params.forEach { dropPattern(it, listOf(definition.body.type)) }
+          val drop = L.Modifier.NO_DROP !in definition.modifiers
+          if (drop) {
+            definition.params.forEach { dropPattern(it, listOf(body.type)) }
           }
 
           if (definition.restore != null) {
             +SetScore(REG_0, REG, definition.restore)
+          }
+
+          // validate stacks
+          if (context.config.debug) {
+            !{ Raw("") }
+            entries.forEach { entry ->
+              !{ Raw("# ${entry.key.toString().padEnd(10)}: ${entry.value.joinToString(", ", "[", "]")}") }
+            }
+            val remaining = if (drop) listOf(body.type) else definition.params.map { it.type } + body.type
+            remaining.forEach {
+              drop(it, relevant = false)
+            }
           }
         }
 
@@ -133,9 +149,10 @@ class Pack private constructor(
         term.args.forEach { packTerm(it) }
         packTerm(term.func)
         +RunFunction(packDefinitionLocation(DISPATCH))
+
+        push(term.type, null)
         val keeps = listOf(term.type)
         term.args.forEach { drop(it.type, keeps, false) }
-        push(term.type, null)
       }
       is L.Term.If          -> {
         packTerm(term.condition)
