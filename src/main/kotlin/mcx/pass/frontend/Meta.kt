@@ -129,7 +129,8 @@ class Meta {
       is Term.Apply       -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
-        Term.Apply(func, args)
+        val type = zonkTerm(term.type)
+        Term.Apply(func, args, type)
       }
       is Term.Code        -> {
         val element = zonkTerm(term.element)
@@ -154,7 +155,8 @@ class Meta {
         Term.Var(term.name, term.idx, type)
       }
       is Term.Def         -> {
-        Term.Def(term.name, term.body)
+        val type = zonkTerm(term.type)
+        Term.Def(term.name, term.body, type)
       }
       is Term.Meta        -> {
         when (val solution = values.getOrNull(term.index)) {
@@ -291,7 +293,7 @@ class Meta {
       value1 is Value.CodeOf && value2 is Value.CodeOf           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Splice && value2 is Value.Splice           -> unifyValue(value1.element, value2.element)
       value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
-      // TODO: unify [Value.Def]s
+      value1 is Value.Def && value2 is Value.Def                 -> value1.name == value2.name // TODO: check body
       value1 is Value.Hole || value2 is Value.Hole               -> true // ?
       else                                                       -> false
     }

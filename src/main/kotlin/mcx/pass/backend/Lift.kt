@@ -120,7 +120,7 @@ class Lift private constructor(
       is C.Term.Apply       -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = NbtType.END // eraseType(term.type)
+        val type = eraseType(term.type)
         L.Term.Apply(func, args, type)
       }
       is C.Term.Code        -> unexpectedTerm(term)
@@ -139,7 +139,7 @@ class Lift private constructor(
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
-        val type = NbtType.END // eraseType(term.type)
+        val type = eraseType(term.type)
         L.Term.Def(term.name, type)
       }
       is C.Term.Meta        -> unexpectedTerm(term)

@@ -174,6 +174,7 @@ object Core {
     data class Apply(
       val func: Term,
       val args: kotlin.collections.List<Term>,
+      val type: Term,
     ) : Term
 
     data class Code(
@@ -203,6 +204,7 @@ object Core {
     data class Def(
       val name: DefinitionLocation,
       val body: Term?,
+      val type: Term,
     ) : Term
 
     data class Meta(

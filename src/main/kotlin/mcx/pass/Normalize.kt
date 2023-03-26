@@ -119,7 +119,10 @@ fun Env.evalTerm(term: Term): Value {
         is Value.FuncOf -> func.result(args)
         is Value.Def    -> lookupBuiltin(func.name)!!.eval(args)
         else            -> null
-      } ?: Value.Apply(func, args)
+      } ?: run {
+        val type = evalTerm(term.type)
+        Value.Apply(func, args, type)
+      }
     }
     is Term.Code        -> {
       val element = lazy { evalTerm(term.element) }
@@ -141,7 +144,12 @@ fun Env.evalTerm(term: Term): Value {
       (this + (binder binds init)).evalTerm(term.body)
     }
     is Term.Var         -> this[Lvl(size).toLvl(term.idx).value].value
-    is Term.Def         -> term.body?.let { evalTerm(it) } ?: Value.Def(term.name, null)
+    is Term.Def         -> {
+      term.body?.let { evalTerm(it) } ?: run {
+        val type = evalTerm(term.type)
+        Value.Def(term.name, null, type)
+      }
+    }
     is Term.Meta        -> Value.Meta(term.index, term.source)
     is Term.Hole        -> Value.Hole
   }
@@ -239,7 +247,8 @@ fun Lvl.quoteValue(value: Value): Term {
     is Value.Apply       -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
-      Term.Apply(func, args)
+      val type = quoteValue(value.type)
+      Term.Apply(func, args, type)
     }
     is Value.Code        -> {
       val element = quoteValue(value.element.value)
@@ -257,7 +266,10 @@ fun Lvl.quoteValue(value: Value): Term {
       val type = quoteValue(value.type)
       Term.Var(value.name, toIdx(value.lvl), type)
     }
-    is Value.Def         -> Term.Def(value.name, value.body)
+    is Value.Def         -> {
+      val type = quoteValue(value.type)
+      Term.Def(value.name, value.body, type)
+    }
     is Value.Meta        -> Term.Meta(value.index, value.source)
     is Value.Hole        -> Term.Hole
   }

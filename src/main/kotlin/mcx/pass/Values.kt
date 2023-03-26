@@ -176,6 +176,7 @@ sealed interface Value {
   data class Apply(
     val func: Value,
     val args: kotlin.collections.List<Lazy<Value>>,
+    val type: Value,
   ) : Value
 
   data class Code(
@@ -199,6 +200,7 @@ sealed interface Value {
   data class Def(
     val name: DefinitionLocation,
     val body: Term?,
+    val type: Value,
   ) : Value
 
   data class Meta(

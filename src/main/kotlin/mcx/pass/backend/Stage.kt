@@ -167,7 +167,10 @@ class Stage private constructor() {
               else            -> null
             }
           }
-        } ?: Value.Apply(func, args)
+        } ?: run {
+          val type = evalTerm(term.type)
+          Value.Apply(func, args, type)
+        }
       }
       is Term.Code        -> {
         requireConst(term, phase)
@@ -203,7 +206,10 @@ class Stage private constructor() {
         when (phase) {
           Phase.WORLD -> null
           Phase.CONST -> term.body?.let { evalTerm(it, phase) }
-        } ?: Value.Def(term.name, null)
+        } ?: run {
+          val type = evalTerm(term.type, phase)
+          Value.Def(term.name, null, type)
+        }
       }
       is Term.Meta        -> unexpectedTerm(term)
       is Term.Hole        -> unexpectedTerm(term)
@@ -305,7 +311,8 @@ class Stage private constructor() {
       is Value.Apply       -> {
         val func = quoteValue(value.func, phase)
         val args = value.args.map { quoteValue(it.value, phase) }
-        Term.Apply(func, args)
+        val type = quoteValue(value.type, phase)
+        Term.Apply(func, args, type)
       }
       is Value.Code        -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
@@ -323,7 +330,10 @@ class Stage private constructor() {
         val type = quoteValue(value.type, phase)
         Term.Var(value.name, toIdx(value.lvl), type)
       }
-      is Value.Def         -> Term.Def(value.name, value.body)
+      is Value.Def         -> {
+        val type = quoteValue(value.type, phase)
+        Term.Def(value.name, value.body, type)
+      }
       is Value.Meta        -> Term.Meta(value.index, value.source)
       is Value.Hole        -> Term.Hole
     }
@@ -371,13 +381,6 @@ class Stage private constructor() {
       }
       is Pattern.Hole       -> unexpectedPattern(pattern)
     }
-  }
-
-  private fun Lvl.evalClosure(
-    closure: Closure,
-    phase: Phase,
-  ): Value {
-    return closure(collect(closure.binders), phase)
   }
 
   private fun Lvl.quoteClosure(
