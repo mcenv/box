@@ -20,13 +20,23 @@ class Generate private constructor(
     definition: P.Definition,
   ): String {
     return when (definition) {
-      is Packed.Definition.Function ->
+      is Packed.Definition.Function -> {
         StringBuilder().apply {
           definition.commands.forEachSeparated(
             separate = { append('\n') },
-            action = { generateCommand(it) },
+            action = if (context.config.debug) {
+              {
+                if (it !is P.Command.Raw) {
+                  append("  ")
+                }
+                generateCommand(it)
+              }
+            } else {
+              { generateCommand(it) }
+            },
           )
         }
+      }
     }.toString()
   }
 
