@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.pass
 
 import kotlinx.serialization.Serializable
 

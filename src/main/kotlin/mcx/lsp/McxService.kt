@@ -9,10 +9,10 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.ModuleLocation
-import mcx.phase.Context
-import mcx.phase.build.Build
-import mcx.phase.build.Build.Companion.EXTENSION
-import mcx.phase.build.Key
+import mcx.pass.Context
+import mcx.pass.build.Build
+import mcx.pass.build.Build.Companion.EXTENSION
+import mcx.pass.build.Key
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft

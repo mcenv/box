@@ -1,6 +1,6 @@
 @file:Suppress("NAME_SHADOWING")
 
-package mcx.phase
+package mcx.pass
 
 import kotlinx.collections.immutable.*
 import mcx.ast.Core.Pattern

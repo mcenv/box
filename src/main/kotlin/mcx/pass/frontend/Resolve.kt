@@ -1,13 +1,13 @@
-package mcx.phase.frontend
+package mcx.pass.frontend
 
 import mcx.ast.*
 import mcx.lsp.HEADER
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
-import mcx.phase.Context
-import mcx.phase.frontend.Resolve.Env.Companion.emptyEnv
-import mcx.phase.lookupBuiltin
+import mcx.pass.Context
+import mcx.pass.frontend.Resolve.Env.Companion.emptyEnv
+import mcx.pass.lookupBuiltin
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Location

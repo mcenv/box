@@ -1,9 +1,9 @@
-package mcx.phase.backend
+package mcx.pass.backend
 
 import mcx.ast.Packed
 import mcx.data.Nbt
 import mcx.data.ResourceLocation
-import mcx.phase.Context
+import mcx.pass.Context
 import mcx.util.quoted
 import mcx.ast.Packed as P
 

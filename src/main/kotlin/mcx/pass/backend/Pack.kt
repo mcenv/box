@@ -1,4 +1,4 @@
-package mcx.phase.backend
+package mcx.pass.backend
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.Packed
@@ -14,8 +14,8 @@ import mcx.ast.Packed.SourceProvider
 import mcx.data.Nbt
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
-import mcx.phase.*
-import mcx.phase.Context.Companion.DISPATCH
+import mcx.pass.*
+import mcx.pass.Context.Companion.DISPATCH
 import mcx.util.nbtPath
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P

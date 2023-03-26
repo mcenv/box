@@ -1,8 +1,8 @@
-package mcx.phase
+package mcx.pass
 
 import kotlinx.coroutines.runBlocking
 import mcx.lsp.diagnosticMessage
-import mcx.phase.build.Build
+import mcx.pass.build.Build
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.test.Test

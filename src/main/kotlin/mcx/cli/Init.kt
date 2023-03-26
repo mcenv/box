@@ -5,7 +5,7 @@ import kotlinx.cli.Subcommand
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
-import mcx.phase.Config
+import mcx.pass.Config
 import java.nio.file.Paths
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream

@@ -1,4 +1,4 @@
-package mcx.phase.backend
+package mcx.pass.backend
 
 import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Definition
@@ -8,7 +8,7 @@ import mcx.ast.Lvl
 import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
-import mcx.phase.*
+import mcx.pass.*
 
 @Suppress("NAME_SHADOWING")
 class Stage private constructor() {

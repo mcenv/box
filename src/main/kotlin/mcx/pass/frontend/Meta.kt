@@ -1,10 +1,10 @@
-package mcx.phase.frontend
+package mcx.pass.frontend
 
 import kotlinx.collections.immutable.*
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
-import mcx.phase.*
+import mcx.pass.*
 import org.eclipse.lsp4j.Range
 
 @Suppress("NAME_SHADOWING")

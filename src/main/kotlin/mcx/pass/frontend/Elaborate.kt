@@ -1,12 +1,12 @@
-package mcx.phase.frontend
+package mcx.pass.frontend
 
 import kotlinx.collections.immutable.*
 import mcx.ast.*
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
-import mcx.phase.*
-import mcx.phase.frontend.Elaborate.Ctx.Companion.emptyCtx
+import mcx.pass.*
+import mcx.pass.frontend.Elaborate.Ctx.Companion.emptyCtx
 import mcx.util.toSubscript
 import org.eclipse.lsp4j.*
 import kotlin.contracts.ExperimentalContracts

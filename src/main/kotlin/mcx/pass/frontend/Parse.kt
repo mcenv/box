@@ -1,4 +1,4 @@
-package mcx.phase.frontend
+package mcx.pass.frontend
 
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
@@ -7,7 +7,7 @@ import mcx.data.NbtType
 import mcx.lsp.Ranged
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo
-import mcx.phase.Context
+import mcx.pass.Context
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position

@@ -1,4 +1,4 @@
-package mcx.phase.build
+package mcx.pass.build
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -11,14 +11,14 @@ import mcx.ast.*
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
-import mcx.phase.Config
-import mcx.phase.Context
-import mcx.phase.backend.Generate
-import mcx.phase.backend.Lift
-import mcx.phase.backend.Pack
-import mcx.phase.backend.Stage
-import mcx.phase.frontend.*
-import mcx.phase.prelude
+import mcx.pass.Config
+import mcx.pass.Context
+import mcx.pass.backend.Generate
+import mcx.pass.backend.Lift
+import mcx.pass.backend.Pack
+import mcx.pass.backend.Stage
+import mcx.pass.frontend.*
+import mcx.pass.prelude
 import org.eclipse.lsp4j.Diagnostic
 import java.nio.file.*
 import java.util.*

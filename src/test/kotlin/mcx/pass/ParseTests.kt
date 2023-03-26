@@ -1,11 +1,11 @@
-package mcx.phase
+package mcx.pass
 
 import mcx.ast.ModuleLocation
 import mcx.ast.Surface.Definition
 import mcx.ast.Surface.Module
 import mcx.ast.Surface.Term
 import mcx.lsp.Ranged
-import mcx.phase.frontend.Parse
+import mcx.pass.frontend.Parse
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import kotlin.test.Test

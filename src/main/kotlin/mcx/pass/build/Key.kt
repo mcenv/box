@@ -1,13 +1,13 @@
-package mcx.phase.build
+package mcx.pass.build
 
 import mcx.ast.Core
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.lsp.Instruction
-import mcx.phase.backend.Lift
-import mcx.phase.frontend.Elaborate
-import mcx.phase.frontend.Parse
-import mcx.phase.frontend.Resolve
+import mcx.pass.backend.Lift
+import mcx.pass.frontend.Elaborate
+import mcx.pass.frontend.Parse
+import mcx.pass.frontend.Resolve
 
 sealed interface Key<V> {
   data class Read(

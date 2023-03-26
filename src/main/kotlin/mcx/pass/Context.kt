@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.pass
 
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation

@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.pass
 
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term

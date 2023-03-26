@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.pass
 
 enum class Phase(val id: String) {
   WORLD("world"),

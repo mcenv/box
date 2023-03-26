@@ -1,4 +1,4 @@
-package mcx.phase
+package mcx.pass
 
 import kotlinx.collections.immutable.PersistentList
 import mcx.ast.Core.Pattern

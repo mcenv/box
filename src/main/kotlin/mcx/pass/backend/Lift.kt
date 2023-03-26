@@ -1,11 +1,11 @@
-package mcx.phase.backend
+package mcx.pass.backend
 
 import mcx.ast.Modifier
 import mcx.data.NbtType
-import mcx.phase.Context
-import mcx.phase.backend.Lift.Ctx.Companion.emptyCtx
-import mcx.phase.prettyPattern
-import mcx.phase.prettyTerm
+import mcx.pass.Context
+import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx
+import mcx.pass.prettyPattern
+import mcx.pass.prettyTerm
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
