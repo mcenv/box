@@ -21,10 +21,6 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: test
-      - name: Install dist
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: installDist
       - name: Upload std pack
         uses: actions/upload-artifact@v3
         with:
@@ -36,4 +32,14 @@ jobs:
         with:
           name: test
           path: ./src/test/resources/test/out/datapacks/test
+          if-no-files-found: error
+      - name: Benchmark
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: benchmark
+      - name: Upload benchmark result
+        uses: actions/upload-artifact@v3
+        with:
+          name: test.json
+          path: ./build/reports/benchmarks/main/*/test.json
           if-no-files-found: error

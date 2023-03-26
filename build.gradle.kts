@@ -5,8 +5,10 @@ import javax.xml.parsers.DocumentBuilderFactory
 plugins {
   kotlin("jvm") version "1.8.10"
   kotlin("plugin.serialization") version "1.8.10"
+  kotlin("plugin.allopen") version "1.8.10"
   id("org.jetbrains.dokka") version "1.8.10"
   id("org.jetbrains.kotlinx.kover") version "0.6.1"
+  id("org.jetbrains.kotlinx.benchmark") version "0.4.7"
   application
 }
 
@@ -30,6 +32,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
   testImplementation(kotlin("test"))
+  testImplementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.7")
 }
 
 sourceSets {
@@ -40,10 +43,6 @@ sourceSets {
   }
 }
 
-tasks.test {
-  useJUnitPlatform()
-}
-
 kotlin {
   jvmToolchain(17)
 }
@@ -52,15 +51,37 @@ tasks.withType<KotlinCompile> {
   kotlinOptions.jvmTarget = "17"
 }
 
+tasks.withType<@Suppress("UnstableApiUsage") ProcessResources> {
+  filesMatching("version") {
+    expand("version" to version)
+  }
+}
+
 application {
   mainClass.set("mcx.cli.MainKt")
 }
 
-@Suppress("UnstableApiUsage")
-tasks.withType<ProcessResources> {
-  filesMatching("version") {
-    expand("version" to version)
+tasks.test {
+  useJUnitPlatform()
+}
+
+benchmark {
+  targets {
+    register("test")
   }
+  configurations {
+    getByName("main") {
+      reportFormat = "json"
+    }
+  }
+}
+
+allOpen {
+  annotation("org.openjdk.jmh.annotations.State")
+}
+
+tasks.withType<DokkaTask>().configureEach {
+  outputDirectory.set(projectDir.resolve("docs/book/api"))
 }
 
 tasks.register("kover") {
@@ -86,8 +107,4 @@ tasks.register("kover") {
       node = node.nextSibling
     }
   }
-}
-
-tasks.withType<DokkaTask>().configureEach {
-  outputDirectory.set(projectDir.resolve("docs/book/api"))
 }
