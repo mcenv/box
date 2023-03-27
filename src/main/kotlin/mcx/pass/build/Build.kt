@@ -228,7 +228,7 @@ class Build(
     return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
   }
 
-  @OptIn(ExperimentalSerializationApi::class)
+  @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): List<Pair<Path, List<Diagnostic>>> {
     val serverProperties = Properties().apply {
       load(root.resolve("server.properties").inputStream().buffered())
@@ -240,11 +240,11 @@ class Build(
 
     val datapackRoot = datapacks.resolve(config.name).also { it.createDirectories() }
 
-    return runBlocking {
+    return coroutineScope {
       val context = Context(config)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
-      val locations = Files
-        .walk(src)
+      val locations = src
+        .walk()
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
@@ -260,7 +260,7 @@ class Build(
         .flatten()
 
       if (diagnosticsByPath.isNotEmpty()) {
-        return@runBlocking diagnosticsByPath
+        return@coroutineScope diagnosticsByPath
       }
 
       val outputModules = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
@@ -272,10 +272,14 @@ class Build(
             .use { it.write(definition) }
         }
 
-      Files
-        .walk(datapackRoot)
-        .filter { it.isRegularFile() && it !in outputModules }
-        .forEach { it.deleteExisting() }
+      datapackRoot.visitFileTree {
+        onVisitFile { file, _ ->
+          if (file !in outputModules) {
+            file.deleteExisting()
+          }
+          FileVisitResult.CONTINUE
+        }
+      }
 
       datapackRoot
         .resolve("pack.mcmeta")
