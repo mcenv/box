@@ -112,7 +112,7 @@ fun Env.evalTerm(term: Term): Value {
       val result = Closure(this, binders, term.result)
       Value.FuncOf(result)
     }
-    is Term.Apply       -> {
+    is Term.Apply   -> {
       val func = evalTerm(term.func)
       val args = term.args.map { lazy { evalTerm(it) } }
       when (func) {
@@ -124,34 +124,39 @@ fun Env.evalTerm(term: Term): Value {
         Value.Apply(func, args, type)
       }
     }
-    is Term.Code        -> {
+    is Term.Code    -> {
       val element = lazy { evalTerm(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf      -> {
+    is Term.CodeOf  -> {
       val element = lazy { evalTerm(term.element) }
       Value.CodeOf(element)
     }
-    is Term.Splice      -> {
+    is Term.Splice  -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> Value.Splice(element)
       }
     }
-    is Term.Let         -> {
+    is Term.Command -> {
+      val element = lazy { evalTerm(term.element) }
+      val type = evalTerm(term.type)
+      Value.Command(element, type)
+    }
+    is Term.Let     -> {
       val init = lazy { evalTerm(term.init) }
       val binder = evalPattern(term.binder)
       (this + (binder binds init)).evalTerm(term.body)
     }
-    is Term.Var         -> this[Lvl(size).toLvl(term.idx).value].value
-    is Term.Def         -> {
+    is Term.Var     -> this[Lvl(size).toLvl(term.idx).value].value
+    is Term.Def     -> {
       term.body?.let { evalTerm(it) } ?: run {
         val type = evalTerm(term.type)
         Value.Def(term.name, null, type)
       }
     }
-    is Term.Meta        -> Value.Meta(term.index, term.source)
-    is Term.Hole        -> Value.Hole
+    is Term.Meta    -> Value.Meta(term.index, term.source)
+    is Term.Hole    -> Value.Hole
   }
 }
 
@@ -239,39 +244,44 @@ fun Lvl.quoteValue(value: Value): Term {
       val result = quoteClosure(value.result)
       Term.Func(params, result)
     }
-    is Value.FuncOf      -> {
+    is Value.FuncOf  -> {
       val params = value.result.binders.map { quotePattern(it) }
       val result = quoteClosure(value.result)
       Term.FuncOf(params, result)
     }
-    is Value.Apply       -> {
+    is Value.Apply   -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
       val type = quoteValue(value.type)
       Term.Apply(func, args, type)
     }
-    is Value.Code        -> {
+    is Value.Code    -> {
       val element = quoteValue(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf      -> {
+    is Value.CodeOf  -> {
       val element = quoteValue(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice      -> {
+    is Value.Splice  -> {
       val element = quoteValue(value.element)
       Term.Splice(element)
     }
-    is Value.Var         -> {
+    is Value.Command -> {
+      val element = quoteValue(value.element.value)
+      val type = quoteValue(value.type)
+      Term.Command(element, type)
+    }
+    is Value.Var     -> {
       val type = quoteValue(value.type)
       Term.Var(value.name, toIdx(value.lvl), type)
     }
-    is Value.Def         -> {
+    is Value.Def     -> {
       val type = quoteValue(value.type)
       Term.Def(value.name, value.body, type)
     }
-    is Value.Meta        -> Term.Meta(value.index, value.source)
-    is Value.Hole        -> Term.Hole
+    is Value.Meta    -> Term.Meta(value.index, value.source)
+    is Value.Hole    -> Term.Hole
   }
 }
 

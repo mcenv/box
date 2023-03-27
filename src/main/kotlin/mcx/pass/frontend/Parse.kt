@@ -202,6 +202,12 @@ class Parse private constructor(
             val element = parseTerm0()
             S.Term.Splice(element, until())
           }
+          '/'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.Command(element, until())
+          }
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {

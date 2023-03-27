@@ -121,44 +121,49 @@ class Meta {
         val result = (this + Lvl(size).collect(params.map { (param, _) -> evalPattern(param) })).zonkTerm(term.result)
         Term.Func(params, result)
       }
-      is Term.FuncOf      -> {
+      is Term.FuncOf  -> {
         val params = term.params.map { zonkPattern(it) }
         val result = (this + Lvl(size).collect(params.map { evalPattern(it) })).zonkTerm(term.result)
         Term.FuncOf(params, result)
       }
-      is Term.Apply       -> {
+      is Term.Apply   -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
         Term.Apply(func, args, type)
       }
-      is Term.Code        -> {
+      is Term.Code    -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
-      is Term.CodeOf      -> {
+      is Term.CodeOf  -> {
         val element = zonkTerm(term.element)
         Term.CodeOf(element)
       }
-      is Term.Splice      -> {
+      is Term.Splice  -> {
         val element = zonkTerm(term.element)
         Term.Splice(element)
       }
-      is Term.Let         -> {
+      is Term.Command -> {
+        val element = zonkTerm(term.element)
+        val type = zonkTerm(term.type)
+        Term.Command(element, type)
+      }
+      is Term.Let     -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         Term.Let(binder, init, body)
       }
-      is Term.Var         -> {
+      is Term.Var     -> {
         val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
-      is Term.Def         -> {
+      is Term.Def     -> {
         val type = zonkTerm(term.type)
         Term.Def(term.name, term.body, type)
       }
-      is Term.Meta        -> {
+      is Term.Meta    -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
             Term.Meta(term.index, term.source).also { _unsolvedMetas += it.index to it.source }
@@ -281,21 +286,22 @@ class Meta {
         (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf   -> {
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.Apply && value2 is Value.Apply             -> {
+      value1 is Value.Apply && value2 is Value.Apply     -> {
         unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code               -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf           -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice           -> unifyValue(value1.element, value2.element)
-      value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
-      value1 is Value.Def && value2 is Value.Def                 -> value1.name == value2.name // TODO: check body
-      value1 is Value.Hole || value2 is Value.Hole               -> true // ?
-      else                                                       -> false
+      value1 is Value.Code && value2 is Value.Code       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf   -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice   -> unifyValue(value1.element, value2.element)
+      value1 is Value.Command && value2 is Value.Command -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Var && value2 is Value.Var         -> value1.lvl == value2.lvl
+      value1 is Value.Def && value2 is Value.Def         -> value1.name == value2.name // TODO: check body
+      value1 is Value.Hole || value2 is Value.Hole       -> true // ?
+      else                                               -> false
     }
   }
 }

@@ -128,6 +128,11 @@ object Lifted {
       override val type: NbtType,
     ) : Term
 
+    data class Command(
+      val element: String,
+      override val type: NbtType,
+    ) : Term
+
     data class Let(
       val binder: Pattern,
       val init: Term,

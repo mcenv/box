@@ -270,6 +270,11 @@ class Elaborate private constructor(
         val element = checkTerm(term.element, Phase.CONST, Value.Code(lazyOf(type)))
         C.Term.Splice(element) to type
       }
+      term is R.Term.Command && match<Value>(type)                             -> {
+        val type = type ?: meta.freshValue(term.range)
+        val element = checkTerm(term.element, Phase.CONST, Value.String)
+        C.Term.Command(element, next().quoteValue(type)) to type
+      }
       term is R.Term.Let && match<Value>(type)                                 -> {
         val (init, initType) = synthTerm(term.init, phase)
         restoring {

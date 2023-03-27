@@ -191,6 +191,11 @@ sealed interface Value {
     val element: Value,
   ) : Value
 
+  data class Command(
+    val element: Lazy<Value>,
+    val type: Value,
+  ) : Value
+
   data class Var(
     val name: kotlin.String,
     val lvl: Lvl,

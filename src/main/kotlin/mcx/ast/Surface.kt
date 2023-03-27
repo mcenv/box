@@ -227,6 +227,11 @@ object Surface {
       override val range: Range,
     ) : Term
 
+    data class Command(
+      val element: Term,
+      override val range: Range,
+    ) : Term
+
     data class Let(
       val binder: Term,
       val init: Term,

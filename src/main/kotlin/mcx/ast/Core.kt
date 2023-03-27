@@ -189,6 +189,11 @@ object Core {
       val element: Term,
     ) : Term
 
+    data class Command(
+      val element: Term,
+      val type: Term,
+    ) : Term
+
     data class Let(
       val binder: Pattern<Term>,
       val init: Term,

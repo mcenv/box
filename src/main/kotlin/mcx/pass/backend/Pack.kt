@@ -76,6 +76,28 @@ class Pack private constructor(
     term: L.Term,
   ) {
     when (term) {
+      is L.Term.If          -> {
+        packTerm(term.condition)
+        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
+        drop(NbtType.BYTE)
+        +Execute.ConditionalScoreMatches(
+          true, REG_0, REG, 1..Int.MAX_VALUE,
+          Execute.Run(
+            RunFunction(packDefinitionLocation(term.thenName))
+          )
+        )
+        +Execute.ConditionalScoreMatches(
+          true, REG_0, REG, Int.MIN_VALUE..0,
+          Execute.Run(
+            RunFunction(packDefinitionLocation(term.elseName))
+          )
+        )
+        push(term.type, null)
+      }
+      is L.Term.Is          -> {
+        packTerm(term.scrutinee)
+        matchPattern(term.scrutineer)
+      }
       is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(term.value)))
       is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(Nbt.Short(term.value)))
       is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(Nbt.Int(term.value)))
@@ -154,22 +176,8 @@ class Pack private constructor(
         val keeps = listOf(term.type)
         term.args.forEach { drop(it.type, keeps, false) }
       }
-      is L.Term.If          -> {
-        packTerm(term.condition)
-        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
-        drop(NbtType.BYTE)
-        +Execute.ConditionalScoreMatches(
-          true, REG_0, REG, 1..Int.MAX_VALUE,
-          Execute.Run(
-            RunFunction(packDefinitionLocation(term.thenName))
-          )
-        )
-        +Execute.ConditionalScoreMatches(
-          true, REG_0, REG, Int.MIN_VALUE..0,
-          Execute.Run(
-            RunFunction(packDefinitionLocation(term.elseName))
-          )
-        )
+      is L.Term.Command     -> {
+        +Raw(term.element)
         push(term.type, null)
       }
       is L.Term.Let         -> {
@@ -187,10 +195,6 @@ class Pack private constructor(
       is L.Term.Def         -> {
         +RunFunction(packDefinitionLocation(term.name))
         push(term.type, null)
-      }
-      is L.Term.Is          -> {
-        packTerm(term.scrutinee)
-        matchPattern(term.scrutineer)
       }
     }
   }
