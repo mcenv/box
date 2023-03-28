@@ -11,10 +11,6 @@ fun lookupBuiltin(name: DefinitionLocation): Builtin? {
 
 abstract class Builtin(val name: DefinitionLocation) {
   abstract fun eval(args: List<Lazy<Value>>): Value?
-
-  open fun pack() {
-    TODO()
-  }
 }
 
 val prelude: ModuleLocation = ModuleLocation("prelude")
