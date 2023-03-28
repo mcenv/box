@@ -412,7 +412,14 @@ class Elaborate private constructor(
       }
       value1 is Value.Point && value2 !is Value.Point      -> sub(value1.elementType, value2)
       value1 is Value.Union                                -> value1.elements.all { sub(it.value, value2) }
-      value2 is Value.Union                                -> value2.elements.any { sub(value1, it.value) }
+      value2 is Value.Union                                -> {
+        // TODO: implement subtyping with unification that has lower bound and upper bound
+        if (value1 is Value.Meta && value2.elements.isEmpty()) {
+          with(meta) { unifyValue(value1, value2) }
+        } else {
+          value2.elements.any { sub(value1, it.value) }
+        }
+      }
       value1 is Value.Func && value2 is Value.Func         -> {
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> sub(param1.value, param2.value) } &&
