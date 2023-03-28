@@ -16,6 +16,8 @@ import mcx.pass.build.Key
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
+import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
+import org.eclipse.lsp4j.jsonrpc.services.JsonSegment
 import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.services.LanguageClientAware
 import org.eclipse.lsp4j.services.TextDocumentService
@@ -27,6 +29,8 @@ import java.util.concurrent.ConcurrentMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.io.path.*
 
+@JsonSegment("mcx")
+@Suppress("unused")
 class McxService : TextDocumentService,
                    WorkspaceService,
                    LanguageClientAware {
@@ -121,6 +125,13 @@ class McxService : TextDocumentService,
     params: DidChangeWatchedFilesParams,
   ) {
     updateContext()
+  }
+
+  @JsonRequest
+  private fun build(): CompletableFuture<Boolean> {
+    return scope.future {
+      build.invoke().isEmpty()
+    }
   }
 
   private fun fetchContext(): Context {

@@ -1,4 +1,4 @@
-import { ExtensionContext, RelativePattern, workspace } from "vscode";
+import { commands, ThemeIcon, ExtensionContext, ProviderResult, RelativePattern, TreeDataProvider, TreeItem, window, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
@@ -28,6 +28,26 @@ export function activate(context: ExtensionContext) {
     clientOptions,
   );
   client.start();
+
+  commands.registerCommand("mcx.build", async () => {
+    const success = await client!.sendRequest<boolean>("mcx/build");
+    window.showInformationMessage(success ? "Build succeeded" : "Build failed");
+  });
+
+  window.registerTreeDataProvider("mcx.tasks", new class implements TreeDataProvider<string> {
+    getTreeItem(element: string): TreeItem {
+      return {
+        label: element,
+        iconPath: new ThemeIcon("wrench"),
+        command: { title: element, command: `mcx.${element}` },
+      };
+    }
+    getChildren(element?: string): ProviderResult<string[]> {
+      return [
+        "build",
+      ];
+    }
+  });
 }
 
 export function deactivate() {

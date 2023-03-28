@@ -4,13 +4,13 @@
   "description": "",
   "version": "0.1.0",
   "engines": {
-    "vscode": "^1.72.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
     "Programming Languages"
   ],
   "activationEvents": [
-    "onLanguage:mcx"
+    "workspaceContains:pack.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -32,7 +32,21 @@
         "scopeName": "source.mcx",
         "path": "./syntax.json"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "title": "mcx: Build",
+        "command": "mcx.build"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "mcx.tasks",
+          "name": "mcx Tasks"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
