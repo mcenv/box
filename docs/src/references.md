@@ -27,7 +27,8 @@
 * [AndrasKovacs/elaboration-zoo](https://github.com/AndrasKovacs/elaboration-zoo)
 * [AndrasKovacs/staged](https://github.com/AndrasKovacs/staged)
 * [JetBrains/kotlin](https://github.com/JetBrains/kotlin)
-* [bytecodealliance/wasmtime](https://github.com/bytecodealliance/wasmtime)
+* [Mojang/DataFixerUpper](https://github.com/Mojang/DataFixerUpper)
+* [Mojang/brigadier](https://github.com/Mojang/brigadier)
 * [rust-lang/rust](https://github.com/rust-lang/rust)
 
 ## Videos
