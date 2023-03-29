@@ -36,30 +36,97 @@
 * András Kovács. [Type theory elaboration 8: comparison of De Bruijn, non-shadowing and fresh variable conventions](https://youtu.be/ZKu1oNSbZ9I).
 * Jon Sterling. [Jon Sterling, How to code your own type theory](https://youtu.be/DEj-_k2Nx6o).
 
+## Articles
+
+* [Major & Minor Versions in Minecraft: Java Edition | Minecraft Help](https://help.minecraft.net/hc/en-us/articles/9971900758413-Major-Minor-Versions-in-Minecraft-Java-Edition)
+
 ## Issues
 
-- [`MC-159633`](https://bugs.mojang.com/browse/MC-159633) - Command feedback messages are unnecessarily created during function execution
-- [`MC-163943`](https://bugs.mojang.com/browse/MC-163943) - Read-only scores can be mutated by swapping
-- [`MC-171881`](https://bugs.mojang.com/browse/MC-171881) - Negative zero cannot be represented in NBT
-- [`MC-173120`](https://bugs.mojang.com/browse/MC-173120) - Lack of escape sequences of newlines prevents quoted strings from containing newlines in a function
-- [`MC-174587`](https://bugs.mojang.com/browse/MC-174587) - Greedy strings cannot contain trailing spaces in a function
-- [`MC-178997`](https://bugs.mojang.com/browse/MC-178997) - Storing a tag with a mismatched type in a numeric array tag succeeds even though its elements are not changed
-- [`MC-179181`](https://bugs.mojang.com/browse/MC-179181) - Match element nodes in NBT paths throw an unexpected UnsupportedOperationException against non-compound lists
-- [`MC-182368`](https://bugs.mojang.com/browse/MC-182368) - Inconsistent constant results of commands
-- [`MC-184512`](https://bugs.mojang.com/browse/MC-184512) - commands.json does not include redirect paths to the root node
-- [`MC-196890`](https://bugs.mojang.com/browse/MC-196890) - "/data merge" deep-copies target compound tag
-- ~~[`MC-201769`](https://bugs.mojang.com/browse/MC-201769)~~ - Copying deeply nested NBT causes StackOverflowError
-- [`MC-208005`](https://bugs.mojang.com/browse/MC-208005) - Reference equality of NaNs is exposed
-- [`MC-208974`](https://bugs.mojang.com/browse/MC-208974) - Target NBT is changed despite being reported as unchanged
-- ~~[`MC-221421`](https://bugs.mojang.com/browse/MC-221421)~~ - A list tag can be modified during insertion into itself
-- [`MC-225425`](https://bugs.mojang.com/browse/MC-225425) - "/data modify" inserts source elements into target collection one by one
-- [`MC-227538`](https://bugs.mojang.com/browse/MC-227538) - Inserting elements into collection tags can be aborted in the middle
-- ~~[`MC-231408`](https://bugs.mojang.com/browse/MC-231408)~~ - A function tag collapses the same values
-- [`MC-248261`](https://bugs.mojang.com/browse/MC-248261) - "/execute store" makes the storage file dirty without any modifications
-- ~~[`MC-248769`](https://bugs.mojang.com/browse/MC-248769)~~ - "/data remove" always traverses the NBT path to the end
-- [`MC-254353`](https://bugs.mojang.com/browse/MC-254353) - A packet to remove the score is always broadcast when a score is reset
-- ~~[`MC-258195`](https://bugs.mojang.com/browse/MC-258195)~~ - Performance degradation of NBT modification
-- [`MC-258479`](https://bugs.mojang.com/browse/MC-258479) - NBT depth limit can be exceeded by "set_nbt"
-- ~~[`MC-259282`](https://bugs.mojang.com/browse/MC-259282)~~ - NBT strings that exceed the length limit can be created
-- ~~[`MC-259563`](https://bugs.mojang.com/browse/MC-259563)~~ - Command exception messages are unnecessarily created and stringified during function execution
-- [`MC-261376`](https://bugs.mojang.com/browse/MC-261376) - Elements in a numeric array tag at the deepest level can be retrieved, but not be set
+* [`MC-159633`](https://bugs.mojang.com/browse/MC-159633) - Command feedback messages are unnecessarily created during function execution
+* [`MC-163943`](https://bugs.mojang.com/browse/MC-163943) - Read-only scores can be mutated by swapping
+* [`MC-171881`](https://bugs.mojang.com/browse/MC-171881) - Negative zero cannot be represented in NBT
+* [`MC-173120`](https://bugs.mojang.com/browse/MC-173120) - Lack of escape sequences of newlines prevents quoted strings from containing newlines in a function
+* [`MC-174587`](https://bugs.mojang.com/browse/MC-174587) - Greedy strings cannot contain trailing spaces in a function
+* [`MC-178997`](https://bugs.mojang.com/browse/MC-178997) - Storing a tag with a mismatched type in a numeric array tag succeeds even though its elements are not changed
+* [`MC-179181`](https://bugs.mojang.com/browse/MC-179181) - Match element nodes in NBT paths throw an unexpected UnsupportedOperationException against non-compound lists
+* [`MC-182368`](https://bugs.mojang.com/browse/MC-182368) - Inconsistent constant results of commands
+* [`MC-184512`](https://bugs.mojang.com/browse/MC-184512) - commands.json does not include redirect paths to the root node
+* [`MC-196890`](https://bugs.mojang.com/browse/MC-196890) - "/data merge" deep-copies target compound tag
+* ~~[`MC-201769`](https://bugs.mojang.com/browse/MC-201769)~~ - Copying deeply nested NBT causes StackOverflowError
+* [`MC-208005`](https://bugs.mojang.com/browse/MC-208005) - Reference equality of NaNs is exposed
+* [`MC-208974`](https://bugs.mojang.com/browse/MC-208974) - Target NBT is changed despite being reported as unchanged
+* ~~[`MC-221421`](https://bugs.mojang.com/browse/MC-221421)~~ - A list tag can be modified during insertion into itself
+* [`MC-225425`](https://bugs.mojang.com/browse/MC-225425) - "/data modify" inserts source elements into target collection one by one
+* [`MC-227538`](https://bugs.mojang.com/browse/MC-227538) - Inserting elements into collection tags can be aborted in the middle
+* ~~[`MC-231408`](https://bugs.mojang.com/browse/MC-231408)~~ - A function tag collapses the same values
+* [`MC-248261`](https://bugs.mojang.com/browse/MC-248261) - "/execute store" makes the storage file dirty without any modifications
+* ~~[`MC-248769`](https://bugs.mojang.com/browse/MC-248769)~~ - "/data remove" always traverses the NBT path to the end
+* [`MC-254353`](https://bugs.mojang.com/browse/MC-254353) - A packet to remove the score is always broadcast when a score is reset
+* ~~[`MC-258195`](https://bugs.mojang.com/browse/MC-258195)~~ - Performance degradation of NBT modification
+* [`MC-258479`](https://bugs.mojang.com/browse/MC-258479) - NBT depth limit can be exceeded by "set_nbt"
+* ~~[`MC-259282`](https://bugs.mojang.com/browse/MC-259282)~~ - NBT strings that exceed the length limit can be created
+* ~~[`MC-259563`](https://bugs.mojang.com/browse/MC-259563)~~ - Command exception messages are unnecessarily created and stringified during function execution
+* [`MC-261376`](https://bugs.mojang.com/browse/MC-261376) - Elements in a numeric array tag at the deepest level can be retrieved, but not be set
+
+## Quotes
+
+### boq — 2019/09/19
+
+> [Oh, also: our plan with this is to make you stop using nbt](https://discord.com/channels/154777837382008833/593812273164976166/623949632812089344)
+
+> [I meant for querying, since nbt is still somehow ok as generic storage format. But `data entity`, `data block` and `@e[nbt=]` are filthy hack](https://discord.com/channels/154777837382008833/593812273164976166/623950417625350157)
+
+> [No. NBT sharing was a bug and will not return.](https://discord.com/channels/154777837382008833/593812273164976166/623950625960361995)
+
+> [NBT matching is a hack. Nothing should work on serialized data, all that should be exposed properly. But It may take long time](https://discord.com/channels/154777837382008833/593812273164976166/623973886702256168)
+
+### boq — 2020/04/20
+
+> [NBT should not be exposed to user](https://discord.com/channels/154777837382008833/593812273164976166/701543553675034695)
+
+### boq — 2020/11/12
+
+> [storage is for NBT, inventories are for items](https://discord.com/channels/154777837382008833/593812273164976166/776177804294881310)
+
+> [Remember, NBT manipulation bad!](https://discord.com/channels/154777837382008833/593812273164976166/776178079239372823)
+
+> [by "NBT manipulation" I mean "manipulation of in-game objects via NBT". Using that as generic data structure is still fine](https://discord.com/channels/154777837382008833/593812273164976166/776178452268580864)
+
+### slicedlime — 2022/11/10
+
+> [I’ve seen some comments about the pack formats in the snapshots. Let’s have a 🧵about pack versions and formats.](https://twitter.com/slicedlime/status/1590684972633190400)
+>
+> [With the new more frequent minor releases we’re also switching the way we bump pack formats.](https://twitter.com/slicedlime/status/1590684975388819462)
+>
+> [Previously, we would bump at most once per snapshot cycle, leading to it being impossible to know which packs work for which snapshots - and that packs would inevitably become incompatible, including the built-in packs.](https://twitter.com/slicedlime/status/1590684978207395843)
+>
+> [Now we will instead keep bumping the pack version whenever breaking changes are introduced. This will lead to more frequent but smaller differences to the format, and pack versions that “skip” several numbers between full releases.](https://twitter.com/slicedlime/status/1590684981554479105)
+>
+> [Nothing really changes with how to update packs - you can choose to skip to the next release version if you want.](https://twitter.com/slicedlime/status/1590684984414994432)
+>
+> [However, if you do individual updates for snapshots, this new scheme means it’ll be easier to keep track of what needs to be done for release and if anyone is testing your packs, they will have an easier time knowing what is compatible.](https://twitter.com/slicedlime/status/1590684987153866752)
+
+### boq — 2022/01/19
+
+> [personally? I just don't want feeding command blocks generated commands to become meta](https://discord.com/channels/154777837382008833/593812273164976166/1065341844403257365)
+
+> [A/B problem. We see: command blocks as legacy feature. You see: oh, I can do argument substitution now and will use it everywhere!](https://discord.com/channels/154777837382008833/593812273164976166/1065342292199735368)
+
+> [I don't want to receive report that changing time format in command block output breaks your Lua interpreter done in commands](https://discord.com/channels/154777837382008833/593812273164976166/1065343358807052388)
+
+> [See? That's what I'm talking about. It's an kludge that obfuscated original intent.
+> We never intended commands to be insane mess of tricks that's impossible to be read](https://discord.com/channels/154777837382008833/593812273164976166/1065343981266927617)
+
+> [We want commands to be accessible. Endorsing kludges is not the way to do it](https://discord.com/channels/154777837382008833/593812273164976166/1065344316333109289)
+
+> [If you want to do vector math, that should be possible directly. Without implementing half of IEEE 754 with integers.
+Asking for binary operators because it makes IEEE 754 implementation easier is, IMO, wrong mindset](https://discord.com/channels/154777837382008833/593812273164976166/1065345022112841790)
+
+> [What I'm trying to get it that you are already thinking with scoreboards as solution for everything.
+> You are not thinking about "feature X", you are automatically assuming that what will you get is "feature X for scoreboards"](https://discord.com/channels/154777837382008833/593812273164976166/1065346170504880148)
+
+### slicedlime — 2023/02/16
+
+> [Nothing is impossible, but here's the situation: with very limited time, we're trying to provide as good map making functionality as possible that isn't just a hijack of some gameplay entity like armor stands. Given lots of time to focus on this stuff, we could make better things. But this is a lot better than nothing, and we'll try to make it as good as we can with the time we have.](https://discord.com/channels/154777837382008833/593812273164976166/1075462092385161348)
+
+> [&lt;insert value here&gt; in various commands are an obvious gap right now. We have some thoughts about it, but not this version.](https://discord.com/channels/154777837382008833/593812273164976166/1075467884135985226)
