@@ -4,19 +4,16 @@ import mcx.ast.DefinitionLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
-import mcx.ast.Packed.Command.Execute.ConditionalScore.Comparator.*
-import mcx.ast.Packed.Command.Execute.Mode.*
+import mcx.ast.Packed.Command.Execute.Mode.RESULT
 import mcx.ast.Packed.Command.Execute.StoreStorage.Type
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
-import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
 import mcx.data.Nbt
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
-import mcx.pass.*
+import mcx.pass.Context
 import mcx.pass.Context.Companion.DISPATCH
-import mcx.util.nbtPath
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
@@ -94,10 +91,12 @@ class Pack private constructor(
         )
         push(term.type, null)
       }
+
       is L.Term.Is          -> {
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
+
       is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(term.value)))
       is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(Nbt.Short(term.value)))
       is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(Nbt.Int(term.value)))
@@ -116,6 +115,7 @@ class Pack private constructor(
           }
         }
       }
+
       is L.Term.IntArrayOf  -> {
         val elements = term.elements.map { (it as? L.Term.IntOf)?.value ?: 0 }
         push(NbtType.INT_ARRAY, SourceProvider.Value(Nbt.IntArray(elements)))
@@ -127,6 +127,7 @@ class Pack private constructor(
           }
         }
       }
+
       is L.Term.LongArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.LongOf)?.value ?: 0 }
         push(NbtType.LONG_ARRAY, SourceProvider.Value(Nbt.LongArray(elements)))
@@ -138,6 +139,7 @@ class Pack private constructor(
           }
         }
       }
+
       is L.Term.ListOf      -> {
         push(NbtType.LIST, SourceProvider.Value(Nbt.List.End))
         if (term.elements.isNotEmpty()) {
@@ -150,6 +152,7 @@ class Pack private constructor(
           }
         }
       }
+
       is L.Term.CompoundOf  -> {
         push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
         term.elements.forEach { (key, element) ->
@@ -160,6 +163,7 @@ class Pack private constructor(
           drop(valueType)
         }
       }
+
       is L.Term.FuncOf      -> {
         push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.entries.forEach { (name, type) ->
@@ -167,6 +171,7 @@ class Pack private constructor(
           +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) }))))
         }
       }
+
       is L.Term.Apply       -> {
         term.args.forEach { packTerm(it) }
         packTerm(term.func)
@@ -176,10 +181,12 @@ class Pack private constructor(
         val keeps = listOf(term.type)
         term.args.forEach { drop(it.type, keeps, false) }
       }
+
       is L.Term.Command     -> {
         +Raw(term.element)
         push(term.type, null)
       }
+
       is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
@@ -187,11 +194,13 @@ class Pack private constructor(
 
         dropPattern(term.binder, listOf(term.body.type))
       }
+
       is L.Term.Var         -> {
         val type = term.type
         val index = this[term.name, term.type]
         push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
       }
+
       is L.Term.Def         -> {
         +RunFunction(packDefinitionLocation(term.name))
         push(term.type, null)
@@ -210,6 +219,7 @@ class Pack private constructor(
           packPattern(element)
         }
       }
+
       is L.Pattern.Var        -> bind(pattern.name, pattern.type)
       is L.Pattern.Drop       -> {}
     }
@@ -225,6 +235,7 @@ class Pack private constructor(
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(NbtType.COMPOUND, keeps)
       }
+
       is L.Pattern.Var        -> drop(pattern.type, keeps)
       is L.Pattern.Drop       -> drop(pattern.type, keeps)
     }
@@ -253,6 +264,7 @@ class Pack private constructor(
             )
           )
         }
+
         is L.Pattern.CompoundOf -> TODO()
         is L.Pattern.Var        -> drop(scrutineer.type)
         is L.Pattern.Drop       -> drop(scrutineer.type)
@@ -336,13 +348,14 @@ class Pack private constructor(
 
     private fun packDefinitionLocation(
       location: DefinitionLocation,
-    ): ResourceLocation =
-      ResourceLocation("minecraft", (location.module.parts + escape(location.name)).joinToString("/"))
+    ): ResourceLocation {
+      return ResourceLocation("minecraft", (location.module.parts + escape(location.name)).joinToString("/"))
+    }
 
     private fun escape(
       string: String,
-    ): String =
-      string
+    ): String {
+      return string
         .encodeToByteArray()
         .joinToString("") {
           when (val char = it.toInt().toChar()) {
@@ -350,6 +363,49 @@ class Pack private constructor(
             else                               -> ".${it.toUByte().toString(Character.MAX_RADIX)}"
           }
         }
+    }
+
+    private inline fun nbtPath(
+      root: Packed.NbtNode.MatchRootObject? = null,
+      block: (NbtPathBuilder) -> Unit,
+    ): Packed.NbtPath {
+      val builder = NbtPathBuilder(root)
+      block(builder)
+      return builder.build()
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private class NbtPathBuilder(root: Packed.NbtNode.MatchRootObject? = null) {
+      val nodes: MutableList<Packed.NbtNode> = mutableListOf()
+
+      init {
+        root?.let { nodes += it }
+      }
+
+      inline operator fun invoke(pattern: Nbt.Compound): NbtPathBuilder {
+        return apply { nodes += Packed.NbtNode.MatchElement(pattern) }
+      }
+
+      inline operator fun invoke(): NbtPathBuilder {
+        return apply { nodes += Packed.NbtNode.AllElements }
+      }
+
+      inline operator fun invoke(index: Int): NbtPathBuilder {
+        return apply { nodes += Packed.NbtNode.IndexedElement(index) }
+      }
+
+      inline operator fun invoke(name: String, pattern: Nbt.Compound): NbtPathBuilder {
+        return apply { nodes += Packed.NbtNode.MatchObject(name, pattern) }
+      }
+
+      inline operator fun invoke(name: String): NbtPathBuilder {
+        return apply { nodes += Packed.NbtNode.CompoundChild(name) }
+      }
+
+      fun build(): Packed.NbtPath {
+        return Packed.NbtPath(nodes)
+      }
+    }
 
     // TODO: specialize dispatcher by type
     fun packDispatch(
