@@ -116,6 +116,15 @@ class McxService : TextDocumentService,
     }
   }
 
+  override fun inlayHint(params: InlayHintParams): CompletableFuture<List<InlayHint>> {
+    return scope.future {
+      val elaborated = with(build) {
+        fetchContext().fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(), Instruction.InlayHint(params.range)))
+      }
+      elaborated.value.inlayHints
+    }
+  }
+
   override fun didChangeConfiguration(
     params: DidChangeConfigurationParams,
   ) {

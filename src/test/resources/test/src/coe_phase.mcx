@@ -1,0 +1,11 @@
+def world_zero : int := 0;
+
+const def def_const_into_world : code int := world_zero;
+
+const def const_code_of_zero : code int := `0;
+
+def def_world_into_const : int := const_code_of_zero;
+
+const def def_const_into_world : code int := let x := `0; `x;
+
+def var_world_into_const : int := let x as int := 0; $x;

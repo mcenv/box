@@ -23,6 +23,7 @@ class McxLanguageServer : LanguageServer,
           diagnosticProvider = DiagnosticRegistrationOptions(true, false)
           setHoverProvider(true)
           setDefinitionProvider(true)
+          setInlayHintProvider(true)
         }
       },
     )

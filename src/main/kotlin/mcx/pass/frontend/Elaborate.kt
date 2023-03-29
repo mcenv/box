@@ -9,6 +9,7 @@ import mcx.pass.*
 import mcx.pass.frontend.Elaborate.Ctx.Companion.emptyCtx
 import mcx.util.toSubscript
 import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import mcx.ast.Core as C
@@ -21,9 +22,10 @@ class Elaborate private constructor(
   private val instruction: Instruction?,
 ) {
   private val meta: Meta = Meta()
+  private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var hover: (() -> String)? = null
-  private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
+  private var inlayHints: MutableList<InlayHint> = mutableListOf()
 
   private fun elaborate(): Result {
     val module = elaborateModule(input.module)
@@ -31,6 +33,7 @@ class Elaborate private constructor(
       module,
       input.diagnostics + diagnostics,
       hover,
+      inlayHints,
     )
   }
 
@@ -124,32 +127,32 @@ class Elaborate private constructor(
         val scrutinee = checkTerm(term.scrutinee, phase, scrutineerType)
         C.Term.Is(scrutinee, scrutineer) to Value.Bool
       }
-      term is R.Term.Byte && synth(type)                                       -> C.Term.Byte to Value.Type.BYTE
-      term is R.Term.ByteOf && synth(type)                                     -> C.Term.ByteOf(term.value) to Value.Byte
-      term is R.Term.Short && synth(type)                                      -> C.Term.Short to Value.Type.SHORT
-      term is R.Term.ShortOf && synth(type)                                    -> C.Term.ShortOf(term.value) to Value.Short
-      term is R.Term.Int && synth(type)                                        -> C.Term.Int to Value.Type.INT
-      term is R.Term.IntOf && synth(type)                                      -> C.Term.IntOf(term.value) to Value.Int
-      term is R.Term.Long && synth(type)                                       -> C.Term.Long to Value.Type.LONG
-      term is R.Term.LongOf && synth(type)                                     -> C.Term.LongOf(term.value) to Value.Long
-      term is R.Term.Float && synth(type)                                      -> C.Term.Float to Value.Type.FLOAT
-      term is R.Term.FloatOf && synth(type)                                    -> C.Term.FloatOf(term.value) to Value.Float
-      term is R.Term.Double && synth(type)                                     -> C.Term.Double to Value.Type.DOUBLE
+      term is R.Term.Byte && synth(type)                          -> C.Term.Byte to Value.Type.BYTE
+      term is R.Term.ByteOf && synth(type)                        -> C.Term.ByteOf(term.value) to Value.Byte
+      term is R.Term.Short && synth(type)                         -> C.Term.Short to Value.Type.SHORT
+      term is R.Term.ShortOf && synth(type)                       -> C.Term.ShortOf(term.value) to Value.Short
+      term is R.Term.Int && synth(type)                           -> C.Term.Int to Value.Type.INT
+      term is R.Term.IntOf && synth(type)                         -> C.Term.IntOf(term.value) to Value.Int
+      term is R.Term.Long && synth(type)                          -> C.Term.Long to Value.Type.LONG
+      term is R.Term.LongOf && synth(type)                        -> C.Term.LongOf(term.value) to Value.Long
+      term is R.Term.Float && synth(type)                         -> C.Term.Float to Value.Type.FLOAT
+      term is R.Term.FloatOf && synth(type)                       -> C.Term.FloatOf(term.value) to Value.Float
+      term is R.Term.Double && synth(type)                        -> C.Term.Double to Value.Type.DOUBLE
       term is R.Term.DoubleOf && synth(type)                                   -> C.Term.DoubleOf(term.value) to Value.Double
       term is R.Term.String && synth(type)                                     -> C.Term.String to Value.Type.STRING
       term is R.Term.StringOf && synth(type)                                   -> C.Term.StringOf(term.value) to Value.String
       term is R.Term.ByteArray && synth(type)                                  -> C.Term.ByteArray to Value.Type.BYTE_ARRAY
-      term is R.Term.ByteArrayOf && synth(type)                                -> {
+      term is R.Term.ByteArrayOf && synth(type)                   -> {
         val elements = term.elements.map { checkTerm(it, phase, Value.Byte) }
         C.Term.ByteArrayOf(elements) to Value.ByteArray
       }
-      term is R.Term.IntArray && synth(type)                                   -> C.Term.IntArray to Value.Type.INT_ARRAY
-      term is R.Term.IntArrayOf && synth(type)                                 -> {
+      term is R.Term.IntArray && synth(type)                      -> C.Term.IntArray to Value.Type.INT_ARRAY
+      term is R.Term.IntArrayOf && synth(type)                    -> {
         val elements = term.elements.map { checkTerm(it, phase, Value.Int) }
         C.Term.IntArrayOf(elements) to Value.IntArray
       }
-      term is R.Term.LongArray && synth(type)                                  -> C.Term.LongArray to Value.Type.LONG_ARRAY
-      term is R.Term.LongArrayOf && synth(type)                                -> {
+      term is R.Term.LongArray && synth(type)                     -> C.Term.LongArray to Value.Type.LONG_ARRAY
+      term is R.Term.LongArrayOf && synth(type)                   -> {
         val elements = term.elements.map { checkTerm(it, phase, Value.Long) }
         C.Term.LongArrayOf(elements) to Value.LongArray
       }
@@ -220,7 +223,7 @@ class Elaborate private constructor(
           C.Term.FuncOf(params, result) to type
         }
       }
-      term is R.Term.FuncOf && check<Value.Func>(type)                         -> {
+      term is R.Term.FuncOf && check<Value.Func>(type)            -> {
         val next = next()
         restoring {
           if (type.params.size == term.params.size) {
@@ -287,34 +290,53 @@ class Elaborate private constructor(
           C.Term.Let(binder, init, body) to type
         }
       }
-      term is R.Term.Var && synth(type)                                        -> {
+      term is R.Term.Var && synth(type)                           -> {
         val entry = this[next().toLvl(term.idx)]
-        if (phase == entry.phase) {
-          C.Term.Var(term.name, term.idx, next().quoteValue(entry.type)) to entry.type
-        } else {
-          invalidTerm(phaseMismatch(phase, entry.phase, term.range))
+        val type = meta.forceValue(entry.type)
+        when {
+          entry.phase == phase                      -> {
+            C.Term.Var(term.name, term.idx, next().quoteValue(type)) to type
+          }
+          entry.phase < phase                       -> {
+            inlayHint(term.range.start, "`")
+            C.Term.CodeOf(C.Term.Var(term.name, term.idx, next().quoteValue(type))) to Value.Code(lazyOf(type))
+          }
+          entry.phase > phase && type is Value.Code -> {
+            inlayHint(term.range.start, "$")
+            C.Term.Splice(C.Term.Var(term.name, term.idx, next().quoteValue(type))) to type.element.value
+          }
+          else                                      -> invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
-      term is R.Term.Def && synth(type)                                        -> {
+      term is R.Term.Def && synth(type)                           -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
-            when (val actualPhase = getPhase(definition.modifiers)) {
-              phase -> {
-                val type = freeze().evalTerm(definition.type)
+            val actualPhase = getPhase(definition.modifiers)
+            val type = freeze().evalTerm(definition.type)
+            when {
+              actualPhase == phase                      -> {
                 C.Term.Def(term.name, definition.body, definition.type) to type
               }
-              else  -> invalidTerm(phaseMismatch(phase, actualPhase, term.range))
+              actualPhase < phase                       -> {
+                inlayHint(term.range.start, "`")
+                C.Term.CodeOf(C.Term.Def(term.name, definition.body, definition.type)) to Value.Code(lazyOf(type))
+              }
+              actualPhase > phase && type is Value.Code -> {
+                inlayHint(term.range.start, "$")
+                C.Term.Splice(C.Term.Def(term.name, definition.body, definition.type)) to type.element.value
+              }
+              else                                      -> invalidTerm(phaseMismatch(phase, actualPhase, term.range))
             }
           }
           else                -> invalidTerm(expectedDef(term.range))
         }
       }
-      term is R.Term.As && synth(type)                                         -> {
+      term is R.Term.As && synth(type)                            -> {
         val type = freeze().evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
-      term is R.Term.Hole && match<Value>(type)                                -> C.Term.Hole to Value.Hole
-      synth(type)                                                              -> invalidTerm(cannotSynthesize(term.range))
+      term is R.Term.Hole && match<Value>(type)                   -> C.Term.Hole to Value.Hole
+      synth(type)                                                 -> invalidTerm(cannotSynthesize(term.range))
       check<Value>(type)                                          -> {
         val (synth, synthType) = synthTerm(term, phase)
         if (next().sub(synthType, type)) {
@@ -323,7 +345,7 @@ class Elaborate private constructor(
           invalidTerm(freeze().typeMismatch(type, synthType, term.range))
         }
       }
-      else                                                                     -> error("unreachable")
+      else                                                        -> error("unreachable")
     }.also { (_, type) ->
       hover(type, term.range)
     }
@@ -490,6 +512,15 @@ class Elaborate private constructor(
     }
   }
 
+  private fun inlayHint(
+    position: Position,
+    label: String,
+  ) {
+    if (instruction is Instruction.InlayHint && position in instruction.range) {
+      inlayHints += InlayHint(position, forLeft(label))
+    }
+  }
+
   private fun Env.typeMismatch(
     expected: Value,
     actual: Value,
@@ -582,6 +613,7 @@ class Elaborate private constructor(
     val module: C.Module,
     val diagnostics: List<Diagnostic>,
     val hover: (() -> String)?,
+    val inlayHints: List<InlayHint>,
   )
 
   companion object {
