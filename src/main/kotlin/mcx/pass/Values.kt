@@ -196,6 +196,12 @@ sealed interface Value {
     val type: Value,
   ) : Value
 
+  data class Let(
+    val binder: Pattern<Value>,
+    val init: Lazy<Value>,
+    val body: Lazy<Value>,
+  ) : Value
+
   data class Var(
     val name: kotlin.String,
     val lvl: Lvl,

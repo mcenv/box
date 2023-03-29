@@ -97,17 +97,17 @@ fun Env.evalTerm(term: Term): Value {
       val elementType = evalTerm(term.elementType)
       Value.Point(element, elementType)
     }
-    is Term.Union       -> {
+    is Term.Union   -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.Union(elements)
     }
-    is Term.Func        -> {
+    is Term.Func    -> {
       val params = term.params.map { (_, type) -> lazy { evalTerm(type) } }
       val binders = term.params.map { (param, _) -> evalPattern(param) }
       val result = Closure(this, binders, term.result)
       Value.Func(params, result)
     }
-    is Term.FuncOf      -> {
+    is Term.FuncOf  -> {
       val binders = term.params.map { evalPattern(it) }
       val result = Closure(this, binders, term.result)
       Value.FuncOf(result)
@@ -222,20 +222,20 @@ fun Lvl.quoteValue(value: Value): Term {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       Term.Compound(elements)
     }
-    is Value.CompoundOf  -> {
+    is Value.CompoundOf -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       Term.CompoundOf(elements)
     }
-    is Value.Point       -> {
+    is Value.Point      -> {
       val element = quoteValue(value.element.value)
       val elementType = quoteValue(value.elementType)
       Term.Point(element, elementType)
     }
-    is Value.Union       -> {
+    is Value.Union      -> {
       val elements = value.elements.map { quoteValue(it.value) }
       Term.Union(elements)
     }
-    is Value.Func        -> {
+    is Value.Func       -> {
       val params = (value.result.binders zip value.params).map { (binder, param) ->
         val binder = quotePattern(binder)
         val param = quoteValue(param.value)
@@ -244,44 +244,45 @@ fun Lvl.quoteValue(value: Value): Term {
       val result = quoteClosure(value.result)
       Term.Func(params, result)
     }
-    is Value.FuncOf  -> {
+    is Value.FuncOf     -> {
       val params = value.result.binders.map { quotePattern(it) }
       val result = quoteClosure(value.result)
       Term.FuncOf(params, result)
     }
-    is Value.Apply   -> {
+    is Value.Apply      -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
       val type = quoteValue(value.type)
       Term.Apply(func, args, type)
     }
-    is Value.Code    -> {
+    is Value.Code       -> {
       val element = quoteValue(value.element.value)
       Term.Code(element)
     }
-    is Value.CodeOf  -> {
+    is Value.CodeOf     -> {
       val element = quoteValue(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice  -> {
+    is Value.Splice     -> {
       val element = quoteValue(value.element)
       Term.Splice(element)
     }
-    is Value.Command -> {
+    is Value.Command    -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type)
       Term.Command(element, type)
     }
-    is Value.Var     -> {
+    is Value.Let        -> error("unexpected value: $value")
+    is Value.Var        -> {
       val type = quoteValue(value.type)
       Term.Var(value.name, toIdx(value.lvl), type)
     }
-    is Value.Def     -> {
+    is Value.Def        -> {
       val type = quoteValue(value.type)
       Term.Def(value.name, value.body, type)
     }
-    is Value.Meta    -> Term.Meta(value.index, value.source)
-    is Value.Hole    -> Term.Hole
+    is Value.Meta       -> Term.Meta(value.index, value.source)
+    is Value.Hole       -> Term.Hole
   }
 }
 

@@ -140,17 +140,17 @@ class Stage private constructor() {
         val elementType = evalTerm(term.elementType, phase)
         Value.Point(element, elementType)
       }
-      is Term.Union       -> {
+      is Term.Union   -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         Value.Union(elements)
       }
-      is Term.Func        -> {
+      is Term.Func    -> {
         val params = term.params.map { (_, type) -> lazy { evalTerm(type, phase) } }
         val binders = term.params.map { (param, _) -> evalPattern(param, phase) }
         val result = Closure(this, binders, term.result)
         Value.Func(params, result)
       }
-      is Term.FuncOf      -> {
+      is Term.FuncOf  -> {
         val binders = term.params.map { evalPattern(it, phase) }
         val result = Closure(this, binders, term.result)
         Value.FuncOf(result)
@@ -194,9 +194,19 @@ class Stage private constructor() {
         Value.Command(element, type)
       }
       is Term.Let     -> {
-        val init = lazy { evalTerm(term.init, phase) }
-        val binder = evalPattern(term.binder, phase)
-        (this + (binder binds init)).evalTerm(term.body, phase)
+        when (phase) {
+          Phase.WORLD -> {
+            val binder = evalPattern(term.binder, phase)
+            val init = lazy { evalTerm(term.init, phase) }
+            val body = lazy { evalTerm(term.body, phase) }
+            Value.Let(binder, init, body)
+          }
+          Phase.CONST -> {
+            val init = lazy { evalTerm(term.init, phase) }
+            val binder = evalPattern(term.binder, phase)
+            (this + (binder binds init)).evalTerm(term.body, phase)
+          }
+        }
       }
       is Term.Var     -> {
         val lvl = Lvl(size).toLvl(term.idx)
@@ -217,8 +227,8 @@ class Stage private constructor() {
           Value.Def(term.name, null, type)
         }
       }
-      is Term.Meta        -> unexpectedTerm(term)
-      is Term.Hole        -> unexpectedTerm(term)
+      is Term.Meta    -> unexpectedTerm(term)
+      is Term.Hole    -> unexpectedTerm(term)
     }
   }
 
@@ -287,20 +297,20 @@ class Stage private constructor() {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         Term.Compound(elements)
       }
-      is Value.CompoundOf  -> {
+      is Value.CompoundOf -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         Term.CompoundOf(elements)
       }
-      is Value.Point       -> {
+      is Value.Point      -> {
         val element = quoteValue(value.element.value, phase)
         val elementType = quoteValue(value.elementType, phase)
         Term.Point(element, elementType)
       }
-      is Value.Union       -> {
+      is Value.Union      -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         Term.Union(elements)
       }
-      is Value.Func        -> {
+      is Value.Func       -> {
         val params = (value.result.binders zip value.params).map { (binder, param) ->
           val binder = quotePattern(binder, phase)
           val param = quoteValue(param.value, phase)
@@ -309,44 +319,50 @@ class Stage private constructor() {
         val result = quoteClosure(value.result, phase)
         Term.Func(params, result)
       }
-      is Value.FuncOf  -> {
+      is Value.FuncOf     -> {
         val params = value.result.binders.map { quotePattern(it, phase) }
         val result = quoteClosure(value.result, phase)
         Term.FuncOf(params, result)
       }
-      is Value.Apply   -> {
+      is Value.Apply      -> {
         val func = quoteValue(value.func, phase)
         val args = value.args.map { quoteValue(it.value, phase) }
         val type = quoteValue(value.type, phase)
         Term.Apply(func, args, type)
       }
-      is Value.Code    -> {
+      is Value.Code       -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
         Term.Code(element)
       }
-      is Value.CodeOf  -> {
+      is Value.CodeOf     -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
         Term.CodeOf(element)
       }
-      is Value.Splice  -> {
+      is Value.Splice     -> {
         val element = quoteValue(value.element, Phase.CONST)
         Term.Splice(element)
       }
-      is Value.Command -> {
+      is Value.Command    -> {
         val element = quoteValue(value.element.value, Phase.CONST)
         val type = quoteValue(value.type, Phase.CONST)
         Term.Command(element, type)
       }
-      is Value.Var     -> {
+      is Value.Let        -> {
+        val binder = quotePattern(value.binder, phase)
+        val init = quoteValue(value.init.value, phase)
+        val body = quoteValue(value.body.value, phase)
+        Term.Let(binder, init, body)
+      }
+      is Value.Var        -> {
         val type = quoteValue(value.type, phase)
         Term.Var(value.name, toIdx(value.lvl), type)
       }
-      is Value.Def     -> {
+      is Value.Def        -> {
         val type = quoteValue(value.type, phase)
         Term.Def(value.name, value.body, type)
       }
-      is Value.Meta    -> Term.Meta(value.index, value.source)
-      is Value.Hole    -> Term.Hole
+      is Value.Meta       -> Term.Meta(value.index, value.source)
+      is Value.Hole       -> Term.Hole
     }
   }
 
