@@ -2,25 +2,63 @@
 
 ## Papers
 
-* Danielsson, N.A., & Norell, U. (2008). **Parsing Mixfix Operators**. IFL.
-* Dragos, I., & Odersky, M. (2009). **Compiling generics through user-directed type specialization**. ICOOOLPS@ECOOP.
-* Oliveira, B.C., Moors, A., & Odersky, M. (2010). **Type classes as objects and implicits**. Proceedings of the ACM international conference on Object oriented programming systems languages and applications.
-* Jones, R.E., Hosking, A.L., & Moss, J.E. (2011). **The Garbage Collection Handbook: The art of automatic memory management**. Chapman and Hall / CRC Applied Algorithms and Data Structures Series.
-* Petříček, T., Orchard, D.A., & Mycroft, A. (2013). **Coeffects: Unified Static Analysis of Context-Dependence**. ICALP.
-* Petříček, T., Orchard, D.A., & Mycroft, A. (2014). **Coeffects: a calculus of context-dependent computation**. ICFP.
-* Eisenberg, R.A., & Jones, S.L. (2017). **Levity polymorphism**. Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation.
-* Downen, P., Ariola, Z.M., Jones, S.L., & Eisenberg, R.A. (2020). **Kinds are calling conventions**. Proceedings of the ACM on Programming Languages, 4, 1 - 29.
-* Wood, D.A. (2020). **Polymorphisation: Improving Rust compilation times through intelligent monomorphisation**.
-* Huang, X., & Oliveira, B.C. (2021). **Distributing intersection and union types with splits and duality (functional pearl)**. Proceedings of the ACM on Programming Languages, 5, 1 - 24.
-* Dunfield, J., & Krishnaswami, N.R. (2021). **Bidirectional Typing**. ACM Computing Surveys (CSUR), 54, 1 - 38.
-* Brachthäuser, J.I., Schuster, P., Lee, E., & Boruch-Gruszecki, A. (2022). **Effects, capabilities, and boxes: from scope-based reasoning to type-based reasoning and back**. Proceedings of the ACM on Programming Languages, 6, 1 - 30.
-* Kovács, A. (2022). **Staged compilation with two-level type theory**. Proceedings of the ACM on Programming Languages, 6, 540 - 569.
-* Marshall, D., Vollmer, M., & Orchard, D.A. (2022). **Linearity and Uniqueness: An Entente Cordiale**. ESOP.
-* Odersky, M., Boruch-Gruszecki, A., Lee, E., Brachthäuser, J.I., & Lhoták, O. (2022). **Scoped Capabilities for Polymorphic Effects**. ArXiv, abs/2207.03402.
-* Rehman, B., Huang, X., Xie, N., & Oliveira, B.C. (2022). **Union Types with Disjoint Switches**. ECOOP.
-* Madsen, M. (2022). **The Principles of the Flix Programming Language**. Proceedings of the 2022 ACM SIGPLAN International Symposium on New Ideas, New Paradigms, and Reflections on Programming and Software.
-* Lionel Parreaux. (). **The Ultimate Conditional Syntax**.
-* Jonathan Sterling, Robert Harper. (). **A metalanguage for multi-phase modularity**.
+### 2008
+
+* Danielsson, N.A., & Norell, U. **Parsing Mixfix Operators**. IFL.
+
+### 2009
+
+* Dragos, I., & Odersky, M. **Compiling generics through user-directed type specialization**. ICOOOLPS@ECOOP.
+
+### 2010
+
+* Oliveira, B.C., Moors, A., & Odersky, M. **Type classes as objects and implicits**. Proceedings of the ACM international conference on Object oriented programming systems languages and applications.
+
+### 2011
+
+* Jones, R.E., Hosking, A.L., & Moss, J.E. **The Garbage Collection Handbook: The art of automatic memory management**. Chapman and Hall / CRC Applied Algorithms and Data Structures Series.
+
+### 2013
+
+* Petříček, T., Orchard, D.A., & Mycroft, A. **Coeffects: Unified Static Analysis of Context-Dependence**. ICALP.
+
+### 2014
+
+* Petříček, T., Orchard, D.A., & Mycroft, A. **Coeffects: a calculus of context-dependent computation**. ICFP.
+
+### 2017
+
+* Eisenberg, R.A., & Jones, S.L. **Levity polymorphism**. Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation.
+
+### 2020
+
+* Downen, P., Ariola, Z.M., Jones, S.L., & Eisenberg, R.A. **Kinds are calling conventions**. Proceedings of the ACM on Programming Languages, 4, 1 - 29.
+* Wood, D.A. **Polymorphisation: Improving Rust compilation times through intelligent monomorphisation**.
+* Willsey, M., Nandi, C., Wang, Y.R., Flatt, O., Tatlock, Z., & Panchekha, P. **egg: Fast and extensible equality saturation**. Proceedings of the ACM on Programming Languages, 5, 1 - 29.
+* Mokhov, A., Mitchell, N., & Peyton Jones, S. **Build systems à la carte: Theory and practice**. Journal of Functional Programming, 30.
+
+### 2021
+
+* Huang, X., & Oliveira, B.C. **Distributing intersection and union types with splits and duality (functional pearl)**. Proceedings of the ACM on Programming Languages, 5, 1 - 24.
+* Dunfield, J., & Krishnaswami, N.R. **Bidirectional Typing**. ACM Computing Surveys (CSUR), 54, 1 - 38.
+* Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Functional Programming Language with Versions**. Art Sci. Eng. Program., 6, 5.
+
+### 2022
+
+* Brachthäuser, J.I., Schuster, P., Lee, E., & Boruch-Gruszecki, A. **Effects, capabilities, and boxes: from scope-based reasoning to type-based reasoning and back**. Proceedings of the ACM on Programming Languages, 6, 1 - 30.
+* Kovács, A. **Staged compilation with two-level type theory**. Proceedings of the ACM on Programming Languages, 6, 540 - 569.
+* Marshall, D., Vollmer, M., & Orchard, D.A. **Linearity and Uniqueness: An Entente Cordiale**. ESOP.
+* Odersky, M., Boruch-Gruszecki, A., Lee, E., Brachthäuser, J.I., & Lhoták, O. **Scoped Capabilities for Polymorphic Effects**. ArXiv, abs/2207.03402.
+* Rehman, B., Huang, X., Xie, N., & Oliveira, B.C. **Union Types with Disjoint Switches**. ECOOP.
+* Madsen, M. **The Principles of the Flix Programming Language**. Proceedings of the 2022 ACM SIGPLAN International Symposium on New Ideas, New Paradigms, and Reflections on Programming and Software.
+* Gratzer, D., Sterling, J., Angiuli, C., Coquand, T., & Birkedal, L. **Controlling unfolding in type theory**. ArXiv, abs/2210.05420.
+* Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Step toward Programming with Versions in Real-World Functional Languages**. Proceedings of the 14th ACM International Workshop on Context-Oriented Programming and Advanced Modularity.
+* Lubis, L.A., Tanabe, Y., Aotani, T., & Masuhara, H. **BatakJava: An Object-Oriented Programming Language with Versions**. Proceedings of the 15th ACM SIGPLAN International Conference on Software Language Engineering.
+
+###
+
+* Lionel Parreaux. **The Ultimate Conditional Syntax**.
+* Jonathan Sterling, Robert Harper. **A metalanguage for multi-phase modularity**.
 
 ## Repositories
 
@@ -29,7 +67,9 @@
 * [JetBrains/kotlin](https://github.com/JetBrains/kotlin)
 * [Mojang/DataFixerUpper](https://github.com/Mojang/DataFixerUpper)
 * [Mojang/brigadier](https://github.com/Mojang/brigadier)
+* [egraphs-good/egg](https://github.com/egraphs-good/egg)
 * [rust-lang/rust](https://github.com/rust-lang/rust)
+* [snowleopard/build](https://github.com/snowleopard/build)
 
 ## Videos
 
@@ -40,6 +80,9 @@
 ## Articles
 
 * [Major & Minor Versions in Minecraft: Java Edition | Minecraft Help](https://help.minecraft.net/hc/en-us/articles/9971900758413-Major-Minor-Versions-in-Minecraft-Java-Edition)
+* [Query-based compiler architectures | Olle Fredriksson's blog](https://ollef.github.io/blog/posts/query-based-compilers.html)
+* [Queries: demand-driven compilation - Rust Compiler Development Guide](https://rustc-dev-guide.rust-lang.org/query.html)
+* [Monomorphization - Rust Compiler Development Guide](https://rustc-dev-guide.rust-lang.org/backend/monomorph.html)
 
 ## Issues
 
