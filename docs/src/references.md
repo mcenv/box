@@ -73,8 +73,8 @@
   Inconsistent constant results of commands
 * [![MC-184512 Unresolved](https://img.shields.io/badge/MC--184512-Unresolved-red)](https://bugs.mojang.com/browse/MC-184512)
   commands.json does not include redirect paths to the root node
-* [![MC-196890 Unresolved](https://img.shields.io/badge/MC--196890-Unresolved-red)](https://bugs.mojang.com/browse/MC-196890) "
-  /data merge" deep-copies target compound tag
+* [![MC-196890 Unresolved](https://img.shields.io/badge/MC--196890-Unresolved-red)](https://bugs.mojang.com/browse/MC-196890)
+  "/data merge" deep-copies target compound tag
 * [![MC-201769 Fixed](https://img.shields.io/badge/MC--201769-Fixed-brightgreen)](https://bugs.mojang.com/browse/MC-201769)
   Copying deeply nested NBT causes StackOverflowError
 * [![MC-208005 Unresolved](https://img.shields.io/badge/MC--208005-Unresolved-red)](https://bugs.mojang.com/browse/MC-208005)
@@ -83,16 +83,16 @@
   Target NBT is changed despite being reported as unchanged
 * [![MC-221421 Fixed](https://img.shields.io/badge/MC--221421-Fixed-brightgreen)](https://bugs.mojang.com/browse/MC-221421)
   A list tag can be modified during insertion into itself
-* [![MC-225425 Unresolved](https://img.shields.io/badge/MC--225425-Unresolved-red)](https://bugs.mojang.com/browse/MC-225425) "
-  /data modify" inserts source elements into target collection one by one
+* [![MC-225425 Unresolved](https://img.shields.io/badge/MC--225425-Unresolved-red)](https://bugs.mojang.com/browse/MC-225425)
+  "/data modify" inserts source elements into target collection one by one
 * [![MC-227538 Unresolved](https://img.shields.io/badge/MC--227538-Unresolved-red)](https://bugs.mojang.com/browse/MC-227538)
   Inserting elements into collection tags can be aborted in the middle
 * [![MC-231408 Works As Intended](https://img.shields.io/badge/MC--231408-Works%20As%20Intended-yellow)](https://bugs.mojang.com/browse/MC-231408)
   A function tag collapses the same values
-* [![MC-248261 Unresolved](https://img.shields.io/badge/MC--248261-Unresolved-red)](https://bugs.mojang.com/browse/MC-248261) "
-  /execute store" makes the storage file dirty without any modifications
-* [![MC-248769 Invalid](https://img.shields.io/badge/MC--248769-Invalid-lightgray)](https://bugs.mojang.com/browse/MC-248769) "
-  /data remove" always traverses the NBT path to the end
+* [![MC-248261 Unresolved](https://img.shields.io/badge/MC--248261-Unresolved-red)](https://bugs.mojang.com/browse/MC-248261)
+  "/execute store" makes the storage file dirty without any modifications
+* [![MC-248769 Invalid](https://img.shields.io/badge/MC--248769-Invalid-lightgray)](https://bugs.mojang.com/browse/MC-248769)
+  "/data remove" always traverses the NBT path to the end
 * [![MC-254353 Unresolved](https://img.shields.io/badge/MC--254353-Unresolved-red)](https://bugs.mojang.com/browse/MC-254353)
   A packet to remove the score is always broadcast when a score is reset
 * [![MC-258195 Fixed](https://img.shields.io/badge/MC--258195-Fixed-brightgreen)](https://bugs.mojang.com/browse/MC-258195)
