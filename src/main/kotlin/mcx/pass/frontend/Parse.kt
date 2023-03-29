@@ -251,16 +251,16 @@ class Parse private constructor(
               "long"           -> S.Term.Long(until())
               "float"          -> S.Term.Float(until())
               "double"         -> S.Term.Double(until())
-              "string"     -> S.Term.String(until())
-              "byte_array" -> S.Term.ByteArray(until())
-              "int_array"  -> S.Term.IntArray(until())
-              "long_array" -> S.Term.LongArray(until())
-              "list"       -> {
+              "string"         -> S.Term.String(until())
+              "byte_array"     -> S.Term.ByteArray(until())
+              "int_array"      -> S.Term.IntArray(until())
+              "long_array"     -> S.Term.LongArray(until())
+              "list"           -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.List(element, until())
               }
-              "compound"   -> {
+              "compound"       -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -271,17 +271,17 @@ class Parse private constructor(
                 }
                 S.Term.Compound(elements, until())
               }
-              "point"      -> {
+              "point"          -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Point(element, until())
               }
-              "union"      -> {
+              "union"          -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())
               }
-              "func"       -> {
+              "func"           -> {
                 skipTrivia()
                 val params = parseList(',', '(', ')') {
                   skipTrivia()

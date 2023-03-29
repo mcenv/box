@@ -1,7 +1,10 @@
 package mcx.pass.frontend
 
-import kotlinx.collections.immutable.*
-import mcx.ast.*
+import kotlinx.collections.immutable.toPersistentList
+import mcx.ast.DefinitionLocation
+import mcx.ast.Lvl
+import mcx.ast.Modifier
+import mcx.ast.toLvl
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
@@ -138,10 +141,10 @@ class Elaborate private constructor(
       term is R.Term.Float && synth(type)                         -> C.Term.Float to Value.Type.FLOAT
       term is R.Term.FloatOf && synth(type)                       -> C.Term.FloatOf(term.value) to Value.Float
       term is R.Term.Double && synth(type)                        -> C.Term.Double to Value.Type.DOUBLE
-      term is R.Term.DoubleOf && synth(type)                                   -> C.Term.DoubleOf(term.value) to Value.Double
-      term is R.Term.String && synth(type)                                     -> C.Term.String to Value.Type.STRING
-      term is R.Term.StringOf && synth(type)                                   -> C.Term.StringOf(term.value) to Value.String
-      term is R.Term.ByteArray && synth(type)                                  -> C.Term.ByteArray to Value.Type.BYTE_ARRAY
+      term is R.Term.DoubleOf && synth(type)                      -> C.Term.DoubleOf(term.value) to Value.Double
+      term is R.Term.String && synth(type)                        -> C.Term.String to Value.Type.STRING
+      term is R.Term.StringOf && synth(type)                      -> C.Term.StringOf(term.value) to Value.String
+      term is R.Term.ByteArray && synth(type)                     -> C.Term.ByteArray to Value.Type.BYTE_ARRAY
       term is R.Term.ByteArrayOf && synth(type)                   -> {
         val elements = term.elements.map { checkTerm(it, phase, Value.Byte) }
         C.Term.ByteArrayOf(elements) to Value.ByteArray
@@ -243,7 +246,7 @@ class Elaborate private constructor(
           }
         }
       }
-      term is R.Term.Apply && synth(type)                                      -> {
+      term is R.Term.Apply && synth(type)                         -> {
         val (func, maybeFuncType) = synthTerm(term.func, phase)
         val funcType = when (val funcType = meta.forceValue(maybeFuncType)) {
           is Value.Func -> funcType
@@ -268,17 +271,17 @@ class Elaborate private constructor(
         val type = type ?: Value.Code(lazyOf(elementType))
         C.Term.CodeOf(element) to type
       }
-      term is R.Term.Splice && match<Value>(type)                              -> {
+      term is R.Term.Splice && match<Value>(type)                 -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.Code(lazyOf(type)))
         C.Term.Splice(element) to type
       }
-      term is R.Term.Command && match<Value>(type)                             -> {
+      term is R.Term.Command && match<Value>(type)                -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.String)
         C.Term.Command(element, next().quoteValue(type)) to type
       }
-      term is R.Term.Let && match<Value>(type)                                 -> {
+      term is R.Term.Let && match<Value>(type)                    -> {
         val (init, initType) = synthTerm(term.init, phase)
         restoring {
           val (binder, binderType) = synthPattern(term.binder, phase)

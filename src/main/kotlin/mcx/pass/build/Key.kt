@@ -20,12 +20,12 @@ sealed interface Key<V> {
 
   data class Resolved(
     val location: ModuleLocation,
-    val instruction: Instruction? = null
+    val instruction: Instruction? = null,
   ) : Key<Resolve.Result>
 
   data class Elaborated(
     val location: ModuleLocation,
-    val instruction: Instruction? = null
+    val instruction: Instruction? = null,
   ) : Key<Elaborate.Result>
 
   data class Staged(

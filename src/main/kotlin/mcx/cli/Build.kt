@@ -5,8 +5,7 @@ import kotlinx.cli.Subcommand
 import kotlinx.coroutines.runBlocking
 import mcx.lsp.diagnosticMessage
 import mcx.pass.build.Build
-import java.util.*
-import kotlin.io.path.*
+import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 @OptIn(ExperimentalCli::class)

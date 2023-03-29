@@ -7,7 +7,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import mcx.ast.*
+import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
@@ -17,7 +18,9 @@ import mcx.pass.backend.Generate
 import mcx.pass.backend.Lift
 import mcx.pass.backend.Pack
 import mcx.pass.backend.Stage
-import mcx.pass.frontend.*
+import mcx.pass.frontend.Elaborate
+import mcx.pass.frontend.Parse
+import mcx.pass.frontend.Resolve
 import mcx.pass.prelude
 import org.eclipse.lsp4j.Diagnostic
 import java.nio.file.*

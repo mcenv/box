@@ -90,19 +90,19 @@ class Lift private constructor(
         L.Term.LongArrayOf(elements)
       }
       is C.Term.List        -> UNIT
-      is C.Term.ListOf      -> {
+      is C.Term.ListOf     -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.ListOf(elements)
       }
-      is C.Term.Compound    -> UNIT
-      is C.Term.CompoundOf  -> {
+      is C.Term.Compound   -> UNIT
+      is C.Term.CompoundOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
-      is C.Term.Point       -> UNIT
-      is C.Term.Union       -> UNIT
-      is C.Term.Func        -> UNIT
-      is C.Term.FuncOf  -> {
+      is C.Term.Point      -> UNIT
+      is C.Term.Union      -> UNIT
+      is C.Term.Func       -> UNIT
+      is C.Term.FuncOf     -> {
         with(emptyCtx()) {
           val freeVars = freeVars(term)
           val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
@@ -117,21 +117,21 @@ class Lift private constructor(
           L.Term.FuncOf(entries, tag)
         }
       }
-      is C.Term.Apply   -> {
+      is C.Term.Apply      -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
         val type = eraseType(term.type)
         L.Term.Apply(func, args, type)
       }
-      is C.Term.Code    -> unexpectedTerm(term)
-      is C.Term.CodeOf  -> unexpectedTerm(term)
-      is C.Term.Splice  -> unexpectedTerm(term)
-      is C.Term.Command -> {
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Command    -> {
         val element = (term.element as C.Term.StringOf).value
         val type = eraseType(term.type)
         L.Term.Command(element, type)
       }
-      is C.Term.Let     -> {
+      is C.Term.Let        -> {
         val init = liftTerm(term.init)
         restoring {
           val binder = liftPattern(term.binder)
@@ -139,16 +139,16 @@ class Lift private constructor(
           L.Term.Let(binder, init, body)
         }
       }
-      is C.Term.Var     -> {
+      is C.Term.Var        -> {
         val type = eraseType(term.type)
         L.Term.Var(term.name, term.idx, type)
       }
-      is C.Term.Def     -> {
+      is C.Term.Def        -> {
         val type = eraseType(term.type)
         L.Term.Def(term.name, type)
       }
-      is C.Term.Meta    -> unexpectedTerm(term)
-      is C.Term.Hole    -> unexpectedTerm(term)
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 
@@ -202,23 +202,23 @@ class Lift private constructor(
       is C.Term.LongArray   -> linkedMapOf()
       is C.Term.LongArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.List        -> freeVars(term.element)
-      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Compound   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.ListOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Compound    -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf  -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Point       -> freeVars(term.element)
+      is C.Term.Union       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code        -> unexpectedTerm(term)
+      is C.Term.CodeOf      -> unexpectedTerm(term)
+      is C.Term.Splice      -> unexpectedTerm(term)
+      is C.Term.Command     -> linkedMapOf()
+      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var         -> linkedMapOf(term.name to eraseType(term.type))
+      is C.Term.Def         -> linkedMapOf()
+      is C.Term.Meta        -> unexpectedTerm(term)
+      is C.Term.Hole        -> unexpectedTerm(term)
     }
   }
 
