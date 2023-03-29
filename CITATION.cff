@@ -1,0 +1,6 @@
+cff-version: 1.2.0
+title: mcx
+abstract: A programming language for Minecraft
+version: 0.1.0
+authors:
+  - name: intsuc
