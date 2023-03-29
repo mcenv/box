@@ -42,6 +42,18 @@
 
 ## Issues
 
+* [![MC-116388 Fixed](https://img.shields.io/badge/MC--116388-Fixed-brightgreen)](https://bugs.mojang.com/browse/MC-116388)
+  Chain command blocks can clone themselves to create an infinite loop which freezes the server
+* [![MC-124444 Won't Fix](https://img.shields.io/badge/MC--124444-Won't%20Fix-orange)](https://bugs.mojang.com/browse/MC-124444)
+  Gamerule maxCommandChainLength allows 0 and negative integer values
+* [![MC-124446 Won't Fix](https://img.shields.io/badge/MC--124446-Won't%20Fix-orange)](https://bugs.mojang.com/browse/MC-124446)
+  No warning message when function is terminated because of maxCommandChainLength gamerule
+* [![MC-124447 Works As Intended](https://img.shields.io/badge/MC--124447-Works%20As%20Intended-yellow)](https://bugs.mojang.com/browse/MC-124447)
+  Modifying maxCommandChainLength inside of function or command blocks does not affect currently running chain
+* [![MC-143266 Unresolved](https://img.shields.io/badge/MC--143266-Unresolved-red)](https://bugs.mojang.com/browse/MC-143266)
+  Nested function calls reevaluate maxCommandChainLength before queueing commands
+* [![MC-143269 Unresolved](https://img.shields.io/badge/MC--143269-Unresolved-red)](https://bugs.mojang.com/browse/MC-143269)
+  Nested intermediate functions are skipped when maxCommandChainLength commands are already queued
 * [![MC-159633 Unresolved](https://img.shields.io/badge/MC--159633-Unresolved-red)](https://bugs.mojang.com/browse/MC-159633)
   Command feedback messages are unnecessarily created during function execution
 * [![MC-163943 Unresolved](https://img.shields.io/badge/MC--163943-Unresolved-red)](https://bugs.mojang.com/browse/MC-163943)
