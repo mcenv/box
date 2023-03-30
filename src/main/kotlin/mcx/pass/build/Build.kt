@@ -23,10 +23,12 @@ import mcx.pass.frontend.Parse
 import mcx.pass.frontend.Resolve
 import mcx.pass.prelude
 import org.eclipse.lsp4j.Diagnostic
+import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.*
 
 // TODO: redesign
@@ -231,8 +233,13 @@ class Build(
     return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
   }
 
+  data class Result(
+    val success: Boolean,
+    val diagnosticsByPath: List<Pair<Path, List<Diagnostic>>>,
+  )
+
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
-  suspend operator fun invoke(): List<Pair<Path, List<Diagnostic>>> {
+  suspend operator fun invoke(): Result {
     val serverProperties = Properties().apply {
       load(root.resolve("server.properties").inputStream().buffered())
     }
@@ -245,6 +252,7 @@ class Build(
 
     return coroutineScope {
       val context = Context(config)
+      val success = AtomicBoolean(true)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
       val locations = src
         .walk()
@@ -253,7 +261,11 @@ class Build(
           async {
             val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation()))
             if (elaborated.value.diagnostics.isNotEmpty()) {
-              diagnosticsByPath += path to elaborated.value.diagnostics
+              diagnosticsByPath += path to elaborated.value.diagnostics.also { diagnostics ->
+                if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
+                  success.set(false)
+                }
+              }
             }
             elaborated.value.module.definitions.map { it.name }
           }
@@ -262,8 +274,8 @@ class Build(
         .awaitAll()
         .flatten()
 
-      if (diagnosticsByPath.isNotEmpty()) {
-        return@coroutineScope diagnosticsByPath
+      if (!success.get()) {
+        return@coroutineScope Result(false, diagnosticsByPath)
       }
 
       val outputModules = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
@@ -300,7 +312,7 @@ class Build(
           )
         }
 
-      emptyList()
+      Result(true, diagnosticsByPath)
     }
   }
 

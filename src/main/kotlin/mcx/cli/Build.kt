@@ -14,11 +14,16 @@ object Build : Subcommand(
   "Build the current pack",
 ) {
   override fun execute() {
-    runBlocking {
-      Build(Path(""))().forEach { (path, diagnostics) ->
-        diagnostics.forEach { println(diagnosticMessage(path, it)) }
-        exitProcess(1)
+    val result = runBlocking {
+      Build(Path(""))()
+    }
+    result.diagnosticsByPath.forEach { (path, diagnostics) ->
+      diagnostics.forEach {
+        println(diagnosticMessage(path, it))
       }
+    }
+    if (!result.success) {
+      exitProcess(1)
     }
   }
 }

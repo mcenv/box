@@ -13,21 +13,27 @@ object BuildTests {
 
   @Test
   fun std() {
-    val diagnosticsByPath = runBlocking {
+    val result = runBlocking {
       Build(std, std)()
-    }.onEach { (path, diagnostics) ->
-      diagnostics.forEach { println(diagnosticMessage(path, it)) }
     }
-    assert(diagnosticsByPath.isEmpty())
+    result.diagnosticsByPath.forEach { (path, diagnostics) ->
+      diagnostics.forEach {
+        println(diagnosticMessage(path, it))
+      }
+    }
+    assert(result.success)
   }
 
   @Test
   fun test() {
-    val diagnosticsByPath = runBlocking {
+    val result = runBlocking {
       Build(test, std)()
-    }.onEach { (path, diagnostics) ->
-      diagnostics.forEach { println(diagnosticMessage(path, it)) }
     }
-    assert(diagnosticsByPath.isEmpty())
+    result.diagnosticsByPath.forEach { (path, diagnostics) ->
+      diagnostics.forEach {
+        println(diagnosticMessage(path, it))
+      }
+    }
+    assert(result.success)
   }
 }

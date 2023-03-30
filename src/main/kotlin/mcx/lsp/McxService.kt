@@ -139,7 +139,7 @@ class McxService : TextDocumentService,
   @JsonRequest
   private fun build(): CompletableFuture<Boolean> {
     return scope.future {
-      build.invoke().isEmpty()
+      build.invoke().success
     }
   }
 

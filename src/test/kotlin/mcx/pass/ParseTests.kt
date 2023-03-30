@@ -46,6 +46,7 @@ object ParseTests {
           imports = emptyList(),
           definitions = listOf(
             Definition.Def(
+              annotations = emptyList(),
               modifiers = emptyList(),
               name = Ranged("a", Range(Position(0, 4), Position(0, 5))),
               type = Term.Int(Range(Position(0, 8), Position(0, 11))),
