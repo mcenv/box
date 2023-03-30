@@ -8,7 +8,7 @@ object Resolved {
   data class Module(
     val name: ModuleLocation,
     val imports: List<Ranged<DefinitionLocation>>,
-    val definitions: Map<DefinitionLocation, Definition>,
+    val definitions: LinkedHashMap<DefinitionLocation, Definition>,
   )
 
   sealed interface Definition {

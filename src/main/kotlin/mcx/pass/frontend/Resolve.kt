@@ -22,14 +22,16 @@ class Resolve private constructor(
   private val input: Parse.Result,
   private val instruction: Instruction?,
 ) {
-  private val locations: List<DefinitionLocation> =
+  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private var definition: Location? = null
+  private val locations: Set<DefinitionLocation> =
     input.module.definitions.mapNotNull { definition ->
       if (definition is S.Definition.Hole) {
         null
       } else {
         input.module.name / definition.name.value
       }
-    } +
+    }.toHashSet() +
     dependencies.mapNotNull { dependency ->
       when (val definition = dependency.module) {
         null -> {
@@ -45,8 +47,6 @@ class Resolve private constructor(
         }
       }
     }
-  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
-  private var definition: Location? = null
 
   private fun resolve(): Result {
     val module = resolveModule(input.module)
@@ -60,9 +60,17 @@ class Resolve private constructor(
   private fun resolveModule(
     module: S.Module,
   ): R.Module {
-    val definitions = module.definitions
-      .mapNotNull { definition -> resolveDefinition(definition).takeUnless { it is R.Definition.Hole } }
-      .associateBy { it.name.value }
+    val definitions = linkedMapOf<DefinitionLocation, R.Definition>()
+    module.definitions.forEach { definition ->
+      val definition = resolveDefinition(definition)
+      if (definition !is R.Definition.Hole) {
+        if (definition.name.value in definitions) {
+          diagnostics += duplicatedName(definition.name.value.name, definition.name.range)
+        } else {
+          definitions[definition.name.value] = definition
+        }
+      }
+    }
     return R.Module(module.name, module.imports, definitions)
   }
 
@@ -271,7 +279,7 @@ class Resolve private constructor(
     range: Range,
   ): DefinitionLocation? {
     val expected = name.split("::").let { ModuleLocation(it.dropLast(1)) / it.last() }
-    val candidates = locations.filter { actual ->
+    val candidates = locations.filter { actual -> // TODO: optimize search
       expected.module.parts.size <= actual.module.parts.size &&
       (expected.name == actual.name) &&
       (expected.module.parts.asReversed() zip actual.module.parts.asReversed()).all { it.first == it.second }
@@ -332,6 +340,17 @@ class Resolve private constructor(
     return diagnostic(
       range,
       "name not found: $name",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun duplicatedName(
+    name: String,
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "duplicated name: $name",
       DiagnosticSeverity.Error,
     )
   }
