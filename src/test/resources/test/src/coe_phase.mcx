@@ -8,4 +8,4 @@ def def_world_into_const : int := const_code_of_zero;
 
 const def def_const_into_world : code int := let x := `0; `x;
 
-def var_world_into_const : int := let x as int := 0; $x;
+def var_world_into_const : int := let x := 0; $x;
