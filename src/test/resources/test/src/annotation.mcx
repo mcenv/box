@@ -1,3 +1,15 @@
-@deprecated def deprecated_zero : int := 0;
+@deprecated
+def deprecated_zero : int := 0;
 
 def use_deprecated : int := deprecated_zero;
+
+@unstable
+def unstable_zero : int := 0;
+
+def use_unstable : int := unstable_zero;
+
+@deprecated
+@unstable 
+def deprecated_unstable_zero : int := 0;
+
+def use_deprecated_unstable : int := deprecated_unstable_zero;

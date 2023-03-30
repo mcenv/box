@@ -192,8 +192,8 @@
       ]
     },
     "annotation": {
-      "match": "@(?:deprecated)\\b",
-      "name": "keyword.deprecated.mcx"
+      "match": "@(?:deprecated|unstable)\\b",
+      "name": "keyword.annotation.mcx"
     },
     "modifier": {
       "match": "\\b(?:builtin|export|rec|const)\\b",

@@ -101,9 +101,11 @@ class Parse private constructor(
       annotations += ranging {
         when (readWord()) {
           "deprecated" -> Ranged(Annotation.Deprecated, until())
+          "unstable"   -> Ranged(Annotation.Unstable, until())
           else         -> Ranged(Annotation.Hole, until())
         }
       }
+      skipTrivia()
     }
     return annotations
   }

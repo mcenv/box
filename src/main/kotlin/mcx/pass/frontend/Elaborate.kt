@@ -317,6 +317,9 @@ class Elaborate private constructor(
             if (Annotation.Deprecated in definition.annotations) {
               diagnostics += deprecated(term.range)
             }
+            if (Annotation.Unstable in definition.annotations) {
+              diagnostics += unstable(term.range)
+            }
 
             val actualPhase = getPhase(definition.modifiers)
             val type = freeze().evalTerm(definition.type)
@@ -708,6 +711,16 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "deprecated",
+        DiagnosticSeverity.Warning,
+      )
+    }
+
+    private fun unstable(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "unstable",
         DiagnosticSeverity.Warning,
       )
     }
