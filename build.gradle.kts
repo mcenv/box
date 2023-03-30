@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
-  kotlin("jvm") version "1.8.10"
+  kotlin("jvm") version "1.8.20"
   kotlin("plugin.serialization") version "1.8.10"
   kotlin("plugin.allopen") version "1.8.10"
   id("org.jetbrains.dokka") version "1.8.10"
