@@ -1,0 +1,3 @@
+@deprecated def deprecated_zero : int := 0;
+
+def use_deprecated : int := deprecated_zero;

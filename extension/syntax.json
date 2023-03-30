@@ -51,6 +51,9 @@
           "include": "#comment"
         },
         {
+          "include": "#annotation"
+        },
+        {
           "include": "#modifier"
         },
         {
@@ -187,6 +190,10 @@
           "name": "variable.mcx"
         }
       ]
+    },
+    "annotation": {
+      "match": "@(?:deprecated)\\b",
+      "name": "keyword.deprecated.mcx"
     },
     "modifier": {
       "match": "\\b(?:builtin|export|rec|const)\\b",

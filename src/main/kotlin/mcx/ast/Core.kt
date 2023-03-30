@@ -10,10 +10,12 @@ object Core {
   )
 
   sealed interface Definition {
+    val annotations: List<Annotation>
     val modifiers: List<Modifier>
     val name: DefinitionLocation
 
     data class Def(
+      override val annotations: List<Annotation>,
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val type: Term,

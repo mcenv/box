@@ -1,5 +1,6 @@
 package mcx.pass.frontend
 
+import mcx.ast.Annotation
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.ast.Surface
@@ -64,8 +65,9 @@ class Parse private constructor(
     return S.Module(module, imports, definitions)
   }
 
-  private fun parseDefinition(): S.Definition =
-    ranging {
+  private fun parseDefinition(): S.Definition {
+    return ranging {
+      val annotations = parseAnnotations()
       val (modifiers, keyword) = parseModifiers()
       when (keyword) {
         "def" -> {
@@ -81,16 +83,30 @@ class Parse private constructor(
             skipTrivia()
             parseTerm()
           }
-          S.Definition.Def(modifiers, name, type, body, until())
+          S.Definition.Def(annotations, modifiers, name, type, body, until())
         }
         else  -> null
-      }
-      ?: run {
+      } ?: run {
         val range = until()
         diagnostics += expectedDefinition(range)
         S.Definition.Hole(range)
       }
     }
+  }
+
+  private fun parseAnnotations(): List<Ranged<Annotation>> {
+    val annotations = mutableListOf<Ranged<Annotation>>()
+    while (canRead() && peek() == '@') {
+      skip()
+      annotations += ranging {
+        when (readWord()) {
+          "deprecated" -> Ranged(Annotation.Deprecated, until())
+          else         -> Ranged(Annotation.Hole, until())
+        }
+      }
+    }
+    return annotations
+  }
 
   private fun parseModifiers(): Pair<List<Ranged<Modifier>>, String?> {
     val modifiers = mutableListOf<Ranged<Modifier>>()
@@ -651,12 +667,12 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedPattern(
+  private fun expectedAnnotation(
     range: Range,
   ): Diagnostic {
     return diagnostic(
       range,
-      "expected: pattern",
+      "expected: annotation",
       DiagnosticSeverity.Error,
     )
   }

@@ -22,7 +22,7 @@ class Stage private constructor() {
         } else {
           val type = stageTerm(definition.type)
           val body = definition.body?.let { stageTerm(it) }
-          Definition.Def(definition.modifiers, definition.name, type, body)
+          Definition.Def(definition.annotations, definition.modifiers, definition.name, type, body)
         }
       }
     }
