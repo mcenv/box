@@ -9,8 +9,9 @@ class Context(
 ) {
   private val id: AtomicInteger = AtomicInteger(0)
 
-  fun freshId(): Int =
-    id.getAndIncrement()
+  fun freshId(): Int {
+    return id.getAndIncrement()
+  }
 
   companion object {
     val DISPATCH: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch")
