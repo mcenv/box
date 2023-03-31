@@ -1,1 +1,5 @@
+export def min_value : float := 1.4e-45f;
+
+export def max_value : float := 3.4028235e38f;
+
 export builtin def to_string : func (float) -> string;
