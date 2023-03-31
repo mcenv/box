@@ -2,4 +2,10 @@ export def min_value : double := 4.9e-324d;
 
 export def max_value : double := 1.7976931348623157e308d;
 
+@unstable
+export def positive_infinity : double := /"data modify storage mcx: double append value 2e308";
+
+@unstable
+export def negative_infinity : double := /"data modify storage mcx: double append value -2e308";
+
 export builtin def to_string : func (double) -> string;
