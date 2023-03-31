@@ -9,6 +9,7 @@ import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.toIdx
 import mcx.ast.toLvl
+import mcx.util.mapWith
 
 fun emptyEnv(): Env {
   return persistentListOf()
@@ -102,9 +103,13 @@ fun Env.evalTerm(term: Term): Value {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.Union(elements)
     }
-    is Term.Func        -> {
-      val params = term.params.map { (_, type) -> lazy { evalTerm(type) } }
-      val binders = term.params.map { (param, _) -> evalPattern(param) }
+    is Term.Func    -> {
+      val (binders, params) = term.params.mapWith(this) { modify, (param, type) ->
+        val type = lazyOf(evalTerm(type))
+        val param = evalPattern(param)
+        modify(this + next().collect(listOf(param)))
+        param to type
+      }.unzip()
       val result = Closure(this, binders, term.result)
       Value.Func(params, result)
     }
@@ -133,31 +138,31 @@ fun Env.evalTerm(term: Term): Value {
       val element = lazy { evalTerm(term.element) }
       Value.CodeOf(element)
     }
-    is Term.Splice      -> {
+    is Term.Splice  -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> Value.Splice(element)
       }
     }
-    is Term.Command     -> {
+    is Term.Command -> {
       val element = lazy { evalTerm(term.element) }
       val type = evalTerm(term.type)
       Value.Command(element, type)
     }
-    is Term.Let         -> {
+    is Term.Let     -> {
       val init = lazy { evalTerm(term.init) }
       val binder = evalPattern(term.binder)
       (this + (binder binds init)).evalTerm(term.body)
     }
-    is Term.Var         -> this[Lvl(size).toLvl(term.idx).value].value
-    is Term.Def         -> {
+    is Term.Var     -> this[next().toLvl(term.idx).value].value
+    is Term.Def     -> {
       term.body?.let { evalTerm(it) } ?: run {
         val type = evalTerm(term.type)
         Value.Def(term.name, null, type)
       }
     }
-    is Term.Meta        -> Value.Meta(term.index, term.source)
-    is Term.Hole        -> Value.Hole
+    is Term.Meta    -> Value.Meta(term.index, term.source)
+    is Term.Hole    -> Value.Hole
   }
 }
 
@@ -237,6 +242,7 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.Union(elements)
     }
     is Value.Func        -> {
+      // TODO: fix offsets
       val params = (value.result.binders zip value.params).map { (binder, param) ->
         val binder = quotePattern(binder)
         val param = quoteValue(param.value)
@@ -246,6 +252,7 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.Func(params, result)
     }
     is Value.FuncOf      -> {
+      // TODO: fix offsets
       val params = value.result.binders.map { quotePattern(it) }
       val result = quoteClosure(value.result)
       Term.FuncOf(params, result)

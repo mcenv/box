@@ -113,17 +113,24 @@ class Meta {
         Term.Union(elements)
       }
       is Term.Func       -> {
+        var env = this
         val params = term.params.map { (param, type) ->
-          val param = zonkPattern(param)
-          val type = zonkTerm(type)
+          val type = env.zonkTerm(type)
+          val param = env.zonkPattern(param)
+          env += env.next().collect(listOf(env.evalPattern(param)))
           param to type
         }
-        val result = (this + Lvl(size).collect(params.map { (param, _) -> evalPattern(param) })).zonkTerm(term.result)
+        val result = env.zonkTerm(term.result)
         Term.Func(params, result)
       }
       is Term.FuncOf     -> {
-        val params = term.params.map { zonkPattern(it) }
-        val result = (this + Lvl(size).collect(params.map { evalPattern(it) })).zonkTerm(term.result)
+        var env = this
+        val params = term.params.map { param ->
+          val param = zonkPattern(param)
+          env += env.next().collect(listOf(env.evalPattern(param)))
+          param
+        }
+        val result = env.zonkTerm(term.result)
         Term.FuncOf(params, result)
       }
       is Term.Apply      -> {
@@ -168,7 +175,7 @@ class Meta {
           null -> {
             Term.Meta(term.index, term.source).also { _unsolvedMetas += it.index to it.source }
           }
-          else -> zonkTerm(Lvl(size).quoteValue(solution))
+          else -> zonkTerm(next().quoteValue(solution))
         }
       }
       is Term.Hole       -> term

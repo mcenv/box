@@ -9,6 +9,7 @@ import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.pass.*
+import mcx.util.mapWith
 
 @Suppress("NAME_SHADOWING")
 class Stage private constructor() {
@@ -38,7 +39,7 @@ class Stage private constructor() {
     term: Term,
     phase: Phase,
   ): Term {
-    return Lvl(size).quoteValue(evalTerm(term, phase), phase)
+    return next().quoteValue(evalTerm(term, phase), phase)
   }
 
   private fun Env.evalTerm(
@@ -145,8 +146,12 @@ class Stage private constructor() {
         Value.Union(elements)
       }
       is Term.Func       -> {
-        val params = term.params.map { (_, type) -> lazy { evalTerm(type, phase) } }
-        val binders = term.params.map { (param, _) -> evalPattern(param, phase) }
+        val (binders, params) = term.params.mapWith(this) { modify, (param, type) ->
+          val type = lazyOf(evalTerm(type, phase))
+          val param = evalPattern(param, phase)
+          modify(this + next().collect(listOf(param)))
+          param to type
+        }.unzip()
         val result = Closure(this, binders, term.result)
         Value.Func(params, result)
       }
@@ -209,7 +214,7 @@ class Stage private constructor() {
         }
       }
       is Term.Var        -> {
-        val lvl = Lvl(size).toLvl(term.idx)
+        val lvl = next().toLvl(term.idx)
         when (phase) {
           Phase.WORLD -> {
             val type = evalTerm(term.type, phase)
@@ -311,6 +316,7 @@ class Stage private constructor() {
         Term.Union(elements)
       }
       is Value.Func        -> {
+        // TODO: fix offsets
         val params = (value.result.binders zip value.params).map { (binder, param) ->
           val binder = quotePattern(binder, phase)
           val param = quoteValue(param.value, phase)
@@ -320,6 +326,7 @@ class Stage private constructor() {
         Term.Func(params, result)
       }
       is Value.FuncOf      -> {
+        // TODO: fix offsets
         val params = value.result.binders.map { quotePattern(it, phase) }
         val result = quoteClosure(value.result, phase)
         Term.FuncOf(params, result)

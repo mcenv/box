@@ -226,6 +226,10 @@ sealed interface Value {
 
 typealias Env = PersistentList<Lazy<Value>>
 
+fun Env.next(): Lvl {
+  return Lvl(size)
+}
+
 data class Closure(
   val env: Env,
   val binders: List<Pattern<Value>>,

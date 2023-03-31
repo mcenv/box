@@ -201,11 +201,10 @@ class Elaborate private constructor(
         C.Term.Union(elements) to type
       }
       term is R.Term.Func && synth(type)                                       -> {
-        val env = freeze()
         restoring {
           val params = term.params.map { (pattern, term) ->
             val term = checkTerm(term, phase, meta.freshType(term.range))
-            val pattern = checkPattern(pattern, phase, env.evalTerm(term))
+            val pattern = checkPattern(pattern, phase, freeze()/* TODO: optimize */.evalTerm(term))
             pattern to term
           }
           val result = checkTerm(term.result, phase, meta.freshType(term.result.range))
@@ -256,6 +255,7 @@ class Elaborate private constructor(
           return invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range))
         }
         val args = (term.args zip funcType.params).map { (arg, param) ->
+          // TODO: substitute arg to param
           checkTerm(arg, phase, param.value)
         }
         val values = freeze()
@@ -568,6 +568,7 @@ class Elaborate private constructor(
     return C.Pattern.Hole to Value.Hole
   }
 
+  // TODO: use persistent data structures
   private class Ctx private constructor(
     private val _entries: MutableList<Entry>,
     private val _values: MutableList<Lazy<Value>>,

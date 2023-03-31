@@ -1,0 +1,3 @@
+def id : func (α : type int_tag, a : α) -> α := \(α, a) -> a;
+
+# def use_id : int := id(int, 0);
