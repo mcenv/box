@@ -1,3 +1,7 @@
 def float_overflow : float := 4e38f;
 
 def double_overflow : double := 2e308d;
+
+def float_positive_zero : float := 0f;
+
+def double_positive_zero : double := 0d;

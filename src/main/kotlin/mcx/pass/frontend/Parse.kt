@@ -341,8 +341,8 @@ class Parse private constructor(
                     'b'  -> word.value.dropLast(1).toByteOrNull()?.let { S.Term.ByteOf(it, until()) }
                     's'  -> word.value.dropLast(1).toShortOrNull()?.let { S.Term.ShortOf(it, until()) }
                     'l'  -> word.value.dropLast(1).toLongOrNull()?.let { S.Term.LongOf(it, until()) }
-                    'f'  -> word.value.dropLast(1).toFloatOrNull()?.takeUnless { it.isNaN() }?.let { S.Term.FloatOf(it, until()) }
-                    'd'  -> word.value.dropLast(1).toDoubleOrNull()?.takeUnless { it.isNaN() }?.let { S.Term.DoubleOf(it, until()) }
+                    'f'  -> word.value.dropLast(1).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.FloatOf(it, until()) }
+                    'd'  -> word.value.dropLast(1).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.DoubleOf(it, until()) }
                     else -> word.value.toIntOrNull()?.let { S.Term.IntOf(it, until()) }
                             ?: word.value.toDoubleOrNull()?.let { S.Term.DoubleOf(it, until()) }
                   }
