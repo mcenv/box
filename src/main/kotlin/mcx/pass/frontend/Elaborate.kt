@@ -56,7 +56,7 @@ class Elaborate private constructor(
     val modifiers = definition.modifiers.map { it.value }
     val name = definition.name.value
     return when (definition) {
-      is R.Definition.Def -> {
+      is R.Definition.Def  -> {
         val ctx = emptyCtx()
         val phase = getPhase(modifiers)
         val type = ctx.checkTerm(definition.type, phase, meta.freshType(definition.type.range))
@@ -71,7 +71,9 @@ class Elaborate private constructor(
           meta.unsolvedMetas.forEach { (index, source) ->
             diagnostics += unsolvedMeta(index, source)
           }
-          C.Definition.Def(annotations, modifiers, name, type, body)
+          C.Definition.Def(annotations, modifiers, name, type, body).also {
+            hoverDef(definition.name.range, it)
+          }
         }
       }
       is R.Definition.Hole -> error("unreachable")
@@ -357,7 +359,7 @@ class Elaborate private constructor(
       }
       else                                                                     -> error("unreachable")
     }.also { (_, type) ->
-      hover(type, term.range)
+      hoverType(term.range, type)
     }
   }
 
@@ -424,7 +426,7 @@ class Elaborate private constructor(
       }
       else                                                           -> error("unreachable")
     }.also { (_, type) ->
-      hover(type, pattern.range)
+      hoverType(pattern.range, type)
     }
   }
 
@@ -512,13 +514,31 @@ class Elaborate private constructor(
     return type is V?
   }
 
-  private fun Ctx.hover(
-    type: Value,
+  private fun Ctx.hoverType(
     range: Range,
+    type: Value,
+  ) {
+    val env = freeze()
+    hover(range) { env.prettyValue(type) }
+  }
+
+  private fun hoverDef(
+    range: Range,
+    definition: C.Definition.Def,
+  ) {
+    hover(range) {
+      val name = definition.name.name
+      val type = prettyTerm(definition.type)
+      "def $name : $type"
+    }
+  }
+
+  private fun hover(
+    range: Range,
+    message: () -> String,
   ) {
     if (hover == null && instruction is Instruction.Hover && instruction.position in range) {
-      val env = freeze()
-      hover = { env.prettyValue(type) }
+      hover = message
     }
   }
 
@@ -551,7 +571,7 @@ class Elaborate private constructor(
   private fun Env.prettyValue(
     value: Value,
   ): String {
-    return prettyTerm(with(meta) { zonkTerm(Lvl(size).quoteValue(value)) })
+    return prettyTerm(with(meta) { zonkTerm(next().quoteValue(value)) })
   }
 
   private fun invalidTerm(
