@@ -97,7 +97,7 @@
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "\\b(?:true|false|end_tag|byte_tag|short_tag|int_tag|long_tag|float_tag|double_tag|string_tag|byte_array_tag|int_array_tag|long_array_tag|list_tag|compound_tag)\\b",
+          "match": "\\b(?:true|false|tag_end|tag_byte|tag_short|tag_int|tag_long|tag_float|tag_double|tag_string|tag_byte_array|tag_int_array|tag_long_array|tag_list|tag_compound)\\b",
           "name": "constant.language.mcx"
         },
         {
