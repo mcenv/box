@@ -317,10 +317,20 @@ class Generate private constructor(
         append('l')
       }
       is Nbt.Float     -> {
-        append(nbt.value.toString())
+        when (nbt.value) {
+          Float.POSITIVE_INFINITY -> append("4e38")
+          Float.NEGATIVE_INFINITY -> append("-4e38")
+          else                    -> append(nbt.value.toString())
+        }
         append('f')
       }
-      is Nbt.Double    -> append(nbt.value.toString())
+      is Nbt.Double    -> {
+        when (nbt.value) {
+          Double.POSITIVE_INFINITY -> append("2e308")
+          Double.NEGATIVE_INFINITY -> append("-2e308")
+          else                     -> append(nbt.value.toString())
+        }
+      }
       is Nbt.ByteArray -> {
         append("[B;")
         nbt.elements.forEachSeparated(
