@@ -1,0 +1,111 @@
+const def tag : type tag_byte := tag;
+
+const def tag_of_end : tag := tag_end;
+
+const def tag_of_byte : tag := tag_byte;
+
+const def tag_of_short : tag := tag_short;
+
+const def tag_of_int : tag := tag_int;
+
+const def tag_of_long : tag := tag_long;
+
+const def tag_of_float : tag := tag_float;
+
+const def tag_of_double : tag := tag_double;
+
+const def tag_of_string : tag := tag_string;
+
+const def tag_of_byte_array : tag := tag_byte_array;
+
+const def tag_of_int_array : tag := tag_int_array;
+
+const def tag_of_long_array : tag := tag_long_array;
+
+const def tag_of_list : tag := tag_list;
+
+const def tag_of_compound : tag := tag_compound;
+
+def type : type tag_byte := type tag_byte;
+
+def bool : type tag_byte := bool;
+
+def bool_of_false : bool := false;
+
+def bool_of_true : bool := true;
+
+def if : int := if true then 1 else 0;
+
+def is : bool := 0 is _;
+
+def byte : type tag_byte := byte;
+
+def byte_of : byte := 0b;
+
+def short : type tag_short := short;
+
+def short_of : short := 0s;
+
+def int : type tag_int := int;
+
+def int_of : int := 0;
+
+def long : type tag_long := long;
+
+def long_of : long := 0l;
+
+def float : type tag_float := float;
+
+def float_of : float := 0.0f;
+
+def double : type tag_double := double;
+
+def double_of : double := 0.0d;
+
+def string : type tag_string := string;
+
+def string_of : string := "";
+
+def byte_array : type tag_byte_array := byte_array;
+
+def byte_array_of : byte_array := [byte;];
+
+def int_array : type tag_int_array := int_array;
+
+def int_array_of : int_array := [int;];
+
+def long_array : type tag_long_array := long_array;
+
+def long_array_of : long_array := [long;];
+
+def list : type tag_list := list int;
+
+def list_of : list int := [];
+
+def compound : type tag_compound := compound {};
+
+# def compound_of : compound := {};
+
+def point : type tag_int := point 0;
+
+def union : type tag_int := union {};
+
+def func : type tag_compound := func () -> int;
+
+def func_of : func () -> int := \() -> 0;
+
+def apply : int := (\() -> 0)();
+
+const def code : type tag_end := code int;
+
+const def code_of : code int := `0;
+
+def splice : int := $`0;
+
+def command : int := /"";
+
+def let : int := let _ := 0; 1;
+
+def var : int := let x := 0; x;
+
+def def : int := var;
