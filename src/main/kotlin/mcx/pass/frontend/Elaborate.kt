@@ -313,7 +313,7 @@ class Elaborate private constructor(
           else                                      -> invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
-      term is R.Term.Def && synth(type)                                        -> {
+      term is R.Term.Def && synth(type)         -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             if (Annotation.Deprecated in definition.annotations) {
@@ -343,13 +343,17 @@ class Elaborate private constructor(
           else                -> invalidTerm(expectedDef(term.range))
         }
       }
-      term is R.Term.As && synth(type)                                         -> {
+      term is R.Term.Meta && match<Value>(type) -> {
+        val type = type ?: meta.freshValue(term.range)
+        next().quoteValue(meta.freshValue(term.range)) to type
+      }
+      term is R.Term.As && synth(type)          -> {
         val type = freeze().evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
-      term is R.Term.Hole && match<Value>(type)                                -> C.Term.Hole to Value.Hole
-      synth(type)                                                              -> invalidTerm(cannotSynthesize(term.range))
-      check<Value>(type)                                                       -> {
+      term is R.Term.Hole && match<Value>(type) -> C.Term.Hole to Value.Hole
+      synth(type)                               -> invalidTerm(cannotSynthesize(term.range))
+      check<Value>(type)                        -> {
         val (synth, synthType) = synthTerm(term, phase)
         if (next().sub(synthType, type)) {
           synth to type
@@ -357,7 +361,7 @@ class Elaborate private constructor(
           invalidTerm(freeze().typeMismatch(type, synthType, term.range))
         }
       }
-      else                                                                     -> error("unreachable")
+      else                                      -> error("unreachable")
     }.also { (_, type) ->
       hoverType(term.range, type)
     }

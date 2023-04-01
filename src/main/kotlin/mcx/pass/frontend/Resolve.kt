@@ -218,19 +218,24 @@ class Resolve private constructor(
         }
       }
       is S.Term.Var         -> {
-        when (val level = terms.lastIndexOf(term.name)) {
-          -1   -> {
-            when (val name = resolveName(term.name, range)) {
-              null -> R.Term.Hole(range)
+        when (term.name) {
+          "_"  -> R.Term.Meta(range)
+          else -> {
+            when (val level = terms.lastIndexOf(term.name)) {
+              -1   -> {
+                when (val name = resolveName(term.name, range)) {
+                  null -> R.Term.Hole(range)
+                  else -> {
+                    definition(name, range)
+                    R.Term.Def(name, range)
+                  }
+                }
+              }
               else -> {
-                definition(name, range)
-                R.Term.Def(name, range)
+                val index = Lvl(terms.size).toIdx(Lvl(level))
+                R.Term.Var(term.name, index, range)
               }
             }
-          }
-          else -> {
-            val index = Lvl(terms.size).toIdx(Lvl(level))
-            R.Term.Var(term.name, index, range)
           }
         }
       }

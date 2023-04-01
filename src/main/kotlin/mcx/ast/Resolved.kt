@@ -253,6 +253,10 @@ object Resolved {
       override val range: Range,
     ) : Term
 
+    data class Meta(
+      override val range: Range,
+    ) : Term
+
     data class As(
       val element: Term,
       val type: Term,
