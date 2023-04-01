@@ -161,21 +161,21 @@ class Parse private constructor(
                     skip()
                     S.Term.ListOf(listOf(first), until())
                   }
-                  ';'  -> (first as? S.Term.Var)?.let { header ->
-                    when (header.name) {
-                      "byte" -> {
+                  ';'  -> {
+                    when (first) {
+                      is S.Term.Byte -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.ByteArrayOf(elements, until())
                       }
-                      "int"  -> {
+                      is S.Term.Int  -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.IntArrayOf(elements, until())
                       }
-                      "long" -> {
+                      is S.Term.Long -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
                         S.Term.LongArrayOf(elements, until())
                       }
-                      else   -> null // TODO: improve error message
+                      else           -> null // TODO: improve error message
                     }
                   }
                   ','  -> {
