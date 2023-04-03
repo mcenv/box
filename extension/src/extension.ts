@@ -21,6 +21,7 @@ export function activate(context: ExtensionContext) {
     synchronize: {
       fileEvents: workspace.createFileSystemWatcher(new RelativePattern(folder, "pack.json")),
     },
+    outputChannel: window.createOutputChannel("mcx"),
   };
   client = new LanguageClient(
     "mcx",

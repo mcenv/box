@@ -139,7 +139,13 @@ class McxService : TextDocumentService,
   @JsonRequest
   private fun build(): CompletableFuture<Boolean> {
     return scope.future {
-      build.invoke().success
+      val result = build.invoke()
+      result.diagnosticsByPath.forEach { (path, diagnostics) ->
+        diagnostics.forEach {
+          client.logMessage(MessageParams(MessageType.Info, diagnosticMessage(path, it)))
+        }
+      }
+      result.success
     }
   }
 
