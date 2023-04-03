@@ -1,4 +1,5 @@
 import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -48,7 +49,9 @@ kotlin {
 }
 
 tasks.withType<KotlinCompile> {
-  kotlinOptions.jvmTarget = "17"
+  compilerOptions {
+    jvmTarget.set(JVM_17)
+  }
 }
 
 tasks.withType<@Suppress("UnstableApiUsage") ProcessResources> {
