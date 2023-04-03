@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface Nbt {
   @Serializable
-  object End : Nbt
+  data object End : Nbt
 
   @Serializable
   data class Byte(val value: kotlin.Byte) : Nbt

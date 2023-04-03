@@ -36,11 +36,11 @@ sealed interface Key<V> {
     val location: DefinitionLocation,
   ) : Key<Lift.Result?>
 
-  object Packed : Key<List<mcx.ast.Packed.Definition>> {
+  data object Packed : Key<List<mcx.ast.Packed.Definition>> {
     lateinit var locations: List<DefinitionLocation>
   }
 
-  object Generated : Key<Map<String, String>> {
+  data object Generated : Key<Map<String, String>> {
     lateinit var locations: List<DefinitionLocation>
   }
 }

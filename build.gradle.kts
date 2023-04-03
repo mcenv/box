@@ -1,5 +1,6 @@
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -50,6 +51,7 @@ kotlin {
 
 tasks.withType<KotlinCompile> {
   compilerOptions {
+    languageVersion.set(KOTLIN_1_9)
     jvmTarget.set(JVM_17)
   }
 }

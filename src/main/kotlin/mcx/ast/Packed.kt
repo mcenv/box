@@ -163,7 +163,7 @@ object Packed {
 
     data class MatchElement(val pattern: Nbt.Compound) : NbtNode
 
-    object AllElements : NbtNode
+    data object AllElements : NbtNode
 
     data class IndexedElement(val index: Int) : NbtNode
 

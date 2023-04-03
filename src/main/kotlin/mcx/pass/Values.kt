@@ -12,9 +12,7 @@ import org.eclipse.lsp4j.Range
  * A well-typed term in weak-head normal form or neutral form.
  */
 sealed interface Value {
-  object Tag : Value {
-    override fun toString(): kotlin.String = "Tag"
-  }
+  data object Tag : Value
 
   data class TagOf(
     val value: NbtType,
@@ -40,9 +38,7 @@ sealed interface Value {
     }
   }
 
-  object Bool : Value {
-    override fun toString(): kotlin.String = "Bool"
-  }
+  data object Bool : Value
 
   data class BoolOf(
     val value: Boolean,
@@ -59,81 +55,61 @@ sealed interface Value {
     val scrutineer: Pattern<Value>,
   ) : Value
 
-  object Byte : Value {
-    override fun toString(): kotlin.String = "Byte"
-  }
+  data object Byte : Value
 
   data class ByteOf(
     val value: kotlin.Byte,
   ) : Value
 
-  object Short : Value {
-    override fun toString(): kotlin.String = "Short"
-  }
+  data object Short : Value
 
   data class ShortOf(
     val value: kotlin.Short,
   ) : Value
 
-  object Int : Value {
-    override fun toString(): kotlin.String = "Int"
-  }
+  data object Int : Value
 
   data class IntOf(
     val value: kotlin.Int,
   ) : Value
 
-  object Long : Value {
-    override fun toString(): kotlin.String = "Long"
-  }
+  data object Long : Value
 
   data class LongOf(
     val value: kotlin.Long,
   ) : Value
 
-  object Float : Value {
-    override fun toString(): kotlin.String = "Float"
-  }
+  data object Float : Value
 
   data class FloatOf(
     val value: kotlin.Float,
   ) : Value
 
-  object Double : Value {
-    override fun toString(): kotlin.String = "Double"
-  }
+  data object Double : Value
 
   data class DoubleOf(
     val value: kotlin.Double,
   ) : Value
 
-  object String : Value {
-    override fun toString(): kotlin.String = "String"
-  }
+  data object String : Value
 
   data class StringOf(
     val value: kotlin.String,
   ) : Value
 
-  object ByteArray : Value {
-    override fun toString(): kotlin.String = "ByteArray"
-  }
+  data object ByteArray : Value
 
   data class ByteArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value
 
-  object IntArray : Value {
-    override fun toString(): kotlin.String = "IntArray"
-  }
+  data object IntArray : Value
 
   data class IntArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value
 
-  object LongArray : Value {
-    override fun toString(): kotlin.String = "LongArray"
-  }
+  data object LongArray : Value
 
   data class LongArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
@@ -219,9 +195,7 @@ sealed interface Value {
     val source: Range,
   ) : Value
 
-  object Hole : Value {
-    override fun toString(): kotlin.String = "Hole"
-  }
+  data object Hole : Value
 }
 
 typealias Env = PersistentList<Lazy<Value>>
