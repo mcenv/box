@@ -1,10 +1,10 @@
 package mcx.ast
 
-sealed interface Annotation {
+sealed class Annotation {
   // TODO: add [reason] field
-  data object Deprecated : Annotation
+  data object Deprecated : Annotation()
 
-  data object Unstable : Annotation
+  data object Unstable : Annotation()
 
-  data object Hole : Annotation
+  data object Hole : Annotation()
 }

@@ -7,17 +7,20 @@ data class ModuleLocation(
 
   operator fun div(
     name: String,
-  ): DefinitionLocation =
-    DefinitionLocation(this, name)
+  ): DefinitionLocation {
+    return DefinitionLocation(this, name)
+  }
 
-  override fun toString(): String =
-    parts.joinToString("::")
+  override fun toString(): String {
+    return parts.joinToString("::")
+  }
 }
 
 data class DefinitionLocation(
   val module: ModuleLocation,
   val name: String,
 ) {
-  override fun toString(): String =
-    "$module::$name"
+  override fun toString(): String {
+    return "$module::$name"
+  }
 }

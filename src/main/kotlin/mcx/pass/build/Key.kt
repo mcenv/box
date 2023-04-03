@@ -9,38 +9,38 @@ import mcx.pass.frontend.Elaborate
 import mcx.pass.frontend.Parse
 import mcx.pass.frontend.Resolve
 
-sealed interface Key<V> {
+sealed class Key<V> {
   data class Read(
     val location: ModuleLocation,
-  ) : Key<String>
+  ) : Key<String>()
 
   data class Parsed(
     val location: ModuleLocation,
-  ) : Key<Parse.Result>
+  ) : Key<Parse.Result>()
 
   data class Resolved(
     val location: ModuleLocation,
     val instruction: Instruction? = null,
-  ) : Key<Resolve.Result>
+  ) : Key<Resolve.Result>()
 
   data class Elaborated(
     val location: ModuleLocation,
     val instruction: Instruction? = null,
-  ) : Key<Elaborate.Result>
+  ) : Key<Elaborate.Result>()
 
   data class Staged(
     val location: DefinitionLocation,
-  ) : Key<Core.Definition?>
+  ) : Key<Core.Definition?>()
 
   data class Lifted(
     val location: DefinitionLocation,
-  ) : Key<Lift.Result?>
+  ) : Key<Lift.Result?>()
 
-  data object Packed : Key<List<mcx.ast.Packed.Definition>> {
+  data object Packed : Key<List<mcx.ast.Packed.Definition>>() {
     lateinit var locations: List<DefinitionLocation>
   }
 
-  data object Generated : Key<Map<String, String>> {
+  data object Generated : Key<Map<String, String>>() {
     lateinit var locations: List<DefinitionLocation>
   }
 }

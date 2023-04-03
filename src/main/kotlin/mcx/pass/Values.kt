@@ -11,16 +11,16 @@ import org.eclipse.lsp4j.Range
 /**
  * A well-typed term in weak-head normal form or neutral form.
  */
-sealed interface Value {
-  data object Tag : Value
+sealed class Value {
+  data object Tag : Value()
 
   data class TagOf(
     val value: NbtType,
-  ) : Value
+  ) : Value()
 
   data class Type(
     val element: Lazy<Value>,
-  ) : Value {
+  ) : Value() {
     companion object {
       val END: Value = Type(lazyOf(TagOf(NbtType.END)))
       val BYTE: Value = Type(lazyOf(TagOf(NbtType.BYTE)))
@@ -38,164 +38,164 @@ sealed interface Value {
     }
   }
 
-  data object Bool : Value
+  data object Bool : Value()
 
   data class BoolOf(
     val value: Boolean,
-  ) : Value
+  ) : Value()
 
   data class If(
     val condition: Value,
     val thenBranch: Lazy<Value>,
     val elseBranch: Lazy<Value>,
-  ) : Value
+  ) : Value()
 
   data class Is(
     val scrutinee: Lazy<Value>,
     val scrutineer: Pattern<Value>,
-  ) : Value
+  ) : Value()
 
-  data object Byte : Value
+  data object Byte : Value()
 
   data class ByteOf(
     val value: kotlin.Byte,
-  ) : Value
+  ) : Value()
 
-  data object Short : Value
+  data object Short : Value()
 
   data class ShortOf(
     val value: kotlin.Short,
-  ) : Value
+  ) : Value()
 
-  data object Int : Value
+  data object Int : Value()
 
   data class IntOf(
     val value: kotlin.Int,
-  ) : Value
+  ) : Value()
 
-  data object Long : Value
+  data object Long : Value()
 
   data class LongOf(
     val value: kotlin.Long,
-  ) : Value
+  ) : Value()
 
-  data object Float : Value
+  data object Float : Value()
 
   data class FloatOf(
     val value: kotlin.Float,
-  ) : Value
+  ) : Value()
 
-  data object Double : Value
+  data object Double : Value()
 
   data class DoubleOf(
     val value: kotlin.Double,
-  ) : Value
+  ) : Value()
 
-  data object String : Value
+  data object String : Value()
 
   data class StringOf(
     val value: kotlin.String,
-  ) : Value
+  ) : Value()
 
-  data object ByteArray : Value
+  data object ByteArray : Value()
 
   data class ByteArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
-  data object IntArray : Value
+  data object IntArray : Value()
 
   data class IntArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
-  data object LongArray : Value
+  data object LongArray : Value()
 
   data class LongArrayOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
   data class List(
     val element: Lazy<Value>,
-  ) : Value
+  ) : Value()
 
   data class ListOf(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
   data class Compound(
     val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
   data class CompoundOf(
     val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
   data class Point(
     val element: Lazy<Value>,
     val elementType: Value,
-  ) : Value
+  ) : Value()
 
   data class Union(
     val elements: kotlin.collections.List<Lazy<Value>>,
-  ) : Value
+  ) : Value()
 
   data class Func(
     val params: kotlin.collections.List<Lazy<Value>>,
     val result: Closure,
-  ) : Value
+  ) : Value()
 
   data class FuncOf(
     val result: Closure,
-  ) : Value
+  ) : Value()
 
   data class Apply(
     val func: Value,
     val args: kotlin.collections.List<Lazy<Value>>,
     val type: Value,
-  ) : Value
+  ) : Value()
 
   data class Code(
     val element: Lazy<Value>,
-  ) : Value
+  ) : Value()
 
   data class CodeOf(
     val element: Lazy<Value>,
-  ) : Value
+  ) : Value()
 
   data class Splice(
     val element: Value,
-  ) : Value
+  ) : Value()
 
   data class Command(
     val element: Lazy<Value>,
     val type: Value,
-  ) : Value
+  ) : Value()
 
   data class Let(
     val binder: Pattern<Value>,
     val init: Lazy<Value>,
     val body: Lazy<Value>,
-  ) : Value
+  ) : Value()
 
   data class Var(
     val name: kotlin.String,
     val lvl: Lvl,
     val type: Value,
-  ) : Value
+  ) : Value()
 
   data class Def(
     val name: DefinitionLocation,
     val body: Term?,
     val type: Value,
-  ) : Value
+  ) : Value()
 
   data class Meta(
     val index: kotlin.Int,
     val source: Range,
-  ) : Value
+  ) : Value()
 
-  data object Hole : Value
+  data object Hole : Value()
 }
 
 typealias Env = PersistentList<Lazy<Value>>

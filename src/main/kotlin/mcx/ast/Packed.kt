@@ -4,27 +4,27 @@ import mcx.data.Nbt
 import mcx.data.ResourceLocation
 
 object Packed {
-  sealed interface Definition {
-    val location: ResourceLocation
+  sealed class Definition {
+    abstract val location: ResourceLocation
 
     data class Function(
       override val location: ResourceLocation,
       val commands: List<Command>,
-    ) : Definition
+    ) : Definition()
   }
 
-  sealed interface Command {
-    sealed interface Execute : Command {
+  sealed class Command {
+    sealed class Execute : Command() {
       data class Run(
         val redirect: Command,
-      ) : Execute
+      ) : Execute()
 
       data class StoreScore(
         val mode: Mode,
         val targets: ScoreHolder,
         val objective: Objective,
         val redirect: Execute,
-      ) : Execute
+      ) : Execute()
 
       data class StoreStorage(
         val mode: Mode,
@@ -32,7 +32,7 @@ object Packed {
         val type: Type,
         val scale: Double,
         val redirect: Execute,
-      ) : Execute {
+      ) : Execute() {
         enum class Type {
           BYTE,
           SHORT,
@@ -51,7 +51,7 @@ object Packed {
         val source: ScoreHolder,
         val sourceObjective: Objective,
         val redirect: Execute,
-      ) : Execute {
+      ) : Execute() {
         enum class Comparator {
           EQ,
           LT,
@@ -67,12 +67,12 @@ object Packed {
         val targetObjective: Objective,
         val range: IntRange,
         val redirect: Execute,
-      ) : Execute
+      ) : Execute()
 
       data class CheckMatchingData(
         val conditional: Boolean,
         val source: DataAccessor,
-      ) : Execute
+      ) : Execute()
 
       enum class Mode {
         RESULT,
@@ -83,30 +83,30 @@ object Packed {
     data class ManipulateData(
       val target: DataAccessor,
       val manipulator: DataManipulator,
-    ) : Command
+    ) : Command()
 
     data class RemoveData(
       val target: DataAccessor,
-    ) : Command
+    ) : Command()
 
     data class GetData(
       val target: DataAccessor,
-    ) : Command
+    ) : Command()
 
     data class RunFunction(
       val name: ResourceLocation,
-    ) : Command
+    ) : Command()
 
     data class GetScore(
       val target: ScoreHolder,
       val objective: Objective,
-    ) : Command
+    ) : Command()
 
     data class SetScore(
       val targets: ScoreHolder,
       val objective: Objective,
       val score: Int,
-    ) : Command
+    ) : Command()
 
     data class PerformOperation(
       val targets: ScoreHolder,
@@ -114,30 +114,30 @@ object Packed {
       val operation: Operation,
       val source: ScoreHolder,
       val sourceObjective: Objective,
-    ) : Command
+    ) : Command()
 
     data class Raw(
       val message: String,
-    ) : Command
+    ) : Command()
   }
 
-  sealed interface DataAccessor {
+  sealed class DataAccessor {
     data class Storage(
       val target: ResourceLocation,
       val path: NbtPath,
-    ) : DataAccessor
+    ) : DataAccessor()
   }
 
-  sealed interface DataManipulator {
-    val source: SourceProvider
+  sealed class DataManipulator {
+    abstract val source: SourceProvider
 
-    data class Append(override val source: SourceProvider) : DataManipulator
-    data class Set(override val source: SourceProvider) : DataManipulator
+    data class Append(override val source: SourceProvider) : DataManipulator()
+    data class Set(override val source: SourceProvider) : DataManipulator()
   }
 
-  sealed interface SourceProvider {
-    data class Value(val value: Nbt) : SourceProvider
-    data class From(val source: DataAccessor) : SourceProvider
+  sealed class SourceProvider {
+    data class Value(val value: Nbt) : SourceProvider()
+    data class From(val source: DataAccessor) : SourceProvider()
   }
 
   data class ScoreHolder(val name: String)
@@ -158,20 +158,20 @@ object Packed {
 
   data class NbtPath(val nodes: List<NbtNode>)
 
-  sealed interface NbtNode {
-    data class MatchRootObject(val pattern: Nbt.Compound) : NbtNode
+  sealed class NbtNode {
+    data class MatchRootObject(val pattern: Nbt.Compound) : NbtNode()
 
-    data class MatchElement(val pattern: Nbt.Compound) : NbtNode
+    data class MatchElement(val pattern: Nbt.Compound) : NbtNode()
 
-    data object AllElements : NbtNode
+    data object AllElements : NbtNode()
 
-    data class IndexedElement(val index: Int) : NbtNode
+    data class IndexedElement(val index: Int) : NbtNode()
 
     data class MatchObject(
       val name: String,
       val pattern: Nbt.Compound,
-    ) : NbtNode
+    ) : NbtNode()
 
-    data class CompoundChild(val name: String) : NbtNode
+    data class CompoundChild(val name: String) : NbtNode()
   }
 }
