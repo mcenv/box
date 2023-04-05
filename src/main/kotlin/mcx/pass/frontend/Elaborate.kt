@@ -102,16 +102,6 @@ class Elaborate private constructor(
   ): Pair<C.Term, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      check<Value.Point>(type)                                                 -> {
-        val (synth, _) = synthTerm(term, phase)
-        val env = freeze()
-        val value = env.evalTerm(synth)
-        if (with(meta) { next().unifyValue(value, type.element.value) }) {
-          synth to type
-        } else {
-          invalidTerm(env.typeMismatch(type.element.value, value, term.range))
-        }
-      }
       term is R.Term.Tag && phase == Phase.CONST && synth(type)                -> C.Term.Tag to Value.Type.BYTE
       term is R.Term.TagOf && phase == Phase.CONST && synth(type)              -> C.Term.TagOf(term.value) to Value.Tag
       term is R.Term.Type && synth(type)                                       -> {
@@ -356,10 +346,15 @@ class Elaborate private constructor(
       check<Value>(type)                        -> {
         val (synth, synthType) = synthTerm(term, phase)
         if (next().sub(synthType, type)) {
-          synth to type
-        } else {
-          invalidTerm(freeze().typeMismatch(type, synthType, term.range))
+          return synth to type
+        } else if (type is Value.Point) {
+          val value = freeze().evalTerm(synth)
+          if (with(meta) { next().unifyValue(value, type.element.value) }) {
+            return synth to type
+          }
         }
+
+        invalidTerm(freeze().typeMismatch(type, synthType, term.range))
       }
       else                                      -> error("unreachable")
     }.also { (_, type) ->
