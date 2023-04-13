@@ -58,6 +58,7 @@
 ### 2023
 
 * Yulong Huang, Jeremy Yallop. **Defunctionalization with Dependent Types**.
+* Choudhury, P. **Unifying Linearity and Dependency Analyses**.
 
 ###
 
