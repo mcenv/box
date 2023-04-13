@@ -194,14 +194,10 @@ class Generate private constructor(
   private fun StringBuilder.generateDataAccessor(
     accessor: P.DataAccessor,
   ) {
-    when (accessor) {
-      is P.DataAccessor.Storage -> {
-        append("storage ")
-        generateResourceLocation(accessor.target)
-        space()
-        generateNbtPath(accessor.path)
-      }
-    }
+    append("storage ")
+    generateResourceLocation(accessor.target)
+    space()
+    generateNbtPath(accessor.path)
   }
 
   private fun StringBuilder.generateDataManipulator(
