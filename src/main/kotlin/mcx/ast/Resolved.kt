@@ -26,6 +26,14 @@ object Resolved {
       override val range: Range,
     ) : Definition()
 
+    data class Test(
+      override val annotations: List<Ranged<Annotation>>,
+      override val modifiers: List<Ranged<Modifier>>,
+      override val name: Ranged<DefinitionLocation>,
+      val body: Term,
+      override val range: Range,
+    ) : Definition()
+
     data class Hole(
       override val range: Range,
     ) : Definition() {

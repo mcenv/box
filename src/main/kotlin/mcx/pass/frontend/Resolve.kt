@@ -78,9 +78,13 @@ class Resolve private constructor(
     definition: S.Definition,
   ): R.Definition {
     val range = definition.range
+    if (definition is S.Definition.Hole) {
+      return R.Definition.Hole(range)
+    }
+
+    val name = definition.name.map { input.module.name / it }
     return when (definition) {
       is S.Definition.Def  -> {
-        val name = definition.name.map { input.module.name / it }
         val builtin = definition.modifiers.find { it.value == Modifier.BUILTIN }
         if (builtin != null && lookupBuiltin(name.value) == null) {
           diagnostics += undefinedBuiltin(name.value, builtin.range)
@@ -89,7 +93,11 @@ class Resolve private constructor(
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
         R.Definition.Def(definition.annotations, definition.modifiers, name, type, body, range)
       }
-      is S.Definition.Hole -> R.Definition.Hole(range)
+      is S.Definition.Test -> {
+        val body = emptyEnv().resolveTerm(definition.body)
+        R.Definition.Test(definition.annotations, definition.modifiers, name, body, range)
+      }
+      is S.Definition.Hole -> error("unreachable")
     }
   }
 

@@ -70,7 +70,7 @@ class Parse private constructor(
       val annotations = parseAnnotations()
       val (modifiers, keyword) = parseModifiers()
       when (keyword) {
-        "def" -> {
+        "def"  -> {
           skipTrivia()
           val name = parseRanged { readWord() }
           expect(':')
@@ -85,7 +85,15 @@ class Parse private constructor(
           }
           S.Definition.Def(annotations, modifiers, name, type, body, until())
         }
-        else  -> null
+        "test" -> {
+          skipTrivia()
+          val name = parseRanged { readWord() }
+          expect(":=")
+          skipTrivia()
+          val body = parseTerm()
+          S.Definition.Test(annotations, modifiers, name, body, until())
+        }
+        else   -> null
       } ?: run {
         val range = until()
         diagnostics += expectedDefinition(range)

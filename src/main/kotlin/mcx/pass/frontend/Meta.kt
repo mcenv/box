@@ -4,14 +4,17 @@ import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
+import mcx.lsp.diagnostic
 import mcx.pass.*
+import mcx.util.toSubscript
+import org.eclipse.lsp4j.Diagnostic
+import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Range
 
 @Suppress("NAME_SHADOWING")
 class Meta {
   private val values: MutableList<Value?> = mutableListOf()
-  private val _unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
-  val unsolvedMetas: Set<Pair<Int, Range>> get() = _unsolvedMetas
+  private val unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
 
   fun freshValue(source: Range): Value {
     return Value.Meta(values.size, source).also { values += null }
@@ -33,8 +36,16 @@ class Meta {
     }
   }
 
-  fun resetUnsolvedMetas() {
-    _unsolvedMetas.clear()
+  fun checkSolved(
+    diagnostics: MutableList<Diagnostic>,
+    vararg terms: Term?,
+  ): List<Term?> {
+    unsolvedMetas.clear()
+    val zonkedTerms = terms.map { it?.let { emptyEnv().zonkTerm(it) } }
+    unsolvedMetas.forEach { (index, source) ->
+      diagnostics += unsolvedMeta(index, source)
+    }
+    return zonkedTerms
   }
 
   fun Env.zonkTerm(term: Term): Term {
@@ -99,20 +110,20 @@ class Meta {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.Compound(elements)
       }
-      is Term.CompoundOf -> {
+      is Term.CompoundOf  -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.CompoundOf(elements)
       }
-      is Term.Point      -> {
+      is Term.Point       -> {
         val element = zonkTerm(term.element)
         val elementType = zonkTerm(term.elementType)
         Term.Point(element, elementType)
       }
-      is Term.Union      -> {
+      is Term.Union       -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.Union(elements)
       }
-      is Term.Func       -> {
+      is Term.Func        -> {
         var env = this
         val params = term.params.map { (param, type) ->
           val type = env.zonkTerm(type)
@@ -123,7 +134,7 @@ class Meta {
         val result = env.zonkTerm(term.result)
         Term.Func(params, result)
       }
-      is Term.FuncOf     -> {
+      is Term.FuncOf      -> {
         var env = this
         val params = term.params.map { param ->
           val param = zonkPattern(param)
@@ -133,52 +144,52 @@ class Meta {
         val result = env.zonkTerm(term.result)
         Term.FuncOf(params, result)
       }
-      is Term.Apply      -> {
+      is Term.Apply       -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
         Term.Apply(func, args, type)
       }
-      is Term.Code       -> {
+      is Term.Code        -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
-      is Term.CodeOf     -> {
+      is Term.CodeOf      -> {
         val element = zonkTerm(term.element)
         Term.CodeOf(element)
       }
-      is Term.Splice     -> {
+      is Term.Splice      -> {
         val element = zonkTerm(term.element)
         Term.Splice(element)
       }
-      is Term.Command    -> {
+      is Term.Command     -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Command(element, type)
       }
-      is Term.Let        -> {
+      is Term.Let         -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         Term.Let(binder, init, body)
       }
-      is Term.Var        -> {
+      is Term.Var         -> {
         val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
-      is Term.Def        -> {
+      is Term.Def         -> {
         val type = zonkTerm(term.type)
         Term.Def(term.name, term.body, type)
       }
-      is Term.Meta       -> {
+      is Term.Meta        -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
-            Term.Meta(term.index, term.source).also { _unsolvedMetas += it.index to it.source }
+            Term.Meta(term.index, term.source).also { unsolvedMetas += it.index to it.source }
           }
           else -> zonkTerm(next().quoteValue(solution))
         }
       }
-      is Term.Hole       -> term
+      is Term.Hole        -> term
     }
   }
 
@@ -274,41 +285,54 @@ class Meta {
         value1.elements.size == value2.elements.size &&
         (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
-      value1 is Value.Compound && value2 is Value.Compound     -> {
+      value1 is Value.Compound && value2 is Value.Compound       -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
-      value1 is Value.CompoundOf && value2 is Value.CompoundOf -> {
+      value1 is Value.CompoundOf && value2 is Value.CompoundOf   -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
-      value1 is Value.Point && value2 is Value.Point           -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Union && value2 is Value.Union           -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
-      value1 is Value.Func && value2 is Value.Func             -> {
+      value1 is Value.Point && value2 is Value.Point             -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Union && value2 is Value.Union             -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
+      value1 is Value.Func && value2 is Value.Func               -> {
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf         -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.Apply && value2 is Value.Apply           -> {
+      value1 is Value.Apply && value2 is Value.Apply             -> {
         unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code             -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf         -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice         -> unifyValue(value1.element, value2.element)
-      value1 is Value.Command && value2 is Value.Command       -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Var && value2 is Value.Var               -> value1.lvl == value2.lvl
-      value1 is Value.Def && value2 is Value.Def               -> value1.name == value2.name // TODO: check body
-      value1 is Value.Hole || value2 is Value.Hole             -> true // ?
-      else                                                     -> false
+      value1 is Value.Code && value2 is Value.Code               -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf           -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice           -> unifyValue(value1.element, value2.element)
+      value1 is Value.Command && value2 is Value.Command         -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
+      value1 is Value.Def && value2 is Value.Def                 -> value1.name == value2.name // TODO: check body
+      value1 is Value.Hole || value2 is Value.Hole               -> true // ?
+      else                                                       -> false
+    }
+  }
+
+  companion object {
+    private fun unsolvedMeta(
+      index: Int,
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "unsolved meta: ?${index.toSubscript()}",
+        DiagnosticSeverity.Error,
+      )
     }
   }
 }

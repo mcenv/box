@@ -17,7 +17,7 @@ class Stage private constructor() {
     definition: Definition,
   ): Definition? {
     return when (definition) {
-      is Definition.Def -> {
+      is Definition.Def  -> {
         if (Modifier.CONST in definition.modifiers) {
           null
         } else {
@@ -25,6 +25,10 @@ class Stage private constructor() {
           val body = definition.body?.let { stageTerm(it) }
           Definition.Def(definition.annotations, definition.modifiers, definition.name, type, body)
         }
+      }
+      is Definition.Test -> {
+        val body = stageTerm(definition.body)
+        Definition.Test(definition.annotations, definition.modifiers, definition.name, body)
       }
     }
   }

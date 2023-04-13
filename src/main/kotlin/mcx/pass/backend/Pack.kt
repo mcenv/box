@@ -33,6 +33,14 @@ class Pack private constructor(
 
         if (L.Modifier.BUILTIN in definition.modifiers) {
           // lookupBuiltin(definition.name)!!.pack()
+        } else if (L.Modifier.TEST in definition.modifiers) {
+          packTerm(definition.body!!)
+          val accessor = DataAccessor.Storage(MCX_TEST, nbtPath {
+            definition.name.module.parts.fold(it) { acc, part -> acc(part) }(definition.name.name)
+          })
+          +RemoveData(accessor)
+          +ManipulateData(accessor, DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
+          drop(NbtType.BYTE)
         } else {
           definition.params.forEach {
             push(it.type, null)
@@ -345,6 +353,7 @@ class Pack private constructor(
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
     private val REG: Packed.Objective = Packed.Objective("mcx")
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
+    private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
 
     private fun packDefinitionLocation(
       location: DefinitionLocation,

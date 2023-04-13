@@ -1,0 +1,3 @@
+test success_trivial := true;
+
+test failure_trivial := false;

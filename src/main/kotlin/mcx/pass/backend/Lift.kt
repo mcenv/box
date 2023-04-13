@@ -19,10 +19,14 @@ class Lift private constructor(
 
   private fun lift(): Result {
     val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
-    when (definition) {
-      is C.Definition.Def -> {
+    liftedDefinitions += when (definition) {
+      is C.Definition.Def  -> {
         val body = definition.body?.let { emptyCtx().liftTerm(it) }
-        liftedDefinitions += L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
+        L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
+      }
+      is C.Definition.Test -> {
+        val body = emptyCtx().liftTerm(definition.body)
+        L.Definition.Function(modifiers + L.Modifier.TEST, definition.name, emptyList(), body, null)
       }
     }
     return Result(liftedDefinitions, dispatchedDefinitions)

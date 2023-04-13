@@ -19,6 +19,7 @@ object Lifted {
   enum class Modifier {
     NO_DROP,
     BUILTIN,
+    TEST,
   }
 
   sealed class Term {

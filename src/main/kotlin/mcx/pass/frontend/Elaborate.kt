@@ -8,7 +8,6 @@ import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.pass.*
 import mcx.pass.frontend.Elaborate.Ctx.Companion.emptyCtx
-import mcx.util.toSubscript
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import kotlin.contracts.ExperimentalContracts
@@ -64,16 +63,17 @@ class Elaborate private constructor(
           definitions[name] = C.Definition.Def(annotations, modifiers, name, type, null)
         }
         val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.freeze().evalTerm(type)) }
-        with(meta) {
-          resetUnsolvedMetas()
-          val type = emptyEnv().zonkTerm(type)
-          val body = body?.let { emptyEnv().zonkTerm(it) }
-          meta.unsolvedMetas.forEach { (index, source) ->
-            diagnostics += unsolvedMeta(index, source)
-          }
-          C.Definition.Def(annotations, modifiers, name, type, body).also {
-            hoverDef(definition.name.range, it)
-          }
+        val (zonkedType, zonkedBody) = meta.checkSolved(diagnostics, type, body)
+        C.Definition.Def(annotations, modifiers, name, zonkedType!!, zonkedBody).also {
+          hoverDef(definition.name.range, it)
+        }
+      }
+      is R.Definition.Test -> {
+        val ctx = emptyCtx()
+        val body = ctx.checkTerm(definition.body, Phase.WORLD /* TODO: const tests */, Value.Bool)
+        val (zonkedBody) = meta.checkSolved(diagnostics, body)
+        C.Definition.Test(annotations, modifiers, name, zonkedBody!!).also {
+          hoverTest(definition.name.range, it)
         }
       }
       is R.Definition.Hole -> error("unreachable")
@@ -303,7 +303,7 @@ class Elaborate private constructor(
           else                                      -> invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
-      term is R.Term.Def && synth(type)         -> {
+      term is R.Term.Def && synth(type)                                        -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             if (Annotation.Deprecated in definition.annotations) {
@@ -333,17 +333,17 @@ class Elaborate private constructor(
           else                -> invalidTerm(expectedDef(term.range))
         }
       }
-      term is R.Term.Meta && match<Value>(type) -> {
+      term is R.Term.Meta && match<Value>(type)                                -> {
         val type = type ?: meta.freshValue(term.range)
         next().quoteValue(meta.freshValue(term.range)) to type
       }
-      term is R.Term.As && synth(type)          -> {
+      term is R.Term.As && synth(type)                                         -> {
         val type = freeze().evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
-      term is R.Term.Hole && match<Value>(type) -> C.Term.Hole to Value.Hole
-      synth(type)                               -> invalidTerm(cannotSynthesize(term.range))
-      check<Value>(type)                        -> {
+      term is R.Term.Hole && match<Value>(type)                                -> C.Term.Hole to Value.Hole
+      synth(type)                                                              -> invalidTerm(cannotSynthesize(term.range))
+      check<Value>(type)                                                       -> {
         val (synth, synthType) = synthTerm(term, phase)
         if (next().sub(synthType, type)) {
           return synth to type
@@ -356,7 +356,7 @@ class Elaborate private constructor(
 
         invalidTerm(freeze().typeMismatch(type, synthType, term.range))
       }
-      else                                      -> error("unreachable")
+      else                                                                     -> error("unreachable")
     }.also { (_, type) ->
       hoverType(term.range, type)
     }
@@ -529,6 +529,16 @@ class Elaborate private constructor(
       val name = definition.name.name
       val type = prettyTerm(definition.type)
       "def $name : $type"
+    }
+  }
+
+  private fun hoverTest(
+    range: Range,
+    definition: C.Definition.Test,
+  ) {
+    hover(range) {
+      val name = definition.name.name
+      "test $name"
     }
   }
 
@@ -710,17 +720,6 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "cannot synthesize",
-        DiagnosticSeverity.Error,
-      )
-    }
-
-    private fun unsolvedMeta(
-      index: Int,
-      range: Range,
-    ): Diagnostic {
-      return diagnostic(
-        range,
-        "unsolved meta: ?${index.toSubscript()}",
         DiagnosticSeverity.Error,
       )
     }

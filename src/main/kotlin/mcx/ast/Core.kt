@@ -21,6 +21,13 @@ object Core {
       val type: Term,
       val body: Term?,
     ) : Definition()
+
+    data class Test(
+      override val annotations: List<Annotation>,
+      override val modifiers: List<Modifier>,
+      override val name: DefinitionLocation,
+      val body: Term,
+    ) : Definition()
   }
 
   /**
