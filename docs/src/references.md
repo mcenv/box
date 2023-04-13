@@ -55,6 +55,10 @@
 * Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Step toward Programming with Versions in Real-World Functional Languages**. Proceedings of the 14th ACM International Workshop on Context-Oriented Programming and Advanced Modularity.
 * Lubis, L.A., Tanabe, Y., Aotani, T., & Masuhara, H. **BatakJava: An Object-Oriented Programming Language with Versions**. Proceedings of the 15th ACM SIGPLAN International Conference on Software Language Engineering.
 
+### 2023
+
+* Yulong Huang, Jeremy Yallop. **Defunctionalization with Dependent Types**.
+
 ###
 
 * Lionel Parreaux. **The Ultimate Conditional Syntax**.
