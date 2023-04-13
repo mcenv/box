@@ -2,6 +2,10 @@
 
 ## Papers
 
+### 1972
+
+* Reynolds, J.C. **Definitional Interpreters for Higher-Order Programming Languages**. Higher-Order and Symbolic Computation, 11, 363-397.
+
 ### 2008
 
 * Danielsson, N.A., & Norell, U. **Parsing Mixfix Operators**. IFL.
