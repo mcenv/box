@@ -121,12 +121,10 @@ object Packed {
     ) : Command()
   }
 
-  sealed class DataAccessor {
-    data class Storage(
-      val target: ResourceLocation,
-      val path: NbtPath,
-    ) : DataAccessor()
-  }
+  data class DataAccessor(
+    val target: ResourceLocation,
+    val path: NbtPath,
+  )
 
   sealed class DataManipulator {
     abstract val source: SourceProvider

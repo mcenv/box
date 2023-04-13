@@ -35,11 +35,11 @@ class Pack private constructor(
           // lookupBuiltin(definition.name)!!.pack()
         } else if (L.Modifier.TEST in definition.modifiers) {
           packTerm(definition.body!!)
-          val accessor = DataAccessor.Storage(MCX_TEST, nbtPath {
+          val accessor = DataAccessor(MCX_TEST, nbtPath {
             definition.name.module.parts.fold(it) { acc, part -> acc(part) }(definition.name.name)
           })
           +RemoveData(accessor)
-          +ManipulateData(accessor, DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
+          +ManipulateData(accessor, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
           drop(NbtType.BYTE)
         } else {
           definition.params.forEach {
@@ -83,7 +83,7 @@ class Pack private constructor(
     when (term) {
       is L.Term.If          -> {
         packTerm(term.condition)
-        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
+        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
         drop(NbtType.BYTE)
         +Execute.ConditionalScoreMatches(
           true, REG_0, REG, 1..Int.MAX_VALUE,
@@ -118,7 +118,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.ByteOf) {
             packTerm(element)
-            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
+            +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.BYTE_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }))))
             drop(NbtType.BYTE)
           }
         }
@@ -130,7 +130,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.IntOf) {
             packTerm(element)
-            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.INT_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.INT.id)(-1) }))))
+            +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.INT_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) }))))
             drop(NbtType.INT)
           }
         }
@@ -142,7 +142,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.LongOf) {
             packTerm(element)
-            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.LONG_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.LONG.id)(-1) }))))
+            +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.LONG_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.LONG.id)(-1) }))))
             drop(NbtType.LONG)
           }
         }
@@ -155,7 +155,7 @@ class Pack private constructor(
           term.elements.forEach { element ->
             packTerm(element)
             val index = if (elementType == NbtType.LIST) -2 else -1
-            +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.LIST.id)(index) }), DataManipulator.Append(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(elementType.id)(-1) }))))
+            +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.LIST.id)(index) }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath { it(elementType.id)(-1) }))))
             drop(elementType)
           }
         }
@@ -167,7 +167,7 @@ class Pack private constructor(
           packTerm(element)
           val valueType = element.type
           val index = if (valueType == NbtType.COMPOUND) -2 else -1
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(valueType.id)(-1) }))))
+          +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(index)(key) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(valueType.id)(-1) }))))
           drop(valueType)
         }
       }
@@ -176,7 +176,7 @@ class Pack private constructor(
         push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
         term.entries.forEach { (name, type) ->
           val index = this[name, type]
-          +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) }))))
+          +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) }))))
         }
       }
 
@@ -206,7 +206,7 @@ class Pack private constructor(
       is L.Term.Var         -> {
         val type = term.type
         val index = this[term.name, term.type]
-        push(type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(type.id)(index) })))
+        push(type, SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) })))
       }
 
       is L.Term.Def         -> {
@@ -223,7 +223,7 @@ class Pack private constructor(
       is L.Pattern.IntOf      -> {}
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.type, SourceProvider.From(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
+          push(element.type, SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
           packPattern(element)
         }
       }
@@ -261,7 +261,7 @@ class Pack private constructor(
           +Execute.StoreScore(
             RESULT, REG_1, REG,
             Execute.Run(
-              GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.INT.id)(-1) }))
+              GetData(DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) }))
             )
           )
           drop(NbtType.INT)
@@ -281,7 +281,7 @@ class Pack private constructor(
     visit(scrutineer)
     push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(0)))
     +Execute.StoreStorage(
-      RESULT, DataAccessor.Storage(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }), Type.BYTE, 1.0,
+      RESULT, DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) }), Type.BYTE, 1.0,
       Execute.Run(
         GetScore(REG_0, REG)
       )
@@ -294,7 +294,7 @@ class Pack private constructor(
   ) {
     if (source != null && stack != NbtType.END) {
       !{ Raw("# push ${stack.id}") }
-      +ManipulateData(DataAccessor.Storage(MCX, nbtPath { it(stack.id) }), DataManipulator.Append(source))
+      +ManipulateData(DataAccessor(MCX, nbtPath { it(stack.id) }), DataManipulator.Append(source))
     }
     getEntry(stack) += null
   }
@@ -307,7 +307,7 @@ class Pack private constructor(
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != NbtType.END) {
       !{ Raw("# drop ${drop.id} under ${keeps.joinToString(", ", "[", "]") { it.id }}") }
-      +RemoveData(DataAccessor.Storage(MCX, nbtPath { it(drop.id)(index) }))
+      +RemoveData(DataAccessor(MCX, nbtPath { it(drop.id)(index) }))
     }
     val entry = getEntry(drop)
     entry.removeAt(entry.size + index)
@@ -422,7 +422,7 @@ class Pack private constructor(
     ): P.Definition.Function {
       val name = packDefinitionLocation(DISPATCH)
       val commands = listOf(
-        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor.Storage(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") }))))
+        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") }))))
       ) + functions.mapIndexed { index, function ->
         Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       }
