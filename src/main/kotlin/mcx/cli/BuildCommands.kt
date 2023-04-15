@@ -7,7 +7,7 @@ import mcx.lsp.diagnosticMessage
 import mcx.pass.build.Build
 import kotlin.io.path.Path
 
-object Build {
+object BuildCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
     dispatcher.register(
       literal<Unit>("build")

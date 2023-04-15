@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType.string
 import mcx.cache.createServer
 import mcx.cache.deleteServer
 
-object Installations {
+object InstallationsCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
     dispatcher.register(
       literal("installations")

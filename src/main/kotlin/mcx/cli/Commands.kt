@@ -7,12 +7,12 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 
 fun registerCommands(dispatcher: CommandDispatcher<Unit>) {
-  Build.register(dispatcher)
-  Help.register(dispatcher)
-  Init.register(dispatcher)
-  Installations.register(dispatcher)
-  Lsp.register(dispatcher)
-  Version.register(dispatcher)
+  BuildCommands.register(dispatcher)
+  HelpCommands.register(dispatcher)
+  InitCommands.register(dispatcher)
+  InstallationsCommands.register(dispatcher)
+  LspCommands.register(dispatcher)
+  VersionCommands.register(dispatcher)
 }
 
 @Suppress("NOTHING_TO_INLINE")

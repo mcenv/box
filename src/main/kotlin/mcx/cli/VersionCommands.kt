@@ -2,12 +2,12 @@ package mcx.cli
 
 import com.mojang.brigadier.CommandDispatcher
 
-object Version {
+object VersionCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
     dispatcher.register(
       literal("version")
         .executes {
-          val version = Version::class.java.getResource("/version")!!.readText()
+          val version = VersionCommands::class.java.getResource("/version")!!.readText()
           println(version)
           0
         }

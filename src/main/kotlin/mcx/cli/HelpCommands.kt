@@ -3,7 +3,7 @@ package mcx.cli
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 
-object Help {
+object HelpCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
     dispatcher.register(
       literal("help")

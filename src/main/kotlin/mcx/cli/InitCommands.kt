@@ -10,7 +10,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 
 @OptIn(ExperimentalSerializationApi::class)
-object Init {
+object InitCommands {
   private val json: Json = Json {
     prettyPrint = true
     prettyPrintIndent = "  "
