@@ -8,7 +8,7 @@ object VersionCommands {
       literal("version")
         .executes {
           val version = VersionCommands::class.java.getResource("/version")!!.readText()
-          println(version)
+          print(version)
           0
         }
     )
