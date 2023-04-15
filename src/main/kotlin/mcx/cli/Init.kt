@@ -1,7 +1,7 @@
 package mcx.cli
 
-import kotlinx.cli.ExperimentalCli
-import kotlinx.cli.Subcommand
+import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
@@ -10,43 +10,31 @@ import java.nio.file.Paths
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 
-@OptIn(
-  ExperimentalCli::class,
-  ExperimentalSerializationApi::class
-)
-object Init : Subcommand(
-  "init",
-  "Initialize a new pack",
-) {
+@OptIn(ExperimentalSerializationApi::class)
+object Init {
   private val json: Json = Json {
     prettyPrint = true
     prettyPrintIndent = "  "
   }
 
-  override fun execute() {
-    val name = Paths
-      .get("")
-      .toAbsolutePath()
-      .last()
-      .toString()
-
-    Paths
-      .get("pack.json")
-      .outputStream()
-      .buffered()
-      .use {
-        json.encodeToStream(
-          Config(
-            name = name,
-            description = "",
-          ),
-          it,
-        )
-        it.write('\n'.code)
-      }
-
-    Paths
-      .get("src")
-      .createDirectories()
+  fun register(dispatcher: CommandDispatcher<Unit>) {
+    dispatcher.register(
+      literal<Unit>("init")
+        .executes {
+          val name = Paths.get("").toAbsolutePath().last().toString()
+          Paths.get("pack.json").outputStream().buffered().use {
+            json.encodeToStream(
+              Config(
+                name = name,
+                description = "",
+              ),
+              it,
+            )
+            it.write('\n'.code)
+          }
+          Paths.get("src").createDirectories()
+          0
+        }
+    )
   }
 }

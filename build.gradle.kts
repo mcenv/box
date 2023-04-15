@@ -24,11 +24,12 @@ version = "0.1.0"
 
 repositories {
   mavenCentral()
+  maven("https://libraries.minecraft.net")
 }
 
 dependencies {
+  implementation("com.mojang:brigadier:1.1.8")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.20.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")

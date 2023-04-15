@@ -1,15 +1,17 @@
 package mcx.cli
 
-import kotlinx.cli.ExperimentalCli
-import kotlinx.cli.Subcommand
+import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
 
-@OptIn(ExperimentalCli::class)
-object Version : Subcommand(
-  "version",
-  "Display the mcx version",
-) {
-  override fun execute() {
-    val version = Version::class.java.getResource("/version")!!.readText()
-    println(version)
+object Version {
+  fun register(dispatcher: CommandDispatcher<Unit>) {
+    dispatcher.register(
+      literal<Unit>("version")
+        .executes {
+          val version = Version::class.java.getResource("/version")!!.readText()
+          println(version)
+          0
+        }
+    )
   }
 }

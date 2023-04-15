@@ -1,19 +1,21 @@
 package mcx.cli
 
-import kotlinx.cli.ExperimentalCli
-import kotlinx.cli.Subcommand
+import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
 import mcx.lsp.McxLanguageServer
 import org.eclipse.lsp4j.launch.LSPLauncher
 
-@OptIn(ExperimentalCli::class)
-object Lsp : Subcommand(
-  "lsp",
-  "Launch the language server",
-) {
-  override fun execute() {
-    val server = McxLanguageServer()
-    val launcher = LSPLauncher.createServerLauncher(server, System.`in`, System.out)
-    server.connect(launcher.remoteProxy)
-    launcher.startListening()
+object Lsp {
+  fun register(dispatcher: CommandDispatcher<Unit>) {
+    dispatcher.register(
+      literal<Unit?>("lsp")
+        .executes {
+          val server = McxLanguageServer()
+          val launcher = LSPLauncher.createServerLauncher(server, System.`in`, System.out)
+          server.connect(launcher.remoteProxy)
+          launcher.startListening().get()
+          0
+        }
+    )
   }
 }
