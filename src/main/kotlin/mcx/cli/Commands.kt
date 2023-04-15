@@ -10,6 +10,7 @@ fun registerCommands(dispatcher: CommandDispatcher<Unit>) {
   Build.register(dispatcher)
   Help.register(dispatcher)
   Init.register(dispatcher)
+  Installations.register(dispatcher)
   Lsp.register(dispatcher)
   Version.register(dispatcher)
 }
