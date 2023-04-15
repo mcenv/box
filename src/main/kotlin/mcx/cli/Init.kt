@@ -1,7 +1,6 @@
 package mcx.cli
 
 import com.mojang.brigadier.CommandDispatcher
-import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
@@ -19,7 +18,7 @@ object Init {
 
   fun register(dispatcher: CommandDispatcher<Unit>) {
     dispatcher.register(
-      literal<Unit>("init")
+      literal("init")
         .executes {
           val name = Paths.get("").toAbsolutePath().last().toString()
           Paths.get("pack.json").outputStream().buffered().use {

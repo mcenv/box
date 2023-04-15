@@ -15,10 +15,3 @@ fun main(args: Array<String>) {
     exitProcess(1)
   }
 }
-
-private fun registerCommands(dispatcher: CommandDispatcher<Unit>) {
-  Build.register(dispatcher)
-  Init.register(dispatcher)
-  Lsp.register(dispatcher)
-  Version.register(dispatcher)
-}
