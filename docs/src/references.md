@@ -224,3 +224,24 @@ Asking for binary operators because it makes IEEE 754 implementation easier is, 
 > [Nothing is impossible, but here's the situation: with very limited time, we're trying to provide as good map making functionality as possible that isn't just a hijack of some gameplay entity like armor stands. Given lots of time to focus on this stuff, we could make better things. But this is a lot better than nothing, and we'll try to make it as good as we can with the time we have.](https://discord.com/channels/154777837382008833/593812273164976166/1075462092385161348)
 
 > [&lt;insert value here&gt; in various commands are an obvious gap right now. We have some thoughts about it, but not this version.](https://discord.com/channels/154777837382008833/593812273164976166/1075467884135985226)
+
+### <svg width="1em" height="1em" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Discord</title><path fill="#5865F2" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg> boq — 2023/04/02
+
+> [I guess I have to explain again. And directly.
+> <br><br>
+> NBT crafting, as in `nbt` field on a recipe output is simply NEVER GOING TO HAPPEN. Not when there are better way (more structured, flexible and future-proof) to express same operation, like item modifiers.
+> **Custom** recipe output is going to happen one day, once we figure out heaps of issues with presenting that to users (especially recipe books).
+> <br><br>
+> As a guideline, if a sentence starts with "Wouldn't it be cool if we could set NBT on...", then it's probably not going to happen, simply because NBT is an awful interface for doing gameplay changes.
+> <br><br>
+> It is, however, decent data structure. So stuff like storage operating on pure NBT is fine, but `/loot ... storage` is a very likely not happening, because items are not NBT.](https://discord.com/channels/154777837382008833/593812273164976166/1091777042753794169)
+
+> [...
+> <br>
+> Read it again.
+> <br>
+> tl:dr:
+> <br>
+> \- _custom_ crafting - yes, eventually, why wouldn't we, makes no sense unless you assume we formed all our plans around tormenting you
+> <br>
+> \- _NBT_ crafting - chuck it into bin, it's a meme at this point, raw NBT access is one of the worst ways to implement custom crafting](https://discord.com/channels/154777837382008833/593812273164976166/1091781394889453658)
