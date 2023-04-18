@@ -8,41 +8,71 @@ import java.net.URL
 import java.nio.file.Path
 import kotlin.io.path.*
 
-private val VERSION_MANIFEST_URL: URL = URL("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
-private val json: Json = Json { ignoreUnknownKeys = true }
+private val versionManifestUrl: URL by lazy {
+  URL("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
+}
+
+private val json: Json by lazy {
+  Json { ignoreUnknownKeys = true }
+}
+
+private val java: String by lazy {
+  ProcessHandle.current().info().command().orElseThrow()
+}
+
+private val bundlerRepoDir: String by lazy {
+  "-DbundlerRepoDir=\"${getOrCreateRootPath()}\""
+}
+
+private fun getOrCreateRootPath(): Path {
+  return Path(System.getProperty("user.home"), ".mcx").createDirectories()
+}
+
+private fun getOrCreateVersionsPath(): Path {
+  return getOrCreateRootPath().resolve("versions").createDirectories()
+}
+
+private fun getOrCreateServerRootPath(id: String): Path {
+  return getOrCreateVersionsPath().resolve(id).createDirectories()
+}
+
+private fun getServerPath(id: String): Path {
+  return getOrCreateServerRootPath(id).resolve("server.jar")
+}
+
+private fun getServerMappingsPath(id: String): Path {
+  return getOrCreateServerRootPath(id).resolve("server.txt")
+}
 
 // TODO: cache version_manifest_v2.json
 @OptIn(ExperimentalSerializationApi::class)
 private fun fetchVersionManifest(): VersionManifest {
-  return VERSION_MANIFEST_URL.openStream().use { json.decodeFromStream(it) }
+  return versionManifestUrl.openStream().use { json.decodeFromStream(it) }
 }
 
-private fun getRootPath(): Path {
-  return Path(System.getProperty("user.home"), ".mcx").createDirectories()
+private fun Path.saveFromStream(input: InputStream) {
+  outputStream().buffered().use { input.transferTo(it) }
 }
 
-private fun getVersionsPath(): Path {
-  return getRootPath().resolve("versions").createDirectories()
-}
-
-private fun getServerRootPath(id: String): Path {
-  return getVersionsPath().resolve(id).createDirectories()
-}
-
-fun getServerPath(id: String): Path {
-  return getServerRootPath(id).resolve("server.jar")
-}
-
-fun getServerMappingsPath(id: String): Path {
-  return getServerRootPath(id).resolve("server.txt")
+fun playServer(id: String): Int {
+  val serverPath = getServerPath(id)
+  // TODO: check sha1
+  // TODO: print messages
+  return if (serverPath.exists()) {
+    ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString).inheritIO().start().waitFor()
+  } else {
+    1
+  }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun createServer(id: String) {
+fun createServer(id: String): Int {
   // TODO: check sha1
   // TODO: remap server.jar
   // TODO: print messages
-  if (getServerPath(id).notExists()) {
+  return if (getServerPath(id).exists()) {
+    1
+  } else {
     fetchVersionManifest()
       .versions
       .first { it.id == id }
@@ -54,15 +84,13 @@ fun createServer(id: String) {
         downloads.server.url.openStream().use { getServerPath(id).saveFromStream(it) }
         downloads.serverMappings.url.openStream().use { getServerMappingsPath(id).saveFromStream(it) }
       }
+    0
   }
 }
 
 @OptIn(ExperimentalPathApi::class)
-fun deleteServer(id: String) {
+fun deleteServer(id: String): Int {
   // TODO: print messages
-  getServerRootPath(id).deleteRecursively()
-}
-
-private fun Path.saveFromStream(input: InputStream) {
-  outputStream().buffered().use { input.transferTo(it) }
+  getOrCreateServerRootPath(id).deleteRecursively()
+  return 0
 }
