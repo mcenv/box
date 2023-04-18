@@ -30,6 +30,8 @@ repositories {
 dependencies {
   implementation("com.mojang:brigadier:1.1.8")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.20.1")
+  implementation("org.ow2.asm:asm:9.5")
+  implementation("org.ow2.asm:asm-commons:9.5")
   implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
