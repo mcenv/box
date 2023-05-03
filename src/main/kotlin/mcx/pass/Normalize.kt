@@ -156,9 +156,12 @@ fun Env.evalTerm(term: Term): Value {
     }
     is Term.Var     -> this[next().toLvl(term.idx).value].value
     is Term.Def     -> {
-      term.body?.let { evalTerm(it) } ?: run {
+      // Builtin definitions have compiler-defined semantics and need to be handled specially.
+      if (term.builtin) {
         val type = evalTerm(term.type)
-        Value.Def(term.name, null, type)
+        Value.Def(true, term.name, null, type)
+      } else {
+        evalTerm(term.body!!)
       }
     }
     is Term.Meta    -> Value.Meta(term.index, term.source)
@@ -287,7 +290,7 @@ fun Lvl.quoteValue(value: Value): Term {
     }
     is Value.Def         -> {
       val type = quoteValue(value.type)
-      Term.Def(value.name, value.body, type)
+      Term.Def(value.builtin, value.name, value.body, type)
     }
     is Value.Meta        -> Term.Meta(value.index, value.source)
     is Value.Hole        -> Term.Hole

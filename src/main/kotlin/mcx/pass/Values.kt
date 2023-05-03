@@ -185,6 +185,7 @@ sealed class Value {
   ) : Value()
 
   data class Def(
+    val builtin: Boolean,
     val name: DefinitionLocation,
     val body: Term?,
     val type: Value,

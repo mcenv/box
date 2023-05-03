@@ -179,7 +179,7 @@ class Meta {
       }
       is Term.Def         -> {
         val type = zonkTerm(term.type)
-        Term.Def(term.name, term.body, type)
+        Term.Def(term.builtin, term.name, term.body, type)
       }
       is Term.Meta        -> {
         when (val solution = values.getOrNull(term.index)) {

@@ -233,7 +233,7 @@ class Stage private constructor() {
           Phase.CONST -> term.body?.let { evalTerm(it, phase) }
         } ?: run {
           val type = evalTerm(term.type, phase)
-          Value.Def(term.name, null, type)
+          Value.Def(term.builtin, term.name, null, type)
         }
       }
       is Term.Meta       -> unexpectedTerm(term)
@@ -370,7 +370,7 @@ class Stage private constructor() {
       }
       is Value.Def         -> {
         val type = quoteValue(value.type, phase)
-        Term.Def(value.name, value.body, type)
+        Term.Def(value.builtin, value.name, value.body, type)
       }
       is Value.Meta        -> Term.Meta(value.index, value.source)
       is Value.Hole        -> Term.Hole

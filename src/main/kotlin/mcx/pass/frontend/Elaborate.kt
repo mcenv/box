@@ -312,20 +312,21 @@ class Elaborate private constructor(
             if (Annotation.Unstable in definition.annotations) {
               diagnostics += unstable(term.range)
             }
+            val builtin = Modifier.BUILTIN in definition.modifiers
 
             val actualPhase = getPhase(definition.modifiers)
             val type = freeze().evalTerm(definition.type)
             when {
               actualPhase == phase                      -> {
-                C.Term.Def(term.name, definition.body, definition.type) to type
+                C.Term.Def(builtin, term.name, definition.body, definition.type) to type
               }
               actualPhase < phase                       -> {
                 inlayHint(term.range.start, "`")
-                C.Term.CodeOf(C.Term.Def(term.name, definition.body, definition.type)) to Value.Code(lazyOf(type))
+                C.Term.CodeOf(C.Term.Def(builtin, term.name, definition.body, definition.type)) to Value.Code(lazyOf(type))
               }
               actualPhase > phase && type is Value.Code -> {
                 inlayHint(term.range.start, "$")
-                C.Term.Splice(C.Term.Def(term.name, definition.body, definition.type)) to type.element.value
+                C.Term.Splice(C.Term.Def(builtin, term.name, definition.body, definition.type)) to type.element.value
               }
               else                                      -> invalidTerm(phaseMismatch(phase, actualPhase, term.range))
             }

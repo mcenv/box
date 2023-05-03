@@ -191,7 +191,9 @@ object Core {
       val type: Term,
     ) : Term()
 
+    // TODO: store [Definition.Def] instead?
     data class Def(
+      val builtin: Boolean,
       val name: DefinitionLocation,
       val body: Term?,
       val type: Term,
