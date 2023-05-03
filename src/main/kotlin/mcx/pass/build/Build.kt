@@ -297,7 +297,7 @@ class Build(
                 it.write(definition)
               }
           }
-        datapackRoot.resolve("data").visitFileTree {
+        datapackRoot.visitFileTree {
           onVisitFile { file, _ ->
             if (file !in outputModules) {
               if (config.debug) {
