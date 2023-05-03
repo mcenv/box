@@ -9,6 +9,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
+import mcx.ast.Packed
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
@@ -193,11 +194,16 @@ class Build(
               val packed = fetch(Key.Packed.apply { locations = Key.Generated.locations })
               val hash = packed.hash
               if (trace == null || trace.hash != hash) {
-                val definitions = packed.value
+                val (test, main) = packed.value.partition { it.modifiers.contains(Packed.Modifier.TEST) }
+                val mainDefinitions = main
                   .map { async { Generate(this@fetch, it) } }
                   .awaitAll()
                   .toMap()
-                Trace(definitions, hash)
+                val testDefinitions = test
+                  .map { async { Generate(this@fetch, it) } }
+                  .awaitAll()
+                  .toMap()
+                Trace(Key.Generated.Packs(mainDefinitions, testDefinitions), hash)
               } else {
                 trace
               }
@@ -248,8 +254,6 @@ class Build(
 
     val config = root.resolve("pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
 
-    val datapackRoot = datapacks.resolve(config.name).also { it.createDirectories() }
-
     return coroutineScope {
       val context = Context(config)
       val success = AtomicBoolean(true)
@@ -278,39 +282,52 @@ class Build(
         return@coroutineScope Result(false, diagnosticsByPath)
       }
 
-      val outputModules = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
-        .mapKeys { (name, _) -> datapackRoot.resolve(name) }
-        .onEach { (name, definition) ->
-          name
-            .also { it.parent.createDirectories() }
-            .bufferedWriter()
-            .use { it.write(definition) }
-        }
-
-      datapackRoot.visitFileTree {
-        onVisitFile { file, _ ->
-          if (file !in outputModules) {
-            file.deleteExisting()
+      fun generate(suffix: String, definitions: Map<String, String>) {
+        val datapackRoot = datapacks.resolve("${config.name}_$suffix").also { it.createDirectories() }
+        val outputModules = definitions
+          .mapKeys { (name, _) -> datapackRoot.resolve(name) }
+          .onEach { (name, definition) ->
+            name
+              .also { it.parent.createDirectories() }
+              .bufferedWriter()
+              .use {
+                if (config.debug) {
+                  println("writing: $name")
+                }
+                it.write(definition)
+              }
           }
-          FileVisitResult.CONTINUE
+        datapackRoot.resolve("data").visitFileTree {
+          onVisitFile { file, _ ->
+            if (file !in outputModules) {
+              if (config.debug) {
+                println("deleting: $file")
+              }
+              file.deleteExisting()
+            }
+            FileVisitResult.CONTINUE
+          }
         }
+        datapackRoot
+          .resolve("pack.mcmeta")
+          .outputStream()
+          .buffered()
+          .use {
+            Json.encodeToStream(
+              PackMetadata(
+                pack = PackMetadataSection(
+                  description = config.description,
+                  packFormat = DATA_PACK_FORMAT,
+                )
+              ),
+              it,
+            )
+          }
       }
 
-      datapackRoot
-        .resolve("pack.mcmeta")
-        .outputStream()
-        .buffered()
-        .use {
-          Json.encodeToStream(
-            PackMetadata(
-              pack = PackMetadataSection(
-                description = config.description,
-                packFormat = DATA_PACK_FORMAT,
-              )
-            ),
-            it,
-          )
-        }
+      val packs =  context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
+      generate("main", packs.main)
+      generate("test", packs.test)
 
       Result(true, diagnosticsByPath)
     }

@@ -29,11 +29,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: std
-          path: ./src/main/resources/std/out/datapacks/std
+          path: |
+            ./src/main/resources/std/out/datapacks/std_main
+            ./src/main/resources/std/out/datapacks/std_test
           if-no-files-found: error
       - name: Upload test pack
         uses: actions/upload-artifact@v3
         with:
           name: test
-          path: ./src/test/resources/test/out/datapacks/test
+          path: |
+            ./src/test/resources/test/out/datapacks/test_main
+            ./src/test/resources/test/out/datapacks/test_test
           if-no-files-found: error

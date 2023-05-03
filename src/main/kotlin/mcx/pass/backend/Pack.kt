@@ -26,6 +26,7 @@ class Pack private constructor(
   private fun packDefinition(
     definition: L.Definition,
   ): P.Definition {
+    val modifiers = definition.modifiers.mapNotNull { packModifier(it) }
     val path = packDefinitionLocation(definition.name)
     return when (definition) {
       is L.Definition.Function -> {
@@ -72,8 +73,18 @@ class Pack private constructor(
           }
         }
 
-        P.Definition.Function(path, commands)
+        P.Definition.Function(modifiers, path, commands)
       }
+    }
+  }
+
+  private fun packModifier(
+    modifier: L.Modifier,
+  ): P.Modifier? {
+    return when (modifier) {
+      L.Modifier.NO_DROP -> null
+      L.Modifier.BUILTIN -> null
+      L.Modifier.TEST    -> P.Modifier.TEST
     }
   }
 
@@ -429,7 +440,7 @@ class Pack private constructor(
       ) + functions.mapIndexed { index, function ->
         Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       }
-      return P.Definition.Function(name, commands)
+      return P.Definition.Function(emptyList(), name, commands)
     }
 
     operator fun invoke(

@@ -5,12 +5,18 @@ import mcx.data.ResourceLocation
 
 object Packed {
   sealed class Definition {
+    abstract val modifiers: List<Modifier>
     abstract val location: ResourceLocation
 
     data class Function(
+      override val modifiers: List<Modifier>,
       override val location: ResourceLocation,
       val commands: List<Command>,
     ) : Definition()
+  }
+
+  enum class Modifier {
+    TEST,
   }
 
   sealed class Command {

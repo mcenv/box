@@ -40,7 +40,12 @@ sealed class Key<V> {
     lateinit var locations: List<DefinitionLocation>
   }
 
-  data object Generated : Key<Map<String, String>>() {
+  data object Generated : Key<Generated.Packs>() {
     lateinit var locations: List<DefinitionLocation>
+
+    data class Packs(
+      val main: Map<String, String>,
+      val test: Map<String, String>,
+    )
   }
 }
