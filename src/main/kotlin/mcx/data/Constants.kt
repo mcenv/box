@@ -1,6 +1,6 @@
 package mcx.data
 
 /**
- * Since Minecraft [23w16a](https://www.minecraft.net/article/minecraft-snapshot-23w16a).
+ * Since Minecraft 23w18a.
  */
-const val DATA_PACK_FORMAT: Int = 14
+const val DATA_PACK_FORMAT: Int = 15
