@@ -32,9 +32,7 @@ class Pack private constructor(
       is L.Definition.Function -> {
         !{ Raw("# function ${definition.name}\n") }
 
-        if (L.Modifier.BUILTIN in definition.modifiers) {
-          // lookupBuiltin(definition.name)!!.pack()
-        } else if (L.Modifier.TEST in definition.modifiers) {
+        if (L.Modifier.TEST in definition.modifiers) {
           packTerm(definition.body!!)
           val accessor = DataAccessor(MCX_TEST, nbtPath {
             definition.name.module.parts.fold(it) { acc, part -> acc(part) }(definition.name.name)

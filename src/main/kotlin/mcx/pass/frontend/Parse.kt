@@ -76,7 +76,7 @@ class Parse private constructor(
           expect(':')
           skipTrivia()
           val type = parseTerm()
-          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null) {
+          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.CONST } != null) {
             null
           } else {
             expect(":=")

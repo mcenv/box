@@ -1,3 +1,5 @@
-export builtin def size : func (string) -> int;
+export builtin def size : func (string) -> int := \(_) ->
+  let _ as end := /"data modify storage mcx: int append value 0";
+  /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";
 
 export def to_string : func (self : string) -> string := \(self) -> self;
