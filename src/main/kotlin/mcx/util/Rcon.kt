@@ -16,7 +16,7 @@ class Rcon private constructor(
   private val input: InputStream = socket.getInputStream()
   private val output: OutputStream = socket.getOutputStream()
 
-  private companion object {
+  companion object {
     private const val AUTH: Int = 3
     private const val AUTH_RESPONSE: Int = 2
     private const val EXECCOMMAND: Int = 2
