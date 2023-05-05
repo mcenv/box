@@ -24,6 +24,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: kover
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate coverage badge
         uses: Schneegans/dynamic-badges-action@v1.6.0
         with:
