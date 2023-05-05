@@ -1,14 +1,17 @@
 package mcx.util
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.Closeable
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.ConnectException
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class Rcon private constructor(
   private val socket: Socket,
@@ -27,8 +30,23 @@ class Rcon private constructor(
       password: String,
       hostname: String,
       port: Int,
+      timeout: Long,
     ): Rcon {
-      val rcon = Rcon(Socket(hostname, port))
+      lateinit var socket: Socket
+      val start = System.currentTimeMillis()
+      while (true) {
+        try {
+          socket = Socket(hostname, port)
+          break
+        } catch (e: ConnectException) {
+          if (System.currentTimeMillis() - start > timeout) {
+            throw e
+          } else {
+            delay(1L.seconds)
+          }
+        }
+      }
+      val rcon = Rcon(socket)
       val auth = rcon.request(Packet.fresh(AUTH, password))
       check(auth.id != AUTH_FAILURE)
       check(auth.type == AUTH_RESPONSE)

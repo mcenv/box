@@ -1,11 +1,15 @@
 package mcx.cache
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import mcx.util.Rcon
+import mcx.util.loadDedicatedServerProperties
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlin.io.path.*
 
 private val versionManifestUrl: URL by lazy {
@@ -54,14 +58,25 @@ private fun Path.saveFromStream(input: InputStream) {
   outputStream().buffered().use { input.transferTo(it) }
 }
 
+// TODO: refactor
 fun playServer(id: String): Int {
-  val serverPath = getServerPath(id)
-  // TODO: check sha1
-  // TODO: print messages
-  return if (serverPath.exists()) {
-    ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString).inheritIO().start().waitFor()
-  } else {
-    1
+  return runBlocking {
+    val serverPath = getServerPath(id)
+    // TODO: check sha1
+    // TODO: print messages
+    if (serverPath.exists()) {
+      val properties = loadDedicatedServerProperties()
+      val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString).inheritIO().start().waitFor() }
+      if (properties.enableRcon && properties.rcon.password.isNotEmpty()) {
+        Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
+          // TODO
+        }
+      }
+      minecraft.join()
+      0
+    } else {
+      1
+    }
   }
 }
 

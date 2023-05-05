@@ -36,6 +36,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:1.5.0")
   testImplementation(kotlin("test"))
   testImplementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.7")
 }

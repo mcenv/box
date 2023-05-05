@@ -1,1 +1,8 @@
+/logs/
 /out/
+/banned-ips.json
+/banned-players.json
+/eula.txt
+/ops.json
+/usercache.json
+/whitelist.json
