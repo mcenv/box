@@ -1,6 +1,7 @@
 package mcx.ast
 
-import mcx.data.Nbt
+import dev.mcenv.nbt.CompoundTag
+import dev.mcenv.nbt.Tag
 import mcx.data.ResourceLocation
 
 object Packed {
@@ -140,7 +141,7 @@ object Packed {
   }
 
   sealed class SourceProvider {
-    data class Value(val value: Nbt) : SourceProvider()
+    data class Value(val value: Tag) : SourceProvider()
     data class From(val source: DataAccessor) : SourceProvider()
   }
 
@@ -163,9 +164,9 @@ object Packed {
   data class NbtPath(val nodes: List<NbtNode>)
 
   sealed class NbtNode {
-    data class MatchRootObject(val pattern: Nbt.Compound) : NbtNode()
+    data class MatchRootObject(val pattern: CompoundTag) : NbtNode()
 
-    data class MatchElement(val pattern: Nbt.Compound) : NbtNode()
+    data class MatchElement(val pattern: CompoundTag) : NbtNode()
 
     data object AllElements : NbtNode()
 
@@ -173,7 +174,7 @@ object Packed {
 
     data class MatchObject(
       val name: String,
-      val pattern: Nbt.Compound,
+      val pattern: CompoundTag,
     ) : NbtNode()
 
     data class CompoundChild(val name: String) : NbtNode()

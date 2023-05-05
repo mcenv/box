@@ -25,10 +25,18 @@ version = "0.1.0"
 repositories {
   mavenCentral()
   maven("https://libraries.minecraft.net")
+  maven {
+    url = uri("https://maven.pkg.github.com/mcenv/kotlinx-serialization-nbt")
+    credentials {
+      username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+      password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+    }
+  }
 }
 
 dependencies {
   implementation("com.mojang:brigadier:1.1.8")
+  implementation("dev.mcenv:kotlinx-serialization-nbt:0.1.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.20.1")
   implementation("org.ow2.asm:asm:9.5")
   implementation("org.ow2.asm:asm-commons:9.5")

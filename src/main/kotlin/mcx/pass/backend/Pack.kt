@@ -1,5 +1,6 @@
 package mcx.pass.backend
 
+import dev.mcenv.nbt.*
 import mcx.ast.DefinitionLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
@@ -9,7 +10,6 @@ import mcx.ast.Packed.Command.Execute.StoreStorage.Type
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.SourceProvider
-import mcx.data.Nbt
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
@@ -114,16 +114,16 @@ class Pack private constructor(
         matchPattern(term.scrutineer)
       }
 
-      is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(term.value)))
-      is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(Nbt.Short(term.value)))
-      is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(Nbt.Int(term.value)))
-      is L.Term.LongOf      -> push(NbtType.LONG, SourceProvider.Value(Nbt.Long(term.value)))
-      is L.Term.FloatOf     -> push(NbtType.FLOAT, SourceProvider.Value(Nbt.Float(term.value)))
-      is L.Term.DoubleOf    -> push(NbtType.DOUBLE, SourceProvider.Value(Nbt.Double(term.value)))
-      is L.Term.StringOf    -> push(NbtType.STRING, SourceProvider.Value(Nbt.String(term.value)))
+      is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
+      is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
+      is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(IntTag(term.value)))
+      is L.Term.LongOf      -> push(NbtType.LONG, SourceProvider.Value(LongTag(term.value)))
+      is L.Term.FloatOf     -> push(NbtType.FLOAT, SourceProvider.Value(FloatTag(term.value)))
+      is L.Term.DoubleOf    -> push(NbtType.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
+      is L.Term.StringOf    -> push(NbtType.STRING, SourceProvider.Value(StringTag(term.value)))
       is L.Term.ByteArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.ByteOf)?.value ?: 0 }
-        push(NbtType.BYTE_ARRAY, SourceProvider.Value(Nbt.ByteArray(elements)))
+        push(NbtType.BYTE_ARRAY, SourceProvider.Value(ByteArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.ByteOf) {
             packTerm(element)
@@ -135,7 +135,7 @@ class Pack private constructor(
 
       is L.Term.IntArrayOf  -> {
         val elements = term.elements.map { (it as? L.Term.IntOf)?.value ?: 0 }
-        push(NbtType.INT_ARRAY, SourceProvider.Value(Nbt.IntArray(elements)))
+        push(NbtType.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.IntOf) {
             packTerm(element)
@@ -147,7 +147,7 @@ class Pack private constructor(
 
       is L.Term.LongArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.LongOf)?.value ?: 0 }
-        push(NbtType.LONG_ARRAY, SourceProvider.Value(Nbt.LongArray(elements)))
+        push(NbtType.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.LongOf) {
             packTerm(element)
@@ -158,7 +158,7 @@ class Pack private constructor(
       }
 
       is L.Term.ListOf      -> {
-        push(NbtType.LIST, SourceProvider.Value(Nbt.List.End))
+        push(NbtType.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
         if (term.elements.isNotEmpty()) {
           val elementType = term.elements.first().type
           term.elements.forEach { element ->
@@ -171,7 +171,7 @@ class Pack private constructor(
       }
 
       is L.Term.CompoundOf  -> {
-        push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(emptyMap())))
+        push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
         term.elements.forEach { (key, element) ->
           packTerm(element)
           val valueType = element.type
@@ -182,7 +182,7 @@ class Pack private constructor(
       }
 
       is L.Term.FuncOf      -> {
-        push(NbtType.COMPOUND, SourceProvider.Value(Nbt.Compound(mapOf("_" to Nbt.Int(term.tag)))))
+        push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
         term.entries.forEach { (name, type) ->
           val index = this[name, type]
           +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) }))))
@@ -288,7 +288,7 @@ class Pack private constructor(
       }
     }
     visit(scrutineer)
-    push(NbtType.BYTE, SourceProvider.Value(Nbt.Byte(0)))
+    push(NbtType.BYTE, SourceProvider.Value(ByteTag(0)))
     +Execute.StoreStorage(
       RESULT, BYTE_TOP, Type.BYTE, 1.0,
       Execute.Run(
@@ -403,7 +403,7 @@ class Pack private constructor(
         root?.let { nodes += it }
       }
 
-      inline operator fun invoke(pattern: Nbt.Compound): NbtPathBuilder {
+      inline operator fun invoke(pattern: CompoundTag): NbtPathBuilder {
         return apply { nodes += Packed.NbtNode.MatchElement(pattern) }
       }
 
@@ -415,7 +415,7 @@ class Pack private constructor(
         return apply { nodes += Packed.NbtNode.IndexedElement(index) }
       }
 
-      inline operator fun invoke(name: String, pattern: Nbt.Compound): NbtPathBuilder {
+      inline operator fun invoke(name: String, pattern: CompoundTag): NbtPathBuilder {
         return apply { nodes += Packed.NbtNode.MatchObject(name, pattern) }
       }
 

@@ -1,7 +1,7 @@
 package mcx.pass.backend
 
+import dev.mcenv.nbt.*
 import mcx.ast.Packed
-import mcx.data.Nbt
 import mcx.data.ResourceLocation
 import mcx.pass.Context
 import mcx.util.quoted
@@ -295,41 +295,40 @@ class Generate private constructor(
   }
 
   private fun StringBuilder.generateNbt(
-    nbt: Nbt,
+    tag: Tag,
   ) {
-    when (nbt) {
-      is Nbt.End       -> Unit
-      is Nbt.Byte      -> {
-        append(nbt.value.toString())
+    when (tag) {
+      is ByteTag      -> {
+        append(tag.value.toString())
         append('b')
       }
-      is Nbt.Short     -> {
-        append(nbt.value.toString())
+      is ShortTag     -> {
+        append(tag.value.toString())
         append('s')
       }
-      is Nbt.Int       -> append(nbt.value.toString())
-      is Nbt.Long      -> {
-        append(nbt.value.toString())
+      is IntTag       -> append(tag.value.toString())
+      is LongTag      -> {
+        append(tag.value.toString())
         append('l')
       }
-      is Nbt.Float     -> {
-        when (nbt.value) {
+      is FloatTag     -> {
+        when (tag.value) {
           Float.POSITIVE_INFINITY -> append("4e38")
           Float.NEGATIVE_INFINITY -> append("-4e38")
-          else                    -> append(nbt.value.toString())
+          else                    -> append(tag.value.toString())
         }
         append('f')
       }
-      is Nbt.Double    -> {
-        when (nbt.value) {
+      is DoubleTag    -> {
+        when (tag.value) {
           Double.POSITIVE_INFINITY -> append("2e308")
           Double.NEGATIVE_INFINITY -> append("-2e308")
-          else                     -> append(nbt.value.toString())
+          else                     -> append(tag.value.toString())
         }
       }
-      is Nbt.ByteArray -> {
+      is ByteArrayTag -> {
         append("[B;")
-        nbt.elements.forEachSeparated(
+        tag.values.forEachSeparated(
           separate = { append(',') },
           action = {
             append(it.toString())
@@ -338,17 +337,17 @@ class Generate private constructor(
         )
         append(']')
       }
-      is Nbt.IntArray  -> {
+      is IntArrayTag  -> {
         append("[I;")
-        nbt.elements.forEachSeparated(
+        tag.values.forEachSeparated(
           separate = { append(',') },
           action = { append(it.toString()) },
         )
         append(']')
       }
-      is Nbt.LongArray -> {
+      is LongArrayTag -> {
         append("[L;")
-        nbt.elements.forEachSeparated(
+        tag.values.forEachSeparated(
           separate = { append(',') },
           action = {
             append(it.toString())
@@ -357,18 +356,18 @@ class Generate private constructor(
         )
         append(']')
       }
-      is Nbt.String    -> append(nbt.value.quoted('"')) // TODO: optimize
-      is Nbt.List<*>   -> {
+      is StringTag    -> append(tag.value.quoted('"')) // TODO: optimize
+      is ListTag<*>   -> {
         append('[')
-        nbt.elements.forEachSeparated(
+        tag.tags.forEachSeparated(
           separate = { append(',') },
           action = { generateNbt(it) },
         )
         append(']')
       }
-      is Nbt.Compound  -> {
+      is CompoundTag  -> {
         append('{')
-        nbt.elements.entries.forEachSeparated(
+        tag.tags.entries.forEachSeparated(
           separate = { append(',') },
           action = { (key, element) ->
             append(key.quoted('"')) // TODO: optimize
