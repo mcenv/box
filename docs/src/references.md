@@ -99,6 +99,8 @@
 
 * [![MC-116388 Fixed](https://img.shields.io/badge/MC--116388-Fixed-brightgreen)](https://bugs.mojang.com/browse/MC-116388)
   Chain command blocks can clone themselves to create an infinite loop which freezes the server
+* [![MC-121692 Won't Fix](https://img.shields.io/badge/MC--121692-Won't%20Fix-orange)](https://bugs.mojang.com/browse/MC-121692)
+  Many commands break on unquoted special characters, quoting support inconsistent
 * [![MC-124444 Won't Fix](https://img.shields.io/badge/MC--124444-Won't%20Fix-orange)](https://bugs.mojang.com/browse/MC-124444)
   Gamerule maxCommandChainLength allows 0 and negative integer values
 * [![MC-124446 Won't Fix](https://img.shields.io/badge/MC--124446-Won't%20Fix-orange)](https://bugs.mojang.com/browse/MC-124446)
