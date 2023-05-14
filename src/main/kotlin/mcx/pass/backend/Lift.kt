@@ -94,21 +94,21 @@ class Lift private constructor(
         L.Term.LongArrayOf(elements)
       }
       is C.Term.List        -> UNIT
-      is C.Term.ListOf     -> {
+      is C.Term.ListOf      -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.ListOf(elements)
       }
-      is C.Term.Compound   -> UNIT
-      is C.Term.CompoundOf -> {
+      is C.Term.Compound    -> UNIT
+      is C.Term.CompoundOf  -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
-      is C.Term.Point      -> UNIT
-      is C.Term.Union      -> UNIT
-      is C.Term.Func       -> UNIT
-      is C.Term.FuncOf     -> {
-        if (term.open) {
-          with(emptyCtx()) {
+      is C.Term.Point       -> UNIT
+      is C.Term.Union       -> UNIT
+      is C.Term.Func        -> UNIT
+      is C.Term.FuncOf      -> {
+        with(emptyCtx()) {
+          if (term.open) {
             val freeVars = freeVars(term)
             val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
             val binders = term.params.map { liftPattern(it) }
@@ -120,32 +120,33 @@ class Lift private constructor(
             }
             val entries = freeVars.map { (name, type) -> L.Term.FuncOf.Entry(name, type) }
             L.Term.FuncOf(entries, tag)
+          } else {
+            val binders = term.params.map { liftPattern(it) }
+            val result = liftTerm(term.result)
+            val tag = context.freshId()
+            L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders, result, tag).also {
+              liftedDefinitions += it
+              dispatchedDefinitions += it
+            }
+            L.Term.ProcOf(tag)
           }
-        } else {
-          val result = liftTerm(term.result)
-          val tag = context.freshId()
-          L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", emptyList(), result, tag).also {
-            liftedDefinitions += it
-            dispatchedDefinitions += it
-          }
-          L.Term.ProcOf(tag)
         }
       }
-      is C.Term.Apply      -> {
+      is C.Term.Apply       -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
         val type = eraseType(term.type)
         L.Term.Apply(func, args, type)
       }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> {
+      is C.Term.Code        -> unexpectedTerm(term)
+      is C.Term.CodeOf      -> unexpectedTerm(term)
+      is C.Term.Splice      -> unexpectedTerm(term)
+      is C.Term.Command     -> {
         val element = (term.element as C.Term.StringOf).value
         val type = eraseType(term.type)
         L.Term.Command(element, type)
       }
-      is C.Term.Let        -> {
+      is C.Term.Let         -> {
         val init = liftTerm(term.init)
         restoring {
           val binder = liftPattern(term.binder)
@@ -153,16 +154,16 @@ class Lift private constructor(
           L.Term.Let(binder, init, body)
         }
       }
-      is C.Term.Var        -> {
+      is C.Term.Var         -> {
         val type = eraseType(term.type)
         L.Term.Var(term.name, term.idx, type)
       }
-      is C.Term.Def        -> {
+      is C.Term.Def         -> {
         val type = eraseType(term.type)
         L.Term.Def(term.name, type)
       }
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.Meta        -> unexpectedTerm(term)
+      is C.Term.Hole        -> unexpectedTerm(term)
     }
   }
 

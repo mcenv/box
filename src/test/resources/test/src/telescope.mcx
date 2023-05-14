@@ -1,3 +1,3 @@
-def id : func (α : type tag_int, a : α) -> α := \(α, a) -> a;
+def id : proc (α : type tag_int, a : α) -> α := \(α, a) -> a;
 
 # def use_id : int := id(int, 0);

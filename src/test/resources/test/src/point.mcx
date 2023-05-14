@@ -1,1 +1,1 @@
-def var : func (x : point 0) -> point 0 := \(x) -> x;
+def var : proc (x : point 0) -> point 0 := \(x) -> x;
