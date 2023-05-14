@@ -73,10 +73,19 @@ class Parse private constructor(
         "def"  -> {
           skipTrivia()
           val name = parseRanged { readWord() }
-          expect(':')
-          skipTrivia()
-          val type = parseTerm()
-          val body = if (modifiers.find { it.value == Modifier.BUILTIN } != null && modifiers.find { it.value == Modifier.CONST } != null) {
+          val type = if (
+            modifiers.find { it.value == Modifier.TEST } != null
+          ) {
+            S.Term.Bool(until())
+          } else {
+            expect(':')
+            skipTrivia()
+            parseTerm()
+          }
+          val body = if (
+            modifiers.find { it.value == Modifier.BUILTIN } != null &&
+            modifiers.find { it.value == Modifier.CONST } != null
+          ) {
             null
           } else {
             expect(":=")
@@ -84,14 +93,6 @@ class Parse private constructor(
             parseTerm()
           }
           S.Definition.Def(annotations, modifiers, name, type, body, until())
-        }
-        "test" -> {
-          skipTrivia()
-          val name = parseRanged { readWord() }
-          expect(":=")
-          skipTrivia()
-          val body = parseTerm()
-          S.Definition.Test(annotations, modifiers, name, body, until())
         }
         else   -> null
       } ?: run {
@@ -132,6 +133,7 @@ class Parse private constructor(
           "export"  -> Ranged(Modifier.EXPORT, until())
           "rec"     -> Ranged(Modifier.REC, until())
           "const"   -> Ranged(Modifier.CONST, until())
+          "test"    -> Ranged(Modifier.TEST, until())
           else      -> return modifiers to word
         }
       }
@@ -277,17 +279,17 @@ class Parse private constructor(
                 val elseBranch = parseTerm1()
                 S.Term.If(condition, thenBranch, elseBranch, until())
               }
-              "byte"           -> S.Term.Byte(until())
-              "short"          -> S.Term.Short(until())
-              "int"            -> S.Term.Int(until())
-              "long"           -> S.Term.Long(until())
-              "float"          -> S.Term.Float(until())
-              "double"         -> S.Term.Double(until())
-              "string"         -> S.Term.String(until())
-              "byte_array"     -> S.Term.ByteArray(until())
-              "int_array"      -> S.Term.IntArray(until())
-              "long_array"     -> S.Term.LongArray(until())
-              "list"           -> {
+              "byte"         -> S.Term.Byte(until())
+              "short"        -> S.Term.Short(until())
+              "int"          -> S.Term.Int(until())
+              "long"         -> S.Term.Long(until())
+              "float"        -> S.Term.Float(until())
+              "double"       -> S.Term.Double(until())
+              "string"       -> S.Term.String(until())
+              "byte_array"   -> S.Term.ByteArray(until())
+              "int_array"    -> S.Term.IntArray(until())
+              "long_array"   -> S.Term.LongArray(until())
+              "list"         -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.List(element, until())
@@ -339,7 +341,7 @@ class Parse private constructor(
                 val element = parseTerm0()
                 S.Term.Code(element, until())
               }
-              "let"            -> {
+              "let"          -> {
                 skipTrivia()
                 val name = parseTerm()
                 expect(":=")
@@ -350,7 +352,7 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              else             ->
+              else           ->
                 word.value.lastOrNull()?.let { suffix ->
                   when (suffix) {
                     'b'  -> word.value.dropLast(1).toByteOrNull()?.let { S.Term.ByteOf(it, until()) }

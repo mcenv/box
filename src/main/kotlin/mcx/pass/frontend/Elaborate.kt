@@ -68,14 +68,6 @@ class Elaborate private constructor(
           hoverDef(definition.name.range, it)
         }
       }
-      is R.Definition.Test -> {
-        val ctx = emptyCtx()
-        val body = ctx.checkTerm(definition.body, Phase.WORLD /* TODO: const tests */, Value.Bool)
-        val (zonkedBody) = meta.checkSolved(diagnostics, body)
-        C.Definition.Test(annotations, modifiers, name, zonkedBody!!).also {
-          hoverTest(definition.name.range, it)
-        }
-      }
       is R.Definition.Hole -> error("unreachable")
     }.also { definitions[name] = it }
   }
@@ -530,19 +522,10 @@ class Elaborate private constructor(
     definition: C.Definition.Def,
   ) {
     hover(range) {
+      val modifiers = definition.modifiers.joinToString(" ", "", " ")
       val name = definition.name.name
       val type = prettyTerm(definition.type)
-      "def $name : $type"
-    }
-  }
-
-  private fun hoverTest(
-    range: Range,
-    definition: C.Definition.Test,
-  ) {
-    hover(range) {
-      val name = definition.name.name
-      "test $name"
+      "${modifiers}def $name : $type"
     }
   }
 

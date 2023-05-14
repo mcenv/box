@@ -4,7 +4,9 @@ enum class Modifier(val id: String) {
   BUILTIN("builtin"),
   EXPORT("export"),
   REC("rec"),
-  CONST("const");
+  CONST("const"),
+  TEST("test");
 
-  override fun toString(): String = id
+  override fun toString(): String =
+    id
 }

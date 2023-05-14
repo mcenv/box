@@ -24,10 +24,6 @@ class Lift private constructor(
         val body = definition.body?.let { emptyCtx().liftTerm(it) }
         L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
       }
-      is C.Definition.Test -> {
-        val body = emptyCtx().liftTerm(definition.body)
-        L.Definition.Function(modifiers + L.Modifier.TEST, definition.name, emptyList(), body, null)
-      }
     }
     return Result(liftedDefinitions, dispatchedDefinitions)
   }
@@ -38,6 +34,7 @@ class Lift private constructor(
       Modifier.EXPORT  -> null
       Modifier.REC     -> null
       Modifier.CONST   -> error("unexpected modifier: ${modifier.id}")
+      Modifier.TEST    -> L.Modifier.TEST
     }
   }
 

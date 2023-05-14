@@ -26,10 +26,6 @@ class Stage private constructor() {
           Definition.Def(definition.annotations, definition.modifiers, definition.name, type, body)
         }
       }
-      is Definition.Test -> {
-        val body = stageTerm(definition.body)
-        Definition.Test(definition.annotations, definition.modifiers, definition.name, body)
-      }
     }
   }
 

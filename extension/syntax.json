@@ -57,39 +57,7 @@
           "include": "#modifier"
         },
         {
-          "begin": "\\b(def)\\s+([^:\\s;,()\\[\\]{}]+)\\s+(:)\\s+",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.mcx"
-            },
-            "2": {
-              "name": "entity.name.function.mcx"
-            },
-            "3": {
-              "name": "keyword.control.mcx"
-            }
-          },
-          "end": ";",
-          "endCaptures": {
-            "0": {
-              "name": "keyword.control.mcx"
-            }
-          },
-          "patterns": [
-            {
-              "include": "#comment"
-            },
-            {
-              "match": ":=",
-              "name": "keyword.control.mcx"
-            },
-            {
-              "include": "#term"
-            }
-          ]
-        },
-        {
-          "begin": "\\b(test)\\s+([^:\\s;,()\\[\\]{}]+)\\s+",
+          "begin": "\\b(def)\\s+([^:\\s;,()\\[\\]{}]+)\\s+(?:(:)\\s+)?",
           "beginCaptures": {
             "1": {
               "name": "keyword.mcx"
@@ -228,7 +196,7 @@
       "name": "keyword.annotation.mcx"
     },
     "modifier": {
-      "match": "\\b(?:builtin|export|rec|const)\\b",
+      "match": "\\b(?:builtin|export|rec|const|test)\\b",
       "name": "keyword.modifier.mcx"
     },
     "location": {
