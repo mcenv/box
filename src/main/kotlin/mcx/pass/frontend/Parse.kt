@@ -209,12 +209,18 @@ class Parse private constructor(
           }
           '\\' -> {
             skip()
+            val open = if (canRead() && peek() == '\\') {
+              skip()
+              true
+            } else {
+              false
+            }
             skipTrivia()
             val params = parseList(',', '(', ')') { parseTerm() }
             expect("->")
             skipTrivia()
             val result = parseTerm()
-            S.Term.FuncOf(params, result, until())
+            S.Term.FuncOf(open, params, result, until())
           }
           '`'  -> {
             skip()
@@ -286,7 +292,7 @@ class Parse private constructor(
                 val element = parseTerm0()
                 S.Term.List(element, until())
               }
-              "compound"       -> {
+              "compound"     -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -297,18 +303,19 @@ class Parse private constructor(
                 }
                 S.Term.Compound(elements, until())
               }
-              "point"          -> {
+              "point"        -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Point(element, until())
               }
-              "union"          -> {
+              "union"        -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())
               }
-              "func"           -> {
+              "proc", "func" -> {
                 skipTrivia()
+                val open = word.value == "func"
                 val params = parseList(',', '(', ')') {
                   skipTrivia()
                   val binderOrType = parseTerm()
@@ -325,9 +332,9 @@ class Parse private constructor(
                 expect("->")
                 skipTrivia()
                 val result = parseTerm()
-                S.Term.Func(params, result, until())
+                S.Term.Func(open, params, result, until())
               }
-              "code"           -> {
+              "code"         -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Code(element, until())

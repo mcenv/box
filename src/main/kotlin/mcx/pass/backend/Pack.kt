@@ -108,12 +108,10 @@ class Pack private constructor(
         )
         push(term.type, null)
       }
-
       is L.Term.Is          -> {
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
-
       is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
       is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
       is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(IntTag(term.value)))
@@ -132,7 +130,6 @@ class Pack private constructor(
           }
         }
       }
-
       is L.Term.IntArrayOf  -> {
         val elements = term.elements.map { (it as? L.Term.IntOf)?.value ?: 0 }
         push(NbtType.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
@@ -144,7 +141,6 @@ class Pack private constructor(
           }
         }
       }
-
       is L.Term.LongArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.LongOf)?.value ?: 0 }
         push(NbtType.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
@@ -156,8 +152,7 @@ class Pack private constructor(
           }
         }
       }
-
-      is L.Term.ListOf      -> {
+      is L.Term.ListOf     -> {
         push(NbtType.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
         if (term.elements.isNotEmpty()) {
           val elementType = term.elements.first().type
@@ -169,8 +164,7 @@ class Pack private constructor(
           }
         }
       }
-
-      is L.Term.CompoundOf  -> {
+      is L.Term.CompoundOf -> {
         push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -180,44 +174,41 @@ class Pack private constructor(
           drop(valueType)
         }
       }
-
-      is L.Term.FuncOf      -> {
+      is L.Term.ProcOf     -> {
+        push(NbtType.INT, SourceProvider.Value(IntTag(term.tag)))
+      }
+      is L.Term.FuncOf     -> {
         push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
         term.entries.forEach { (name, type) ->
           val index = this[name, type]
           +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) }))))
         }
       }
-
-      is L.Term.Apply       -> {
+      is L.Term.Apply      -> {
         term.args.forEach { packTerm(it) }
         packTerm(term.func)
-        +RunFunction(packDefinitionLocation(DISPATCH))
+        +RunFunction(packDefinitionLocation(DISPATCH)) // TODO: support proc
 
         push(term.type, null)
         val keeps = listOf(term.type)
         term.args.forEach { drop(it.type, keeps, false) }
       }
-
-      is L.Term.Command     -> {
+      is L.Term.Command    -> {
         +Raw(term.element)
         push(term.type, null)
       }
-
-      is L.Term.Let         -> {
+      is L.Term.Let        -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
 
         dropPattern(term.binder, listOf(term.body.type))
       }
-
       is L.Term.Var         -> {
         val type = term.type
         val index = this[term.name, term.type]
         push(type, SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) })))
       }
-
       is L.Term.Def         -> {
         +RunFunction(packDefinitionLocation(term.name))
         push(term.type, null)

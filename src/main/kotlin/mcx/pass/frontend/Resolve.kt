@@ -179,21 +179,21 @@ class Resolve private constructor(
         R.Term.Union(elements, range)
       }
       is S.Term.Func        -> {
-        restoring {
+        restoring(0) {
           val params = term.params.map { (binder, type) ->
             val type = resolveTerm(type)
             val binder = resolvePattern(binder)
             binder to type
           }
           val result = resolveTerm(term.result)
-          R.Term.Func(params, result, range)
+          R.Term.Func(term.open, params, result, range)
         }
       }
       is S.Term.FuncOf      -> {
-        restoring {
+        restoring(if (term.open) 0 else size) {
           val params = term.params.map { resolvePattern(it) }
           val result = resolveTerm(term.result)
-          R.Term.FuncOf(params, result, range)
+          R.Term.FuncOf(term.open, params, result, range)
         }
       }
       is S.Term.Apply       -> {
@@ -219,7 +219,7 @@ class Resolve private constructor(
       }
       is S.Term.Let         -> {
         val init = resolveTerm(term.init)
-        restoring {
+        restoring(0) {
           val binder = resolvePattern(term.binder)
           val body = resolveTerm(term.body)
           R.Term.Let(binder, init, body, range)
@@ -229,7 +229,7 @@ class Resolve private constructor(
         when (term.name) {
           "_"  -> R.Term.Meta(range)
           else -> {
-            when (val level = terms.lastIndexOf(term.name)) {
+            when (val level = lookup(term.name)) {
               -1   -> {
                 when (val name = resolveName(term.name, range)) {
                   null -> R.Term.Hole(range)
@@ -240,7 +240,7 @@ class Resolve private constructor(
                 }
               }
               else -> {
-                val index = Lvl(terms.size).toIdx(Lvl(level))
+                val index = Lvl(size).toIdx(Lvl(level))
                 R.Term.Var(term.name, index, range)
               }
             }
@@ -324,18 +324,34 @@ class Resolve private constructor(
   private class Env private constructor(
     private val _terms: MutableList<String>,
   ) {
-    val terms: List<String> get() = _terms
+    private var frontier: Int = 0
+    val size: Int get() = _terms.size
 
     fun bind(name: String) {
       _terms += name
     }
 
-    inline fun <R> restoring(block: Env.() -> R): R {
-      val restore = _terms.size
+    fun lookup(name: String): Int {
+      for (i in _terms.lastIndex downTo frontier) {
+        if (_terms[i] == name) {
+          return i
+        }
+      }
+      return -1
+    }
+
+    inline fun <R> restoring(frontier: Int, block: Env.() -> R): R {
+      val restoreFrontier = this.frontier
+      this.frontier = frontier
+      val restoreSize = _terms.size
+
       val result = this.block()
-      repeat(_terms.size - restore) {
+
+      this.frontier = restoreFrontier
+      repeat(_terms.size - restoreSize) {
         _terms.removeLast()
       }
+
       return result
     }
 

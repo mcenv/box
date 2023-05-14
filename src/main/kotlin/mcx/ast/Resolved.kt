@@ -206,12 +206,14 @@ object Resolved {
     ) : Term()
 
     data class Func(
+      val open: Boolean,
       val params: kotlin.collections.List<Pair<Pattern, Term>>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class FuncOf(
+      val open: Boolean,
       val params: kotlin.collections.List<Pattern>,
       val result: Term,
       override val range: Range,

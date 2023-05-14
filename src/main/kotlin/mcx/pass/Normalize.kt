@@ -86,24 +86,24 @@ fun Env.evalTerm(term: Term): Value {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.ListOf(elements)
     }
-    is Term.Compound    -> {
+    is Term.Compound   -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       Value.Compound(elements)
     }
-    is Term.CompoundOf  -> {
+    is Term.CompoundOf -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       Value.CompoundOf(elements)
     }
-    is Term.Point       -> {
+    is Term.Point      -> {
       val element = lazy { evalTerm(term.element) }
       val elementType = evalTerm(term.elementType)
       Value.Point(element, elementType)
     }
-    is Term.Union       -> {
+    is Term.Union      -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.Union(elements)
     }
-    is Term.Func    -> {
+    is Term.Func       -> {
       val (binders, params) = term.params.mapWith(this) { modify, (param, type) ->
         val type = lazyOf(evalTerm(type))
         val param = evalPattern(param)
@@ -111,14 +111,14 @@ fun Env.evalTerm(term: Term): Value {
         param to type
       }.unzip()
       val result = Closure(this, binders, term.result)
-      Value.Func(params, result)
+      Value.Func(term.open, params, result)
     }
-    is Term.FuncOf      -> {
+    is Term.FuncOf     -> {
       val binders = term.params.map { evalPattern(it) }
       val result = Closure(this, binders, term.result)
-      Value.FuncOf(result)
+      Value.FuncOf(term.open, result)
     }
-    is Term.Apply       -> {
+    is Term.Apply      -> {
       val func = evalTerm(term.func)
       val args = term.args.map { lazy { evalTerm(it) } }
       when (func) {
@@ -130,32 +130,32 @@ fun Env.evalTerm(term: Term): Value {
         Value.Apply(func, args, type)
       }
     }
-    is Term.Code        -> {
+    is Term.Code       -> {
       val element = lazy { evalTerm(term.element) }
       Value.Code(element)
     }
-    is Term.CodeOf      -> {
+    is Term.CodeOf     -> {
       val element = lazy { evalTerm(term.element) }
       Value.CodeOf(element)
     }
-    is Term.Splice  -> {
+    is Term.Splice     -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> Value.Splice(element)
       }
     }
-    is Term.Command -> {
+    is Term.Command    -> {
       val element = lazy { evalTerm(term.element) }
       val type = evalTerm(term.type)
       Value.Command(element, type)
     }
-    is Term.Let     -> {
+    is Term.Let        -> {
       val init = lazy { evalTerm(term.init) }
       val binder = evalPattern(term.binder)
       (this + (binder binds init)).evalTerm(term.body)
     }
-    is Term.Var     -> this[next().toLvl(term.idx).value].value
-    is Term.Def     -> {
+    is Term.Var        -> this[next().toLvl(term.idx).value].value
+    is Term.Def        -> {
       // Builtin definitions have compiler-defined semantics and need to be handled specially.
       if (term.builtin) {
         val type = evalTerm(term.type)
@@ -164,8 +164,8 @@ fun Env.evalTerm(term: Term): Value {
         evalTerm(term.body!!)
       }
     }
-    is Term.Meta    -> Value.Meta(term.index, term.source)
-    is Term.Hole    -> Value.Hole
+    is Term.Meta       -> Value.Meta(term.index, term.source)
+    is Term.Hole       -> Value.Hole
   }
 }
 
@@ -252,13 +252,13 @@ fun Lvl.quoteValue(value: Value): Term {
         binder to param
       }
       val result = quoteClosure(value.result)
-      Term.Func(params, result)
+      Term.Func(value.open, params, result)
     }
     is Value.FuncOf      -> {
       // TODO: fix offsets
       val params = value.result.binders.map { quotePattern(it) }
       val result = quoteClosure(value.result)
-      Term.FuncOf(params, result)
+      Term.FuncOf(value.open, params, result)
     }
     is Value.Apply       -> {
       val func = quoteValue(value.func)

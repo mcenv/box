@@ -157,12 +157,12 @@ class Stage private constructor() {
           param to type
         }.unzip()
         val result = Closure(this, binders, term.result)
-        Value.Func(params, result)
+        Value.Func(term.open, params, result)
       }
       is Term.FuncOf     -> {
         val binders = term.params.map { evalPattern(it, phase) }
         val result = Closure(this, binders, term.result)
-        Value.FuncOf(result)
+        Value.FuncOf(term.open, result)
       }
       is Term.Apply      -> {
         val func = evalTerm(term.func, phase)
@@ -327,13 +327,13 @@ class Stage private constructor() {
           binder to param
         }
         val result = quoteClosure(value.result, phase)
-        Term.Func(params, result)
+        Term.Func(value.open, params, result)
       }
       is Value.FuncOf      -> {
         // TODO: fix offsets
         val params = value.result.binders.map { quotePattern(it, phase) }
         val result = quoteClosure(value.result, phase)
-        Term.FuncOf(params, result)
+        Term.FuncOf(value.open, params, result)
       }
       is Value.Apply       -> {
         val func = quoteValue(value.func, phase)

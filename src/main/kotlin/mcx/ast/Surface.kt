@@ -206,12 +206,14 @@ object Surface {
     ) : Term()
 
     data class Func(
+      val open: Boolean,
       val params: kotlin.collections.List<Pair<Term, Term>>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class FuncOf(
+      val open: Boolean,
       val params: kotlin.collections.List<Term>,
       val result: Term,
       override val range: Range,

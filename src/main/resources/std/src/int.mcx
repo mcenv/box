@@ -2,53 +2,53 @@ export def min_value : int := -2147483648;
 
 export def max_value : int := 2147483647;
 
-export builtin def + : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def + : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def - : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def - : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def * : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def * : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def / : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def / : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def % : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def % : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def min : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def min : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def max : func (int, int) -> int := \(_, _) -> /"#todo";
+export builtin def max : proc (int, int) -> int := \(_, _) -> /"#todo";
 
-export builtin def = : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def = : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def < : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def < : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def <= : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def <= : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def > : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def > : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def >= : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def >= : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def != : func (int, int) -> bool := \(_, _) -> /"#todo";
+export builtin def != : proc (int, int) -> bool := \(_, _) -> /"#todo";
 
-export builtin def to_byte : func (int) -> byte := \(_) ->
+export builtin def to_byte : proc (int) -> byte := \(_) ->
   let _ as end := /"data modify storage mcx: byte append value 0b";
   /"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]";
 
-export builtin def to_short : func (int) -> short := \(_) ->
+export builtin def to_short : proc (int) -> short := \(_) ->
   let _ as end := /"data modify storage mcx: short append value 0s";
   /"execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]";
 
-export def to_int : func (self : int) -> int := \(self) -> self;
+export def to_int : proc (self : int) -> int := \(self) -> self;
 
-export builtin def to_long : func (int) -> long := \(_) ->
+export builtin def to_long : proc (int) -> long := \(_) ->
   let _ as end := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]";
 
-export builtin def to_float : func (int) -> float := \(_) ->
+export builtin def to_float : proc (int) -> float := \(_) ->
   let _ as end := /"data modify storage mcx: float append value 0f";
   /"execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]";
 
-export builtin def to_double : func (int) -> double := \(_) ->
+export builtin def to_double : proc (int) -> double := \(_) ->
   let _ as end := /"data modify storage mcx: double append value 0d";
   /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]";
 
-export builtin def to_string : func (int) -> string :=
+export builtin def to_string : proc (int) -> string :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: int[-1]";

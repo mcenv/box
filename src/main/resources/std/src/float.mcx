@@ -2,5 +2,5 @@ export def min_value : float := 1.4e-45f;
 
 export def max_value : float := 3.4028235e38f;
 
-export builtin def to_string : func (float) -> string :=
+export builtin def to_string : proc (float) -> string :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: float[-1]";

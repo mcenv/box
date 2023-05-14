@@ -2,5 +2,5 @@ export def min_value : byte := -128b;
 
 export def max_value : byte := 127b;
 
-export builtin def to_string : func (byte) -> string :=
+export builtin def to_string : proc (byte) -> string :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: byte[-1]";

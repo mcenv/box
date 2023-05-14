@@ -141,11 +141,13 @@ sealed class Value {
   ) : Value()
 
   data class Func(
+    val open: Boolean,
     val params: kotlin.collections.List<Lazy<Value>>,
     val result: Closure,
   ) : Value()
 
   data class FuncOf(
+    val open: Boolean,
     val result: Closure,
   ) : Value()
 

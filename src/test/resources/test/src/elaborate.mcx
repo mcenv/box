@@ -90,9 +90,13 @@ def point : type tag_int := point 0;
 
 def union : type tag_int := union {};
 
+def proc : type tag_int := proc () -> int;
+
+def proc_of : proc () -> int := \() -> 0;
+
 def func : type tag_compound := func () -> int;
 
-def func_of : func () -> int := \() -> 0;
+def func_of : func () -> int := \\() -> 0;
 
 def apply : int := (\() -> 0)();
 

@@ -147,11 +147,13 @@ object Core {
     ) : Term()
 
     data class Func(
+      val open: Boolean,
       val params: kotlin.collections.List<Pair<Pattern<Term>, Term>>,
       val result: Term,
     ) : Term()
 
     data class FuncOf(
+      val open: Boolean,
       val params: kotlin.collections.List<Pattern<Term>>,
       val result: Term,
     ) : Term()

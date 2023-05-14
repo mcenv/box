@@ -14,19 +14,19 @@ fun prettyTerm(
     term: Term,
   ): String {
     return when (term) {
-      is Term.Tag     -> "tag"
-      is Term.TagOf   -> "tag_${term.value}"
-      is Term.Type    -> "(type ${go(term.element)})"
-      is Term.Bool    -> "bool"
-      is Term.BoolOf  -> term.value.toString()
-      is Term.If      -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
-      is Term.Is      -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
-      is Term.Byte    -> "byte"
-      is Term.ByteOf  -> "${term.value}b"
-      is Term.Short   -> "short"
-      is Term.ShortOf -> "${term.value}s"
-      is Term.Int     -> "int"
-      is Term.IntOf   -> term.value.toString()
+      is Term.Tag         -> "tag"
+      is Term.TagOf       -> "tag_${term.value}"
+      is Term.Type        -> "(type ${go(term.element)})"
+      is Term.Bool        -> "bool"
+      is Term.BoolOf      -> term.value.toString()
+      is Term.If          -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
+      is Term.Is          -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
+      is Term.Byte        -> "byte"
+      is Term.ByteOf      -> "${term.value}b"
+      is Term.Short       -> "short"
+      is Term.ShortOf     -> "${term.value}s"
+      is Term.Int         -> "int"
+      is Term.IntOf       -> term.value.toString()
       is Term.Long        -> "long"
       is Term.LongOf      -> "${term.value}L"
       is Term.Float       -> "float"
@@ -47,8 +47,8 @@ fun prettyTerm(
       is Term.CompoundOf  -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
       is Term.Point       -> "(point ${prettyTerm(term.element)})"
       is Term.Union       -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
-      is Term.Func        -> "(func ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
-      is Term.FuncOf      -> "(\\${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
+      is Term.Func        -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
+      is Term.FuncOf      -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
       is Term.Apply       -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
       is Term.Code        -> "(code ${go(term.element)})"
       is Term.CodeOf      -> "(`${go(term.element)})"

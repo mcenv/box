@@ -2,5 +2,5 @@ export def min_value : short := -32768s;
 
 export def max_value : short := 32767s;
 
-export builtin def to_string : func (short) -> string :=
+export builtin def to_string : proc (short) -> string :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: short[-1]";

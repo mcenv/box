@@ -2,5 +2,5 @@ export def min_value : long := -9223372036854775808l;
 
 export def max_value : long := 9223372036854775807l;
 
-export builtin def to_string : func (long) -> string :=
+export builtin def to_string : proc (long) -> string :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: long[-1]";

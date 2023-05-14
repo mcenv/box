@@ -111,6 +111,12 @@ object Lifted {
       override val type: NbtType get() = NbtType.COMPOUND
     }
 
+    data class ProcOf(
+      val tag: Int,
+    ) : Term() {
+      override val type: NbtType get() = NbtType.INT
+    }
+
     data class FuncOf(
       val entries: List<Entry>,
       val tag: Int,

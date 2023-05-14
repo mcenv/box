@@ -132,7 +132,7 @@ class Meta {
           param to type
         }
         val result = env.zonkTerm(term.result)
-        Term.Func(params, result)
+        Term.Func(term.open, params, result)
       }
       is Term.FuncOf      -> {
         var env = this
@@ -142,7 +142,7 @@ class Meta {
           param
         }
         val result = env.zonkTerm(term.result)
-        Term.FuncOf(params, result)
+        Term.FuncOf(term.open, params, result)
       }
       is Term.Apply       -> {
         val func = zonkTerm(term.func)
@@ -300,11 +300,13 @@ class Meta {
       value1 is Value.Point && value2 is Value.Point             -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union             -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
       value1 is Value.Func && value2 is Value.Func               -> {
+        value1.open == value2.open &&
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
       value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
+        value1.open == value2.open &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
       value1 is Value.Apply && value2 is Value.Apply             -> {
