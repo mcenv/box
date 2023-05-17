@@ -108,7 +108,7 @@ tasks.register("kover") {
     var node = DocumentBuilderFactory
       .newInstance()
       .newDocumentBuilder()
-      .parse(file("$buildDir/reports/kover/xml/report.xml"))
+      .parse(file("$buildDir/reports/kover/report.xml"))
       .firstChild
       .firstChild
     while (node != null) {
