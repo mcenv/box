@@ -43,6 +43,7 @@ jobs:
           version: snapshot
       - name: Test
         run: |
+          ${{ github.workspace }}/build/install/mcx/bin/mcx help
           echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
