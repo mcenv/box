@@ -358,7 +358,7 @@ class Pack private constructor(
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
     private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.LONG.id)(-1) })
 
-    private fun packDefinitionLocation(
+    fun packDefinitionLocation(
       location: DefinitionLocation,
     ): ResourceLocation {
       return ResourceLocation("minecraft", (location.module.parts + escape(location.name)).joinToString("/"))

@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import mcx.ast.DefinitionLocation
+import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
 import mcx.ast.Packed
 import mcx.data.DATA_PACK_FORMAT
@@ -242,8 +243,10 @@ class Build(
   data class Result(
     val success: Boolean,
     val diagnosticsByPath: List<Pair<Path, List<Diagnostic>>>,
+    val tests: List<DefinitionLocation>,
   )
 
+  // TODO: skip build if no changes
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): Result {
     val serverProperties = Properties().apply {
@@ -258,6 +261,7 @@ class Build(
       val context = Context(config)
       val success = AtomicBoolean(true)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
+      val tests = mutableListOf<DefinitionLocation>()
       val locations = src
         .walk()
         .filter { it.extension == "mcx" }
@@ -271,7 +275,12 @@ class Build(
                 }
               }
             }
-            elaborated.value.module.definitions.map { it.name }
+            elaborated.value.module.definitions.map {
+              if (Modifier.TEST in it.modifiers) {
+                tests += it.name
+              }
+              it.name
+            }
           }
         }
         .toList()
@@ -279,7 +288,7 @@ class Build(
         .flatten()
 
       if (!success.get()) {
-        return@coroutineScope Result(false, diagnosticsByPath)
+        return@coroutineScope Result(false, diagnosticsByPath, tests)
       }
 
       fun generate(suffix: String, definitions: Map<String, String>) {
@@ -329,7 +338,7 @@ class Build(
       generate("main", packs.main)
       generate("test", packs.test)
 
-      Result(true, diagnosticsByPath)
+      Result(true, diagnosticsByPath, tests)
     }
   }
 

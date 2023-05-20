@@ -59,17 +59,17 @@ private fun Path.saveFromStream(input: InputStream) {
 }
 
 // TODO: refactor
-fun playServer(id: String): Int {
+fun playServer(id: String, rconAction: (suspend (Rcon) -> Unit)? = null): Int {
   return runBlocking {
     val serverPath = getServerPath(id)
     // TODO: check sha1
     // TODO: print messages
     if (serverPath.exists()) {
       val properties = loadDedicatedServerProperties()
-      val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString).inheritIO().start().waitFor() }
-      if (properties.enableRcon && properties.rcon.password.isNotEmpty()) {
+      val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
+      if (rconAction != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
         Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
-          // TODO
+          rconAction(it)
         }
       }
       minecraft.join()

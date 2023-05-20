@@ -12,6 +12,7 @@ fun registerCommands(dispatcher: CommandDispatcher<Unit>) {
   InitCommands.register(dispatcher)
   InstallationsCommands.register(dispatcher)
   LspCommands.register(dispatcher)
+  TestCommands.register(dispatcher)
   VersionCommands.register(dispatcher)
 }
 
