@@ -44,7 +44,7 @@ jobs:
       - name: Test
         run: |
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
-          mv $MINECRAFT/server.jar ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
+          mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           ./build/install/mcx/bin/mcx test ${{ steps.minecraft.outputs.version }}
       - name: Upload datapacks
         uses: actions/upload-artifact@v3
