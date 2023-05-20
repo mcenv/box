@@ -32,6 +32,8 @@ class Rcon private constructor(
       port: Int,
       timeout: Long,
     ): Rcon {
+      @Suppress("NAME_SHADOWING")
+      val timeout = if (timeout < 0) Long.MAX_VALUE else timeout
       lateinit var socket: Socket
       val start = System.currentTimeMillis()
       while (true) {
