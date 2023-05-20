@@ -30,19 +30,29 @@ jobs:
           arguments: test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload std pack
+      - name: Install
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: installDist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Minecraft
+        id: minecraft
+        uses: mcenv/setup-minecraft@v3
+        with:
+          version: snapshot
+      - name: Test
+        run: |
+          mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
+          mv $MINECRAFT/server.jar ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
+          ./build/install/mcx/bin/mcx test ${{ steps.minecraft.outputs.version }}
+      - name: Upload datapacks
         uses: actions/upload-artifact@v3
         with:
-          name: std
+          name: datapacks
           path: |
             ./src/main/resources/std/out/datapacks/std_main
             ./src/main/resources/std/out/datapacks/std_test
-          if-no-files-found: error
-      - name: Upload test pack
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: |
             ./src/test/resources/test/out/datapacks/test_main
             ./src/test/resources/test/out/datapacks/test_test
           if-no-files-found: error
