@@ -67,7 +67,7 @@ class Rcon private constructor(
           .putInt(packet.size)
           .putInt(packet.id)
           .putInt(packet.type)
-          .put(packet.body.encodeToByteArray())
+          .put(packet.encodedBody)
           .put(0)
           .put(0)
           .flip()
@@ -88,7 +88,8 @@ class Packet private constructor(
   val type: Int,
   val body: String,
 ) {
-  val size: Int = body.encodeToByteArray().size + Int.SIZE_BYTES + Int.SIZE_BYTES + Byte.SIZE_BYTES + Byte.SIZE_BYTES
+  val encodedBody: ByteArray = body.encodeToByteArray()
+  val size: Int = encodedBody.size + Int.SIZE_BYTES + Int.SIZE_BYTES + Byte.SIZE_BYTES + Byte.SIZE_BYTES
 
   companion object {
     private val freshId: AtomicInteger = AtomicInteger()
@@ -99,13 +100,15 @@ class Packet private constructor(
 
     fun from(input: InputStream): Packet {
       fun readInt(): Int {
-        return ByteBuffer.wrap(input.readNBytes(Integer.BYTES)).order(ByteOrder.LITTLE_ENDIAN).getInt()
+        return ByteBuffer.wrap(input.readNBytes(Int.SIZE_BYTES)).order(ByteOrder.LITTLE_ENDIAN).getInt()
       }
 
       val size = readInt()
       val id = readInt()
       val type = readInt()
-      val body = String(input.readNBytes(size - Integer.BYTES - Integer.BYTES))
+      val body = String(input.readNBytes(size - Int.SIZE_BYTES - Int.SIZE_BYTES - Byte.SIZE_BYTES - Byte.SIZE_BYTES))
+      input.read() // drop null
+      input.read() // drop null
       return Packet(id, type, body)
     }
   }
