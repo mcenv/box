@@ -41,10 +41,9 @@ jobs:
         uses: mcenv/setup-minecraft@v3
         with:
           version: snapshot
+      - run: echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
       - name: Test
         run: |
-          ${{ github.workspace }}/build/install/mcx/bin/mcx help
-          echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           cd ./src/test/resources/test
