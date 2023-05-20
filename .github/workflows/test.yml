@@ -43,10 +43,11 @@ jobs:
           version: snapshot
       - name: Test
         run: |
+          echo "$GITHUB_WORKSPACE/build/install/mcx/bin" >> $GITHUB_PATH
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           cd ./src/test/resources/test
-          ./build/install/mcx/bin/mcx test ${{ steps.minecraft.outputs.version }}
+          mcx test ${{ steps.minecraft.outputs.version }}
       - name: Upload datapacks
         uses: actions/upload-artifact@v3
         with:
