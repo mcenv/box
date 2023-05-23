@@ -30,6 +30,10 @@
 
 * Petříček, T., Orchard, D.A., & Mycroft, A. **Coeffects: a calculus of context-dependent computation**. ICFP.
 
+### 2015
+
+* White, L., Bour, F., & Yallop, J. **Modular implicits**. ML/OCaml.
+
 ### 2017
 
 * Eisenberg, R.A., & Jones, S.L. **Levity polymorphism**. Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation.
