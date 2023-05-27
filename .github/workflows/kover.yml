@@ -32,7 +32,7 @@ jobs:
           auth: ${{ secrets.COVERAGE }}
           gistID: 7af9a474143f247a1e0077a972afd904
           filename: mcx-coverage-badge.json
-          label: coverage
+          label: Coverage
           message: ${{ env.COVERAGE }}%
           valColorRange: ${{ env.COVERAGE }}
           minColorRange: 0
