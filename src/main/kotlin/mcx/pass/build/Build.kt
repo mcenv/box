@@ -178,7 +178,12 @@ class Build(
             }
 
             is Key.Packed     -> {
-              val results = Key.Packed.locations.map { fetch(Key.Lifted(it)) }
+              val results = Key.Packed.locations.flatMap {
+                fetch(Key.Resolved(it.module)).value.module.imports
+                  .map { async { fetch(Key.Lifted(it.value)) } }
+                  .plus(async { fetch(Key.Lifted(it)) })
+                  .awaitAll()
+              }
               val hash = results.map { it.hash }.hashCode()
               if (trace == null || trace.hash != hash) {
                 val definitions = results
