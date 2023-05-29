@@ -526,7 +526,7 @@ class Elaborate private constructor(
     definition: C.Definition.Def,
   ) {
     hover(range) {
-      val modifiers = definition.modifiers.joinToString(" ", "", " ")
+      val modifiers = definition.modifiers.joinToString(" ", "", " ").ifBlank { "" }
       val name = definition.name.name
       val type = prettyTerm(definition.type)
       val doc = definition.doc
