@@ -91,7 +91,7 @@ class Resolve private constructor(
         }
         val type = emptyEnv().resolveTerm(definition.type)
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
-        R.Definition.Def(definition.annotations, definition.modifiers, name, type, body, range)
+        R.Definition.Def(definition.doc, definition.annotations, definition.modifiers, name, type, body, range)
       }
       is S.Definition.Hole -> error("unreachable")
     }

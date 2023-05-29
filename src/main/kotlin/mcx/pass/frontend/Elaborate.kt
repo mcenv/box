@@ -24,7 +24,7 @@ class Elaborate private constructor(
   private val meta: Meta = Meta()
   private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
-  private var hover: (() -> String)? = null
+  private var hover: (() -> Hover)? = null
   private var inlayHints: MutableList<InlayHint> = mutableListOf()
 
   private fun elaborate(): Result {
@@ -51,6 +51,7 @@ class Elaborate private constructor(
       return null
     }
 
+    val doc = definition.doc
     val annotations = definition.annotations.map { it.value }
     val modifiers = definition.modifiers.map { it.value }
     val name = definition.name.value
@@ -60,11 +61,11 @@ class Elaborate private constructor(
         val phase = getPhase(modifiers)
         val type = ctx.checkTerm(definition.type, phase, meta.freshType(definition.type.range))
         if (Modifier.REC in modifiers) {
-          definitions[name] = C.Definition.Def(annotations, modifiers, name, type, null)
+          definitions[name] = C.Definition.Def(doc, annotations, modifiers, name, type, null)
         }
         val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.freeze().evalTerm(type)) }
         val (zonkedType, zonkedBody) = meta.checkSolved(diagnostics, type, body)
-        C.Definition.Def(annotations, modifiers, name, zonkedType!!, zonkedBody).also {
+        C.Definition.Def(doc, annotations, modifiers, name, zonkedType!!, zonkedBody).also {
           hoverDef(definition.name.range, it)
         }
       }
@@ -514,7 +515,10 @@ class Elaborate private constructor(
     type: Value,
   ) {
     val env = freeze()
-    hover(range) { env.prettyValue(type) }
+    hover(range) {
+      val type = env.prettyValue(type)
+      Hover(MarkupContent(MarkupKind.MARKDOWN, "```mcx\n$type\n```"))
+    }
   }
 
   private fun hoverDef(
@@ -525,13 +529,14 @@ class Elaborate private constructor(
       val modifiers = definition.modifiers.joinToString(" ", "", " ")
       val name = definition.name.name
       val type = prettyTerm(definition.type)
-      "${modifiers}def $name : $type"
+      val doc = definition.doc
+      Hover(MarkupContent(MarkupKind.MARKDOWN, "```mcx\n${modifiers}def $name : $type\n```\n---\n$doc"))
     }
   }
 
   private fun hover(
     range: Range,
-    message: () -> String,
+    message: () -> Hover,
   ) {
     if (hover == null && instruction is Instruction.Hover && instruction.position in range) {
       hover = message
@@ -639,7 +644,7 @@ class Elaborate private constructor(
   data class Result(
     val module: C.Module,
     val diagnostics: List<Diagnostic>,
-    val hover: (() -> String)?,
+    val hover: (() -> Hover)?,
     val inlayHints: List<InlayHint>,
   )
 

@@ -67,10 +67,11 @@ class Parse private constructor(
 
   private fun parseDefinition(): S.Definition {
     return ranging {
+      val doc = parseDoc()
       val annotations = parseAnnotations()
       val (modifiers, keyword) = parseModifiers()
       when (keyword) {
-        "def"  -> {
+        "def" -> {
           skipTrivia()
           val name = parseRanged { readWord() }
           val type = if (
@@ -92,15 +93,33 @@ class Parse private constructor(
             skipTrivia()
             parseTerm()
           }
-          S.Definition.Def(annotations, modifiers, name, type, body, until())
+          S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
         }
-        else   -> null
+        else  -> null
       } ?: run {
         val range = until()
         diagnostics += expectedDefinition(range)
         S.Definition.Hole(range)
       }
     }
+  }
+
+  private fun parseDoc(): String {
+    val lines = mutableListOf<String>()
+    while (text.startsWith("#|", cursor)) {
+      skip(2)
+      val start = cursor
+      while (
+        canRead() && when (peek()) {
+          '\n', '\r' -> false; else -> true
+        }
+      ) {
+        skip()
+      }
+      lines += text.substring(start, cursor)
+      skipTrivia()
+    }
+    return lines.joinToString("\n")
   }
 
   private fun parseAnnotations(): List<Ranged<Annotation>> {
@@ -591,6 +610,11 @@ class Parse private constructor(
           }
         }
         '#'  -> {
+          // ignore doc
+          if (canRead(1) && peek(1) == '|') {
+            break
+          }
+
           skip()
           while (
             canRead() && when (peek()) {
@@ -617,6 +641,10 @@ class Parse private constructor(
 
   private inline fun peek(): Char {
     return text[cursor]
+  }
+
+  private inline fun peek(offset: Int): Char {
+    return text[cursor + offset]
   }
 
   private inline fun canRead(): Boolean {
@@ -699,8 +727,9 @@ class Parse private constructor(
   private inner class RangingContext(
     private val start: Position,
   ) {
-    fun until(): Range =
-      start..here()
+    fun until(): Range {
+      return start..here()
+    }
   }
 
   data class Result(

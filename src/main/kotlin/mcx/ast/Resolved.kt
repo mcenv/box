@@ -12,12 +12,14 @@ object Resolved {
   )
 
   sealed class Definition {
+    abstract val doc: String
     abstract val annotations: List<Ranged<Annotation>>
     abstract val modifiers: List<Ranged<Modifier>>
     abstract val name: Ranged<DefinitionLocation>
     abstract val range: Range
 
     data class Def(
+      override val doc: String,
       override val annotations: List<Ranged<Annotation>>,
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
@@ -29,6 +31,7 @@ object Resolved {
     data class Hole(
       override val range: Range,
     ) : Definition() {
+      override val doc: String get() = throw IllegalStateException()
       override val annotations: List<Ranged<Annotation>> get() = throw IllegalStateException()
       override val modifiers: List<Ranged<Modifier>> get() = throw IllegalStateException()
       override val name: Ranged<DefinitionLocation> get() = throw IllegalStateException()

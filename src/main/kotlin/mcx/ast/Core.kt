@@ -10,11 +10,13 @@ object Core {
   )
 
   sealed class Definition {
+    abstract val doc: String
     abstract val annotations: List<Annotation>
     abstract val modifiers: List<Modifier>
     abstract val name: DefinitionLocation
 
     data class Def(
+      override val doc: String,
       override val annotations: List<Annotation>,
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,

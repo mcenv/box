@@ -31,9 +31,7 @@ import kotlin.io.path.*
 
 @JsonSegment("mcx")
 @Suppress("unused")
-class McxService : TextDocumentService,
-                   WorkspaceService,
-                   LanguageClientAware {
+class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
   private lateinit var client: LanguageClient
   private val build: Build = Build(Path(""))
@@ -98,12 +96,10 @@ class McxService : TextDocumentService,
       val elaborated = with(build) {
         fetchContext().fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(), Instruction.Hover(params.position)))
       }
-      Hover(
-        when (val hover = elaborated.value.hover) {
-          null -> throw CancellationException()
-          else -> highlight(hover())
-        }
-      )
+      when (val hover = elaborated.value.hover) {
+        null -> throw CancellationException()
+        else -> hover()
+      }
     }
   }
 
