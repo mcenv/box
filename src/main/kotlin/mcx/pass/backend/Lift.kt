@@ -111,7 +111,7 @@ class Lift private constructor(
             val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
-            val tag = context.freshId()
+            val tag = context.freshFuncId()
             L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders + capture, result, tag).also {
               liftedDefinitions += it
               dispatchedFuncs += it
@@ -121,7 +121,7 @@ class Lift private constructor(
           } else {
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
-            val tag = context.freshId()
+            val tag = context.freshProcId()
             L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders, result, tag).also {
               liftedDefinitions += it
               dispatchedProcs += it

@@ -5,9 +5,14 @@ import java.util.concurrent.atomic.AtomicInteger
 class Context(
   val config: Config,
 ) {
-  private val id: AtomicInteger = AtomicInteger(0)
+  private val procId: AtomicInteger = AtomicInteger(0)
+  private val funcId: AtomicInteger = AtomicInteger(0)
 
-  fun freshId(): Int {
-    return id.getAndIncrement()
+  fun freshProcId(): Int {
+    return procId.getAndIncrement()
+  }
+
+  fun freshFuncId(): Int {
+    return funcId.getAndIncrement()
   }
 }
