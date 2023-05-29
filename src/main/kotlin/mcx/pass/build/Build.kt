@@ -178,12 +178,12 @@ class Build(
             }
 
             is Key.Packed     -> {
-              val results = Key.Packed.locations.flatMap {
-                fetch(Key.Resolved(it.module)).value.module.imports
-                  .map { async { fetch(Key.Lifted(it.value)) } }
-                  .plus(async { fetch(Key.Lifted(it)) })
-                  .awaitAll()
+              val locations = Key.Packed.locations.flatMapTo(mutableSetOf()) {
+                transitiveImports(it.module) + it
               }
+              val results = locations.map {
+                async { fetch(Key.Lifted(it)) }
+              }.awaitAll()
               val hash = results.map { it.hash }.hashCode()
               if (trace == null || trace.hash != hash) {
                 val definitions = results
@@ -224,7 +224,7 @@ class Build(
   }
 
   private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
-    val imports = mutableListOf<DefinitionLocation>()
+    val imports = mutableSetOf<DefinitionLocation>()
     suspend fun go(location: ModuleLocation) {
       fetch(Key.Parsed(location)).value.module.imports.forEach { (import) ->
         imports += import
@@ -232,7 +232,7 @@ class Build(
       }
     }
     go(location)
-    return imports
+    return imports.toList()
   }
 
   private fun Path.pathOf(location: ModuleLocation): Path? {
@@ -341,7 +341,7 @@ class Build(
           }
       }
 
-      val packs =  context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
+      val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
       generate("main", packs.main)
       generate("test", packs.test)
 

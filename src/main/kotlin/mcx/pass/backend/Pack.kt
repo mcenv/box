@@ -435,10 +435,15 @@ class Pack private constructor(
     fun packDispatchProcs(
       procs: List<L.Definition.Function>,
     ): P.Definition.Function {
-      return P.Definition.Function(emptyList(), DISPATCH_PROC, listOf(
-        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) }))))
-      ) + procs.mapIndexed { index, function ->
-        Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+      return P.Definition.Function(emptyList(), DISPATCH_PROC, run {
+        val proc = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
+        listOf(
+          Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(proc))),
+          RemoveData(proc),
+        )
+      } + procs.sortedBy { it.restore }.map { function ->
+        val tag = function.restore!!
+        Execute.ConditionalScoreMatches(true, REG_0, REG, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
@@ -447,9 +452,11 @@ class Pack private constructor(
       funcs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_FUNC, listOf(
-        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") }))))
-      ) + funcs.mapIndexed { index, function ->
-        Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") })))),
+        RemoveData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1) })),
+      ) + funcs.sortedBy { it.restore }.map { function ->
+        val tag = function.restore!!
+        Execute.ConditionalScoreMatches(true, REG_0, REG, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
