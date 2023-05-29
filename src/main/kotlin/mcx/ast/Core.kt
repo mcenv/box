@@ -152,6 +152,7 @@ object Core {
     ) : Term()
 
     data class Apply(
+      val open: Boolean,
       val func: Term,
       val args: kotlin.collections.List<Term>,
       val type: Term,

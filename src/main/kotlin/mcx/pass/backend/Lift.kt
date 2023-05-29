@@ -14,18 +14,19 @@ class Lift private constructor(
   private val definition: C.Definition,
 ) {
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
-  private val dispatchedDefinitions: MutableList<L.Definition.Function> = mutableListOf()
+  private val dispatchedProcs: MutableList<L.Definition.Function> = mutableListOf()
+  private val dispatchedFuncs: MutableList<L.Definition.Function> = mutableListOf()
   private var freshFunctionId: Int = 0
 
   private fun lift(): Result {
     val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     liftedDefinitions += when (definition) {
-      is C.Definition.Def  -> {
+      is C.Definition.Def -> {
         val body = definition.body?.let { emptyCtx().liftTerm(it) }
         L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
       }
     }
-    return Result(liftedDefinitions, dispatchedDefinitions)
+    return Result(liftedDefinitions, dispatchedProcs, dispatchedFuncs)
   }
 
   private fun liftModifier(modifier: Modifier): L.Modifier? {
@@ -113,7 +114,7 @@ class Lift private constructor(
             val tag = context.freshId()
             L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders + capture, result, tag).also {
               liftedDefinitions += it
-              dispatchedDefinitions += it
+              dispatchedFuncs += it
             }
             val entries = freeVars.map { (name, type) -> L.Term.FuncOf.Entry(name, type) }
             L.Term.FuncOf(entries, tag)
@@ -123,7 +124,7 @@ class Lift private constructor(
             val tag = context.freshId()
             L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders, result, tag).also {
               liftedDefinitions += it
-              dispatchedDefinitions += it
+              dispatchedProcs += it
             }
             L.Term.ProcOf(tag)
           }
@@ -133,7 +134,7 @@ class Lift private constructor(
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
         val type = eraseType(term.type)
-        L.Term.Apply(func, args, type)
+        L.Term.Apply(term.open, func, args, type)
       }
       is C.Term.Code        -> unexpectedTerm(term)
       is C.Term.CodeOf      -> unexpectedTerm(term)
@@ -337,7 +338,8 @@ class Lift private constructor(
 
   data class Result(
     val liftedDefinitions: List<L.Definition>,
-    val dispatchedDefinitions: List<L.Definition.Function>,
+    val dispatchedProcs: List<L.Definition.Function>,
+    val dispatchedFuncs: List<L.Definition.Function>,
   )
 
   companion object {

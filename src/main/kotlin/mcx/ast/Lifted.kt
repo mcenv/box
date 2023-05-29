@@ -130,6 +130,7 @@ object Lifted {
     }
 
     data class Apply(
+      val open: Boolean,
       val func: Term,
       val args: List<Term>,
       override val type: NbtType,

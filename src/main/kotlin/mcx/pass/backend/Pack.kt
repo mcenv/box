@@ -2,6 +2,7 @@ package mcx.pass.backend
 
 import dev.mcenv.nbt.*
 import mcx.ast.DefinitionLocation
+import mcx.ast.ModuleLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
@@ -13,7 +14,6 @@ import mcx.ast.Packed.SourceProvider
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
-import mcx.pass.Context.Companion.DISPATCH
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
@@ -152,7 +152,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.ListOf     -> {
+      is L.Term.ListOf      -> {
         push(NbtType.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
         if (term.elements.isNotEmpty()) {
           val elementType = term.elements.first().type
@@ -164,7 +164,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.CompoundOf -> {
+      is L.Term.CompoundOf  -> {
         push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -174,30 +174,30 @@ class Pack private constructor(
           drop(valueType)
         }
       }
-      is L.Term.ProcOf     -> {
+      is L.Term.ProcOf      -> {
         push(NbtType.INT, SourceProvider.Value(IntTag(term.tag)))
       }
-      is L.Term.FuncOf     -> {
+      is L.Term.FuncOf      -> {
         push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
         term.entries.forEach { (name, type) ->
           val index = this[name, type]
           +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath { it(type.id)(index) }))))
         }
       }
-      is L.Term.Apply      -> {
+      is L.Term.Apply       -> {
         term.args.forEach { packTerm(it) }
         packTerm(term.func)
-        +RunFunction(packDefinitionLocation(DISPATCH)) // TODO: support proc
+        +RunFunction(packDefinitionLocation(if (term.open) DISPATCH_FUNC else DISPATCH_PROC))
 
         push(term.type, null)
         val keeps = listOf(term.type)
         term.args.forEach { drop(it.type, keeps, false) }
       }
-      is L.Term.Command    -> {
+      is L.Term.Command     -> {
         +Raw(term.element)
         push(term.type, null)
       }
-      is L.Term.Let        -> {
+      is L.Term.Let         -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -349,6 +349,9 @@ class Pack private constructor(
   }
 
   companion object {
+    private val DISPATCH_PROC: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch_proc")
+    private val DISPATCH_FUNC: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch_func")
+
     private val REG_0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
     private val REG: Packed.Objective = Packed.Objective("mcx")
@@ -420,13 +423,26 @@ class Pack private constructor(
     }
 
     // TODO: specialize dispatcher by type
-    fun packDispatch(
-      functions: List<L.Definition.Function>,
+    fun packDispatchProcs(
+      procs: List<L.Definition.Function>,
     ): P.Definition.Function {
-      val name = packDefinitionLocation(DISPATCH)
+      val name = packDefinitionLocation(DISPATCH_PROC)
+      val commands = listOf(
+        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) }))))
+      ) + procs.mapIndexed { index, function ->
+        Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+      }
+      return P.Definition.Function(emptyList(), name, commands)
+    }
+
+    // TODO: specialize dispatcher by type
+    fun packDispatchFuncs(
+      funcs: List<L.Definition.Function>,
+    ): P.Definition.Function {
+      val name = packDefinitionLocation(DISPATCH_FUNC)
       val commands = listOf(
         Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") }))))
-      ) + functions.mapIndexed { index, function ->
+      ) + funcs.mapIndexed { index, function ->
         Execute.ConditionalScoreMatches(true, REG_0, REG, index..index, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       }
       return P.Definition.Function(emptyList(), name, commands)

@@ -174,7 +174,7 @@ class Stage private constructor() {
           }
         } ?: run {
           val type = evalTerm(term.type)
-          Value.Apply(func, args, type)
+          Value.Apply(term.open, func, args, type)
         }
       }
       is Term.Code       -> {
@@ -335,7 +335,7 @@ class Stage private constructor() {
         val func = quoteValue(value.func, phase)
         val args = value.args.map { quoteValue(it.value, phase) }
         val type = quoteValue(value.type, phase)
-        Term.Apply(func, args, type)
+        Term.Apply(value.open, func, args, type)
       }
       is Value.Code        -> {
         val element = quoteValue(value.element.value, Phase.WORLD)

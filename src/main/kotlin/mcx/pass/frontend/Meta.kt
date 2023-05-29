@@ -148,7 +148,7 @@ class Meta {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
-        Term.Apply(func, args, type)
+        Term.Apply(term.open, func, args, type)
       }
       is Term.Code        -> {
         val element = zonkTerm(term.element)

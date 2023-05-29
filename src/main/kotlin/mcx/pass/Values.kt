@@ -152,6 +152,7 @@ sealed class Value {
   ) : Value()
 
   data class Apply(
+    val open: Boolean,
     val func: Value,
     val args: kotlin.collections.List<Lazy<Value>>,
     val type: Value,

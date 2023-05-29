@@ -1,7 +1,5 @@
 package mcx.pass
 
-import mcx.ast.DefinitionLocation
-import mcx.ast.ModuleLocation
 import java.util.concurrent.atomic.AtomicInteger
 
 class Context(
@@ -11,9 +9,5 @@ class Context(
 
   fun freshId(): Int {
     return id.getAndIncrement()
-  }
-
-  companion object {
-    val DISPATCH: DefinitionLocation = DefinitionLocation(ModuleLocation(), ":dispatch")
   }
 }

@@ -246,7 +246,7 @@ class Elaborate private constructor(
         }
         val values = freeze()
         val type = funcType.result(args.map { lazy { values.evalTerm(it) } })
-        C.Term.Apply(func, args, next().quoteValue(type)) to type
+        C.Term.Apply(funcType.open, func, args, next().quoteValue(type)) to type
       }
       term is R.Term.Code && phase == Phase.CONST && synth(type)                 -> {
         val element = checkTerm(term.element, Phase.WORLD, meta.freshType(term.element.range))

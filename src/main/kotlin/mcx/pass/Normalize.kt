@@ -127,7 +127,7 @@ fun Env.evalTerm(term: Term): Value {
         else            -> null
       } ?: run {
         val type = evalTerm(term.type)
-        Value.Apply(func, args, type)
+        Value.Apply(term.open, func, args, type)
       }
     }
     is Term.Code       -> {
@@ -264,7 +264,7 @@ fun Lvl.quoteValue(value: Value): Term {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
       val type = quoteValue(value.type)
-      Term.Apply(func, args, type)
+      Term.Apply(value.open, func, args, type)
     }
     is Value.Code        -> {
       val element = quoteValue(value.element.value)
