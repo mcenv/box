@@ -1,5 +1,8 @@
 import {
   int::+,
+  int::=,
 }
 
 def two : int := 1 + 1;
+
+test def 1+2=3 := (1 + 2) = 3;
