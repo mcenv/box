@@ -188,6 +188,7 @@ class Build(
               if (trace == null || trace.hash != hash) {
                 val definitions = results
                   .flatMap { result -> result.value?.liftedDefinitions?.map { async { Pack(this@fetch, it) } } ?: emptyList() }
+                  .plus(async { Pack.packInit() })
                   .plus(async { Pack.packDispatchProcs(results.flatMap { result -> result.value?.dispatchedProcs ?: emptyList() }) })
                   .plus(async { Pack.packDispatchFuncs(results.flatMap { result -> result.value?.dispatchedFuncs ?: emptyList() }) })
                   .awaitAll()

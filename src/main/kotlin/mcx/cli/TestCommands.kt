@@ -25,6 +25,8 @@ object TestCommands {
               }
               var success = true
               playServer(version) { rcon ->
+                rcon.exec("function ${Pack.INIT.namespace}:${Pack.INIT.path}")
+
                 success = buildResult.tests.fold(true) { acc, test ->
                   val name = Pack.packDefinitionLocation(test)
                   val path = (test.module.parts + test.name).joinToString(".")
@@ -40,7 +42,8 @@ object TestCommands {
                       true
                     }
                     else -> {
-                      error("unexpected result: $result")
+                      println("\u001B[31munexpected result: '$result'\u001B[0m")
+                      false
                     }
                   }
                 }
