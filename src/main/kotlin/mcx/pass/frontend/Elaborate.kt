@@ -301,6 +301,8 @@ class Elaborate private constructor(
       term is R.Term.Def && synth(type)                                          -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
+            hoverDef(term.range, definition)
+
             if (Annotation.Deprecated in definition.annotations) {
               diagnostics += deprecated(term.range)
             }
