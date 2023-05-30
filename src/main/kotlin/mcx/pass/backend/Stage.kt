@@ -168,7 +168,7 @@ class Stage private constructor() {
           Phase.CONST -> {
             when (func) {
               is Value.FuncOf -> func.result(args, phase)
-              is Value.Def    -> lookupBuiltin(func.name)!!.eval(args)
+              is Value.Def    -> lookupBuiltin(func.def.name)!!.eval(args)
               else            -> null
             }
           }
@@ -226,11 +226,8 @@ class Stage private constructor() {
       is Term.Def        -> {
         when (phase) {
           Phase.WORLD -> null
-          Phase.CONST -> term.body?.let { evalTerm(it, phase) }
-        } ?: run {
-          val type = evalTerm(term.type, phase)
-          Value.Def(term.builtin, term.name, null, type)
-        }
+          Phase.CONST -> term.def.body?.let { evalTerm(it, phase) }
+        } ?: Value.Def(term.def)
       }
       is Term.Meta       -> unexpectedTerm(term)
       is Term.Hole       -> unexpectedTerm(term)
@@ -349,27 +346,24 @@ class Stage private constructor() {
         val element = quoteValue(value.element, Phase.CONST)
         Term.Splice(element)
       }
-      is Value.Command     -> {
+      is Value.Command -> {
         val element = quoteValue(value.element.value, Phase.CONST)
         val type = quoteValue(value.type, Phase.CONST)
         Term.Command(element, type)
       }
-      is Value.Let         -> {
+      is Value.Let     -> {
         val binder = quotePattern(value.binder, phase)
         val init = quoteValue(value.init.value, phase)
         val body = quoteValue(value.body.value, phase)
         Term.Let(binder, init, body)
       }
-      is Value.Var         -> {
+      is Value.Var     -> {
         val type = quoteValue(value.type, phase)
         Term.Var(value.name, toIdx(value.lvl), type)
       }
-      is Value.Def         -> {
-        val type = quoteValue(value.type, phase)
-        Term.Def(value.builtin, value.name, value.body, type)
-      }
-      is Value.Meta        -> Term.Meta(value.index, value.source)
-      is Value.Hole        -> Term.Hole
+      is Value.Def     -> Term.Def(value.def)
+      is Value.Meta    -> Term.Meta(value.index, value.source)
+      is Value.Hole    -> Term.Hole
     }
   }
 

@@ -157,8 +157,8 @@ class Lift private constructor(
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def         -> {
-        val type = eraseType(term.type)
-        L.Term.Def(term.name, type)
+        val type = eraseType(term.def.type)
+        L.Term.Def(term.def.name, type)
       }
       is C.Term.Meta        -> unexpectedTerm(term)
       is C.Term.Hole        -> unexpectedTerm(term)
@@ -278,20 +278,20 @@ class Lift private constructor(
       is C.Term.ListOf      -> unexpectedTerm(type)
       is C.Term.Compound    -> NbtType.COMPOUND
       is C.Term.CompoundOf  -> unexpectedTerm(type)
-      is C.Term.Point       -> eraseType(type.elementType)
-      is C.Term.Union       -> type.elements.firstOrNull()?.let { eraseType(it) } ?: NbtType.END
-      is C.Term.Func        -> NbtType.COMPOUND
-      is C.Term.FuncOf      -> unexpectedTerm(type)
-      is C.Term.Apply       -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Code        -> unexpectedTerm(type)
-      is C.Term.CodeOf      -> unexpectedTerm(type)
-      is C.Term.Splice      -> unexpectedTerm(type)
-      is C.Term.Command     -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Let         -> eraseType(type.body)
-      is C.Term.Var         -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Def         -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Meta        -> unexpectedTerm(type)
-      is C.Term.Hole        -> unexpectedTerm(type)
+      is C.Term.Point   -> eraseType(type.elementType)
+      is C.Term.Union   -> type.elements.firstOrNull()?.let { eraseType(it) } ?: NbtType.END
+      is C.Term.Func    -> NbtType.COMPOUND
+      is C.Term.FuncOf  -> unexpectedTerm(type)
+      is C.Term.Apply   -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
+      is C.Term.Code    -> unexpectedTerm(type)
+      is C.Term.CodeOf  -> unexpectedTerm(type)
+      is C.Term.Splice  -> unexpectedTerm(type)
+      is C.Term.Command -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
+      is C.Term.Let     -> eraseType(type.body)
+      is C.Term.Var     -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
+      is C.Term.Def     -> ((type.def.type as C.Term.Type).element as C.Term.TagOf).value
+      is C.Term.Meta    -> unexpectedTerm(type)
+      is C.Term.Hole    -> unexpectedTerm(type)
     }
   }
 

@@ -1,9 +1,9 @@
 package mcx.pass
 
 import kotlinx.collections.immutable.PersistentList
+import mcx.ast.Core.Definition
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.DefinitionLocation
 import mcx.ast.Lvl
 import mcx.data.NbtType
 import org.eclipse.lsp4j.Range
@@ -188,10 +188,7 @@ sealed class Value {
   ) : Value()
 
   data class Def(
-    val builtin: Boolean,
-    val name: DefinitionLocation,
-    val body: Term?,
-    val type: Value,
+    val def: Definition.Def,
   ) : Value()
 
   data class Meta(

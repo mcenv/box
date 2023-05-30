@@ -162,26 +162,23 @@ class Meta {
         val element = zonkTerm(term.element)
         Term.Splice(element)
       }
-      is Term.Command     -> {
+      is Term.Command -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Command(element, type)
       }
-      is Term.Let         -> {
+      is Term.Let     -> {
         val binder = zonkPattern(term.binder)
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         Term.Let(binder, init, body)
       }
-      is Term.Var         -> {
+      is Term.Var     -> {
         val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
-      is Term.Def         -> {
-        val type = zonkTerm(term.type)
-        Term.Def(term.builtin, term.name, term.body, type)
-      }
-      is Term.Meta        -> {
+      is Term.Def     -> Term.Def(term.def)
+      is Term.Meta    -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
             Term.Meta(term.index, term.source).also { unsolvedMetas += it.index to it.source }
@@ -189,7 +186,7 @@ class Meta {
           else -> zonkTerm(next().quoteValue(solution))
         }
       }
-      is Term.Hole        -> term
+      is Term.Hole    -> term
     }
   }
 
@@ -299,29 +296,29 @@ class Meta {
       }
       value1 is Value.Point && value2 is Value.Point             -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union             -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
-      value1 is Value.Func && value2 is Value.Func               -> {
+      value1 is Value.Func && value2 is Value.Func       -> {
         value1.open == value2.open &&
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf           -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf   -> {
         value1.open == value2.open &&
         unifyValue(evalClosure(value1.result), evalClosure(value2.result))
       }
-      value1 is Value.Apply && value2 is Value.Apply             -> {
+      value1 is Value.Apply && value2 is Value.Apply     -> {
         unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code               -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf           -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice           -> unifyValue(value1.element, value2.element)
-      value1 is Value.Command && value2 is Value.Command         -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Var && value2 is Value.Var                 -> value1.lvl == value2.lvl
-      value1 is Value.Def && value2 is Value.Def                 -> value1.name == value2.name // TODO: check body
-      value1 is Value.Hole || value2 is Value.Hole               -> true // ?
-      else                                                       -> false
+      value1 is Value.Code && value2 is Value.Code       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf   -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice   -> unifyValue(value1.element, value2.element)
+      value1 is Value.Command && value2 is Value.Command -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Var && value2 is Value.Var         -> value1.lvl == value2.lvl
+      value1 is Value.Def && value2 is Value.Def         -> value1.def.name == value2.def.name // TODO: check body
+      value1 is Value.Hole || value2 is Value.Hole       -> true // ?
+      else                                               -> false
     }
   }
 

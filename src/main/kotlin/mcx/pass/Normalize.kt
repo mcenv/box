@@ -7,6 +7,7 @@ import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
+import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.util.mapWith
@@ -123,7 +124,7 @@ fun Env.evalTerm(term: Term): Value {
       val args = term.args.map { lazy { evalTerm(it) } }
       when (func) {
         is Value.FuncOf -> func.result(args)
-        is Value.Def    -> lookupBuiltin(func.name)!!.eval(args)
+        is Value.Def    -> lookupBuiltin(func.def.name)!!.eval(args)
         else            -> null
       } ?: run {
         val type = evalTerm(term.type)
@@ -157,11 +158,10 @@ fun Env.evalTerm(term: Term): Value {
     is Term.Var        -> this[next().toLvl(term.idx).value].value
     is Term.Def        -> {
       // Builtin definitions have compiler-defined semantics and need to be handled specially.
-      if (term.builtin) {
-        val type = evalTerm(term.type)
-        Value.Def(true, term.name, null, type)
+      if (Modifier.BUILTIN in term.def.modifiers) {
+        Value.Def(term.def)
       } else {
-        evalTerm(term.body!!)
+        evalTerm(term.def.body!!)
       }
     }
     is Term.Meta       -> Value.Meta(term.index, term.source)
@@ -274,26 +274,23 @@ fun Lvl.quoteValue(value: Value): Term {
       val element = quoteValue(value.element.value)
       Term.CodeOf(element)
     }
-    is Value.Splice      -> {
+    is Value.Splice  -> {
       val element = quoteValue(value.element)
       Term.Splice(element)
     }
-    is Value.Command     -> {
+    is Value.Command -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type)
       Term.Command(element, type)
     }
-    is Value.Let         -> error("unexpected value: $value")
-    is Value.Var         -> {
+    is Value.Let     -> error("unexpected value: $value")
+    is Value.Var     -> {
       val type = quoteValue(value.type)
       Term.Var(value.name, toIdx(value.lvl), type)
     }
-    is Value.Def         -> {
-      val type = quoteValue(value.type)
-      Term.Def(value.builtin, value.name, value.body, type)
-    }
-    is Value.Meta        -> Term.Meta(value.index, value.source)
-    is Value.Hole        -> Term.Hole
+    is Value.Def     -> Term.Def(value.def)
+    is Value.Meta    -> Term.Meta(value.index, value.source)
+    is Value.Hole    -> Term.Hole
   }
 }
 
