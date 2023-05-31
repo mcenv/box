@@ -36,7 +36,7 @@ object ParseTests {
     val name = ModuleLocation("simple")
     val result = Parse(
       context, name,
-      """def a : int := 0;
+      """def a : i32 := 0;
       """.trimIndent()
     )
     assertEquals(
@@ -50,8 +50,8 @@ object ParseTests {
               annotations = emptyList(),
               modifiers = emptyList(),
               name = Ranged("a", Range(Position(0, 4), Position(0, 5))),
-              type = Term.Int(Range(Position(0, 8), Position(0, 11))),
-              body = Term.IntOf(0, Range(Position(0, 15), Position(0, 16))),
+              type = Term.I32(Range(Position(0, 8), Position(0, 11))),
+              body = Term.I32Of(0, Range(Position(0, 15), Position(0, 16))),
               range = Range(Position(0, 0), Position(0, 16)),
             )
           ),

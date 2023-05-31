@@ -1,15 +1,15 @@
 @deprecated
-def deprecated_zero : int := 0;
+def deprecated_zero : i32 := 0;
 
-def use_deprecated : int := deprecated_zero;
+def use_deprecated : i32 := deprecated_zero;
 
 @unstable
-def unstable_zero : int := 0;
+def unstable_zero : i32 := 0;
 
-def use_unstable : int := unstable_zero;
+def use_unstable : i32 := unstable_zero;
 
 @deprecated
-@unstable 
-def deprecated_unstable_zero : int := 0;
+@unstable
+def deprecated_unstable_zero : i32 := 0;
 
-def use_deprecated_unstable : int := deprecated_unstable_zero;
+def use_deprecated_unstable : i32 := deprecated_unstable_zero;

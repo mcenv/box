@@ -112,47 +112,47 @@ class Pack private constructor(
         packTerm(term.scrutinee)
         matchPattern(term.scrutineer)
       }
-      is L.Term.ByteOf      -> push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
-      is L.Term.ShortOf     -> push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
-      is L.Term.IntOf       -> push(NbtType.INT, SourceProvider.Value(IntTag(term.value)))
-      is L.Term.LongOf      -> push(NbtType.LONG, SourceProvider.Value(LongTag(term.value)))
-      is L.Term.FloatOf     -> push(NbtType.FLOAT, SourceProvider.Value(FloatTag(term.value)))
-      is L.Term.DoubleOf    -> push(NbtType.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
-      is L.Term.StringOf    -> push(NbtType.STRING, SourceProvider.Value(StringTag(term.value)))
-      is L.Term.ByteArrayOf -> {
-        val elements = term.elements.map { (it as? L.Term.ByteOf)?.value ?: 0 }
+      is L.Term.I8Of        -> push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
+      is L.Term.I16Of       -> push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
+      is L.Term.I32Of       -> push(NbtType.INT, SourceProvider.Value(IntTag(term.value)))
+      is L.Term.I64Of       -> push(NbtType.LONG, SourceProvider.Value(LongTag(term.value)))
+      is L.Term.F32Of       -> push(NbtType.FLOAT, SourceProvider.Value(FloatTag(term.value)))
+      is L.Term.F64Of       -> push(NbtType.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
+      is L.Term.StrOf       -> push(NbtType.STRING, SourceProvider.Value(StringTag(term.value)))
+      is L.Term.I8ArrayOf   -> {
+        val elements = term.elements.map { (it as? L.Term.I8Of)?.value ?: 0 }
         push(NbtType.BYTE_ARRAY, SourceProvider.Value(ByteArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
-          if (element !is L.Term.ByteOf) {
+          if (element !is L.Term.I8Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.BYTE_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
             drop(NbtType.BYTE)
           }
         }
       }
-      is L.Term.IntArrayOf  -> {
-        val elements = term.elements.map { (it as? L.Term.IntOf)?.value ?: 0 }
+      is L.Term.I32ArrayOf  -> {
+        val elements = term.elements.map { (it as? L.Term.I32Of)?.value ?: 0 }
         push(NbtType.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
-          if (element !is L.Term.IntOf) {
+          if (element !is L.Term.I32Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.INT_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(INT_TOP)))
             drop(NbtType.INT)
           }
         }
       }
-      is L.Term.LongArrayOf -> {
-        val elements = term.elements.map { (it as? L.Term.LongOf)?.value ?: 0 }
+      is L.Term.I64ArrayOf  -> {
+        val elements = term.elements.map { (it as? L.Term.I64Of)?.value ?: 0 }
         push(NbtType.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
-          if (element !is L.Term.LongOf) {
+          if (element !is L.Term.I64Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath { it(NbtType.LONG_ARRAY.id)(-1)(index) }), DataManipulator.Set(SourceProvider.From(LONG_TOP)))
             drop(NbtType.LONG)
           }
         }
       }
-      is L.Term.ListOf      -> {
+      is L.Term.VecOf       -> {
         push(NbtType.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
         if (term.elements.isNotEmpty()) {
           val elementType = term.elements.first().type
@@ -164,7 +164,7 @@ class Pack private constructor(
           }
         }
       }
-      is L.Term.CompoundOf  -> {
+      is L.Term.StructOf    -> {
         push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
         term.elements.forEach { (key, element) ->
           packTerm(element)
@@ -220,7 +220,7 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.IntOf      -> {}
+      is L.Pattern.I32Of      -> {}
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
           push(element.type, SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
@@ -238,7 +238,7 @@ class Pack private constructor(
     keeps: List<NbtType>,
   ) {
     when (pattern) {
-      is L.Pattern.IntOf      -> drop(NbtType.INT, keeps)
+      is L.Pattern.I32Of      -> drop(NbtType.INT, keeps)
       is L.Pattern.CompoundOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(NbtType.COMPOUND, keeps)
@@ -257,7 +257,7 @@ class Pack private constructor(
       scrutineer: L.Pattern,
     ) {
       when (scrutineer) {
-        is L.Pattern.IntOf      -> {
+        is L.Pattern.I32Of -> {
           +Execute.StoreScore(
             RESULT, REG_1, REG,
             Execute.Run(

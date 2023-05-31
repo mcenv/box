@@ -1,1 +1,1 @@
-def zero : int := $(identity(tag_int))(int)(0);
+def zero : i32 := $(identity(int))(i32)(0);

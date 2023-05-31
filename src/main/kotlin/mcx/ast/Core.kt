@@ -56,80 +56,80 @@ object Core {
       val scrutineer: Pattern<Term>,
     ) : Term()
 
-    data object Byte : Term()
+    data object I8 : Term()
 
-    data class ByteOf(
-      val value: kotlin.Byte,
+    data class I8Of(
+      val value: Byte,
     ) : Term()
 
-    data object Short : Term()
+    data object I16 : Term()
 
-    data class ShortOf(
-      val value: kotlin.Short,
+    data class I16Of(
+      val value: Short,
     ) : Term()
 
-    data object Int : Term()
+    data object I32 : Term()
 
-    data class IntOf(
-      val value: kotlin.Int,
+    data class I32Of(
+      val value: Int,
     ) : Term()
 
-    data object Long : Term()
+    data object I64 : Term()
 
-    data class LongOf(
-      val value: kotlin.Long,
+    data class I64Of(
+      val value: Long,
     ) : Term()
 
-    data object Float : Term()
+    data object F32 : Term()
 
-    data class FloatOf(
-      val value: kotlin.Float,
+    data class F32Of(
+      val value: Float,
     ) : Term()
 
-    data object Double : Term()
+    data object F64 : Term()
 
-    data class DoubleOf(
-      val value: kotlin.Double,
+    data class F64Of(
+      val value: Double,
     ) : Term()
 
-    data object String : Term()
+    data object Str : Term()
 
-    data class StringOf(
-      val value: kotlin.String,
+    data class StrOf(
+      val value: String,
     ) : Term()
 
-    data object ByteArray : Term()
+    data object I8Array : Term()
 
-    data class ByteArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I8ArrayOf(
+      val elements: List<Term>,
     ) : Term()
 
-    data object IntArray : Term()
+    data object I32Array : Term()
 
-    data class IntArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I32ArrayOf(
+      val elements: List<Term>,
     ) : Term()
 
-    data object LongArray : Term()
+    data object I64Array : Term()
 
-    data class LongArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I64ArrayOf(
+      val elements: List<Term>,
     ) : Term()
 
-    data class List(
+    data class Vec(
       val element: Term,
     ) : Term()
 
-    data class ListOf(
-      val elements: kotlin.collections.List<Term>,
+    data class VecOf(
+      val elements: List<Term>,
     ) : Term()
 
-    data class Compound(
-      val elements: LinkedHashMap<kotlin.String, Term>,
+    data class Struct(
+      val elements: LinkedHashMap<String, Term>,
     ) : Term()
 
-    data class CompoundOf(
-      val elements: LinkedHashMap<kotlin.String, Term>,
+    data class StructOf(
+      val elements: LinkedHashMap<String, Term>,
     ) : Term()
 
     data class Point(
@@ -138,25 +138,25 @@ object Core {
     ) : Term()
 
     data class Union(
-      val elements: kotlin.collections.List<Term>,
+      val elements: List<Term>,
     ) : Term()
 
     data class Func(
       val open: Boolean,
-      val params: kotlin.collections.List<Pair<Pattern<Term>, Term>>,
+      val params: List<Pair<Pattern<Term>, Term>>,
       val result: Term,
     ) : Term()
 
     data class FuncOf(
       val open: Boolean,
-      val params: kotlin.collections.List<Pattern<Term>>,
+      val params: List<Pattern<Term>>,
       val result: Term,
     ) : Term()
 
     data class Apply(
       val open: Boolean,
       val func: Term,
-      val args: kotlin.collections.List<Term>,
+      val args: List<Term>,
       val type: Term,
     ) : Term()
 
@@ -184,7 +184,7 @@ object Core {
     ) : Term()
 
     data class Var(
-      val name: kotlin.String,
+      val name: String,
       val idx: Idx,
       val type: Term,
     ) : Term()
@@ -194,7 +194,7 @@ object Core {
     ) : Term()
 
     data class Meta(
-      val index: kotlin.Int,
+      val index: Int,
       val source: Range,
     ) : Term()
 
@@ -205,7 +205,7 @@ object Core {
    * A well-typed pattern.
    */
   sealed class Pattern<out T> {
-    data class IntOf(
+    data class I32Of(
       val value: Int,
     ) : Pattern<Nothing>()
 

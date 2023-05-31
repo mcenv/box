@@ -93,11 +93,11 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:tag|type|bool|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound|union|point|proc|func|code)\\b",
+          "match": "\\b(?:tag|type|bool|i8|i16|i32|i64|f32|f64|str|i8_array|i32_array|i64_array|vec|struct|union|point|proc|func|code)\\b",
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "\\b(?:true|false|tag_end|tag_byte|tag_short|tag_int|tag_long|tag_float|tag_double|tag_string|tag_byte_array|tag_int_array|tag_long_array|tag_list|tag_compound)\\b",
+          "match": "\\b(?:true|false|end|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound)\\b",
           "name": "constant.language.mcx"
         },
         {
@@ -164,7 +164,7 @@
           ]
         },
         {
-          "match": "([-+]?(?:[0-9]+))([bls])",
+          "match": "([-+]?(?:[0-9]+))(i8|i16|i32|i64)?",
           "captures": {
             "1": {
               "name": "constant.numeric.mcx"
@@ -175,7 +175,7 @@
           }
         },
         {
-          "match": "([-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?)([df]?)",
+          "match": "([-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?)(f32|f64)?",
           "captures": {
             "1": {
               "name": "constant.numeric.mcx"

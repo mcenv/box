@@ -91,61 +91,61 @@ class Stage private constructor() {
           }
         }
       }
-      is Term.Byte        -> Value.Byte
-      is Term.ByteOf      -> Value.ByteOf(term.value)
-      is Term.Short       -> Value.Short
-      is Term.ShortOf     -> Value.ShortOf(term.value)
-      is Term.Int         -> Value.Int
-      is Term.IntOf       -> Value.IntOf(term.value)
-      is Term.Long        -> Value.Long
-      is Term.LongOf      -> Value.LongOf(term.value)
-      is Term.Float       -> Value.Float
-      is Term.FloatOf     -> Value.FloatOf(term.value)
-      is Term.Double      -> Value.Double
-      is Term.DoubleOf    -> Value.DoubleOf(term.value)
-      is Term.String      -> Value.String
-      is Term.StringOf    -> Value.StringOf(term.value)
-      is Term.ByteArray   -> Value.ByteArray
-      is Term.ByteArrayOf -> {
+      is Term.I8          -> Value.I8
+      is Term.I8Of        -> Value.I8Of(term.value)
+      is Term.I16         -> Value.I16
+      is Term.I16Of       -> Value.I16Of(term.value)
+      is Term.I32         -> Value.I32
+      is Term.I32Of       -> Value.I32Of(term.value)
+      is Term.I64         -> Value.I64
+      is Term.I64Of       -> Value.I64Of(term.value)
+      is Term.F32         -> Value.F32
+      is Term.F32Of       -> Value.F32Of(term.value)
+      is Term.F64         -> Value.F64
+      is Term.F64Of       -> Value.F64Of(term.value)
+      is Term.Str         -> Value.Str
+      is Term.StrOf       -> Value.StrOf(term.value)
+      is Term.I8Array     -> Value.I8Array
+      is Term.I8ArrayOf   -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        Value.ByteArrayOf(elements)
+        Value.I8ArrayOf(elements)
       }
-      is Term.IntArray    -> Value.IntArray
-      is Term.IntArrayOf  -> {
+      is Term.I32Array    -> Value.I32Array
+      is Term.I32ArrayOf  -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        Value.IntArrayOf(elements)
+        Value.I32ArrayOf(elements)
       }
-      is Term.LongArray   -> Value.LongArray
-      is Term.LongArrayOf -> {
+      is Term.I64Array    -> Value.I64Array
+      is Term.I64ArrayOf  -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        Value.LongArrayOf(elements)
+        Value.I64ArrayOf(elements)
       }
-      is Term.List        -> {
+      is Term.Vec         -> {
         val element = lazy { evalTerm(term.element, phase) }
-        Value.List(element)
+        Value.Vec(element)
       }
-      is Term.ListOf     -> {
+      is Term.VecOf       -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        Value.ListOf(elements)
+        Value.VecOf(elements)
       }
-      is Term.Compound   -> {
+      is Term.Struct      -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
-        Value.Compound(elements)
+        Value.Struct(elements)
       }
-      is Term.CompoundOf -> {
+      is Term.StructOf    -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
-        Value.CompoundOf(elements)
+        Value.StructOf(elements)
       }
-      is Term.Point      -> {
+      is Term.Point       -> {
         val element = lazy { evalTerm(term.element, phase) }
         val elementType = evalTerm(term.elementType, phase)
         Value.Point(element, elementType)
       }
-      is Term.Union      -> {
+      is Term.Union       -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         Value.Union(elements)
       }
-      is Term.Func       -> {
+      is Term.Func        -> {
         val (binders, params) = term.params.mapWith(this) { modify, (param, type) ->
           val type = lazyOf(evalTerm(type, phase))
           val param = evalPattern(param, phase)
@@ -258,50 +258,50 @@ class Stage private constructor() {
         val scrutineer = quotePattern(value.scrutineer, phase)
         Term.Is(scrutinee, scrutineer)
       }
-      is Value.Byte        -> Term.Byte
-      is Value.ByteOf      -> Term.ByteOf(value.value)
-      is Value.Short       -> Term.Short
-      is Value.ShortOf     -> Term.ShortOf(value.value)
-      is Value.Int         -> Term.Int
-      is Value.IntOf       -> Term.IntOf(value.value)
-      is Value.Long        -> Term.Long
-      is Value.LongOf      -> Term.LongOf(value.value)
-      is Value.Float       -> Term.Float
-      is Value.FloatOf     -> Term.FloatOf(value.value)
-      is Value.Double      -> Term.Double
-      is Value.DoubleOf    -> Term.DoubleOf(value.value)
-      is Value.String      -> Term.String
-      is Value.StringOf    -> Term.StringOf(value.value)
-      is Value.ByteArray   -> Term.ByteArray
-      is Value.ByteArrayOf -> {
+      is Value.I8          -> Term.I8
+      is Value.I8Of        -> Term.I8Of(value.value)
+      is Value.I16         -> Term.I16
+      is Value.I16Of       -> Term.I16Of(value.value)
+      is Value.I32         -> Term.I32
+      is Value.I32Of       -> Term.I32Of(value.value)
+      is Value.I64         -> Term.I64
+      is Value.I64Of       -> Term.I64Of(value.value)
+      is Value.F32         -> Term.F32
+      is Value.F32Of       -> Term.F32Of(value.value)
+      is Value.F64         -> Term.F64
+      is Value.F64Of       -> Term.F64Of(value.value)
+      is Value.Str         -> Term.Str
+      is Value.StrOf       -> Term.StrOf(value.value)
+      is Value.I8Array     -> Term.I8Array
+      is Value.I8ArrayOf   -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        Term.ByteArrayOf(elements)
+        Term.I8ArrayOf(elements)
       }
-      is Value.IntArray    -> Term.IntArray
-      is Value.IntArrayOf  -> {
+      is Value.I32Array    -> Term.I32Array
+      is Value.I32ArrayOf  -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        Term.IntArrayOf(elements)
+        Term.I32ArrayOf(elements)
       }
-      is Value.LongArray   -> Term.LongArray
-      is Value.LongArrayOf -> {
+      is Value.I64Array    -> Term.I64Array
+      is Value.I64ArrayOf  -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        Term.LongArrayOf(elements)
+        Term.I64ArrayOf(elements)
       }
-      is Value.List        -> {
+      is Value.Vec         -> {
         val element = quoteValue(value.element.value, phase)
-        Term.List(element)
+        Term.Vec(element)
       }
-      is Value.ListOf      -> {
+      is Value.VecOf       -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        Term.ListOf(elements)
+        Term.VecOf(elements)
       }
-      is Value.Compound    -> {
+      is Value.Struct      -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
-        Term.Compound(elements)
+        Term.Struct(elements)
       }
-      is Value.CompoundOf  -> {
+      is Value.StructOf    -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
-        Term.CompoundOf(elements)
+        Term.StructOf(elements)
       }
       is Value.Point       -> {
         val element = quoteValue(value.element.value, phase)
@@ -372,7 +372,7 @@ class Stage private constructor() {
     phase: Phase,
   ): Pattern<Value> {
     return when (pattern) {
-      is Pattern.IntOf      -> pattern
+      is Pattern.I32Of      -> pattern
       is Pattern.CompoundOf -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> evalPattern(element, phase) }
         Pattern.CompoundOf(elements)
@@ -394,7 +394,7 @@ class Stage private constructor() {
     phase: Phase,
   ): Pattern<Term> {
     return when (pattern) {
-      is Pattern.IntOf      -> pattern
+      is Pattern.I32Of      -> pattern
       is Pattern.CompoundOf -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> quotePattern(element, phase) }
         Pattern.CompoundOf(elements)

@@ -4,6 +4,6 @@
 #| #### Header 4
 #| ##### Header 5
 #| ###### Header 6
-def a : int := 0;
+def a : i32 := 0;
 
-def b : int := a;
+def b : i32 := a;

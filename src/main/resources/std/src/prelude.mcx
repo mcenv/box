@@ -1,6 +1,6 @@
-export builtin const def ++ : func (left : string, right : string) -> string;
+export builtin const def ++ : func (left : str, right : str) -> str;
 
-export def end : type tag_end := union {};
+export def nothing : type end := union {};
 
 export const def identity : proc (τ : tag) -> code (proc (α : type τ) -> proc (a : α) -> α) :=
   \(τ) -> `(\(α) -> \(a) -> a);

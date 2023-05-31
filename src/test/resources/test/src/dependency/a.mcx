@@ -4,7 +4,7 @@ import {
   dependency::d::d,
 }
 
-def a : list int := [
+def a : vec i32 := [
   b,
   c,
   d,

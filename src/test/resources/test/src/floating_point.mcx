@@ -1,7 +1,7 @@
-def float_overflow : float := 4e38f;
+def float_overflow : f32 := 4e38f32;
 
-def double_overflow : double := 2e308d;
+def double_overflow : f64 := 2e308f64;
 
-def float_positive_zero : float := 0f;
+def float_positive_zero : f32 := 0f32;
 
-def double_positive_zero : double := 0d;
+def double_positive_zero : f64 := 0f64;

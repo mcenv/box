@@ -39,73 +39,73 @@ object Lifted {
       override val type: NbtType get() = NbtType.BYTE
     }
 
-    data class ByteOf(
+    data class I8Of(
       val value: Byte,
     ) : Term() {
       override val type: NbtType get() = NbtType.BYTE
     }
 
-    data class ShortOf(
+    data class I16Of(
       val value: Short,
     ) : Term() {
       override val type: NbtType get() = NbtType.SHORT
     }
 
-    data class IntOf(
+    data class I32Of(
       val value: Int,
     ) : Term() {
       override val type: NbtType get() = NbtType.INT
     }
 
-    data class LongOf(
+    data class I64Of(
       val value: Long,
     ) : Term() {
       override val type: NbtType get() = NbtType.LONG
     }
 
-    data class FloatOf(
+    data class F32Of(
       val value: Float,
     ) : Term() {
       override val type: NbtType get() = NbtType.FLOAT
     }
 
-    data class DoubleOf(
+    data class F64Of(
       val value: Double,
     ) : Term() {
       override val type: NbtType get() = NbtType.DOUBLE
     }
 
-    data class StringOf(
+    data class StrOf(
       val value: String,
     ) : Term() {
       override val type: NbtType get() = NbtType.STRING
     }
 
-    data class ByteArrayOf(
+    data class I8ArrayOf(
       val elements: List<Term>,
     ) : Term() {
       override val type: NbtType get() = NbtType.BYTE_ARRAY
     }
 
-    data class IntArrayOf(
+    data class I32ArrayOf(
       val elements: List<Term>,
     ) : Term() {
       override val type: NbtType get() = NbtType.INT_ARRAY
     }
 
-    data class LongArrayOf(
+    data class I64ArrayOf(
       val elements: List<Term>,
     ) : Term() {
       override val type: NbtType get() = NbtType.LONG_ARRAY
     }
 
-    data class ListOf(
+    data class VecOf(
       val elements: List<Term>,
     ) : Term() {
       override val type: NbtType get() = NbtType.LIST
     }
 
-    data class CompoundOf(
+    data class StructOf(
       val elements: LinkedHashMap<String, Term>,
     ) : Term() {
       override val type: NbtType get() = NbtType.COMPOUND
@@ -164,7 +164,7 @@ object Lifted {
   sealed class Pattern {
     abstract val type: NbtType
 
-    data class IntOf(
+    data class I32Of(
       val value: Int,
     ) : Pattern() {
       override val type: NbtType get() = NbtType.INT

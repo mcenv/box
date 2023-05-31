@@ -1,6 +1,6 @@
-export def min_value : double := 4.9e-324d;
+export def min_value : f64 := 4.9e-324f64;
 
-export def max_value : double := 1.7976931348623157e308d;
+export def max_value : f64 := 1.7976931348623157e308f64;
 
-export builtin def to_string : proc (double) -> string :=
+export builtin def to_string : proc (f64) -> str :=
   \(_) -> /"data modify storage mcx: string append string storage mcx: double[-1]";

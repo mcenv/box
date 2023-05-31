@@ -1,1 +1,1 @@
-export def e : int := 4;
+export def e : i32 := 4;

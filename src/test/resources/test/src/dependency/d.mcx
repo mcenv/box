@@ -2,4 +2,4 @@ import {
   dependency::e::e,
 }
 
-export def d : int := e;
+export def d : i32 := e;

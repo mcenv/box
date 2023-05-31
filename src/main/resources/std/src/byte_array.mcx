@@ -1,3 +1,3 @@
-export builtin def size : proc (byte_array) -> int := \(_) ->
-  let _ as end := /"data modify storage mcx: int append value 0";
+export builtin def size : proc (i8_array) -> i32 := \(_) ->
+  let _ as nothing := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: byte_array[-1]";

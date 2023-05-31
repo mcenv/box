@@ -3,6 +3,6 @@ import {
   int::=,
 }
 
-def two : int := 1 + 1;
+def two : i32 := 1 + 1;
 
 test def 1+2=3 := (1 + 2) = 3;

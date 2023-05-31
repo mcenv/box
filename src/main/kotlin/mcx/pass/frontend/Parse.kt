@@ -174,7 +174,7 @@ class Parse private constructor(
             expect(')')
             term
           }
-          '"'  -> S.Term.StringOf(readQuotedString(), until())
+          '"'  -> S.Term.StrOf(readQuotedString(), until())
           '['  -> {
             skip()
             skipTrivia()
@@ -192,19 +192,19 @@ class Parse private constructor(
                   }
                   ';'  -> {
                     when (first) {
-                      is S.Term.Byte -> {
+                      is S.Term.I8  -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        S.Term.ByteArrayOf(elements, until())
+                        S.Term.I8ArrayOf(elements, until())
                       }
-                      is S.Term.Int  -> {
+                      is S.Term.I32 -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        S.Term.IntArrayOf(elements, until())
+                        S.Term.I32ArrayOf(elements, until())
                       }
-                      is S.Term.Long -> {
+                      is S.Term.I64 -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        S.Term.LongArrayOf(elements, until())
+                        S.Term.I64ArrayOf(elements, until())
                       }
-                      else           -> null // TODO: improve error message
+                      else          -> null // TODO: improve error message
                     }
                   }
                   ','  -> {
@@ -264,30 +264,30 @@ class Parse private constructor(
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
-              ""               -> null
-              "tag"            -> S.Term.Tag(until())
-              "tag_end"        -> S.Term.TagOf(NbtType.END, until())
-              "tag_byte"       -> S.Term.TagOf(NbtType.BYTE, until())
-              "tag_short"      -> S.Term.TagOf(NbtType.SHORT, until())
-              "tag_int"        -> S.Term.TagOf(NbtType.INT, until())
-              "tag_long"       -> S.Term.TagOf(NbtType.LONG, until())
-              "tag_float"      -> S.Term.TagOf(NbtType.FLOAT, until())
-              "tag_double"     -> S.Term.TagOf(NbtType.DOUBLE, until())
-              "tag_string"     -> S.Term.TagOf(NbtType.STRING, until())
-              "tag_byte_array" -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
-              "tag_int_array"  -> S.Term.TagOf(NbtType.INT_ARRAY, until())
-              "tag_long_array" -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
-              "tag_list"       -> S.Term.TagOf(NbtType.LIST, until())
-              "tag_compound"   -> S.Term.TagOf(NbtType.COMPOUND, until())
-              "type"           -> {
+              ""             -> null
+              "tag"          -> S.Term.Tag(until())
+              "end"          -> S.Term.TagOf(NbtType.END, until())
+              "byte"         -> S.Term.TagOf(NbtType.BYTE, until())
+              "short"        -> S.Term.TagOf(NbtType.SHORT, until())
+              "int"          -> S.Term.TagOf(NbtType.INT, until())
+              "long"         -> S.Term.TagOf(NbtType.LONG, until())
+              "float"        -> S.Term.TagOf(NbtType.FLOAT, until())
+              "double"       -> S.Term.TagOf(NbtType.DOUBLE, until())
+              "string"       -> S.Term.TagOf(NbtType.STRING, until())
+              "byte_array"   -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
+              "int_array"    -> S.Term.TagOf(NbtType.INT_ARRAY, until())
+              "long_array"   -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
+              "list"         -> S.Term.TagOf(NbtType.LIST, until())
+              "compound"     -> S.Term.TagOf(NbtType.COMPOUND, until())
+              "type"         -> {
                 skipTrivia()
                 val tag = parseTerm0()
                 S.Term.Type(tag, until())
               }
-              "bool"           -> S.Term.Bool(until())
-              "false"          -> S.Term.BoolOf(false, until())
-              "true"           -> S.Term.BoolOf(true, until())
-              "if"             -> {
+              "bool"         -> S.Term.Bool(until())
+              "false"        -> S.Term.BoolOf(false, until())
+              "true"         -> S.Term.BoolOf(true, until())
+              "if"           -> {
                 skipTrivia()
                 val condition = parseTerm1()
                 expect("then")
@@ -298,22 +298,22 @@ class Parse private constructor(
                 val elseBranch = parseTerm1()
                 S.Term.If(condition, thenBranch, elseBranch, until())
               }
-              "byte"         -> S.Term.Byte(until())
-              "short"        -> S.Term.Short(until())
-              "int"          -> S.Term.Int(until())
-              "long"         -> S.Term.Long(until())
-              "float"        -> S.Term.Float(until())
-              "double"       -> S.Term.Double(until())
-              "string"       -> S.Term.String(until())
-              "byte_array"   -> S.Term.ByteArray(until())
-              "int_array"    -> S.Term.IntArray(until())
-              "long_array"   -> S.Term.LongArray(until())
-              "list"         -> {
+              "i8"           -> S.Term.I8(until())
+              "i16"          -> S.Term.I16(until())
+              "i32"          -> S.Term.I32(until())
+              "i64"          -> S.Term.I64(until())
+              "f32"          -> S.Term.F32(until())
+              "f64"          -> S.Term.F64(until())
+              "str"          -> S.Term.Str(until())
+              "i8_array"     -> S.Term.I8Array(until())
+              "i32_array"    -> S.Term.I32Array(until())
+              "i64_array"    -> S.Term.I64Array(until())
+              "vec"          -> {
                 skipTrivia()
                 val element = parseTerm0()
-                S.Term.List(element, until())
+                S.Term.Vec(element, until())
               }
-              "compound"     -> {
+              "struct"       -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -322,7 +322,7 @@ class Parse private constructor(
                   val value = parseTerm()
                   key to value
                 }
-                S.Term.Compound(elements, until())
+                S.Term.Struct(elements, until())
               }
               "point"        -> {
                 skipTrivia()
@@ -371,18 +371,20 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              else           ->
-                word.value.lastOrNull()?.let { suffix ->
-                  when (suffix) {
-                    'b'  -> word.value.dropLast(1).toByteOrNull()?.let { S.Term.ByteOf(it, until()) }
-                    's'  -> word.value.dropLast(1).toShortOrNull()?.let { S.Term.ShortOf(it, until()) }
-                    'l'  -> word.value.dropLast(1).toLongOrNull()?.let { S.Term.LongOf(it, until()) }
-                    'f'  -> word.value.dropLast(1).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.FloatOf(it, until()) }
-                    'd'  -> word.value.dropLast(1).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.DoubleOf(it, until()) }
-                    else -> word.value.toIntOrNull()?.let { S.Term.IntOf(it, until()) }
-                            ?: word.value.toDoubleOrNull()?.let { S.Term.DoubleOf(it, until()) }
-                  }
-                } ?: S.Term.Var(word.value, until())
+              else           -> {
+                val name = word.value
+                when {
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.I16Of(it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.I32Of(it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.I64Of(it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.F32Of(it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.F64Of(it, until()) }
+                  else                 -> name.toIntOrNull()?.let { S.Term.I32Of(it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.F64Of(it, until()) }
+                                          ?: S.Term.Var(name, until())
+                }
+              }
             }
           }
         }

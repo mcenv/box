@@ -1,7 +1,7 @@
-def meta≤end : end := /"";
+def meta≤end : nothing := /"";
 
-def unify_tag : int := $(identity(_))(int)(0);
+def unify_tag : i32 := $(identity(_))(i32)(0);
 
-def unify_type : int := $(identity(tag_int))(_)(0);
+def unify_type : i32 := $(identity(int))(_)(0);
 
 # def unify_tag_and_type : int := $(identity(_))(_)(0);

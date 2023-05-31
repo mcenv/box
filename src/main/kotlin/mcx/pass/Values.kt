@@ -55,80 +55,80 @@ sealed class Value {
     val scrutineer: Pattern<Value>,
   ) : Value()
 
-  data object Byte : Value()
+  data object I8 : Value()
 
-  data class ByteOf(
-    val value: kotlin.Byte,
+  data class I8Of(
+    val value: Byte,
   ) : Value()
 
-  data object Short : Value()
+  data object I16 : Value()
 
-  data class ShortOf(
-    val value: kotlin.Short,
+  data class I16Of(
+    val value: Short,
   ) : Value()
 
-  data object Int : Value()
+  data object I32 : Value()
 
-  data class IntOf(
-    val value: kotlin.Int,
+  data class I32Of(
+    val value: Int,
   ) : Value()
 
-  data object Long : Value()
+  data object I64 : Value()
 
-  data class LongOf(
-    val value: kotlin.Long,
+  data class I64Of(
+    val value: Long,
   ) : Value()
 
-  data object Float : Value()
+  data object F32 : Value()
 
-  data class FloatOf(
-    val value: kotlin.Float,
+  data class F32Of(
+    val value: Float,
   ) : Value()
 
-  data object Double : Value()
+  data object F64 : Value()
 
-  data class DoubleOf(
-    val value: kotlin.Double,
+  data class F64Of(
+    val value: Double,
   ) : Value()
 
-  data object String : Value()
+  data object Str : Value()
 
-  data class StringOf(
-    val value: kotlin.String,
+  data class StrOf(
+    val value: String,
   ) : Value()
 
-  data object ByteArray : Value()
+  data object I8Array : Value()
 
-  data class ByteArrayOf(
-    val elements: kotlin.collections.List<Lazy<Value>>,
+  data class I8ArrayOf(
+    val elements: List<Lazy<Value>>,
   ) : Value()
 
-  data object IntArray : Value()
+  data object I32Array : Value()
 
-  data class IntArrayOf(
-    val elements: kotlin.collections.List<Lazy<Value>>,
+  data class I32ArrayOf(
+    val elements: List<Lazy<Value>>,
   ) : Value()
 
-  data object LongArray : Value()
+  data object I64Array : Value()
 
-  data class LongArrayOf(
-    val elements: kotlin.collections.List<Lazy<Value>>,
+  data class I64ArrayOf(
+    val elements: List<Lazy<Value>>,
   ) : Value()
 
-  data class List(
+  data class Vec(
     val element: Lazy<Value>,
   ) : Value()
 
-  data class ListOf(
-    val elements: kotlin.collections.List<Lazy<Value>>,
+  data class VecOf(
+    val elements: List<Lazy<Value>>,
   ) : Value()
 
-  data class Compound(
-    val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
+  data class Struct(
+    val elements: LinkedHashMap<String, Lazy<Value>>,
   ) : Value()
 
-  data class CompoundOf(
-    val elements: LinkedHashMap<kotlin.String, Lazy<Value>>,
+  data class StructOf(
+    val elements: LinkedHashMap<String, Lazy<Value>>,
   ) : Value()
 
   data class Point(
@@ -137,12 +137,12 @@ sealed class Value {
   ) : Value()
 
   data class Union(
-    val elements: kotlin.collections.List<Lazy<Value>>,
+    val elements: List<Lazy<Value>>,
   ) : Value()
 
   data class Func(
     val open: Boolean,
-    val params: kotlin.collections.List<Lazy<Value>>,
+    val params: List<Lazy<Value>>,
     val result: Closure,
   ) : Value()
 
@@ -154,7 +154,7 @@ sealed class Value {
   data class Apply(
     val open: Boolean,
     val func: Value,
-    val args: kotlin.collections.List<Lazy<Value>>,
+    val args: List<Lazy<Value>>,
     val type: Value,
   ) : Value()
 
@@ -182,7 +182,7 @@ sealed class Value {
   ) : Value()
 
   data class Var(
-    val name: kotlin.String,
+    val name: String,
     val lvl: Lvl,
     val type: Value,
   ) : Value()
@@ -192,7 +192,7 @@ sealed class Value {
   ) : Value()
 
   data class Meta(
-    val index: kotlin.Int,
+    val index: Int,
     val source: Range,
   ) : Value()
 

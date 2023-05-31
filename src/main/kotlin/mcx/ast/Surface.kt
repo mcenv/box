@@ -80,113 +80,113 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class Byte(
+    data class I8(
       override val range: Range,
     ) : Term()
 
-    data class ByteOf(
-      val value: kotlin.Byte,
+    data class I8Of(
+      val value: Byte,
       override val range: Range,
     ) : Term()
 
-    data class Short(
+    data class I16(
       override val range: Range,
     ) : Term()
 
-    data class ShortOf(
-      val value: kotlin.Short,
+    data class I16Of(
+      val value: Short,
       override val range: Range,
     ) : Term()
 
-    data class Int(
+    data class I32(
       override val range: Range,
     ) : Term()
 
-    data class IntOf(
-      val value: kotlin.Int,
+    data class I32Of(
+      val value: Int,
       override val range: Range,
     ) : Term()
 
-    data class Long(
+    data class I64(
       override val range: Range,
     ) : Term()
 
-    data class LongOf(
-      val value: kotlin.Long,
+    data class I64Of(
+      val value: Long,
       override val range: Range,
     ) : Term()
 
-    data class Float(
+    data class F32(
       override val range: Range,
     ) : Term()
 
-    data class FloatOf(
-      val value: kotlin.Float,
+    data class F32Of(
+      val value: Float,
       override val range: Range,
     ) : Term()
 
-    data class Double(
+    data class F64(
       override val range: Range,
     ) : Term()
 
-    data class DoubleOf(
-      val value: kotlin.Double,
+    data class F64Of(
+      val value: Double,
       override val range: Range,
     ) : Term()
 
-    data class String(
+    data class Str(
       override val range: Range,
     ) : Term()
 
-    data class StringOf(
-      val value: kotlin.String,
+    data class StrOf(
+      val value: String,
       override val range: Range,
     ) : Term()
 
-    data class ByteArray(
+    data class I8Array(
       override val range: Range,
     ) : Term()
 
-    data class ByteArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I8ArrayOf(
+      val elements: List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class IntArray(
+    data class I32Array(
       override val range: Range,
     ) : Term()
 
-    data class IntArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I32ArrayOf(
+      val elements: List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class LongArray(
+    data class I64Array(
       override val range: Range,
     ) : Term()
 
-    data class LongArrayOf(
-      val elements: kotlin.collections.List<Term>,
+    data class I64ArrayOf(
+      val elements: List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class List(
+    data class Vec(
       val element: Term,
       override val range: Range,
     ) : Term()
 
     data class ListOf(
-      val elements: kotlin.collections.List<Term>,
+      val elements: List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class Compound(
-      val elements: kotlin.collections.List<Pair<Ranged<kotlin.String>, Term>>,
+    data class Struct(
+      val elements: List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term()
 
     data class CompoundOf(
-      val elements: kotlin.collections.List<Pair<Ranged<kotlin.String>, Term>>,
+      val elements: List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term()
 
@@ -196,27 +196,27 @@ object Surface {
     ) : Term()
 
     data class Union(
-      val elements: kotlin.collections.List<Term>,
+      val elements: List<Term>,
       override val range: Range,
     ) : Term()
 
     data class Func(
       val open: Boolean,
-      val params: kotlin.collections.List<Pair<Term, Term>>,
+      val params: List<Pair<Term, Term>>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class FuncOf(
       val open: Boolean,
-      val params: kotlin.collections.List<Term>,
+      val params: List<Term>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class Apply(
       val func: Term,
-      val args: kotlin.collections.List<Term>,
+      val args: List<Term>,
       override val range: Range,
     ) : Term()
 
@@ -248,7 +248,7 @@ object Surface {
     ) : Term()
 
     data class Var(
-      val name: kotlin.String,
+      val name: String,
       override val range: Range,
     ) : Term()
 

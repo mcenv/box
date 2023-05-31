@@ -1,7 +1,7 @@
-def command_string_of_end : end := /"say command_string_of_end";
+def command_string_of_end : nothing := /"say command_string_of_end";
 
-def command_string_of_int : int := /"data modify storage mcx: int append value 0";
+def command_string_of_int : i32 := /"data modify storage mcx: int append value 0";
 
-const def const_string_of : string := "say string_constant";
+const def const_string_of : str := "say string_constant";
 
-def use_const_string_of : end := /const_string_of;
+def use_const_string_of : nothing := /const_string_of;

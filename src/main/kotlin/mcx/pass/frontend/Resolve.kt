@@ -121,50 +121,50 @@ class Resolve private constructor(
         val scrutineer = resolvePattern(term.scrutineer)
         R.Term.Is(scrutinee, scrutineer, range)
       }
-      is S.Term.Byte        -> R.Term.Byte(range)
-      is S.Term.ByteOf      -> R.Term.ByteOf(term.value, range)
-      is S.Term.Short       -> R.Term.Short(range)
-      is S.Term.ShortOf     -> R.Term.ShortOf(term.value, range)
-      is S.Term.Int         -> R.Term.Int(range)
-      is S.Term.IntOf       -> R.Term.IntOf(term.value, range)
-      is S.Term.Long        -> R.Term.Long(range)
-      is S.Term.LongOf      -> R.Term.LongOf(term.value, range)
-      is S.Term.Float       -> R.Term.Float(range)
-      is S.Term.FloatOf     -> R.Term.FloatOf(term.value, range)
-      is S.Term.Double      -> R.Term.Double(range)
-      is S.Term.DoubleOf    -> R.Term.DoubleOf(term.value, range)
-      is S.Term.String      -> R.Term.String(range)
-      is S.Term.StringOf    -> R.Term.StringOf(term.value, range)
-      is S.Term.ByteArray   -> R.Term.ByteArray(range)
-      is S.Term.ByteArrayOf -> {
+      is S.Term.I8          -> R.Term.I8(range)
+      is S.Term.I8Of        -> R.Term.I8Of(term.value, range)
+      is S.Term.I16         -> R.Term.I16(range)
+      is S.Term.I16Of       -> R.Term.I16Of(term.value, range)
+      is S.Term.I32         -> R.Term.I32(range)
+      is S.Term.I32Of       -> R.Term.I32Of(term.value, range)
+      is S.Term.I64         -> R.Term.I64(range)
+      is S.Term.I64Of       -> R.Term.I64Of(term.value, range)
+      is S.Term.F32         -> R.Term.F32(range)
+      is S.Term.F32Of       -> R.Term.F32Of(term.value, range)
+      is S.Term.F64         -> R.Term.F64(range)
+      is S.Term.F64Of       -> R.Term.F64Of(term.value, range)
+      is S.Term.Str         -> R.Term.Str(range)
+      is S.Term.StrOf       -> R.Term.StrOf(term.value, range)
+      is S.Term.I8Array     -> R.Term.I8Array(range)
+      is S.Term.I8ArrayOf   -> {
         val elements = term.elements.map { resolveTerm(it) }
-        R.Term.ByteArrayOf(elements, range)
+        R.Term.I8ArrayOf(elements, range)
       }
-      is S.Term.IntArray    -> R.Term.IntArray(range)
-      is S.Term.IntArrayOf  -> {
+      is S.Term.I32Array    -> R.Term.I32Array(range)
+      is S.Term.I32ArrayOf  -> {
         val elements = term.elements.map { resolveTerm(it) }
-        R.Term.IntArrayOf(elements, range)
+        R.Term.I32ArrayOf(elements, range)
       }
-      is S.Term.LongArray   -> R.Term.LongArray(range)
-      is S.Term.LongArrayOf -> {
+      is S.Term.I64Array    -> R.Term.I64Array(range)
+      is S.Term.I64ArrayOf  -> {
         val elements = term.elements.map { resolveTerm(it) }
-        R.Term.LongArrayOf(elements, range)
+        R.Term.I64ArrayOf(elements, range)
       }
-      is S.Term.List        -> {
+      is S.Term.Vec         -> {
         val element = resolveTerm(term.element)
-        R.Term.List(element, range)
+        R.Term.Vec(element, range)
       }
       is S.Term.ListOf      -> {
         val elements = term.elements.map { resolveTerm(it) }
-        R.Term.ListOf(elements, range)
+        R.Term.VecOf(elements, range)
       }
-      is S.Term.Compound    -> {
+      is S.Term.Struct      -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
-        R.Term.Compound(elements, range)
+        R.Term.Struct(elements, range)
       }
       is S.Term.CompoundOf  -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
-        R.Term.CompoundOf(elements, range)
+        R.Term.StructOf(elements, range)
       }
       is S.Term.Point       -> {
         val element = resolveTerm(term.element)
@@ -256,10 +256,10 @@ class Resolve private constructor(
     pattern: S.Term,
   ): R.Pattern {
     return when (pattern) {
-      is S.Term.IntOf      -> R.Pattern.IntOf(pattern.value, pattern.range)
+      is S.Term.I32Of      -> R.Pattern.I32Of(pattern.value, pattern.range)
       is S.Term.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
-        R.Pattern.CompoundOf(elements, pattern.range)
+        R.Pattern.StructOf(elements, pattern.range)
       }
       is S.Term.Var        -> {
         when (pattern.name) {
