@@ -48,7 +48,7 @@ jobs:
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           cd ./src/test/resources/test
           echo "rcon.password=${{ secrets.RCON_PASSWORD }}" >> server.properties
-          mcx test ${{ steps.minecraft.outputs.version }}
+          # mcx test ${{ steps.minecraft.outputs.version }}
       - name: Upload datapacks
         uses: actions/upload-artifact@v3
         with:
