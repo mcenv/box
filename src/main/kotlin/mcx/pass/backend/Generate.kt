@@ -1,9 +1,9 @@
 package mcx.pass.backend
 
-import dev.mcenv.nbt.*
 import mcx.ast.Packed
 import mcx.data.ResourceLocation
 import mcx.pass.Context
+import mcx.util.nbt.*
 import mcx.util.quoted
 import mcx.ast.Packed as P
 
@@ -298,6 +298,9 @@ class Generate private constructor(
     tag: Tag,
   ) {
     when (tag) {
+      is EndTag       -> {
+        error("unreachable")
+      }
       is ByteTag      -> {
         append(tag.value.toString())
         append('b')
@@ -328,7 +331,7 @@ class Generate private constructor(
       }
       is ByteArrayTag -> {
         append("[B;")
-        tag.values.forEachSeparated(
+        tag.forEachSeparated(
           separate = { append(',') },
           action = {
             append(it.toString())
@@ -339,7 +342,7 @@ class Generate private constructor(
       }
       is IntArrayTag  -> {
         append("[I;")
-        tag.values.forEachSeparated(
+        tag.forEachSeparated(
           separate = { append(',') },
           action = { append(it.toString()) },
         )
@@ -347,7 +350,7 @@ class Generate private constructor(
       }
       is LongArrayTag -> {
         append("[L;")
-        tag.values.forEachSeparated(
+        tag.forEachSeparated(
           separate = { append(',') },
           action = {
             append(it.toString())
@@ -367,7 +370,7 @@ class Generate private constructor(
       }
       is CompoundTag  -> {
         append('{')
-        tag.tags.entries.forEachSeparated(
+        tag.entries.forEachSeparated(
           separate = { append(',') },
           action = { (key, element) ->
             append(key.quoted('"')) // TODO: optimize

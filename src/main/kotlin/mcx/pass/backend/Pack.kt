@@ -1,6 +1,5 @@
 package mcx.pass.backend
 
-import dev.mcenv.nbt.*
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.ast.Packed
@@ -14,6 +13,7 @@ import mcx.ast.Packed.SourceProvider
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
+import mcx.util.nbt.*
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 

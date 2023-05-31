@@ -1,8 +1,8 @@
 package mcx.ast
 
-import dev.mcenv.nbt.CompoundTag
-import dev.mcenv.nbt.Tag
 import mcx.data.ResourceLocation
+import mcx.util.nbt.CompoundTag
+import mcx.util.nbt.Tag
 
 object Packed {
   sealed class Definition {
