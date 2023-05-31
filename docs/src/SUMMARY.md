@@ -2,6 +2,8 @@
 
 [Introduction](./introduction.md)
 
+- [Frequently Asked Questions](./frequently-asked-questions.md)
+
 # Internals
 
 - [References](./references.md)
