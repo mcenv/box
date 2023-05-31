@@ -1,4 +1,4 @@
-package mcx.cache.remap
+package mcx.util.remap
 
 import org.objectweb.asm.commons.Remapper
 

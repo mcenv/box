@@ -4,9 +4,9 @@ import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder.literal
 import kotlinx.coroutines.runBlocking
-import mcx.cache.playServer
 import mcx.pass.backend.Pack
 import mcx.pass.build.Build
+import mcx.util.playServer
 import kotlin.io.path.Path
 
 object TestCommands {

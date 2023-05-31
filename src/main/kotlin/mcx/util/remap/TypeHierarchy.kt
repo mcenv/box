@@ -1,4 +1,4 @@
-package mcx.cache.remap
+package mcx.util.remap
 
 class TypeHierarchy {
   private val types: MutableMap<String, MutableSet<String>> = hashMapOf()

@@ -1,4 +1,4 @@
-package mcx.cache.remap
+package mcx.util.remap
 
 data class Mapping(
   val classMapping: Map<String, Class>,

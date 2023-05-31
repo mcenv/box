@@ -1,4 +1,4 @@
-package mcx.cache.remap
+package mcx.util.remap
 
 @Suppress("NOTHING_TO_INLINE")
 class MappingParser private constructor(

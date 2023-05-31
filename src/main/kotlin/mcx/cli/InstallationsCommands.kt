@@ -2,9 +2,9 @@ package mcx.cli
 
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType.string
-import mcx.cache.createServer
-import mcx.cache.deleteServer
-import mcx.cache.playServer
+import mcx.util.createServer
+import mcx.util.deleteServer
+import mcx.util.playServer
 
 object InstallationsCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
