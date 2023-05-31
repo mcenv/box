@@ -65,9 +65,9 @@ fun playServer(id: String, rconAction: (suspend (Rcon) -> Unit)? = null): Int {
     // TODO: check sha1
     // TODO: print messages
     if (serverPath.exists()) {
-      val properties = loadDedicatedServerProperties()
+      val properties = loadDedicatedServerProperties(Path("server.properties"))
       val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
-      if (rconAction != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
+      if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
         Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
           rconAction(it)
         }
