@@ -82,9 +82,9 @@ def vec : type list := vec i32;
 
 def vec_of : vec i32 := [];
 
-def compound : type compound := struct {};
+def struct : type compound := struct {};
 
-# def compound_of : compound := {};
+# def struct_of : struct {} := {};
 
 def point : type int := point 0;
 
