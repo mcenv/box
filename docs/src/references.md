@@ -165,6 +165,8 @@
   Command exception messages are unnecessarily created and stringified during function execution
 * [![MC-261376](https://img.shields.io/badge/dynamic/json?label=MC-261376&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-261376)](https://bugs.mojang.com/browse/MC-261376)
   Elements in a numeric array tag at the deepest level can be retrieved, but not be set
+* [![MC-263058](https://img.shields.io/badge/dynamic/json?label=MC-263058&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-263058)](https://bugs.mojang.com/browse/MC-263058)
+  A newly added data storage file cannot be loaded if it was previously failed to be loaded
 
 ## Quotes
 
