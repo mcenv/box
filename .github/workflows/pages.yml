@@ -33,12 +33,15 @@ jobs:
         run: |
           cd docs
           mdbook build
-      - uses: actions/setup-java@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
           distribution: "temurin"
           java-version: "19"
-      - uses: gradle/wrapper-validation-action@v1
-      - uses: gradle/gradle-build-action@v2
+      - name: Validate gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+      - name: Generate Dokka documentation
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: dokkaHtml
       - name: Upload book
