@@ -14,6 +14,9 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.properties.Properties
+import kotlinx.serialization.properties.decodeFromStringMap
+import mcx.data.DedicatedServerProperties
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Path
@@ -21,6 +24,7 @@ import java.time.Instant
 import java.util.*
 import kotlin.concurrent.thread
 import kotlin.io.path.*
+import java.util.Properties as JProperties
 
 private val versionManifestUrl: URL by lazy {
   URL("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
@@ -68,22 +72,22 @@ private fun Path.saveFromStream(input: InputStream) {
   outputStream().buffered().use { input.transferTo(it) }
 }
 
-// TODO: refactor
 fun playServer(id: String, rconAction: (suspend (Rcon) -> Unit)? = null): Int {
   return runBlocking {
     val serverPath = getServerPath(id)
     // TODO: check sha1
     // TODO: print messages
     if (serverPath.isRegularFile()) {
-      val properties = loadDedicatedServerProperties(Path("server.properties"))
-      val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
-      if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
-        Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
-          rconAction(it)
+      useDedicatedServerProperties { properties ->
+        val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
+        if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
+          Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
+            rconAction(it)
+          }
         }
+        minecraft.join()
+        0
       }
-      minecraft.join()
-      0
     } else {
       1
     }
@@ -120,6 +124,21 @@ fun deleteServer(id: String): Int {
   return 0
 }
 
+@OptIn(ExperimentalSerializationApi::class)
+inline fun <R> useDedicatedServerProperties(block: (DedicatedServerProperties?) -> R): R {
+  val serverPropertiesPath = Path("server.properties")
+  return if (serverPropertiesPath.isRegularFile()) {
+    val text = serverPropertiesPath.readText()
+    val properties = JProperties().apply { load(text.reader()) }
+    val map = @Suppress("UNCHECKED_CAST") (properties.toMap() as Map<String, String>)
+    val dedicatedServerProperties = Properties.decodeFromStringMap<DedicatedServerProperties>(map)
+    val result = block(dedicatedServerProperties)
+    serverPropertiesPath.writeText(text)
+    result
+  } else {
+    block(null)
+  }
+}
 
 @Serializable
 data class VersionManifest(
