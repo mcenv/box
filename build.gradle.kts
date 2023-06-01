@@ -1,13 +1,10 @@
 import org.jetbrains.dokka.gradle.DokkaTask
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_19
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
-  kotlin("jvm") version "1.8.21"
-  kotlin("plugin.serialization") version "1.8.21"
-  kotlin("plugin.allopen") version "1.8.21"
+  kotlin("jvm") version "1.9.0-Beta"
+  kotlin("plugin.serialization") version "1.9.0-Beta"
+  kotlin("plugin.allopen") version "1.9.0-Beta"
   id("org.jetbrains.dokka") version "1.8.10"
   id("org.jetbrains.kotlinx.kover") version "0.7.0"
   id("org.jetbrains.kotlinx.benchmark") version "0.4.8"
@@ -51,13 +48,6 @@ sourceSets {
 
 kotlin {
   jvmToolchain(19)
-}
-
-tasks.withType<KotlinCompile> {
-  compilerOptions {
-    languageVersion.set(KOTLIN_1_9)
-    jvmTarget.set(JVM_19)
-  }
 }
 
 tasks.withType<@Suppress("UnstableApiUsage") ProcessResources> {
