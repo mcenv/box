@@ -425,6 +425,7 @@ class Pack private constructor(
 
     fun packInit(): P.Definition.Function {
       val commands = listOf(
+        Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
         Raw("scoreboard objectives remove ${REG.name}"),
         Raw("scoreboard objectives add ${REG.name} dummy"),
       )
