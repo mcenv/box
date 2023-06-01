@@ -120,7 +120,7 @@
 * [![MC-163943](https://img.shields.io/badge/dynamic/json?label=MC-163943&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-163943)](https://bugs.mojang.com/browse/MC-163943)
   Read-only scores can be mutated by swapping
 * [![MC-171881](https://img.shields.io/badge/dynamic/json?label=MC-171881&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-171881)](https://bugs.mojang.com/browse/MC-171881)
-  Negative zero cannot be represented in NBT
+  Cannot create negative zero in NBT
 * [![MC-173120](https://img.shields.io/badge/dynamic/json?label=MC-173120&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-173120)](https://bugs.mojang.com/browse/MC-173120)
   Lack of escape sequences of newlines prevents quoted strings from containing newlines in a function
 * [![MC-174587](https://img.shields.io/badge/dynamic/json?label=MC-174587&query=%24.fields.resolution.name&url=https%3A%2F%2Fbugs.mojang.com%2Frest%2Fapi%2F2%2Fissue%2FMC-174587)](https://bugs.mojang.com/browse/MC-174587)
