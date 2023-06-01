@@ -1,17 +1,13 @@
-import {
-  int::=,
-}
+def id : proc (x : bool) -> bool := \(x) -> x;
 
-def id : proc (x : i32) -> i32 := \(x) -> x;
+def apply_def : bool := id(true);
 
-def apply_def : i32 := id(-1);
+def apply_proc : bool := (\(x) -> x)(true);
 
-def apply_proc : i32 := (\(x) -> x)(-1);
+def apply_func : bool := (\\(x) -> x)(true);
 
-def apply_func : i32 := (\\(x) -> x)(-1);
+test def test_apply_def := apply_def;
 
-test def test_apply_def := apply_def = -1;
+test def test_apply_proc := apply_proc;
 
-test def test_apply_proc := apply_proc = -1;
-
-test def test_apply_func := apply_func = -1;
+test def test_apply_func := apply_func;
