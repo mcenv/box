@@ -47,19 +47,19 @@ private fun getOrCreateRootPath(): Path {
 }
 
 private fun getOrCreateVersionsPath(): Path {
-  return getOrCreateRootPath().resolve("versions").createDirectories()
+  return (getOrCreateRootPath() / "versions").createDirectories()
 }
 
 private fun getOrCreateServerRootPath(id: String): Path {
-  return getOrCreateVersionsPath().resolve(id).createDirectories()
+  return (getOrCreateVersionsPath() / id).createDirectories()
 }
 
 private fun getServerPath(id: String): Path {
-  return getOrCreateServerRootPath(id).resolve("server.jar")
+  return getOrCreateServerRootPath(id) / "server.jar"
 }
 
 private fun getServerMappingsPath(id: String): Path {
-  return getOrCreateServerRootPath(id).resolve("server.txt")
+  return getOrCreateServerRootPath(id) / "server.txt"
 }
 
 // TODO: cache version_manifest_v2.json

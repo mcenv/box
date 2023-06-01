@@ -43,7 +43,7 @@ class Build(
     FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
     Paths.get(uri)
   }
-  private val src: Path = root.resolve("src").also { it.createDirectories() }
+  private val src: Path = (root / "src").createDirectories()
   private val traces: ConcurrentMap<Key<*>, Trace<*>> = ConcurrentHashMap()
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
 
@@ -237,11 +237,11 @@ class Build(
 
   private fun Path.pathOf(location: ModuleLocation): Path? {
     return try {
-      resolve(
-        location.parts
-          .drop(1) // Drop pack name
-          .joinToString("/", postfix = EXTENSION)
-      )
+      this / (
+          location.parts
+            .drop(1) // Drop pack name
+            .joinToString("/", postfix = EXTENSION)
+             )
     } catch (_: InvalidPathException) {
       null
     }
@@ -261,12 +261,12 @@ class Build(
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): Result {
     val serverProperties = Properties().apply {
-      load(root.resolve("server.properties").inputStream().buffered())
+      load((root / "server.properties").inputStream().buffered())
     }
     val levelName = serverProperties.getProperty("level-name")
-    val datapacks = root.resolve(levelName).resolve("datapacks").also { it.createDirectories() }
+    val datapacks = (root / levelName / "datapacks").also { it.createDirectories() }
 
-    val config = root.resolve("pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
+    val config = (root / "pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
 
     return coroutineScope {
       val context = Context(config)
@@ -303,9 +303,9 @@ class Build(
       }
 
       fun generate(suffix: String, definitions: Map<String, String>) {
-        val datapackRoot = datapacks.resolve("${config.name}_$suffix").also { it.createDirectories() }
+        val datapackRoot = (datapacks / "${config.name}_$suffix").also { it.createDirectories() }
         val outputModules = definitions
-          .mapKeys { (name, _) -> datapackRoot.resolve(name) }
+          .mapKeys { (name, _) -> datapackRoot / name }
           .onEach { (name, definition) ->
             name
               .also { it.parent.createDirectories() }
@@ -328,8 +328,7 @@ class Build(
             FileVisitResult.CONTINUE
           }
         }
-        datapackRoot
-          .resolve("pack.mcmeta")
+        (datapackRoot / "pack.mcmeta")
           .outputStream()
           .buffered()
           .use {
