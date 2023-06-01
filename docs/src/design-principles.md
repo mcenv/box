@@ -28,3 +28,7 @@
 * [AndrasKovacs/staged](https://github.com/AndrasKovacs/staged)
 * [Memory layout control and staged compilation](https://youtube.com/playlist?list=PL2ZpyLROj5FNeUJh7m6IB1wTPa75JUTzL)
 * [[ICFP'22] Staged Compilation with Two-Level Type Theory](https://youtu.be/0BOQE48_qOM)
+
+## Almost Drop-in Replacement for Data Packs
+
+* There should be as few things as possible that can be done in data packs but cannot be done in mcx
