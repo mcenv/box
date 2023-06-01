@@ -188,13 +188,13 @@ class Pack private constructor(
         term.args.forEach { packTerm(it) }
         val func = term.func
         when {
-          func is L.Term.ProcOf           -> {
+          func is L.Term.ProcOf             -> {
             +RunFunction(packDefinitionLocation(func.function.name))
           }
-          func is L.Term.Def && func.proc -> {
+          func is L.Term.Def && func.direct -> {
             +RunFunction(packDefinitionLocation(func.name.let { it.module / "${it.name}:0" }))
           }
-          else                            -> {
+          else                              -> {
             packTerm(term.func)
             +RunFunction(if (term.open) DISPATCH_FUNC else DISPATCH_PROC)
           }

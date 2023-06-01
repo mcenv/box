@@ -34,6 +34,7 @@ class Lift private constructor(
       Modifier.BUILTIN -> L.Modifier.BUILTIN
       Modifier.EXPORT  -> null
       Modifier.REC     -> null
+      Modifier.DIRECT  -> null // ?
       Modifier.CONST   -> error("unexpected modifier: ${modifier.id}")
       Modifier.TEST    -> L.Modifier.TEST
     }
@@ -105,6 +106,9 @@ class Lift private constructor(
       is C.Term.Union      -> UNIT
       is C.Term.Func       -> UNIT
       is C.Term.FuncOf     -> {
+        // Generate ID before the subterms are lifted to ensure the top-level proc always gets ID 0.
+        val id = freshFunctionId++
+
         with(emptyCtx()) {
           if (term.open) {
             val freeVars = freeVars(term)
@@ -112,7 +116,7 @@ class Lift private constructor(
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
             val tag = context.freshFuncId()
-            L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:${freshFunctionId++}" }, binders + capture, result, tag).also {
+            L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:$id" }, binders + capture, result, tag).also {
               liftedDefinitions += it
               dispatchedFuncs += it
             }
@@ -122,7 +126,7 @@ class Lift private constructor(
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
             val tag = context.freshProcId()
-            val function = L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:${freshFunctionId++}" }, binders, result, tag).also {
+            val function = L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:$id" }, binders, result, tag).also {
               liftedDefinitions += it
               dispatchedProcs += it
             }
@@ -157,9 +161,9 @@ class Lift private constructor(
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def        -> {
-        val proc = term.def.body.let { it is C.Term.FuncOf && !it.open }
+        val direct = Modifier.DIRECT in term.def.modifiers
         val type = eraseType(term.def.type)
-        L.Term.Def(proc, term.def.name, type)
+        L.Term.Def(direct, term.def.name, type)
       }
       is C.Term.Meta       -> unexpectedTerm(term)
       is C.Term.Hole       -> unexpectedTerm(term)
@@ -188,51 +192,51 @@ class Lift private constructor(
 
   private fun freeVars(term: C.Term): LinkedHashMap<String, NbtType> {
     return when (term) {
-      is C.Term.Tag         -> unexpectedTerm(term)
-      is C.Term.TagOf       -> linkedMapOf()
-      is C.Term.Type        -> freeVars(term.element)
-      is C.Term.Bool        -> linkedMapOf()
-      is C.Term.BoolOf      -> linkedMapOf()
-      is C.Term.If          -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.Is          -> freeVars(term.scrutinee)
-      is C.Term.I8          -> linkedMapOf()
-      is C.Term.I8Of        -> linkedMapOf()
-      is C.Term.I16         -> linkedMapOf()
-      is C.Term.I16Of       -> linkedMapOf()
-      is C.Term.I32         -> linkedMapOf()
-      is C.Term.I32Of       -> linkedMapOf()
-      is C.Term.I64         -> linkedMapOf()
-      is C.Term.I64Of       -> linkedMapOf()
-      is C.Term.F32         -> linkedMapOf()
-      is C.Term.F32Of       -> linkedMapOf()
-      is C.Term.F64         -> linkedMapOf()
-      is C.Term.F64Of       -> linkedMapOf()
-      is C.Term.Str         -> linkedMapOf()
-      is C.Term.StrOf       -> linkedMapOf()
-      is C.Term.I8Array     -> linkedMapOf()
-      is C.Term.I8ArrayOf   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.I32Array    -> linkedMapOf()
-      is C.Term.I32ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.I64Array    -> linkedMapOf()
-      is C.Term.I64ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Vec         -> freeVars(term.element)
-      is C.Term.VecOf       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Struct      -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.StructOf    -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Point       -> freeVars(term.element)
-      is C.Term.Union       -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func        -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf      -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply       -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code        -> unexpectedTerm(term)
-      is C.Term.CodeOf      -> unexpectedTerm(term)
-      is C.Term.Splice      -> unexpectedTerm(term)
-      is C.Term.Command     -> linkedMapOf()
-      is C.Term.Let         -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var         -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def         -> linkedMapOf()
-      is C.Term.Meta        -> unexpectedTerm(term)
-      is C.Term.Hole        -> unexpectedTerm(term)
+      is C.Term.Tag        -> unexpectedTerm(term)
+      is C.Term.TagOf      -> linkedMapOf()
+      is C.Term.Type       -> freeVars(term.element)
+      is C.Term.Bool       -> linkedMapOf()
+      is C.Term.BoolOf     -> linkedMapOf()
+      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.Is         -> freeVars(term.scrutinee)
+      is C.Term.I8         -> linkedMapOf()
+      is C.Term.I8Of       -> linkedMapOf()
+      is C.Term.I16        -> linkedMapOf()
+      is C.Term.I16Of      -> linkedMapOf()
+      is C.Term.I32        -> linkedMapOf()
+      is C.Term.I32Of      -> linkedMapOf()
+      is C.Term.I64        -> linkedMapOf()
+      is C.Term.I64Of      -> linkedMapOf()
+      is C.Term.F32        -> linkedMapOf()
+      is C.Term.F32Of      -> linkedMapOf()
+      is C.Term.F64        -> linkedMapOf()
+      is C.Term.F64Of      -> linkedMapOf()
+      is C.Term.Str        -> linkedMapOf()
+      is C.Term.StrOf      -> linkedMapOf()
+      is C.Term.I8Array    -> linkedMapOf()
+      is C.Term.I8ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.I32Array   -> linkedMapOf()
+      is C.Term.I32ArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.I64Array   -> linkedMapOf()
+      is C.Term.I64ArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Vec        -> freeVars(term.element)
+      is C.Term.VecOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Point      -> freeVars(term.element)
+      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 

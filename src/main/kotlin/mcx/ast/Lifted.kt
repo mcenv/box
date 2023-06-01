@@ -156,7 +156,7 @@ object Lifted {
     ) : Term()
 
     data class Def(
-      val proc: Boolean,
+      val direct: Boolean,
       val name: DefinitionLocation,
       override val type: NbtType,
     ) : Term()
