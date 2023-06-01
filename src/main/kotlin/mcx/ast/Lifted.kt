@@ -171,7 +171,7 @@ object Lifted {
       override val type: NbtType get() = NbtType.INT
     }
 
-    data class CompoundOf(
+    data class StructOf(
       val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern() {
       override val type: NbtType get() = NbtType.COMPOUND

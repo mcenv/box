@@ -232,16 +232,16 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.I32Of      -> {}
-      is L.Pattern.CompoundOf -> {
+      is L.Pattern.I32Of    -> {}
+      is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
           push(element.type, SourceProvider.From(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)(name) }))) // TODO: avoid immediate push
           packPattern(element)
         }
       }
 
-      is L.Pattern.Var        -> bind(pattern.name, pattern.type)
-      is L.Pattern.Drop       -> {}
+      is L.Pattern.Var      -> bind(pattern.name, pattern.type)
+      is L.Pattern.Drop     -> {}
     }
   }
 
@@ -250,14 +250,14 @@ class Pack private constructor(
     keeps: List<NbtType>,
   ) {
     when (pattern) {
-      is L.Pattern.I32Of      -> drop(NbtType.INT, keeps)
-      is L.Pattern.CompoundOf -> {
+      is L.Pattern.I32Of    -> drop(NbtType.INT, keeps)
+      is L.Pattern.StructOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(NbtType.COMPOUND, keeps)
       }
 
-      is L.Pattern.Var        -> drop(pattern.type, keeps)
-      is L.Pattern.Drop       -> drop(pattern.type, keeps)
+      is L.Pattern.Var      -> drop(pattern.type, keeps)
+      is L.Pattern.Drop     -> drop(pattern.type, keeps)
     }
   }
 
@@ -285,9 +285,9 @@ class Pack private constructor(
           )
         }
 
-        is L.Pattern.CompoundOf -> TODO()
-        is L.Pattern.Var        -> drop(scrutineer.type)
-        is L.Pattern.Drop       -> drop(scrutineer.type)
+        is L.Pattern.StructOf -> TODO()
+        is L.Pattern.Var -> drop(scrutineer.type)
+        is L.Pattern.Drop -> drop(scrutineer.type)
       }
     }
     visit(scrutineer)

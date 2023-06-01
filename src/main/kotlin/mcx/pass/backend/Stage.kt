@@ -373,9 +373,9 @@ class Stage private constructor() {
   ): Pattern<Value> {
     return when (pattern) {
       is Pattern.I32Of      -> pattern
-      is Pattern.CompoundOf -> {
+      is Pattern.StructOf   -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> evalPattern(element, phase) }
-        Pattern.CompoundOf(elements)
+        Pattern.StructOf(elements)
       }
       is Pattern.Var        -> {
         val type = evalTerm(pattern.type, phase)
@@ -395,9 +395,9 @@ class Stage private constructor() {
   ): Pattern<Term> {
     return when (pattern) {
       is Pattern.I32Of      -> pattern
-      is Pattern.CompoundOf -> {
+      is Pattern.StructOf   -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> quotePattern(element, phase) }
-        Pattern.CompoundOf(elements)
+        Pattern.StructOf(elements)
       }
       is Pattern.Var        -> {
         val type = quoteValue(pattern.type, phase)

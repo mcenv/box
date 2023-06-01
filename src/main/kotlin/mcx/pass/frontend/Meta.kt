@@ -193,9 +193,9 @@ class Meta {
   fun Env.zonkPattern(pattern: Pattern<Term>): Pattern<Term> {
     return when (pattern) {
       is Pattern.I32Of      -> pattern
-      is Pattern.CompoundOf -> {
+      is Pattern.StructOf   -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> zonkPattern(element) }
-        Pattern.CompoundOf(elements)
+        Pattern.StructOf(elements)
       }
       is Pattern.Var        -> {
         val type = zonkTerm(pattern.type)

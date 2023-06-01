@@ -297,9 +297,9 @@ fun Lvl.quoteValue(value: Value): Term {
 fun Env.evalPattern(pattern: Pattern<Term>): Pattern<Value> {
   return when (pattern) {
     is Pattern.I32Of      -> pattern
-    is Pattern.CompoundOf -> {
+    is Pattern.StructOf   -> {
       val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> evalPattern(element) }
-      Pattern.CompoundOf(elements)
+      Pattern.StructOf(elements)
     }
     is Pattern.Var        -> {
       val type = evalTerm(pattern.type)
@@ -316,9 +316,9 @@ fun Env.evalPattern(pattern: Pattern<Term>): Pattern<Value> {
 fun Lvl.quotePattern(pattern: Pattern<Value>): Pattern<Term> {
   return when (pattern) {
     is Pattern.I32Of      -> pattern
-    is Pattern.CompoundOf -> {
+    is Pattern.StructOf   -> {
       val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> quotePattern(element) }
-      Pattern.CompoundOf(elements)
+      Pattern.StructOf(elements)
     }
     is Pattern.Var        -> {
       val type = quoteValue(pattern.type)
@@ -348,11 +348,11 @@ fun Lvl.collect(patterns: List<Pattern<Value>>): List<Lazy<Value>> {
   val vars = mutableListOf<Lazy<Value>>()
   fun go(pattern: Pattern<Value>) {
     when (pattern) {
-      is Pattern.I32Of      -> {}
-      is Pattern.CompoundOf -> pattern.elements.forEach { (_, element) -> go(element) }
-      is Pattern.Var        -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.type /* TODO: correctness */))
-      is Pattern.Drop       -> {}
-      is Pattern.Hole       -> {}
+      is Pattern.I32Of    -> {}
+      is Pattern.StructOf -> pattern.elements.forEach { (_, element) -> go(element) }
+      is Pattern.Var      -> vars += lazyOf(Value.Var(pattern.name, this + vars.size, pattern.type /* TODO: correctness */))
+      is Pattern.Drop     -> {}
+      is Pattern.Hole     -> {}
     }
   }
   patterns.forEach { go(it) }
@@ -366,16 +366,16 @@ infix fun Pattern<*>.binds(value: Lazy<Value>): List<Lazy<Value>> {
     value: Lazy<Value>,
   ) {
     when (binder) {
-      is Pattern.I32Of      -> {}
-      is Pattern.CompoundOf -> {
+      is Pattern.I32Of    -> {}
+      is Pattern.StructOf -> {
         val value = value.value
         if (value is Value.StructOf) {
           binder.elements.forEach { (key, element) -> go(element, value.elements[key]!!) }
         }
       }
-      is Pattern.Var        -> values += value
-      is Pattern.Drop       -> {}
-      is Pattern.Hole       -> {}
+      is Pattern.Var      -> values += value
+      is Pattern.Drop     -> {}
+      is Pattern.Hole     -> {}
     }
   }
   go(this, value)
@@ -384,16 +384,16 @@ infix fun Pattern<*>.binds(value: Lazy<Value>): List<Lazy<Value>> {
 
 infix fun Pattern<*>.matches(value: Lazy<Value>): Boolean? {
   return when (this) {
-    is Pattern.I32Of      -> {
+    is Pattern.I32Of    -> {
       val value = value.value as? Value.I32Of ?: return null
       this.value == value.value
     }
-    is Pattern.CompoundOf -> {
+    is Pattern.StructOf -> {
       val value = value.value as? Value.StructOf ?: return null
       this.elements.all { (key, element) -> value.elements[key]?.let { element matches it } ?: false }
     }
-    is Pattern.Var        -> true
-    is Pattern.Drop       -> true
-    is Pattern.Hole       -> null
+    is Pattern.Var      -> true
+    is Pattern.Drop     -> true
+    is Pattern.Hole     -> null
   }
 }

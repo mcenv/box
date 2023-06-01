@@ -209,7 +209,7 @@ object Core {
       val value: Int,
     ) : Pattern<Nothing>()
 
-    data class CompoundOf<T>(
+    data class StructOf<T>(
       val elements: LinkedHashMap<String, Pattern<T>>,
     ) : Pattern<T>()
 

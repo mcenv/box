@@ -112,7 +112,7 @@ class Lift private constructor(
         with(emptyCtx()) {
           if (term.open) {
             val freeVars = freeVars(term)
-            val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
+            val capture = L.Pattern.StructOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
             val tag = context.freshFuncId()
@@ -173,9 +173,9 @@ class Lift private constructor(
   private fun Ctx.liftPattern(pattern: C.Pattern<C.Term>): L.Pattern {
     return when (pattern) {
       is C.Pattern.I32Of      -> L.Pattern.I32Of(pattern.value)
-      is C.Pattern.CompoundOf -> {
+      is C.Pattern.StructOf   -> {
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> liftPattern(element) }
-        L.Pattern.CompoundOf(elements)
+        L.Pattern.StructOf(elements)
       }
       is C.Pattern.Var        -> {
         val type = eraseType(pattern.type)
@@ -242,11 +242,11 @@ class Lift private constructor(
 
   private fun boundVars(pattern: C.Pattern<*>): Set<String> {
     return when (pattern) {
-      is C.Pattern.I32Of      -> emptySet()
-      is C.Pattern.CompoundOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
-      is C.Pattern.Var        -> setOf(pattern.name)
-      is C.Pattern.Drop       -> emptySet()
-      is C.Pattern.Hole       -> unexpectedPattern(pattern)
+      is C.Pattern.I32Of    -> emptySet()
+      is C.Pattern.StructOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
+      is C.Pattern.Var      -> setOf(pattern.name)
+      is C.Pattern.Drop     -> emptySet()
+      is C.Pattern.Hole     -> unexpectedPattern(pattern)
     }
   }
 

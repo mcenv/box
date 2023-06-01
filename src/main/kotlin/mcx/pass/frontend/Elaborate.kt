@@ -396,7 +396,7 @@ class Elaborate private constructor(
           elementsTypes[key.value] = lazyOf(elementType)
         }
         val type = Value.Struct(elementsTypes)
-        C.Pattern.CompoundOf(elements) to type
+        C.Pattern.StructOf(elements) to type
       }
       pattern is R.Pattern.StructOf && check<Value.Struct>(type) -> {
         TODO("implement")
@@ -472,16 +472,16 @@ class Elaborate private constructor(
     pattern2: C.Pattern<*>,
   ): Boolean {
     return when {
-      pattern1 is C.Pattern.I32Of && pattern2 is C.Pattern.I32Of           -> pattern1.value == pattern2.value
-      pattern1 is C.Pattern.CompoundOf && pattern2 is C.Pattern.CompoundOf -> {
+      pattern1 is C.Pattern.I32Of && pattern2 is C.Pattern.I32Of       -> pattern1.value == pattern2.value
+      pattern1 is C.Pattern.StructOf && pattern2 is C.Pattern.StructOf -> {
         pattern1.elements.size == pattern2.elements.size &&
         pattern1.elements.all { (key1, element1) ->
           pattern2.elements[key1]?.let { element2 -> conv(element1, element2) } ?: false
         }
       }
-      pattern1 is C.Pattern.Var && pattern2 is C.Pattern.Var               -> pattern1.name == pattern2.name
-      pattern1 is C.Pattern.Drop && pattern2 is C.Pattern.Drop             -> true
-      else                                                                 -> false
+      pattern1 is C.Pattern.Var && pattern2 is C.Pattern.Var           -> pattern1.name == pattern2.name
+      pattern1 is C.Pattern.Drop && pattern2 is C.Pattern.Drop         -> true
+      else                                                             -> false
     }
   }
 
