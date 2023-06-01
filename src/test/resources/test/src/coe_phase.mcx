@@ -1,11 +1,15 @@
-def world_zero : i32 := 0;
+def world_zero : bool := true;
 
-const def def_const_into_world : code i32 := world_zero;
+const def def_world_to_const : code bool := world_zero;
 
-const def const_code_of_zero : code i32 := `0;
+test def test_def_world_to_const := def_world_to_const;
 
-def def_world_into_const : i32 := const_code_of_zero;
+const def const_code_of_zero : code bool := `true;
 
-const def var_const_into_world : code i32 := let x := `0; `x;
+test def test_def_const_to_world := const_code_of_zero;
 
-def var_world_into_const : i32 := let x := 0; $x;
+const def var_const_to_world : code bool := let x := `true; `x;
+
+test def test_var_const_to_world := var_const_to_world;
+
+test def test_var_world_to_const := let x := true; $x;

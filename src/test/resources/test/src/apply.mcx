@@ -2,12 +2,12 @@ def id : proc (x : bool) -> bool := \(x) -> x;
 
 def apply_def : bool := id(true);
 
-def apply_proc : bool := (\(x) -> x)(true);
-
-def apply_func : bool := (\\(x) -> x)(true);
-
 test def test_apply_def := apply_def;
 
+def apply_proc : bool := (\(x) -> x)(true);
+
 test def test_apply_proc := apply_proc;
+
+def apply_func : bool := (\\(x) -> x)(true);
 
 test def test_apply_func := apply_func;
