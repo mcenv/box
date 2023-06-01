@@ -112,7 +112,7 @@ class Lift private constructor(
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
             val tag = context.freshFuncId()
-            L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders + capture, result, tag).also {
+            L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:${freshFunctionId++}" }, binders + capture, result, tag).also {
               liftedDefinitions += it
               dispatchedFuncs += it
             }
@@ -122,11 +122,11 @@ class Lift private constructor(
             val binders = term.params.map { liftPattern(it) }
             val result = liftTerm(term.result)
             val tag = context.freshProcId()
-            L.Definition.Function(emptyList(), definition.name.module / "${definition.name.name}:${freshFunctionId++}", binders, result, tag).also {
+            val function = L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:${freshFunctionId++}" }, binders, result, tag).also {
               liftedDefinitions += it
               dispatchedProcs += it
             }
-            L.Term.ProcOf(tag)
+            L.Term.ProcOf(function)
           }
         }
       }
@@ -157,8 +157,9 @@ class Lift private constructor(
         L.Term.Var(term.name, term.idx, type)
       }
       is C.Term.Def        -> {
+        val proc = term.def.body.let { it is C.Term.FuncOf && !it.open }
         val type = eraseType(term.def.type)
-        L.Term.Def(term.def.name, type)
+        L.Term.Def(proc, term.def.name, type)
       }
       is C.Term.Meta       -> unexpectedTerm(term)
       is C.Term.Hole       -> unexpectedTerm(term)

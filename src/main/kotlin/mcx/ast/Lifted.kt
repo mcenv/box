@@ -112,7 +112,7 @@ object Lifted {
     }
 
     data class ProcOf(
-      val tag: Int,
+      val function: Definition.Function,
     ) : Term() {
       override val type: NbtType get() = NbtType.INT
     }
@@ -156,6 +156,7 @@ object Lifted {
     ) : Term()
 
     data class Def(
+      val proc: Boolean,
       val name: DefinitionLocation,
       override val type: NbtType,
     ) : Term()
