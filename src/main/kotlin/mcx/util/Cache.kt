@@ -74,7 +74,7 @@ fun playServer(id: String, rconAction: (suspend (Rcon) -> Unit)? = null): Int {
     val serverPath = getServerPath(id)
     // TODO: check sha1
     // TODO: print messages
-    if (serverPath.exists()) {
+    if (serverPath.isRegularFile()) {
       val properties = loadDedicatedServerProperties(Path("server.properties"))
       val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
       if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
