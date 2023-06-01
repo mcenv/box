@@ -47,8 +47,13 @@ jobs:
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           cd ./src/test/resources/test
+          echo "enable-rcon=true" >> server.properties
+          echo "rcon.port=25575" >> server.properties
           echo "rcon.password=${{ secrets.RCON_PASSWORD }}" >> server.properties
-          # mcx test ${{ steps.minecraft.outputs.version }}
+          echo "function-permission-level=4" >> server.properties
+          echo "max-tick-time=-1" >> server.properties
+          echo "max-players=0" >> server.properties
+          mcx test ${{ steps.minecraft.outputs.version }}
       - name: Upload datapacks
         uses: actions/upload-artifact@v3
         with:
