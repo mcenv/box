@@ -15,7 +15,7 @@ object ParseTests {
   @Test
   fun empty() {
     val context = Context(Config("test", "", true))
-    val name = ModuleLocation("empty")
+    val name = ModuleLocation("test", "empty")
     val result = Parse(context, name, "")
     assertEquals(
       Parse.Result(
@@ -33,7 +33,7 @@ object ParseTests {
   @Test
   fun simple() {
     val context = Context(Config("test", "", true))
-    val name = ModuleLocation("simple")
+    val name = ModuleLocation("test", "simple")
     val result = Parse(
       context, name,
       """def a : i32 := 0;

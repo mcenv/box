@@ -1,9 +1,13 @@
 package mcx.ast
 
+// TODO: Merge [ModuleLocation] and [DefinitionLocation] into one class.
+
 data class ModuleLocation(
   val parts: List<String>,
 ) {
-  constructor(vararg parts: String) : this(parts.toList())
+  constructor(
+    vararg parts: String,
+  ) : this(parts.toList())
 
   operator fun div(
     name: String,

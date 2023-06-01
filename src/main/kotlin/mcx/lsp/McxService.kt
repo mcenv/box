@@ -47,7 +47,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     params: DidOpenTextDocumentParams,
   ) {
     runBlocking {
-      build.changeText(params.textDocument.uri.toModuleLocation(), params.textDocument.text)
+      build.changeText(params.textDocument.uri.toModuleLocation(fetchContext()), params.textDocument.text)
     }
   }
 
@@ -55,7 +55,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     params: DidChangeTextDocumentParams,
   ) {
     runBlocking {
-      build.changeText(params.textDocument.uri.toModuleLocation(), params.contentChanges.last().text)
+      build.changeText(params.textDocument.uri.toModuleLocation(fetchContext()), params.contentChanges.last().text)
     }
   }
 
@@ -64,7 +64,10 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   ) {
     runBlocking {
       diagnosticsHashes -= params.textDocument.uri
-      with(build) { fetchContext().closeText(params.textDocument.uri.toModuleLocation()) }
+      with(build) {
+        val context = fetchContext()
+        context.closeText(params.textDocument.uri.toModuleLocation(context))
+      }
     }
   }
 
@@ -77,9 +80,10 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     params: DocumentDiagnosticParams,
   ): CompletableFuture<DocumentDiagnosticReport> {
     return scope.future {
+      val context = fetchContext()
       val uri = params.textDocument.uri
       // TODO: use [Key.Diagnostic]
-      val elaborated = with(build) { fetchContext().fetch(Key.Elaborated(uri.toModuleLocation())) }
+      val elaborated = with(build) { context.fetch(Key.Elaborated(uri.toModuleLocation(context))) }
       val newHash = elaborated.value.diagnostics.hashCode()
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
@@ -94,7 +98,8 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   override fun hover(params: HoverParams): CompletableFuture<Hover> {
     return scope.future {
       val elaborated = with(build) {
-        fetchContext().fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(), Instruction.Hover(params.position)))
+        val context = fetchContext()
+        context.fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(context), Instruction.Hover(params.position)))
       }
       when (val hover = elaborated.value.hover) {
         null -> throw CancellationException()
@@ -106,7 +111,8 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   override fun definition(params: DefinitionParams): CompletableFuture<Either<List<Location>, List<LocationLink>>> {
     return scope.future {
       val resolved = with(build) {
-        fetchContext().fetch(Key.Resolved(params.textDocument.uri.toModuleLocation(), Instruction.Definition(params.position)))
+        val context = fetchContext()
+        context.fetch(Key.Resolved(params.textDocument.uri.toModuleLocation(context), Instruction.Definition(params.position)))
       }
       forLeft(resolved.value.definition?.let { listOf(it) } ?: emptyList())
     }
@@ -115,7 +121,8 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   override fun inlayHint(params: InlayHintParams): CompletableFuture<List<InlayHint>> {
     return scope.future {
       val elaborated = with(build) {
-        fetchContext().fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(), Instruction.InlayHint(params.range)))
+        val context = fetchContext()
+        context.fetch(Key.Elaborated(params.textDocument.uri.toModuleLocation(context), Instruction.InlayHint(params.range)))
       }
       elaborated.value.inlayHints
     }
@@ -162,7 +169,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     }
   }
 
-  private fun String.toModuleLocation(): ModuleLocation {
-    return ModuleLocation(Path("src").absolute().relativize(URI(dropLast(EXTENSION.length)).toPath()).map { it.toString() })
+  private fun String.toModuleLocation(context: Context): ModuleLocation {
+    return ModuleLocation(listOf(context.config.name) + Path("src").absolute().relativize(URI(dropLast(EXTENSION.length)).toPath()).map { it.toString() })
   }
 }

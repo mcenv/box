@@ -744,12 +744,13 @@ class Parse private constructor(
       context: Context,
       module: ModuleLocation,
       text: String,
-    ): Result =
-      Parse(text).run {
+    ): Result {
+      return Parse(text).run {
         Result(
           parseModule(module),
           diagnostics,
         )
       }
+    }
   }
 }

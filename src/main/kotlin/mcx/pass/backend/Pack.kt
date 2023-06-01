@@ -13,6 +13,7 @@ import mcx.ast.Packed.SourceProvider
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
+import mcx.pass.std
 import mcx.util.nbt.*
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
@@ -360,9 +361,9 @@ class Pack private constructor(
   }
 
   companion object {
-    val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(), ":init"))
-    private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(), ":dispatch_proc"))
-    private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(), ":dispatch_func"))
+    val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(std), ":init"))
+    private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(std), ":dispatch_proc"))
+    private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(std), ":dispatch_func"))
 
     private val REG_0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
@@ -376,7 +377,7 @@ class Pack private constructor(
     fun packDefinitionLocation(
       location: DefinitionLocation,
     ): ResourceLocation {
-      return ResourceLocation("minecraft", (location.module.parts + escape(location.name)).joinToString("/"))
+      return ResourceLocation(location.module.parts.first(), (location.module.parts.drop(1) + escape(location.name)).joinToString("/"))
     }
 
     private fun escape(

@@ -287,7 +287,9 @@ class Resolve private constructor(
     name: String,
     range: Range,
   ): DefinitionLocation? {
-    val expected = name.split("::").let { ModuleLocation(it.dropLast(1)) / it.last() }
+    val expected = name.split("::").let {
+      ModuleLocation(it.dropLast(1)) / it.last()
+    }
     val candidates = locations.filter { actual -> // TODO: optimize search
       expected.module.parts.size <= actual.module.parts.size &&
       (expected.name == actual.name) &&
@@ -298,7 +300,9 @@ class Resolve private constructor(
         diagnostics += nameNotFound(name, range)
         null
       }
-      1    -> candidates.first()
+      1    -> {
+        candidates.first()
+      }
       else -> {
         diagnostics += ambiguousName(name, range)
         null
@@ -430,7 +434,8 @@ class Resolve private constructor(
       dependencies: List<Dependency>,
       input: Parse.Result,
       instruction: Instruction?,
-    ): Result =
-      Resolve(dependencies, input, instruction).resolve()
+    ): Result {
+      return Resolve(dependencies, input, instruction).resolve()
+    }
   }
 }

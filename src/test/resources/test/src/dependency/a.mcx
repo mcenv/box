@@ -1,7 +1,7 @@
 import {
-  dependency::b::b,
-  dependency::c::c,
-  dependency::d::d,
+  test::dependency::b::b,
+  test::dependency::c::c,
+  test::dependency::d::d,
 }
 
 def a : vec i32 := [

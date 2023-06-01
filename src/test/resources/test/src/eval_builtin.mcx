@@ -1,5 +1,5 @@
 import {
-  i32::+,
+  std::i32::+,
 }
 
 def 2=1+1 : point 2 := 1 + 1;

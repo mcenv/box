@@ -237,14 +237,18 @@ class Build(
 
   private fun Path.pathOf(location: ModuleLocation): Path? {
     return try {
-      resolve(location.parts.joinToString("/", postfix = EXTENSION))
+      resolve(
+        location.parts
+          .drop(1) // Drop pack name
+          .joinToString("/", postfix = EXTENSION)
+      )
     } catch (_: InvalidPathException) {
       null
     }
   }
 
-  private fun Path.toModuleLocation(): ModuleLocation {
-    return ModuleLocation(src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
+  private fun Path.toModuleLocation(packName: String): ModuleLocation {
+    return ModuleLocation(listOf(packName) + src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
   }
 
   data class Result(
@@ -274,7 +278,7 @@ class Build(
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation()))
+            val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation(context.config.name)))
             if (elaborated.value.diagnostics.isNotEmpty()) {
               diagnosticsByPath += path to elaborated.value.diagnostics.also { diagnostics ->
                 if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
