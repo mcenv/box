@@ -1,6 +1,7 @@
 package mcx.cli
 
 import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 import com.mojang.brigadier.arguments.StringArgumentType.string
 import mcx.util.createServer
 import mcx.util.deleteServer
@@ -29,6 +30,14 @@ object InstallationsCommands {
                   val version: String = it["version"]
                   playServer(version)
                 }
+                .then(
+                  argument("args", greedyString())
+                    .executes {
+                      val version: String = it["version"]
+                      val args: String = it["args"]
+                      playServer(version, args)
+                    }
+                )
             )
         )
         .then(

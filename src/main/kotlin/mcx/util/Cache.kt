@@ -72,14 +72,28 @@ private fun Path.saveFromStream(input: InputStream) {
   outputStream().buffered().use { input.transferTo(it) }
 }
 
-fun playServer(id: String, rconAction: (suspend (Rcon) -> Unit)? = null): Int {
+fun playServer(
+  id: String,
+  args: String? = null,
+  rconAction: (suspend (Rcon) -> Unit)? = null,
+): Int {
   return runBlocking {
     val serverPath = getServerPath(id)
     // TODO: check sha1
     // TODO: print messages
     if (serverPath.isRegularFile()) {
       useDedicatedServerProperties { properties ->
-        val minecraft = thread { ProcessBuilder(java, bundlerRepoDir, "-jar", serverPath.pathString, "nogui").inheritIO().start().waitFor() }
+        val minecraft = thread {
+          val command = mutableListOf(java, bundlerRepoDir, "-jar", serverPath.pathString).also {
+            if (args != null) {
+              it.addAll(args.split(' '))
+            }
+          }
+          ProcessBuilder(command)
+            .inheritIO()
+            .start()
+            .waitFor()
+        }
         if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
           Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
             rconAction(it)
