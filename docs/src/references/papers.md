@@ -48,6 +48,7 @@
 * Huang, X., & Oliveira, B.C. **Distributing intersection and union types with splits and duality (functional pearl)**. Proceedings of the ACM on Programming Languages, 5, 1 - 24.
 * Dunfield, J., & Krishnaswami, N.R. **Bidirectional Typing**. ACM Computing Surveys (CSUR), 54, 1 - 38.
 * Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Functional Programming Language with Versions**. Art Sci. Eng. Program., 6, 5.
+* Jonathan Sterling, Robert Harper. **A metalanguage for multi-phase modularity**.
 
 ## 2022
 
@@ -60,13 +61,9 @@
 * Gratzer, D., Sterling, J., Angiuli, C., Coquand, T., & Birkedal, L. **Controlling unfolding in type theory**. ArXiv, abs/2210.05420.
 * Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Step toward Programming with Versions in Real-World Functional Languages**. Proceedings of the 14th ACM International Workshop on Context-Oriented Programming and Advanced Modularity.
 * Lubis, L.A., Tanabe, Y., Aotani, T., & Masuhara, H. **BatakJava: An Object-Oriented Programming Language with Versions**. Proceedings of the 15th ACM SIGPLAN International Conference on Software Language Engineering.
+* Lionel Parreaux. **The Ultimate Conditional Syntax**.
 
 ## 2023
 
 * Yulong Huang, Jeremy Yallop. **Defunctionalization with Dependent Types**.
 * Choudhury, P. **Unifying Linearity and Dependency Analyses**.
-
-##
-
-* Lionel Parreaux. **The Ultimate Conditional Syntax**.
-* Jonathan Sterling, Robert Harper. **A metalanguage for multi-phase modularity**.
