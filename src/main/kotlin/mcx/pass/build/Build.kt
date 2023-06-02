@@ -38,6 +38,7 @@ class Build(
   private val root: Path,
   std: Path? = null,
 ) {
+  private val mcx: Path = root / ".mcx"
   private val std: Path? = std?.resolve("src") ?: run {
     val uri = Build::class.java.getResource("/std/src")!!.toURI()
     FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
@@ -261,10 +262,10 @@ class Build(
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): Result {
     val serverProperties = Properties().apply {
-      load((root / "server.properties").inputStream().buffered())
+      load((mcx / "server.properties").inputStream().buffered())
     }
     val levelName = serverProperties.getProperty("level-name")
-    val datapacks = (root / levelName / "datapacks").also { it.createDirectories() }
+    val datapacks = (mcx / levelName / "datapacks").also { it.createDirectories() }
 
     val config = (root / "pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
 

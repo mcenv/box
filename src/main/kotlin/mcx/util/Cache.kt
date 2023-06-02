@@ -90,6 +90,7 @@ fun playServer(
             }
           }
           ProcessBuilder(command)
+            .directory(Path(".mcx").createDirectories().toFile())
             .inheritIO()
             .start()
             .waitFor()
@@ -140,7 +141,7 @@ fun deleteServer(id: String): Int {
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <R> useDedicatedServerProperties(block: (DedicatedServerProperties?) -> R): R {
-  val serverPropertiesPath = Path("server.properties")
+  val serverPropertiesPath = Path(".mcx") / "server.properties"
   return if (serverPropertiesPath.isRegularFile()) {
     val text = serverPropertiesPath.readText()
     val properties = JProperties().apply { load(text.reader()) }
