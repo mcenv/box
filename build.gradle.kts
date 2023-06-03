@@ -41,7 +41,7 @@ dependencies {
 sourceSets {
   main {
     resources {
-      exclude("std/out", "std/server.properties")
+      exclude("core/.mcx")
     }
   }
 }

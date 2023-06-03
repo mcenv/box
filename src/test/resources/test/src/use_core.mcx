@@ -1,6 +1,6 @@
 import {
-  std::i32::+,
-  std::i32::=,
+  core::i32::+,
+  core::i32::=,
 }
 
 test def 1+2=3 := (1 + 2) = 3;

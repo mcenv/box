@@ -1,8 +1,8 @@
 import {
-  std::i32::=,
-  std::i32::<=,
-  std::i32::+,
-  std::i32::-,
+  core::i32::=,
+  core::i32::<=,
+  core::i32::+,
+  core::i32::-,
 }
 
 rec def fib : proc(n : i32) -> i32 :=

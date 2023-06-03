@@ -11,12 +11,12 @@ import java.util.concurrent.TimeUnit
 @BenchmarkMode(Mode.SingleShotTime)
 class BuildBenchmarks {
   @Benchmark
-  fun std() {
-    runBlocking { Build(BuildTests.std, BuildTests.std)() }
+  fun core() {
+    runBlocking { Build(BuildTests.core, BuildTests.core)() }
   }
 
   @Benchmark
   fun test() {
-    runBlocking { Build(BuildTests.test, BuildTests.std)() }
+    runBlocking { Build(BuildTests.test, BuildTests.core)() }
   }
 }

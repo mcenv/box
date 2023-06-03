@@ -8,13 +8,13 @@ import kotlin.io.path.Path
 import kotlin.test.Test
 
 object BuildTests {
-  val std: Path = Path("src", "main", "resources", "std")
+  val core: Path = Path("src", "main", "resources", "core")
   val test: Path = Path("src", "test", "resources", "test")
 
   @Test
-  fun std() {
+  fun core() {
     val result = runBlocking {
-      Build(std, std)()
+      Build(core, core)()
     }
     result.diagnosticsByPath.forEach { (path, diagnostics) ->
       diagnostics.forEach {
@@ -27,7 +27,7 @@ object BuildTests {
   @Test
   fun test() {
     val result = runBlocking {
-      Build(test, std)()
+      Build(test, core)()
     }
     result.diagnosticsByPath.forEach { (path, diagnostics) ->
       diagnostics.forEach {

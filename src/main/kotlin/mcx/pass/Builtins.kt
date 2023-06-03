@@ -13,20 +13,20 @@ abstract class Builtin(val name: DefinitionLocation) {
   abstract fun eval(args: List<Lazy<Value>>): Value?
 }
 
-const val std: String = "std"
-val prelude: ModuleLocation = ModuleLocation(std, "prelude")
-private val i8: ModuleLocation = ModuleLocation(std, "i8")
-private val i16: ModuleLocation = ModuleLocation(std, "i16")
-private val i32: ModuleLocation = ModuleLocation(std, "i32")
-private val i64: ModuleLocation = ModuleLocation(std, "i64")
-private val f32: ModuleLocation = ModuleLocation(std, "f32")
-private val f64: ModuleLocation = ModuleLocation(std, "f64")
-private val str: ModuleLocation = ModuleLocation(std, "str")
-private val i8_array: ModuleLocation = ModuleLocation(std, "i8_array")
-private val i32_array: ModuleLocation = ModuleLocation(std, "i32_array")
-private val i64_array: ModuleLocation = ModuleLocation(std, "i64_array")
-private val vec: ModuleLocation = ModuleLocation(std, "vec")
-private val struct: ModuleLocation = ModuleLocation(std, "struct")
+const val core: String = "core"
+val prelude: ModuleLocation = ModuleLocation(core, "prelude")
+private val i8: ModuleLocation = ModuleLocation(core, "i8")
+private val i16: ModuleLocation = ModuleLocation(core, "i16")
+private val i32: ModuleLocation = ModuleLocation(core, "i32")
+private val i64: ModuleLocation = ModuleLocation(core, "i64")
+private val f32: ModuleLocation = ModuleLocation(core, "f32")
+private val f64: ModuleLocation = ModuleLocation(core, "f64")
+private val str: ModuleLocation = ModuleLocation(core, "str")
+private val i8_array: ModuleLocation = ModuleLocation(core, "i8_array")
+private val i32_array: ModuleLocation = ModuleLocation(core, "i32_array")
+private val i64_array: ModuleLocation = ModuleLocation(core, "i64_array")
+private val vec: ModuleLocation = ModuleLocation(core, "vec")
+private val struct: ModuleLocation = ModuleLocation(core, "struct")
 
 private val builtins: Map<DefinitionLocation, Builtin> = listOf(
   object : Builtin(prelude / "++") {

@@ -36,11 +36,11 @@ import kotlin.io.path.*
 // TODO: redesign
 class Build(
   private val root: Path,
-  std: Path? = null,
+  core: Path? = null,
 ) {
   private val mcx: Path = root / ".mcx"
-  private val std: Path? = std?.resolve("src") ?: run {
-    val uri = Build::class.java.getResource("/std/src")!!.toURI()
+  private val core: Path? = core?.resolve("src") ?: run {
+    val uri = Build::class.java.getResource("/core/src")!!.toURI()
     FileSystems.newFileSystem(uri, emptyMap<String, Nothing>())
     Paths.get(uri)
   }
@@ -93,7 +93,7 @@ class Build(
                 src.pathOf(key.location)?.takeIf { it.isRegularFile() }?.let {
                   return@withContext Trace(it.readText(), 0)
                 }
-                std?.pathOf(key.location)?.takeIf { it.exists() }?.let {
+                core?.pathOf(key.location)?.takeIf { it.exists() }?.let {
                   return@withContext Trace(it.readText(), 0)
                 }
                 Trace("", 0)

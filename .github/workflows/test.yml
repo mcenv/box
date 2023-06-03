@@ -68,8 +68,8 @@ jobs:
         with:
           name: datapacks
           path: |
-            ./src/main/resources/std/.mcx/world/datapacks/std_main
-            ./src/main/resources/std/.mcx/world/datapacks/std_test
+            ./src/main/resources/core/.mcx/world/datapacks/core_main
+            ./src/main/resources/core/.mcx/world/datapacks/core_test
             ./src/test/resources/test/.mcx/world/datapacks/test_main
             ./src/test/resources/test/.mcx/world/datapacks/test_test
           if-no-files-found: error
