@@ -1,4 +1,4 @@
-package mcx.util
+package mcx.cache
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
