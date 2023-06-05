@@ -328,11 +328,8 @@ class Elaborate private constructor(
         if (funcType.params.size != term.args.size) {
           return invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range))
         }
-        val (_, args) = (term.args zip funcType.params).mapWith(this) { transform, (arg, param) ->
-          val paramType = param.second.value
-          val arg = checkTerm(arg, phase, paramType)
-          transform(Ctx(entries, env + lazy { env.evalTerm(arg) }))
-          arg
+        val args = (term.args zip funcType.params).map { (arg, param) ->
+          checkTerm(arg, phase, param.second.value)
         }
         val (_, vArgs) = args.mapWith(env) { transform, arg ->
           val vArg = lazy { env.evalTerm(arg) }

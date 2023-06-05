@@ -5,7 +5,7 @@ import {
   core::i32::-,
 }
 
-# rec def fib : proc(n : i32) -> i32 :=
-#   \(n) -> if (n <= 1) then n else (fib(n - 1) + fib(n - 2));
-#
-# test def fib_10=55 := fib(10) = 55;
+rec def fib : proc(n : i32) -> i32 :=
+  \(n) -> if (n <= 1) then n else (fib(n - 1) + fib(n - 2));
+
+test def fib_10=55 := fib(10) = 55;
