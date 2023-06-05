@@ -2,5 +2,5 @@ export def min_value : f64 := 4.9e-324f64;
 
 export def max_value : f64 := 1.7976931348623157e308f64;
 
-export builtin def to_string(f64) : str :=
+export builtin def to_str(f64) : str :=
   /"data modify storage mcx: string append string storage mcx: double[-1]";

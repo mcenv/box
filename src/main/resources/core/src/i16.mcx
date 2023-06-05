@@ -2,5 +2,5 @@ export def min_value : i16 := -32768i16;
 
 export def max_value : i16 := 32767i16;
 
-export builtin def to_string(i16) : str :=
+export builtin def to_str(i16) : str :=
   /"data modify storage mcx: string append string storage mcx: short[-1]";

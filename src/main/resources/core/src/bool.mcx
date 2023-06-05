@@ -1,8 +1,0 @@
-export def not(a : bool) : bool :=
-  if a then false else true;
-
-export def and(a : bool, b : bool) : bool :=
-  if a then b else false;
-
-export def or(a : bool, b : bool) : bool :=
-  if a then true else b;
