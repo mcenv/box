@@ -16,15 +16,15 @@ object TestCommands {
       literal<Unit>("test")
         .then(
           argument("version", string())
-            .executes {
-              val version: String = it["version"]
+            .executes { c ->
+              val version: String = c["version"]
               test(version)
             }
             .then(
               argument("args", greedyString())
-                .executes {
-                  val version: String = it["version"]
-                  val args: String = it["args"]
+                .executes { c ->
+                  val version: String = c["version"]
+                  val args: String = c["args"]
                   test(version, args)
                 }
             )
