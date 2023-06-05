@@ -5,8 +5,8 @@ import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
+import mcx.cache.getOrCreateDependenciesPath
 import mcx.pass.Config
-import mcx.util.getOrCreateDependenciesPath
 import java.io.FileNotFoundException
 import java.net.URL
 import java.util.zip.ZipInputStream

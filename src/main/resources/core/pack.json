@@ -1,5 +1,6 @@
 {
   "name": "core",
   "description": "The mcx core pack",
+  "eula": true,
   "debug": true
 }

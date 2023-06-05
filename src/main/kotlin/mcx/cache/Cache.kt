@@ -1,9 +1,11 @@
+// TODO: refactor
+
 @file:UseSerializers(
   URLSerializer::class,
   DateSerializer::class,
 )
 
-package mcx.util
+package mcx.cache
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.*
@@ -17,6 +19,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.decodeFromStringMap
 import mcx.data.DedicatedServerProperties
+import mcx.util.Rcon
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Path
@@ -82,33 +85,41 @@ fun playServer(
   rconAction: (suspend (Rcon) -> Unit)? = null,
 ): Int {
   return runBlocking {
-    val serverPath = getServerPath(id)
+    val configPath = Path("pack.json")
+    if (configPath.notExists()) {
+      return@runBlocking 1
+    }
+
     // TODO: check sha1
     // TODO: print messages
-    if (serverPath.isRegularFile()) {
-      useDedicatedServerProperties { properties ->
-        val minecraft = thread {
-          val command = mutableListOf(java, bundlerRepoDir, "-jar", serverPath.pathString).also {
-            if (args != null) {
-              it.addAll(args.split(' '))
-            }
-          }
-          ProcessBuilder(command)
-            .directory(Path(".mcx").createDirectories().toFile())
-            .inheritIO()
-            .start()
-            .waitFor()
-        }
-        if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
-          Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
-            rconAction(it)
+    val serverPath = getServerPath(id)
+    if (!serverPath.isRegularFile()) {
+      return@runBlocking 1
+    }
+
+    val workspace = Path(".mcx").createDirectories()
+    (workspace / "eula.txt").writeText("eula=true\n")
+
+    useDedicatedServerProperties { properties ->
+      val minecraft = thread {
+        val command = mutableListOf(java, bundlerRepoDir, "-jar", serverPath.pathString).also {
+          if (args != null) {
+            it.addAll(args.split(' '))
           }
         }
-        minecraft.join()
-        0
+        ProcessBuilder(command)
+          .directory(workspace.toFile())
+          .inheritIO()
+          .start()
+          .waitFor()
       }
-    } else {
-      1
+      if (rconAction != null && properties != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
+        Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
+          rconAction(it)
+        }
+      }
+      minecraft.join()
+      0
     }
   }
 }

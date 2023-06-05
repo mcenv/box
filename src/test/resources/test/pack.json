@@ -1,5 +1,6 @@
 {
   "name": "test",
   "description": "The mcx test pack",
+  "eula": true,
   "debug": true
 }

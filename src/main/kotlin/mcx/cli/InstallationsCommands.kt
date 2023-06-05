@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 import com.mojang.brigadier.arguments.StringArgumentType.string
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
-import mcx.util.*
+import mcx.cache.*
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
@@ -57,7 +57,7 @@ object InstallationsCommands {
                       .first { it.id == version }
                       .url
                       .openStream()
-                      .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<mcx.util.Package>(it) }
+                      .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<Package>(it) }
                       .downloads
                       .let { downloads ->
                         downloads.server.url.openStream().use { getServerPath(version).saveFromStream(it) }
