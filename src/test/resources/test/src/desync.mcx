@@ -1,0 +1,15 @@
+def xx : proc(x : bool) -> bool := \(x) -> x;
+
+test def test_xx := xx(true);
+
+def _y : proc(bool) -> bool := \(y) -> y;
+
+test def test__y := _y(true);
+
+def xy : proc(x : bool) -> bool := \(y) -> y;
+
+test def test_xy := xy(true);
+
+def x_ : proc(x : bool) -> bool := \(_) -> true;
+
+test def test_x_ := x_(true);
