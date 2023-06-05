@@ -19,6 +19,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.decodeFromStringMap
 import mcx.data.DedicatedServerProperties
+import mcx.pass.Config
 import mcx.util.Rcon
 import java.io.InputStream
 import java.net.URL
@@ -98,7 +99,9 @@ fun playServer(
     }
 
     val workspace = Path(".mcx").createDirectories()
-    (workspace / "eula.txt").writeText("eula=true\n")
+
+    val config = @OptIn(ExperimentalSerializationApi::class) Json.decodeFromStream<Config>(configPath.inputStream().buffered())
+    (workspace / "eula.txt").writeText("eula=${config.eula}\n")
 
     useDedicatedServerProperties { properties ->
       val minecraft = thread {
