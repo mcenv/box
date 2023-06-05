@@ -6,12 +6,13 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
 import mcx.pass.Config
 import java.nio.file.Paths
+import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 
 @OptIn(ExperimentalSerializationApi::class)
 object InitCommands {
-  private val json: Json = Json {
+  val json: Json = Json {
     prettyPrint = true
     prettyPrintIndent = "  "
   }
@@ -20,8 +21,8 @@ object InitCommands {
     dispatcher.register(
       literal("init")
         .executes {
-          val name = Paths.get("").toAbsolutePath().last().toString()
-          Paths.get("pack.json").outputStream().buffered().use {
+          val name = Path("").toAbsolutePath().last().toString()
+          Path("pack.json").outputStream().buffered().use {
             json.encodeToStream(
               Config(
                 name = name,

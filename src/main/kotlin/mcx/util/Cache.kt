@@ -26,49 +26,53 @@ import kotlin.concurrent.thread
 import kotlin.io.path.*
 import java.util.Properties as JProperties
 
-private val versionManifestUrl: URL by lazy {
+val versionManifestUrl: URL by lazy {
   URL("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
 }
 
-private val json: Json by lazy {
+val json: Json by lazy {
   Json { ignoreUnknownKeys = true }
 }
 
-private val java: String by lazy {
+val java: String by lazy {
   ProcessHandle.current().info().command().orElseThrow()
 }
 
-private val bundlerRepoDir: String by lazy {
+val bundlerRepoDir: String by lazy {
   "-DbundlerRepoDir=\"${getOrCreateRootPath()}\""
 }
 
-private fun getOrCreateRootPath(): Path {
+fun getOrCreateRootPath(): Path {
   return Path(System.getProperty("user.home"), ".mcx").createDirectories()
 }
 
-private fun getOrCreateVersionsPath(): Path {
+fun getOrCreateDependenciesPath(): Path {
+  return (getOrCreateRootPath() / "dependencies").createDirectories()
+}
+
+fun getOrCreateVersionsPath(): Path {
   return (getOrCreateRootPath() / "versions").createDirectories()
 }
 
-private fun getOrCreateServerRootPath(id: String): Path {
+fun getOrCreateServerRootPath(id: String): Path {
   return (getOrCreateVersionsPath() / id).createDirectories()
 }
 
-private fun getServerPath(id: String): Path {
+fun getServerPath(id: String): Path {
   return getOrCreateServerRootPath(id) / "server.jar"
 }
 
-private fun getServerMappingsPath(id: String): Path {
+fun getServerMappingsPath(id: String): Path {
   return getOrCreateServerRootPath(id) / "server.txt"
 }
 
 // TODO: cache version_manifest_v2.json
 @OptIn(ExperimentalSerializationApi::class)
-private fun fetchVersionManifest(): VersionManifest {
+fun fetchVersionManifest(): VersionManifest {
   return versionManifestUrl.openStream().use { json.decodeFromStream(it) }
 }
 
-private fun Path.saveFromStream(input: InputStream) {
+fun Path.saveFromStream(input: InputStream) {
   outputStream().buffered().use { input.transferTo(it) }
 }
 
@@ -107,36 +111,6 @@ fun playServer(
       1
     }
   }
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-fun createServer(id: String): Int {
-  // TODO: check sha1
-  // TODO: remap server.jar
-  // TODO: print messages
-  return if (getServerPath(id).exists()) {
-    1
-  } else {
-    fetchVersionManifest()
-      .versions
-      .first { it.id == id }
-      .url
-      .openStream()
-      .use { json.decodeFromStream<Package>(it) }
-      .downloads
-      .let { downloads ->
-        downloads.server.url.openStream().use { getServerPath(id).saveFromStream(it) }
-        downloads.serverMappings.url.openStream().use { getServerMappingsPath(id).saveFromStream(it) }
-      }
-    0
-  }
-}
-
-@OptIn(ExperimentalPathApi::class)
-fun deleteServer(id: String): Int {
-  // TODO: print messages
-  getOrCreateServerRootPath(id).deleteRecursively()
-  return 0
 }
 
 @OptIn(ExperimentalSerializationApi::class)

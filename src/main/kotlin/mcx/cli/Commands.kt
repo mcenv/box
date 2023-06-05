@@ -8,6 +8,7 @@ import com.mojang.brigadier.context.CommandContext
 
 fun registerCommands(dispatcher: CommandDispatcher<Unit>) {
   BuildCommands.register(dispatcher)
+  DependenciesCommands.register(dispatcher)
   HelpCommands.register(dispatcher)
   InitCommands.register(dispatcher)
   InstallationsCommands.register(dispatcher)

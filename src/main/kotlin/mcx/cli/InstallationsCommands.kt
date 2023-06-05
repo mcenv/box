@@ -3,9 +3,12 @@ package mcx.cli
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 import com.mojang.brigadier.arguments.StringArgumentType.string
-import mcx.util.createServer
-import mcx.util.deleteServer
-import mcx.util.playServer
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.decodeFromStream
+import mcx.util.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.deleteRecursively
+import kotlin.io.path.exists
 
 object InstallationsCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
@@ -26,15 +29,15 @@ object InstallationsCommands {
           literal("play")
             .then(
               argument("version", string())
-                .executes {
-                  val version: String = it["version"]
+                .executes { c ->
+                  val version: String = c["version"]
                   playServer(version)
                 }
                 .then(
                   argument("args", greedyString())
-                    .executes {
-                      val version: String = it["version"]
-                      val args: String = it["args"]
+                    .executes { c ->
+                      val version: String = c["version"]
+                      val args: String = c["args"]
                       playServer(version, args)
                     }
                 )
@@ -44,9 +47,24 @@ object InstallationsCommands {
           literal("create")
             .then(
               argument("version", string())
-                .executes {
-                  val version: String = it["version"]
-                  createServer(version)
+                .executes { c ->
+                  val version: String = c["version"]
+                  if (getServerPath(version).exists()) {
+                    1
+                  } else {
+                    fetchVersionManifest()
+                      .versions
+                      .first { it.id == version }
+                      .url
+                      .openStream()
+                      .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<mcx.util.Package>(it) }
+                      .downloads
+                      .let { downloads ->
+                        downloads.server.url.openStream().use { getServerPath(version).saveFromStream(it) }
+                        downloads.serverMappings.url.openStream().use { getServerMappingsPath(version).saveFromStream(it) }
+                      }
+                    0
+                  }
                 }
             )
         )
@@ -54,9 +72,11 @@ object InstallationsCommands {
           literal("delete")
             .then(
               argument("version", string())
-                .executes {
-                  val version: String = it["version"]
-                  deleteServer(version)
+                .executes { c ->
+                  val version: String = c["version"]
+                  @OptIn(ExperimentalPathApi::class)
+                  getOrCreateServerRootPath(version).deleteRecursively()
+                  0
                 }
             )
         )
