@@ -42,11 +42,26 @@ class Lift private constructor(
 
   private fun Ctx.liftTerm(term: C.Term): L.Term {
     return when (term) {
-      is C.Term.Tag        -> unexpectedTerm(term)
-      is C.Term.TagOf      -> UNIT
-      is C.Term.Type       -> UNIT
-      is C.Term.Bool       -> UNIT
-      is C.Term.BoolOf     -> L.Term.I8Of(if (term.value) 1 else 0)
+      is C.Term.Tag        -> {
+        unexpectedTerm(term)
+      }
+
+      is C.Term.TagOf      -> {
+        UNIT
+      }
+
+      is C.Term.Type       -> {
+        UNIT
+      }
+
+      is C.Term.Bool       -> {
+        UNIT
+      }
+
+      is C.Term.BoolOf     -> {
+        L.Term.I8Of(if (term.value) 1 else 0)
+      }
+
       is C.Term.If         -> {
         val condition = liftTerm(term.condition)
         val thenBranch = liftTerm(term.thenBranch)
@@ -56,55 +71,128 @@ class Lift private constructor(
         val type = thenBranch.type
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
+
       is C.Term.Is         -> {
         val scrutinee = liftTerm(term.scrutinee)
         restoring {
-          val scrutineer = liftPattern(term.scrutineer)
+          val scrutineer = liftPattern(term.scrutineer, term.scrutinee.type.value)
           L.Term.Is(scrutinee, scrutineer)
         }
       }
-      is C.Term.I8         -> UNIT
-      is C.Term.I8Of       -> L.Term.I8Of(term.value)
-      is C.Term.I16        -> UNIT
-      is C.Term.I16Of      -> L.Term.I16Of(term.value)
-      is C.Term.I32        -> UNIT
-      is C.Term.I32Of      -> L.Term.I32Of(term.value)
-      is C.Term.I64        -> UNIT
-      is C.Term.I64Of      -> L.Term.I64Of(term.value)
-      is C.Term.F32        -> UNIT
-      is C.Term.F32Of      -> L.Term.F32Of(term.value)
-      is C.Term.F64        -> UNIT
-      is C.Term.F64Of      -> L.Term.F64Of(term.value)
-      is C.Term.Str        -> UNIT
-      is C.Term.StrOf      -> L.Term.StrOf(term.value)
-      is C.Term.I8Array    -> UNIT
+
+      is C.Term.I8         -> {
+        UNIT
+      }
+
+      is C.Term.I8Of       -> {
+        L.Term.I8Of(term.value)
+      }
+
+      is C.Term.I16        -> {
+        UNIT
+      }
+
+      is C.Term.I16Of      -> {
+        L.Term.I16Of(term.value)
+      }
+
+      is C.Term.I32        -> {
+        UNIT
+      }
+
+      is C.Term.I32Of      -> {
+        L.Term.I32Of(term.value)
+      }
+
+      is C.Term.I64        -> {
+        UNIT
+      }
+
+      is C.Term.I64Of      -> {
+        L.Term.I64Of(term.value)
+      }
+
+      is C.Term.F32        -> {
+        UNIT
+      }
+
+      is C.Term.F32Of      -> {
+        L.Term.F32Of(term.value)
+      }
+
+      is C.Term.F64        -> {
+        UNIT
+      }
+
+      is C.Term.F64Of      -> {
+        L.Term.F64Of(term.value)
+      }
+
+      is C.Term.Str        -> {
+        UNIT
+      }
+
+      is C.Term.StrOf      -> {
+        L.Term.StrOf(term.value)
+      }
+
+      is C.Term.I8Array    -> {
+        UNIT
+      }
+
       is C.Term.I8ArrayOf  -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I8ArrayOf(elements)
       }
-      is C.Term.I32Array   -> UNIT
+
+      is C.Term.I32Array   -> {
+        UNIT
+      }
+
       is C.Term.I32ArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I32ArrayOf(elements)
       }
-      is C.Term.I64Array   -> UNIT
+
+      is C.Term.I64Array   -> {
+        UNIT
+      }
+
       is C.Term.I64ArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I64ArrayOf(elements)
       }
-      is C.Term.Vec        -> UNIT
+
+      is C.Term.Vec        -> {
+        UNIT
+      }
+
       is C.Term.VecOf      -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.VecOf(elements)
       }
-      is C.Term.Struct     -> UNIT
+
+      is C.Term.Struct     -> {
+        UNIT
+      }
+
       is C.Term.StructOf   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
         L.Term.StructOf(elements)
       }
-      is C.Term.Point      -> UNIT
-      is C.Term.Union      -> UNIT
-      is C.Term.Func       -> UNIT
+
+      is C.Term.Point      -> {
+        UNIT
+      }
+
+      is C.Term.Union      -> {
+        UNIT
+      }
+
+      is C.Term.Func       -> {
+        UNIT
+      }
+
       is C.Term.FuncOf     -> {
         // Generate ID before the subterms are lifted to ensure the top-level proc always gets ID 0.
         val id = freshFunctionId++
@@ -113,7 +201,9 @@ class Lift private constructor(
           if (term.open) {
             val freeVars = freeVars(term)
             val capture = L.Pattern.StructOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
-            val binders = term.params.map { liftPattern(it) }
+            val binders = (term.params zip (term.type.value as C.Term.Func).params).map { (pattern, type) ->
+              liftPattern(pattern, type.second)
+            }
             val result = liftTerm(term.result)
             val tag = context.freshFuncId()
             L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:$id" }, binders + capture, result, tag).also {
@@ -123,7 +213,9 @@ class Lift private constructor(
             val entries = freeVars.map { (name, type) -> L.Term.FuncOf.Entry(name, type) }
             L.Term.FuncOf(entries, tag)
           } else {
-            val binders = term.params.map { liftPattern(it) }
+            val binders = (term.params zip (term.type.value as C.Term.Func).params).map { (pattern, type) ->
+              liftPattern(pattern, type.second)
+            }
             val result = liftTerm(term.result)
             val tag = context.freshProcId()
             val function = L.Definition.Function(emptyList(), definition.name.let { it.module / "${it.name}:$id" }, binders, result, tag).also {
@@ -134,70 +226,96 @@ class Lift private constructor(
           }
         }
       }
+
       is C.Term.Apply      -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = eraseType(term.type)
+        val type = eraseType(term.type.value)
         L.Term.Apply(term.open, func, args, type)
       }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
+
+      is C.Term.Code       -> {
+        unexpectedTerm(term)
+      }
+
+      is C.Term.CodeOf     -> {
+        unexpectedTerm(term)
+      }
+
+      is C.Term.Splice     -> {
+        unexpectedTerm(term)
+      }
+
       is C.Term.Command    -> {
         val element = (term.element as C.Term.StrOf).value
-        val type = eraseType(term.type)
+        val type = eraseType(term.type.value)
         L.Term.Command(element, type)
       }
+
       is C.Term.Let        -> {
         val init = liftTerm(term.init)
         restoring {
-          val binder = liftPattern(term.binder)
+          val binder = liftPattern(term.binder, term.init.type.value)
           val body = liftTerm(term.body)
           L.Term.Let(binder, init, body)
         }
       }
+
       is C.Term.Var        -> {
-        val type = eraseType(term.type)
+        val type = eraseType(term.type.value)
         L.Term.Var(term.name, term.idx, type)
       }
+
       is C.Term.Def        -> {
         val direct = Modifier.DIRECT in term.def.modifiers
         val type = eraseType(term.def.type)
         L.Term.Def(direct, term.def.name, type)
       }
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+
+      is C.Term.Meta       -> {
+        unexpectedTerm(term)
+      }
+
+      is C.Term.Hole       -> {
+        unexpectedTerm(term)
+      }
     }
   }
 
-  private fun Ctx.liftPattern(pattern: C.Pattern<C.Term>): L.Pattern {
+  private fun Ctx.liftPattern(
+    pattern: C.Pattern,
+    type: C.Term,
+  ): L.Pattern {
     return when (pattern) {
-      is C.Pattern.I32Of      -> L.Pattern.I32Of(pattern.value)
-      is C.Pattern.StructOf   -> {
-        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> liftPattern(element) }
-        L.Pattern.StructOf(elements)
+      is C.Pattern.I32Of -> {
+        L.Pattern.I32Of(pattern.value)
       }
-      is C.Pattern.Var        -> {
-        val type = eraseType(pattern.type)
+
+      is C.Pattern.Var   -> {
+        val type = eraseType(type)
         bind(pattern.name, type)
         L.Pattern.Var(pattern.name, type)
       }
-      is C.Pattern.Drop       -> {
-        val type = eraseType(pattern.type)
+
+      is C.Pattern.Drop  -> {
+        val type = eraseType(type)
         L.Pattern.Drop(type)
       }
-      is C.Pattern.Hole       -> unexpectedPattern(pattern)
+
+      is C.Pattern.Hole  -> {
+        unexpectedPattern(pattern)
+      }
     }
   }
 
   private fun freeVars(term: C.Term): LinkedHashMap<String, NbtType> {
     return when (term) {
-      is C.Term.Tag        -> unexpectedTerm(term)
-      is C.Term.TagOf      -> linkedMapOf()
-      is C.Term.Type       -> freeVars(term.element)
-      is C.Term.Bool       -> linkedMapOf()
-      is C.Term.BoolOf     -> linkedMapOf()
-      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.Tag      -> unexpectedTerm(term)
+      is C.Term.TagOf    -> linkedMapOf()
+      is C.Term.Type     -> freeVars(term.element)
+      is C.Term.Bool     -> linkedMapOf()
+      is C.Term.BoolOf   -> linkedMapOf()
+      is C.Term.If       -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
       is C.Term.Is         -> freeVars(term.scrutinee)
       is C.Term.I8         -> linkedMapOf()
       is C.Term.I8Of       -> linkedMapOf()
@@ -222,82 +340,35 @@ class Lift private constructor(
       is C.Term.Vec        -> freeVars(term.element)
       is C.Term.VecOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.StructOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Point    -> freeVars(term.element)
+      is C.Term.Union    -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf   -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply    -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code     -> unexpectedTerm(term)
+      is C.Term.CodeOf   -> unexpectedTerm(term)
+      is C.Term.Splice   -> unexpectedTerm(term)
+      is C.Term.Command  -> linkedMapOf()
+      is C.Term.Let      -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var      -> linkedMapOf(term.name to eraseType(term.type.value))
+      is C.Term.Def      -> linkedMapOf()
+      is C.Term.Meta     -> unexpectedTerm(term)
+      is C.Term.Hole     -> unexpectedTerm(term)
     }
   }
 
-  private fun boundVars(pattern: C.Pattern<*>): Set<String> {
+  private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
-      is C.Pattern.I32Of    -> emptySet()
-      is C.Pattern.StructOf -> pattern.elements.flatMapTo(hashSetOf()) { (_, element) -> boundVars(element) }
-      is C.Pattern.Var      -> setOf(pattern.name)
-      is C.Pattern.Drop     -> emptySet()
-      is C.Pattern.Hole     -> unexpectedPattern(pattern)
+      is C.Pattern.I32Of -> emptySet()
+      is C.Pattern.Var   -> setOf(pattern.name)
+      is C.Pattern.Drop  -> emptySet()
+      is C.Pattern.Hole  -> unexpectedPattern(pattern)
     }
   }
 
   private fun eraseType(type: C.Term): NbtType {
-    return when (type) {
-      is C.Term.Tag        -> unexpectedTerm(type)
-      is C.Term.TagOf      -> unexpectedTerm(type)
-      is C.Term.Type       -> NbtType.BYTE
-      is C.Term.Bool       -> NbtType.BYTE
-      is C.Term.BoolOf     -> unexpectedTerm(type)
-      is C.Term.If         -> eraseType(type.thenBranch)
-      is C.Term.Is         -> unexpectedTerm(type)
-      is C.Term.I8         -> NbtType.BYTE
-      is C.Term.I8Of       -> unexpectedTerm(type)
-      is C.Term.I16        -> NbtType.SHORT
-      is C.Term.I16Of      -> unexpectedTerm(type)
-      is C.Term.I32        -> NbtType.INT
-      is C.Term.I32Of      -> unexpectedTerm(type)
-      is C.Term.I64        -> NbtType.LONG
-      is C.Term.I64Of      -> unexpectedTerm(type)
-      is C.Term.F32        -> NbtType.FLOAT
-      is C.Term.F32Of      -> unexpectedTerm(type)
-      is C.Term.F64        -> NbtType.DOUBLE
-      is C.Term.F64Of      -> unexpectedTerm(type)
-      is C.Term.Str        -> NbtType.STRING
-      is C.Term.StrOf      -> unexpectedTerm(type)
-      is C.Term.I8Array    -> NbtType.BYTE_ARRAY
-      is C.Term.I8ArrayOf  -> unexpectedTerm(type)
-      is C.Term.I32Array   -> NbtType.INT_ARRAY
-      is C.Term.I32ArrayOf -> unexpectedTerm(type)
-      is C.Term.I64Array   -> NbtType.LONG_ARRAY
-      is C.Term.I64ArrayOf -> unexpectedTerm(type)
-      is C.Term.Vec        -> NbtType.LIST
-      is C.Term.VecOf      -> unexpectedTerm(type)
-      is C.Term.Struct     -> NbtType.COMPOUND
-      is C.Term.StructOf   -> unexpectedTerm(type)
-      is C.Term.Point      -> eraseType(type.elementType)
-      is C.Term.Union      -> type.elements.firstOrNull()?.let { eraseType(it) } ?: NbtType.END
-      is C.Term.Func       -> NbtType.COMPOUND
-      is C.Term.FuncOf     -> unexpectedTerm(type)
-      is C.Term.Apply      -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Code       -> unexpectedTerm(type)
-      is C.Term.CodeOf     -> unexpectedTerm(type)
-      is C.Term.Splice     -> unexpectedTerm(type)
-      is C.Term.Command    -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Let        -> eraseType(type.body)
-      is C.Term.Var        -> ((type.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Def        -> ((type.def.type as C.Term.Type).element as C.Term.TagOf).value
-      is C.Term.Meta       -> unexpectedTerm(type)
-      is C.Term.Hole       -> unexpectedTerm(type)
-    }
+    return ((type.type.value as C.Term.Type).element as C.Term.TagOf).value
   }
 
   private fun Ctx.createFreshFunction(
@@ -311,7 +382,9 @@ class Lift private constructor(
       params,
       body,
       restore,
-    ).also { liftedDefinitions += it }
+    ).also {
+      liftedDefinitions += it
+    }
   }
 
   private class Ctx private constructor() {
@@ -354,7 +427,7 @@ class Lift private constructor(
       error("unexpected term: ${prettyTerm(term)}")
     }
 
-    private fun unexpectedPattern(pattern: C.Pattern<*>): Nothing {
+    private fun unexpectedPattern(pattern: C.Pattern): Nothing {
       error("unexpected pattern: ${prettyPattern(pattern)}")
     }
 

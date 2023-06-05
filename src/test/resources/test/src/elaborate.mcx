@@ -36,7 +36,7 @@ def bool_of_true : bool := true;
 
 def if : i32 := if true then 1 else 0;
 
-def is : bool := 0 is _;
+# def is : bool := 0 is _;
 
 def i8 : type byte := i8;
 

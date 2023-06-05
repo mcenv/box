@@ -65,11 +65,10 @@ fun prettyTerm(
 }
 
 fun prettyPattern(
-  pattern: Pattern<*>,
+  pattern: Pattern,
 ): String {
   return when (pattern) {
     is Pattern.I32Of    -> "${pattern.value}i32"
-    is Pattern.StructOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
     is Pattern.Var      -> pattern.name
     is Pattern.Drop     -> "_"
     is Pattern.Hole     -> "??"

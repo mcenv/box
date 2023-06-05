@@ -185,7 +185,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class CompoundOf(
+    data class StructOf(
       val elements: List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term()

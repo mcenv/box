@@ -226,7 +226,7 @@ class Parse private constructor(
               val element = parseTerm()
               key to element
             }
-            S.Term.CompoundOf(elements, until())
+            S.Term.StructOf(elements, until())
           }
           '\\' -> {
             skip()

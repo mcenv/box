@@ -1,11 +1,12 @@
 package mcx.pass.frontend
 
-import kotlinx.collections.immutable.plus
-import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.lsp.diagnostic
-import mcx.pass.*
+import mcx.pass.Value
+import mcx.pass.open
+import mcx.pass.quoteValue
+import mcx.util.mapWith
 import mcx.util.toSubscript
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
@@ -16,12 +17,15 @@ class Meta {
   private val values: MutableList<Value?> = mutableListOf()
   private val unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
 
-  fun freshValue(source: Range): Value {
-    return Value.Meta(values.size, source).also { values += null }
+  fun freshValue(
+    source: Range,
+    type: Lazy<Value> = lazy { freshType(source) },
+  ): Value {
+    return Value.Meta(values.size, source, type).also { values += null }
   }
 
   fun freshType(source: Range): Value {
-    val tag = lazy { freshValue(source) }
+    val tag = lazy { freshValue(source, Value.Tag.LAZY) }
     return Value.Type(tag)
   }
 
@@ -41,171 +45,243 @@ class Meta {
     vararg terms: Term?,
   ): List<Term?> {
     unsolvedMetas.clear()
-    val zonkedTerms = terms.map { it?.let { emptyEnv().zonkTerm(it) } }
+    val zonkedTerms = terms.map { it?.let { Lvl(0).zonkTerm(it) } }
     unsolvedMetas.forEach { (index, source) ->
       diagnostics += unsolvedMeta(index, source)
     }
     return zonkedTerms
   }
 
-  fun Env.zonkTerm(term: Term): Term {
+  fun Lvl.zonkTerm(term: Term): Term {
     return when (term) {
-      is Term.Tag         -> term
-      is Term.TagOf       -> term
-      is Term.Type        -> {
+      is Term.Tag        -> {
+        term
+      }
+
+      is Term.TagOf      -> {
+        term
+      }
+
+      is Term.Type       -> {
         val tag = zonkTerm(term.element)
         Term.Type(tag)
       }
-      is Term.Bool        -> term
-      is Term.BoolOf      -> term
-      is Term.If          -> {
+
+      is Term.Bool       -> {
+        term
+      }
+
+      is Term.BoolOf     -> {
+        term
+      }
+
+      is Term.If         -> {
         val condition = zonkTerm(term.condition)
         val thenBranch = zonkTerm(term.thenBranch)
         val elseBranch = zonkTerm(term.elseBranch)
-        Term.If(condition, thenBranch, elseBranch)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.If(condition, thenBranch, elseBranch, type)
       }
-      is Term.Is          -> {
+
+      is Term.Is         -> {
         val scrutinee = zonkTerm(term.scrutinee)
-        val scrutineer = zonkPattern(term.scrutineer)
-        Term.Is(scrutinee, scrutineer)
+        Term.Is(scrutinee, term.scrutineer)
       }
-      is Term.I8          -> term
-      is Term.I8Of        -> term
-      is Term.I16         -> term
-      is Term.I16Of       -> term
-      is Term.I32         -> term
-      is Term.I32Of       -> term
-      is Term.I64         -> term
-      is Term.I64Of       -> term
-      is Term.F32         -> term
-      is Term.F32Of       -> term
-      is Term.F64         -> term
-      is Term.F64Of       -> term
-      is Term.Str         -> term
-      is Term.StrOf       -> term
-      is Term.I8Array     -> term
-      is Term.I8ArrayOf   -> {
+
+      is Term.I8         -> {
+        term
+      }
+
+      is Term.I8Of       -> {
+        term
+      }
+
+      is Term.I16        -> {
+        term
+      }
+
+      is Term.I16Of      -> {
+        term
+      }
+
+      is Term.I32        -> {
+        term
+      }
+
+      is Term.I32Of      -> {
+        term
+      }
+
+      is Term.I64        -> {
+        term
+      }
+
+      is Term.I64Of      -> {
+        term
+      }
+
+      is Term.F32        -> {
+        term
+      }
+
+      is Term.F32Of      -> {
+        term
+      }
+
+      is Term.F64        -> {
+        term
+      }
+
+      is Term.F64Of      -> {
+        term
+      }
+
+      is Term.Str        -> {
+        term
+      }
+
+      is Term.StrOf      -> {
+        term
+      }
+
+      is Term.I8Array    -> {
+        term
+      }
+
+      is Term.I8ArrayOf  -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I8ArrayOf(elements)
       }
-      is Term.I32Array    -> term
-      is Term.I32ArrayOf  -> {
+
+      is Term.I32Array   -> {
+        term
+      }
+
+      is Term.I32ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I32ArrayOf(elements)
       }
-      is Term.I64Array    -> term
-      is Term.I64ArrayOf  -> {
+
+      is Term.I64Array   -> {
+        term
+      }
+
+      is Term.I64ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I64ArrayOf(elements)
       }
-      is Term.Vec         -> {
+
+      is Term.Vec        -> {
         val element = zonkTerm(term.element)
         Term.Vec(element)
       }
-      is Term.VecOf       -> {
+
+      is Term.VecOf      -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.VecOf(elements)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.VecOf(elements, type)
       }
-      is Term.Struct      -> {
+
+      is Term.Struct     -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.Struct(elements)
       }
-      is Term.StructOf    -> {
+
+      is Term.StructOf   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
-        Term.StructOf(elements)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.StructOf(elements, type)
       }
-      is Term.Point       -> {
+
+      is Term.Point      -> {
         val element = zonkTerm(term.element)
-        val elementType = zonkTerm(term.elementType)
-        Term.Point(element, elementType)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Point(element, type)
       }
-      is Term.Union       -> {
+
+      is Term.Union      -> {
         val elements = term.elements.map { zonkTerm(it) }
-        Term.Union(elements)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Union(elements, type)
       }
-      is Term.Func        -> {
-        var env = this
-        val params = term.params.map { (param, type) ->
-          val type = env.zonkTerm(type)
-          val param = env.zonkPattern(param)
-          env += env.next().collect(listOf(env.evalPattern(param)))
+
+      is Term.Func       -> {
+        val (lvl, params) = term.params.mapWith(this) { transform, (param, type) ->
+          val type = zonkTerm(type)
+          transform(this + 1)
           param to type
         }
-        val result = env.zonkTerm(term.result)
+        val result = lvl.zonkTerm(term.result)
         Term.Func(term.open, params, result)
       }
-      is Term.FuncOf      -> {
-        var env = this
-        val params = term.params.map { param ->
-          val param = zonkPattern(param)
-          env += env.next().collect(listOf(env.evalPattern(param)))
-          param
-        }
-        val result = env.zonkTerm(term.result)
-        Term.FuncOf(term.open, params, result)
+
+      is Term.FuncOf     -> {
+        val params = term.params
+        val result = (this + params.size).zonkTerm(term.result)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.FuncOf(term.open, params, result, type)
       }
-      is Term.Apply       -> {
+
+      is Term.Apply      -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
-        val type = zonkTerm(term.type)
+        val type = lazyOf(zonkTerm(term.type.value))
         Term.Apply(term.open, func, args, type)
       }
-      is Term.Code        -> {
+
+      is Term.Code       -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
-      is Term.CodeOf      -> {
+
+      is Term.CodeOf     -> {
         val element = zonkTerm(term.element)
-        Term.CodeOf(element)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.CodeOf(element, type)
       }
-      is Term.Splice      -> {
+
+      is Term.Splice     -> {
         val element = zonkTerm(term.element)
-        Term.Splice(element)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Splice(element, type)
       }
-      is Term.Command -> {
+
+      is Term.Command    -> {
         val element = zonkTerm(term.element)
-        val type = zonkTerm(term.type)
+        val type = lazyOf(zonkTerm(term.type.value))
         Term.Command(element, type)
       }
-      is Term.Let     -> {
-        val binder = zonkPattern(term.binder)
+
+      is Term.Let        -> {
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
-        Term.Let(binder, init, body)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Let(term.binder, init, body, type)
       }
-      is Term.Var     -> {
-        val type = zonkTerm(term.type)
+
+      is Term.Var        -> {
+        val type = lazyOf(zonkTerm(term.type.value))
         Term.Var(term.name, term.idx, type)
       }
-      is Term.Def     -> Term.Def(term.def)
-      is Term.Meta    -> {
+
+      is Term.Def        -> {
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Def(term.def, type)
+      }
+
+      is Term.Meta       -> {
         when (val solution = values.getOrNull(term.index)) {
           null -> {
-            Term.Meta(term.index, term.source).also { unsolvedMetas += it.index to it.source }
+            val type = lazyOf(zonkTerm(term.type.value))
+            Term.Meta(term.index, term.source, type).also { unsolvedMetas += it.index to it.source }
           }
-          else -> zonkTerm(next().quoteValue(solution))
+          else -> zonkTerm(quoteValue(solution))
         }
       }
-      is Term.Hole    -> term
-    }
-  }
 
-  fun Env.zonkPattern(pattern: Pattern<Term>): Pattern<Term> {
-    return when (pattern) {
-      is Pattern.I32Of      -> pattern
-      is Pattern.StructOf   -> {
-        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) -> zonkPattern(element) }
-        Pattern.StructOf(elements)
+      is Term.Hole       -> {
+        term
       }
-      is Pattern.Var        -> {
-        val type = zonkTerm(pattern.type)
-        Pattern.Var(pattern.name, type)
-      }
-      is Pattern.Drop       -> {
-        val type = zonkTerm(pattern.type)
-        Pattern.Drop(type)
-      }
-      is Pattern.Hole       -> pattern
     }
   }
 
@@ -299,12 +375,20 @@ class Meta {
       value1 is Value.Func && value2 is Value.Func             -> {
         value1.open == value2.open &&
         value1.params.size == value2.params.size &&
-        (value1.params zip value2.params).all { (param1, param2) -> unifyValue(param1.value, param2.value) } &&
-        unifyValue(evalClosure(value1.result), evalClosure(value2.result))
+        (value1.params zip value2.params).all { (param1, param2) ->
+          unifyValue(param1.second.value, param2.second.value) // TODO
+        } &&
+        unifyValue(
+          value1.result.open(this, value1.params.map { it.second }),
+          value2.result.open(this, value2.params.map { it.second }),
+        )
       }
       value1 is Value.FuncOf && value2 is Value.FuncOf         -> {
         value1.open == value2.open &&
-        unifyValue(evalClosure(value1.result), evalClosure(value2.result))
+        unifyValue(
+          value1.result.open(this, (value1.type.value as Value.Func).params.map { it.second }),
+          value2.result.open(this, (value2.type.value as Value.Func).params.map { it.second }),
+        )
       }
       value1 is Value.Apply && value2 is Value.Apply           -> {
         unifyValue(value1.func, value2.func) &&
