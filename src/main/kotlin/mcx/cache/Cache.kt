@@ -65,10 +65,6 @@ fun getServerPath(id: String): Path {
   return getOrCreateServerRootPath(id) / "server.jar"
 }
 
-fun getServerMappingsPath(id: String): Path {
-  return getOrCreateServerRootPath(id) / "server.txt"
-}
-
 // TODO: cache version_manifest_v2.json
 @OptIn(ExperimentalSerializationApi::class)
 fun fetchVersionManifest(): VersionManifest {

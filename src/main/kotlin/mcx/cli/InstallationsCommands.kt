@@ -96,10 +96,7 @@ object InstallationsCommands {
       .openStream()
       .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<Package>(it) }
       .downloads
-      .let { downloads ->
-        downloads.server.url.openStream().use { getServerPath(id).saveFromStream(it) }
-        downloads.serverMappings.url.openStream().use { getServerMappingsPath(id).saveFromStream(it) }
-      }
+      .let { downloads -> downloads.server.url.openStream().use { getServerPath(id).saveFromStream(it) } }
 
     return 0
   }
