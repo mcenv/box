@@ -12,17 +12,6 @@ import kotlin.io.path.exists
 
 object InstallationsCommands {
   fun register(dispatcher: CommandDispatcher<Unit>) {
-    // Create an alias: play -> installations play
-    literal("play").build().let { play ->
-      dispatcher.register(
-        literal("installations")
-      ).addChild(play)
-      dispatcher.register(
-        literal("play")
-          .redirect(play)
-      )
-    }
-
     dispatcher.register(
       literal("installations")
         .then(
