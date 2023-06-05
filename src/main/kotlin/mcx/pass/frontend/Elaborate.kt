@@ -328,8 +328,11 @@ class Elaborate private constructor(
         if (funcType.params.size != term.args.size) {
           return invalidTerm(arityMismatch(funcType.params.size, term.args.size, term.range))
         }
-        val args = (term.args zip funcType.params).map { (arg, param) ->
-          checkTerm(arg, phase, param.second.value)
+        val (_, args) = (term.args zip funcType.params).mapWith(env) { transform, (arg, param) ->
+          val paramType = evalTerm(next().quoteValue(param.second.value)) // TODO: use telescopic closure
+          val arg = checkTerm(arg, phase, paramType)
+          transform(this + lazy { evalTerm(arg) })
+          arg
         }
         val (_, vArgs) = args.mapWith(env) { transform, arg ->
           val vArg = lazy { env.evalTerm(arg) }
