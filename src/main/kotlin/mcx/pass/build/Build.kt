@@ -261,13 +261,10 @@ class Build(
   // TODO: skip build if no changes
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): Result {
-    val serverProperties = Properties().apply {
-      load((mcx / "server.properties").inputStream().buffered())
-    }
-    val levelName = serverProperties.getProperty("level-name")
-    val datapacks = (mcx / levelName / "datapacks").also { it.createDirectories() }
-
     val config = (root / "pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
+    val serverProperties = config.properties
+    val levelName = serverProperties.levelName
+    val datapacks = (mcx / levelName / "datapacks").also { it.createDirectories() }
 
     return coroutineScope {
       val context = Context(config)
