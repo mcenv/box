@@ -1,4 +1,4 @@
-def id : proc (x : bool) -> bool := \(x) -> x;
+def id(x : bool) : bool := x;
 
 def apply_def : bool := id(true);
 

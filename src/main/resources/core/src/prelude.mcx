@@ -1,4 +1,4 @@
-export builtin const def ++ : proc (left : str, right : str) -> str;
+export builtin const def ++(left : str, right : str) : str;
 
 export def nothing : type end := union {};
 

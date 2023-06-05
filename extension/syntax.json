@@ -87,6 +87,42 @@
               "include": "#term"
             }
           ]
+        },
+        {
+          "begin": "\\b(def)\\s+([^:\\s;,()\\[\\]{}]+)\\s*\\(",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.mcx"
+            },
+            "2": {
+              "name": "entity.name.function.mcx"
+            }
+          },
+          "end": ";",
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.mcx"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#comment"
+            },
+            {
+              "match": "\\)"
+            },
+            {
+              "match": ":=",
+              "name": "keyword.control.mcx"
+            },
+            {
+              "match": ":",
+              "name": "keyword.control.mcx"
+            },
+            {
+              "include": "#term"
+            }
+          ]
         }
       ]
     },

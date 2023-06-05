@@ -1,8 +1,8 @@
-export def not : proc (a : bool) -> bool :=
-  \(a) -> if a then false else true;
+export def not(a : bool) : bool :=
+  if a then false else true;
 
-export def and : proc (a : bool, b : bool) -> bool :=
-  \(a, b) -> if a then b else false;
+export def and(a : bool, b : bool) : bool :=
+  if a then b else false;
 
-export def or : proc (a : bool, b : bool) -> bool :=
-  \(a, b) -> if a then true else b;
+export def or(a : bool, b : bool) : bool :=
+  if a then true else b;

@@ -1,5 +1,5 @@
-export builtin def size : proc (str) -> i32 := \(_) ->
+export builtin def size(str) : i32 :=
   let _ as nothing := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";
 
-export def to_string : proc (self : str) -> str := \(self) -> self;
+export def to_string(self : str) : str := self;

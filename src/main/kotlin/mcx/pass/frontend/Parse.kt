@@ -74,26 +74,73 @@ class Parse private constructor(
         "def" -> {
           skipTrivia()
           val name = parseRanged { readWord() }
-          val type = if (
-            modifiers.find { it.value == Modifier.TEST } != null
-          ) {
-            S.Term.Bool(until())
-          } else {
-            expect(':')
-            skipTrivia()
-            parseTerm()
+
+          if (modifiers.find { it.value == Modifier.TEST } != null) {
+            val type = S.Term.Bool(until())
+            val body = run {
+              expect(":=")
+              skipTrivia()
+              parseTerm()
+            }
+            return S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
           }
-          val body = if (
-            modifiers.find { it.value == Modifier.BUILTIN } != null &&
-            modifiers.find { it.value == Modifier.CONST } != null
-          ) {
+
+          skipTrivia()
+          if (canRead()) {
+            when (peek()) {
+              ':'  -> {
+                skip()
+                skipTrivia()
+                val type = parseTerm()
+                val body = if (
+                  modifiers.find { it.value == Modifier.BUILTIN } != null &&
+                  modifiers.find { it.value == Modifier.CONST } != null
+                ) {
+                  null
+                } else {
+                  expect(":=")
+                  skipTrivia()
+                  parseTerm()
+                }
+                S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
+              }
+              '('  -> {
+                val params = parseList(',', '(', ')') {
+                  val binderOrType = parseTerm()
+                  skipTrivia()
+                  if (canRead() && peek() == ':') {
+                    skip()
+                    skipTrivia()
+                    val type = parseTerm()
+                    binderOrType to type
+                  } else {
+                    S.Term.Var("_", binderOrType.range) to binderOrType
+                  }
+                }
+                val type = run {
+                  expect(':')
+                  skipTrivia()
+                  val result = parseTerm()
+                  S.Term.Func(false, params, result, until())
+                }
+                val body = if (
+                  modifiers.find { it.value == Modifier.BUILTIN } != null &&
+                  modifiers.find { it.value == Modifier.CONST } != null
+                ) {
+                  null
+                } else {
+                  expect(":=")
+                  skipTrivia()
+                  val body = parseTerm()
+                  S.Term.FuncOf(false, params.map { it.first }, body, until())
+                }
+                S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
+              }
+              else -> null
+            }
+          } else {
             null
-          } else {
-            expect(":=")
-            skipTrivia()
-            parseTerm()
           }
-          S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
         }
         else  -> null
       } ?: run {
@@ -338,7 +385,6 @@ class Parse private constructor(
                 skipTrivia()
                 val open = word.value == "func"
                 val params = parseList(',', '(', ')') {
-                  skipTrivia()
                   val binderOrType = parseTerm()
                   skipTrivia()
                   if (canRead() && peek() == ':') {

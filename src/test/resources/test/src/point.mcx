@@ -1,1 +1,1 @@
-def var : proc (x : point 0) -> point 0 := \(x) -> x;
+def var(x : point 0) : point 0 := x;
