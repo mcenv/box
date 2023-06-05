@@ -46,25 +46,22 @@ object InstallationsCommands {
         .then(
           literal("create")
             .then(
+              literal("release")
+                .executes {
+                  create(Version.Release)
+                }
+            )
+            .then(
+              literal("snapshot")
+                .executes {
+                  create(Version.Snapshot)
+                }
+            )
+            .then(
               argument("version", string())
                 .executes { c ->
                   val version: String = c["version"]
-                  if (getServerPath(version).exists()) {
-                    1
-                  } else {
-                    fetchVersionManifest()
-                      .versions
-                      .first { it.id == version }
-                      .url
-                      .openStream()
-                      .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<Package>(it) }
-                      .downloads
-                      .let { downloads ->
-                        downloads.server.url.openStream().use { getServerPath(version).saveFromStream(it) }
-                        downloads.serverMappings.url.openStream().use { getServerMappingsPath(version).saveFromStream(it) }
-                      }
-                    0
-                  }
+                  create(Version.Custom(version))
                 }
             )
         )
@@ -81,5 +78,46 @@ object InstallationsCommands {
             )
         )
     )
+  }
+
+  private fun create(version: Version): Int {
+    var manifest: VersionManifest? = null
+    val id = when (version) {
+      Version.Release   -> {
+        manifest = fetchVersionManifest()
+        manifest.latest.release
+      }
+      Version.Snapshot  -> {
+        manifest = fetchVersionManifest()
+        manifest.latest.snapshot
+      }
+      is Version.Custom -> {
+        version.id
+      }
+    }
+
+    if (getServerPath(id).exists()) {
+      return 1
+    }
+
+    (manifest ?: fetchVersionManifest())
+      .versions
+      .first { it.id == id }
+      .url
+      .openStream()
+      .use { @OptIn(ExperimentalSerializationApi::class) json.decodeFromStream<Package>(it) }
+      .downloads
+      .let { downloads ->
+        downloads.server.url.openStream().use { getServerPath(id).saveFromStream(it) }
+        downloads.serverMappings.url.openStream().use { getServerMappingsPath(id).saveFromStream(it) }
+      }
+
+    return 0
+  }
+
+  private sealed class Version {
+    data object Release : Version()
+    data object Snapshot : Version()
+    data class Custom(val id: String) : Version()
   }
 }
