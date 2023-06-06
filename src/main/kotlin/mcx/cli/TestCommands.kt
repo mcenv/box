@@ -8,6 +8,8 @@ import kotlinx.coroutines.runBlocking
 import mcx.cache.playServer
 import mcx.pass.backend.Pack
 import mcx.pass.build.Build
+import mcx.util.green
+import mcx.util.red
 import kotlin.io.path.Path
 
 object TestCommands {
@@ -54,15 +56,15 @@ object TestCommands {
         val message = rcon.exec("data get storage mcx_test: $path")
         acc and when (message.takeLast(2)) {
           "0b" -> {
-            println("test $test \u001B[31mfailed\u001B[0m")
+            println("test $test ${red("failed")}")
             false
           }
           "1b" -> {
-            println("test $test \u001B[32mpassed\u001B[0m")
+            println("test $test ${green("passed")}")
             true
           }
           else -> {
-            println("\u001B[31mfatal: $message\u001B[0m")
+            println("test $test ${red("fatal")} $message")
             false
           }
         }
