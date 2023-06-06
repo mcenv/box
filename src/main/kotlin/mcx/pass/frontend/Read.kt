@@ -1,10 +1,13 @@
 package mcx.pass.frontend
 
 import mcx.ast.ModuleLocation
+import mcx.cache.getOrCreateDependenciesPath
 import mcx.pass.Context
+import mcx.util.toDependencyTripleOrNull
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import kotlin.io.path.div
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 class Read private constructor(
@@ -13,11 +16,22 @@ class Read private constructor(
   private val src: Path,
 ) {
   private fun read(location: ModuleLocation): String {
-    return when (location.parts.first()) {
-             context.config.name -> src.resolve(location)
-             "core"              -> core?.resolve(location)
-             else                -> null // TODO: read from dependencies
-           }?.readText() ?: ""
+    val path = when (val pack = location.parts.firstOrNull()) {
+      context.config.name -> src.resolve(location)
+      "core"              -> core?.resolve(location)
+      null                -> null
+      else                -> resolveDependency(pack, location)
+    }
+    return when (path?.isRegularFile()) {
+      true -> path.readText()
+      else -> ""
+    }
+  }
+
+  private fun resolveDependency(pack: String, location: ModuleLocation): Path? {
+    val (owner, repository, tag) = context.config.dependencies[pack]?.toDependencyTripleOrNull() ?: return null
+    val root = getOrCreateDependenciesPath() / owner / "$repository-$tag" / "src"
+    return root.resolve(location)
   }
 
   private fun Path.resolve(location: ModuleLocation): Path? {

@@ -7,7 +7,9 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.cache.getOrCreateDependenciesPath
 import mcx.pass.Config
 import mcx.util.green
+import mcx.util.toDependencyTripleOrNull
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.net.URL
 import java.util.zip.ZipInputStream
 import kotlin.io.path.*
@@ -24,7 +26,7 @@ object DependenciesCommands {
                 Json.decodeFromStream<Config>(it)
               }
               config.dependencies.forEach { dependency ->
-                val (_, owner, repository, tag) = Regex("""^([^/]+)/([^@]+)@(.+)$""").matchEntire(dependency.value)?.groupValues ?: run {
+                val (owner, repository, tag) = dependency.value.toDependencyTripleOrNull() ?: run {
                   println("invalid dependency name: ${dependency.value}")
                   return@executes 1
                 }
@@ -40,7 +42,10 @@ object DependenciesCommands {
                         path.createDirectories()
                       } else {
                         path.createParentDirectories()
-                        input.copyTo(path.outputStream().buffered())
+                        FileOutputStream(path.toFile()).use {
+                          input.transferTo(it)
+                        }
+                        input.closeEntry()
                       }
                       entry = input.nextEntry
                     }

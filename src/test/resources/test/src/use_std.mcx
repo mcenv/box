@@ -1,0 +1,5 @@
+import {
+  std::bool::not,
+}
+
+test def use_not := not(false);
