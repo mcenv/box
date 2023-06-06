@@ -3,19 +3,18 @@ package mcx.util.collections
 import kotlinx.serialization.Serializable
 import kotlin.math.max
 
+// TODO: sort members
 @Serializable
-class IntList private constructor(
-  private var elements: IntArray,
-  private var size: Int,
-) {
+class IntList() : MutableList<Int> {
+  private var elements: IntArray = IntArray(DEFAULT_CAPACITY)
+
+  override var size: Int = 0
+    private set
+
   val lastIndex: Int
     get() {
       return size - 1
     }
-
-  internal constructor() : this(IntArray(DEFAULT_CAPACITY), 0)
-
-  internal constructor(vararg elements: Int) : this(elements, elements.size)
 
   private fun grow() {
     val oldCapacity = elements.size
@@ -23,7 +22,7 @@ class IntList private constructor(
     elements = elements.copyOf(newCapacity)
   }
 
-  fun add(element: Int): Boolean {
+  override fun add(element: Int): Boolean {
     if (size == elements.size) {
       grow()
     }
@@ -35,7 +34,7 @@ class IntList private constructor(
     --size
   }
 
-  fun get(index: Int): Int {
+  override fun get(index: Int): Int {
     return elements[index]
   }
 
@@ -43,7 +42,7 @@ class IntList private constructor(
     return elements[lastIndex]
   }
 
-  fun set(index: Int, element: Int): Int {
+  override fun set(index: Int, element: Int): Int {
     val old = elements[index]
     elements[index] = element
     return old
@@ -52,6 +51,14 @@ class IntList private constructor(
   inline fun modifyLast(action: (Int) -> Int): Int {
     val index = lastIndex
     return set(index, action(get(index)))
+  }
+
+  override fun contains(element: Int): Boolean {
+    return elements.contains(element)
+  }
+
+  override fun containsAll(elements: Collection<Int>): Boolean {
+    return elements.containsAll(elements)
   }
 
   override fun equals(other: Any?): Boolean {
@@ -65,6 +72,66 @@ class IntList private constructor(
 
   override fun hashCode(): Int {
     return elements.contentHashCode()
+  }
+
+  override fun isEmpty(): Boolean {
+    return size == 0
+  }
+
+  override fun iterator(): MutableIterator<Int> {
+    TODO("Not yet implemented")
+  }
+
+  override fun listIterator(): MutableListIterator<Int> {
+    TODO("Not yet implemented")
+  }
+
+  override fun listIterator(index: Int): MutableListIterator<Int> {
+    TODO("Not yet implemented")
+  }
+
+  override fun removeAt(index: Int): Int {
+    TODO("Not yet implemented")
+  }
+
+  override fun retainAll(elements: Collection<Int>): Boolean {
+    TODO("Not yet implemented")
+  }
+
+  override fun removeAll(elements: Collection<Int>): Boolean {
+    TODO("Not yet implemented")
+  }
+
+  override fun remove(element: Int): Boolean {
+    TODO("Not yet implemented")
+  }
+
+  override fun subList(fromIndex: Int, toIndex: Int): IntList {
+    TODO("Not yet implemented")
+  }
+
+  override fun lastIndexOf(element: Int): Int {
+    return elements.lastIndexOf(element)
+  }
+
+  override fun indexOf(element: Int): Int {
+    return elements.indexOf(element)
+  }
+
+  override fun clear() {
+    TODO("Not yet implemented")
+  }
+
+  override fun addAll(elements: Collection<Int>): Boolean {
+    TODO("Not yet implemented")
+  }
+
+  override fun addAll(index: Int, elements: Collection<Int>): Boolean {
+    TODO("Not yet implemented")
+  }
+
+  override fun add(index: Int, element: Int) {
+    TODO("Not yet implemented")
   }
 
   override fun toString(): String {
