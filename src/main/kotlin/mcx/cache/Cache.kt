@@ -122,7 +122,7 @@ fun installDependencies(root: Path): Int {
   }
   config.dependencies.forEach { dependency ->
     val (owner, repository, tag) = dependency.value.toDependencyTripleOrNull() ?: run {
-      println("invalid dependency name: ${dependency.value}")
+      println("invalid dependency triple: ${dependency.value}")
       return 1
     }
 
