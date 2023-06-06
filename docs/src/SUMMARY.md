@@ -2,6 +2,14 @@
 
 [Introduction](./introduction.md)
 
+- [Commands](./commands.md)
+  - [mcx build](./commands/build.md)
+  - [mcx dependencies](./commands/dependencies.md)
+  - [mcx help](./commands/help.md)
+  - [mcx installations](./commands/installations.md)
+  - [mcx lsp](./commands/lsp.md)
+  - [mcx test](./commands/test.md)
+  - [mcx version](./commands/version.md)
 - [Frequently Asked Questions](./frequently-asked-questions.md)
 
 # Internals
