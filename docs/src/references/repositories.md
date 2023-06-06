@@ -12,6 +12,8 @@
 
 * <a href="https://github.com/egraphs-good/egg"><img align="center" src="https://gh-card.dev/repos/egraphs-good/egg.svg?fullname"></a>
 
+* <a href="https://github.com/bytecodealliance/wasmtime"><img align="center" src="https://gh-card.dev/repos/bytecodealliance/wasmtime.svg?fullname"></a>
+
 * <a href="https://github.com/rust-lang/rust"><img align="center" src="https://gh-card.dev/repos/rust-lang/rust.svg?fullname"></a>
 
 * <a href="https://github.com/snowleopard/build"><img align="center" src="https://gh-card.dev/repos/snowleopard/build.svg?fullname"></a>
