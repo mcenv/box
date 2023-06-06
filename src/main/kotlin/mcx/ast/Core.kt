@@ -35,7 +35,7 @@ object Core {
     abstract val type: Lazy<Term>
 
     data object Tag : Term() {
-      override val type: Lazy<Term> get() = Type.BYTE_LAZY
+      override val type: Lazy<Term> get() = Type.END_LAZY
 
       val LAZY: Lazy<Tag> = lazyOf(Tag)
     }

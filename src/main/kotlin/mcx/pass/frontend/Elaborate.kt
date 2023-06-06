@@ -99,7 +99,7 @@ class Elaborate private constructor(
     val type = type?.let { meta.forceValue(type) }
     return when {
       term is R.Term.Tag && phase == Phase.CONST && synth(type)                  -> {
-        C.Term.Tag to Value.Type.BYTE
+        C.Term.Tag to Value.Type.END
       }
 
       term is R.Term.TagOf && phase == Phase.CONST && synth(type)                -> {

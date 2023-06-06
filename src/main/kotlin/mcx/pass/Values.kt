@@ -15,7 +15,7 @@ sealed class Value {
   abstract val type: Lazy<Value>
 
   data object Tag : Value() {
-    override val type: Lazy<Value> get() = Type.BYTE_LAZY
+    override val type: Lazy<Value> get() = Type.END_LAZY
 
     val LAZY: Lazy<Tag> = lazyOf(Tag)
   }

@@ -1,4 +1,4 @@
-const def tag : type byte := tag;
+const def tag : type end := tag;
 
 const def tag_of_end : tag := end;
 
