@@ -1,17 +1,26 @@
 package mcx.util.collections
 
+/**
+ * A disjoint-set data structure.
+ */
 class UnionFind {
   private val parents: IntList = IntList()
   private val ranks: IntList = IntList()
 
-  fun make(): Int {
-    return parents.size.also {
-      parents += it
+  /**
+   * Creates a new disjoint-set.
+   */
+  fun make(): Id {
+    return Id(parents.size).also {
+      parents += it.value
       ranks += 0
     }
   }
 
-  fun find(x: Int): Int {
+  /**
+   * Finds the representative of the set containing [x].
+   */
+  fun find(x: Id): Id {
     var self = x
     // Do path halving
     while (self.parent != self) {
@@ -21,7 +30,10 @@ class UnionFind {
     return self
   }
 
-  fun union(x: Int, y: Int): Int {
+  /**
+   * Unions the sets containing [x] and [y].
+   */
+  fun union(x: Id, y: Id): Id {
     val xRoot = find(x)
     val yRoot = find(y)
 
@@ -45,23 +57,29 @@ class UnionFind {
     }
   }
 
-  fun equals(x: Int, y: Int): Boolean {
+  /**
+   * Checks if [x] and [y] are in the same set.
+   */
+  fun equals(x: Id, y: Id): Boolean {
     return find(x) == find(y)
   }
 
-  private inline var Int.parent: Int
+  private inline var Id.parent: Id
     get() {
-      return parents[this]
+      return Id(parents[value])
     }
-    set(value) {
-      parents[this] = value
+    set(id) {
+      parents[value] = id.value
     }
 
-  private inline var Int.rank: Int
+  private inline var Id.rank: Int
     get() {
-      return ranks[this]
+      return ranks[value]
     }
-    set(value) {
-      ranks[this] = value
+    set(rank) {
+      ranks[value] = rank
     }
+
+  @JvmInline
+  value class Id(val value: Int)
 }
