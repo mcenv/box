@@ -1,12 +1,12 @@
 package mcx.cli
 
 import com.mojang.brigadier.CommandDispatcher
-import com.mojang.brigadier.arguments.StringArgumentType.greedyString
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 import mcx.cache.getOrCreateDependenciesPath
 import mcx.pass.Config
+import mcx.util.green
 import java.io.FileNotFoundException
 import java.net.URL
 import java.util.zip.ZipInputStream
@@ -17,52 +17,41 @@ object DependenciesCommands {
     dispatcher.register(
       literal("dependencies")
         .then(
-          literal("add")
-            .then(
-              argument("name", greedyString())
-                .executes { c ->
-                  val name: String = c["name"]
-                  val result = Regex("""^([^/]+)/([^@]+)@(.+)$""").matchEntire(name) ?: run {
-                    println("invalid dependency name: $name")
-                    return@executes 1
-                  }
-                  val (_, owner, repository, tag) = result.groupValues
-
-                  try {
-                    // TODO: message
-                    ZipInputStream(getArchiveUrl(owner, repository, tag).openStream().buffered()).use { input ->
-                      val root = (getOrCreateDependenciesPath() / owner).createDirectories()
-                      var entry = input.nextEntry
-                      while (entry != null) {
-                        val path = root / entry.name
-                        if (entry.isDirectory) {
-                          path.createDirectories()
-                        } else {
-                          path.createParentDirectories()
-                          input.copyTo(path.outputStream().buffered())
-                        }
-                        entry = input.nextEntry
-                      }
-                    }
-
-                    Path("pack.json").let { packPath ->
-                      @OptIn(ExperimentalSerializationApi::class)
-                      packPath.inputStream().buffered().use { input ->
-                        val oldConfig = InitCommands.json.decodeFromStream<Config>(input)
-                        val newConfig = oldConfig.copy(dependencies = oldConfig.dependencies + name)
-                        packPath.outputStream().buffered().use { output ->
-                          InitCommands.json.encodeToStream(newConfig, output)
-                        }
-                      }
-                    }
-
-                    0
-                  } catch (_: FileNotFoundException) {
-                    println("not found: $owner/$repository@$tag")
-                    1
-                  }
+          literal("install")
+            .executes {
+              val config = Path("pack.json").inputStream().buffered().use {
+                @OptIn(ExperimentalSerializationApi::class)
+                Json.decodeFromStream<Config>(it)
+              }
+              config.dependencies.forEach { dependency ->
+                val (_, owner, repository, tag) = Regex("""^([^/]+)/([^@]+)@(.+)$""").matchEntire(dependency.value)?.groupValues ?: run {
+                  println("invalid dependency name: ${dependency.value}")
+                  return@executes 1
                 }
-            )
+
+                try {
+                  println("${green("installing")} $owner/$repository@$tag")
+                  ZipInputStream(getArchiveUrl(owner, repository, tag).openStream().buffered()).use { input ->
+                    val root = (getOrCreateDependenciesPath() / owner).createDirectories()
+                    var entry = input.nextEntry
+                    while (entry != null) {
+                      val path = root / entry.name
+                      if (entry.isDirectory) {
+                        path.createDirectories()
+                      } else {
+                        path.createParentDirectories()
+                        input.copyTo(path.outputStream().buffered())
+                      }
+                      entry = input.nextEntry
+                    }
+                  }
+                } catch (_: FileNotFoundException) {
+                  println("not found: $owner/$repository@$tag")
+                }
+              }
+
+              0
+            }
         )
     )
   }

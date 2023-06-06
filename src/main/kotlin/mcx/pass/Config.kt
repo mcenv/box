@@ -8,6 +8,6 @@ data class Config(
   val name: String,
   val description: String, // TODO: use [Component]
   val debug: Boolean = false,
-  val dependencies: List<String> = emptyList(),
+  val dependencies: Map<String, String> = emptyMap(),
   val properties: DedicatedServerProperties = DedicatedServerProperties(),
 )

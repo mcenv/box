@@ -2,6 +2,9 @@
   "name": "test",
   "description": "The mcx test pack",
   "debug": true,
+  "dependencies": {
+    "std": "mcenv/std@main"
+  },
   "properties": {
     "eula": true,
     "enable-rcon": true,
