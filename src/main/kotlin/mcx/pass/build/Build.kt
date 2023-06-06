@@ -22,11 +22,15 @@ import mcx.pass.backend.Pack
 import mcx.pass.backend.Stage
 import mcx.pass.frontend.Elaborate
 import mcx.pass.frontend.Parse
+import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.prelude
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
-import java.nio.file.*
+import java.nio.file.FileSystems
+import java.nio.file.FileVisitResult
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -90,13 +94,7 @@ class Build(
           when (key) {
             is Key.Read       -> {
               trace ?: withContext(Dispatchers.IO) {
-                src.pathOf(key.location)?.takeIf { it.isRegularFile() }?.let {
-                  return@withContext Trace(it.readText(), 0)
-                }
-                core?.pathOf(key.location)?.takeIf { it.exists() }?.let {
-                  return@withContext Trace(it.readText(), 0)
-                }
-                Trace("", 0)
+                Trace(Read(this@fetch, core, src, key.location), 0)
               }
             }
 
@@ -236,20 +234,8 @@ class Build(
     return imports.toList()
   }
 
-  private fun Path.pathOf(location: ModuleLocation): Path? {
-    return try {
-      this / (
-          location.parts
-            .drop(1) // Drop pack name
-            .joinToString("/", postfix = EXTENSION)
-             )
-    } catch (_: InvalidPathException) {
-      null
-    }
-  }
-
   private fun Path.toModuleLocation(packName: String): ModuleLocation {
-    return ModuleLocation(listOf(packName) + src.relativize(this).invariantSeparatorsPathString.dropLast(EXTENSION.length).split('/'))
+    return ModuleLocation(listOf(packName) + src.relativize(this).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
   }
 
   data class Result(
@@ -348,9 +334,5 @@ class Build(
 
       Result(true, diagnosticsByPath, tests)
     }
-  }
-
-  companion object {
-    const val EXTENSION: String = ".mcx"
   }
 }

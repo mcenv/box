@@ -11,7 +11,6 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.ModuleLocation
 import mcx.pass.Context
 import mcx.pass.build.Build
-import mcx.pass.build.Build.Companion.EXTENSION
 import mcx.pass.build.Key
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -170,6 +169,6 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
   }
 
   private fun String.toModuleLocation(context: Context): ModuleLocation {
-    return ModuleLocation(listOf(context.config.name) + Path("src").absolute().relativize(URI(dropLast(EXTENSION.length)).toPath()).map { it.toString() })
+    return ModuleLocation(listOf(context.config.name) + Path("src").absolute().relativize(URI(dropLast(".mcx".length)).toPath()).map { it.toString() })
   }
 }
