@@ -1,4 +1,4 @@
-package mcx.util
+package mcx.util.collections
 
 inline fun <S, T, R> Iterable<T>.mapWith(state: S, transform: S.(modify: (S) -> Unit, T) -> R): Pair<S, List<R>> {
   val result = mutableListOf<R>()

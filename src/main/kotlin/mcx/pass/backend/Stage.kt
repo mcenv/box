@@ -8,8 +8,8 @@ import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.pass.*
+import mcx.util.collections.mapWith
 import mcx.util.map
-import mcx.util.mapWith
 
 @Suppress("NAME_SHADOWING")
 class Stage private constructor() {

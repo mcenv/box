@@ -10,8 +10,8 @@ import mcx.ast.Lvl
 import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
+import mcx.util.collections.mapWith
 import mcx.util.map
-import mcx.util.mapWith
 
 fun emptyEnv(): Env {
   return persistentListOf()

@@ -9,7 +9,7 @@ import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.pass.*
-import mcx.util.mapWith
+import mcx.util.collections.mapWith
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import kotlin.contracts.ExperimentalContracts

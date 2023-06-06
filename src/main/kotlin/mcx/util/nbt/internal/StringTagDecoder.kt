@@ -8,6 +8,7 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.CompositeDecoder.Companion.DECODE_DONE
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.modules.SerializersModule
+import mcx.util.collections.IntList
 import mcx.util.nbt.AsIntTag
 import mcx.util.nbt.Nbt
 import mcx.util.nbt.NbtConfiguration

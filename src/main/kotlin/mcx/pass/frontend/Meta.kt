@@ -6,7 +6,7 @@ import mcx.lsp.diagnostic
 import mcx.pass.Value
 import mcx.pass.open
 import mcx.pass.quoteValue
-import mcx.util.mapWith
+import mcx.util.collections.mapWith
 import mcx.util.toSubscript
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity

@@ -1,4 +1,4 @@
-package mcx.util.nbt.internal
+package mcx.util.collections
 
 import kotlinx.serialization.Serializable
 import kotlin.math.max

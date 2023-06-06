@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
+import mcx.util.collections.IntList
 import mcx.util.nbt.*
 import java.io.Writer
 import kotlin.contracts.ExperimentalContracts
