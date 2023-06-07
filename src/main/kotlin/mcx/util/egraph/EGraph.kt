@@ -51,12 +51,14 @@ class EGraph {
     }
   }
 
-  fun rebuild() {
+  fun rebuild(): Boolean {
+    val saturated = worklist.isEmpty()
     while (worklist.isNotEmpty()) {
       val todo = worklist.mapTo(hashSetOf()) { find(it) }
       worklist = mutableListOf()
       todo.forEach { repair(getEClass(it)) }
     }
+    return saturated
   }
 
   private fun repair(cl: EClass) {
@@ -91,6 +93,7 @@ class EGraph {
     return classes[id]!!
   }
 
+  // TODO: refactor
   fun match(pattern: Pattern): List<Pair<Map<String, EClassId>, EClassId>> {
     val nodes: Map<EClassId, List<ENode>> = mutableMapOf<EClassId, MutableList<ENode>>().also { nodes ->
       hashcons.forEach { (node, id) ->
@@ -98,18 +101,21 @@ class EGraph {
       }
     }
 
-    fun match(pattern: Pattern, id: EClassId): PersistentMap<String, EClassId>? {
+    fun PersistentMap<String, EClassId>.match(pattern: Pattern, id: EClassId): PersistentMap<String, EClassId>? {
       return when (pattern) {
         is Pattern.Var   -> {
-          persistentHashMapOf(pattern.name to id)
+          if (pattern.name in this && this[pattern.name] != id) {
+            return null
+          }
+          this + (pattern.name to id)
         }
         is Pattern.Apply -> {
           nodes[id]!!.forEach { node ->
             if (pattern.op != node.op || pattern.args.size != node.args.size) {
               return null
             }
-            return (pattern.args zip node.args).fold(persistentHashMapOf()) { acc, (pattern, id) ->
-              acc + (match(pattern, id) ?: return null)
+            return (pattern.args zip node.args).fold(this) { acc, (pattern, id) ->
+              acc.match(pattern, id) ?: return null
             }
           }
           null
@@ -119,10 +125,40 @@ class EGraph {
 
     val matched = mutableListOf<Pair<Map<String, EClassId>, EClassId>>()
     nodes.keys.forEach { id ->
-      match(pattern, id)?.let {
+      persistentHashMapOf<String, EClassId>().match(pattern, id)?.let {
         matched += it to id
       }
     }
     return matched
+  }
+
+  fun saturate(rewrites: List<Rewrite>) {
+    while (true) {
+      val matches = mutableListOf<Triple<Rewrite, Map<String, EClassId>, EClassId>>()
+
+      rewrites.forEach { rewrite ->
+        match(rewrite.before).forEach { (subst, id) ->
+          matches += Triple(rewrite, subst, id)
+        }
+      }
+
+      matches.forEach { (rewrite, subst, id) ->
+        union(id, subst.subst(rewrite.after))
+      }
+
+      if (rebuild()) {
+        break
+      }
+    }
+  }
+
+  private fun Map<String, EClassId>.subst(pattern: Pattern): EClassId {
+    fun subst(pattern: Pattern): EClassId {
+      return when (pattern) {
+        is Pattern.Var   -> this[pattern.name]!!
+        is Pattern.Apply -> add(ENode(pattern.op, pattern.args.map { subst(it) }))
+      }
+    }
+    return subst(pattern)
   }
 }

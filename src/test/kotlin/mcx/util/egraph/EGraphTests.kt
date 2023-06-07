@@ -203,11 +203,49 @@ object EGraphTests {
       val `2` = add("2")
       val a = add("a")
       val `a mul 2` = add("*", listOf(a, `2`))
-      val `a mul 2 div 2` = add("/", listOf(`a mul 2`, `2`))
+      val `{a mul 2} div 2` = add("/", listOf(`a mul 2`, `2`))
       assertEquals(
-        listOf(mapOf("x" to a, "y" to `2`, "z" to `2`) to `a mul 2 div 2`),
+        listOf(mapOf("x" to a, "y" to `2`, "z" to `2`) to `{a mul 2} div 2`),
         match("/"("*"(!"x", !"y"), !"z")),
       )
+    }
+  }
+
+  @Test
+  fun `saturate arithmetic`() {
+    EGraph().run {
+      val `2` = add("2")
+      val a = add("a")
+      val `a mul 2` = add("*", listOf(a, `2`))
+      val `{a mul 2} div 2` = add("/", listOf(`a mul 2`, `2`))
+      val `1` = add("1")
+      val `a shl 1` = add("<<", listOf(a, `1`))
+      val `2 div 2` = add("/", listOf(`2`, `2`))
+      val `a mul {2 div 2}` = add("*", listOf(a, `2 div 2`))
+      val `a mul 1` = add("*", listOf(a, `1`))
+
+      val rewrites = listOf(
+        "*"(!"x", "2"()) rewritesTo "<<"(!"x", "1"()),
+        "/"("*"(!"x", !"y"), !"z") rewritesTo "*"(!"x", "/"(!"y", !"z")),
+        "/"(!"x", !"x") rewritesTo "1"(),
+        "*"(!"x", "1"()) rewritesTo !"x",
+      )
+
+      saturate(rewrites)
+
+      assertTrue(equals(`a mul 2`, `a shl 1`))
+      assertTrue(equals(`2 div 2`, `1`))
+      assertTrue(equals(`{a mul 2} div 2`, `a mul {2 div 2}`))
+      assertTrue(equals(`a mul {2 div 2}`, `a mul 1`))
+      assertTrue(equals(`a mul {2 div 2}`, a))
+      assertTrue(equals(`a mul 1`, a))
+
+      assertFalse(equals(`1`, `2`))
+      assertFalse(equals(`1`, a))
+      assertFalse(equals(`a mul 1`, `a shl 1`))
+      assertFalse(equals(`a mul 2`, `a mul {2 div 2}`))
+      assertFalse(equals(`a mul 2`, `a mul 1`))
+      assertFalse(equals(`a mul {2 div 2}`, `a mul 2`))
     }
   }
 }
