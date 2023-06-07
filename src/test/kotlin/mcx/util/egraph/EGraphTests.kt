@@ -1,17 +1,17 @@
-package mcx.util.collections
+package mcx.util.egraph
 
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-object EquivalenceGraphTests {
-  private fun EquivalenceGraph.add(op: String, args: List<EquivalenceGraph.EClassId> = emptyList()): EquivalenceGraph.EClassId {
-    return add(EquivalenceGraph.ENode(op, args))
+object EGraphTests {
+  private fun EGraph.add(op: String, args: List<EClassId> = emptyList()): EClassId {
+    return add(ENode(op, args))
   }
 
   @Test
   fun `different nodes`() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a = add("a")
       val b = add("b")
       assertFalse(equals(a, b))
@@ -24,7 +24,7 @@ object EquivalenceGraphTests {
 
   @Test
   fun `same nodes`() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a1 = add("a")
       val a2 = add("a")
       assertTrue(equals(a1, a2))
@@ -37,7 +37,7 @@ object EquivalenceGraphTests {
 
   @Test
   fun `merge functions`() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a = add("a")
       val fa = add("f", listOf(a))
       val ga = add("g", listOf(a))
@@ -51,7 +51,7 @@ object EquivalenceGraphTests {
 
   @Test
   fun `already equivalent`() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a1 = add("a")
       val b = add("b")
       assertFalse(equals(a1, b))
@@ -67,7 +67,7 @@ object EquivalenceGraphTests {
 
   @Test
   fun `upward merging`() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a = add("a")
       val b = add("b")
       val c = add("c")
@@ -89,7 +89,7 @@ object EquivalenceGraphTests {
 
   @Test
   fun recursive() {
-    EquivalenceGraph().run {
+    EGraph().run {
       val a = add("a")
       val fa = add("f", listOf(a))
       assertFalse(equals(a, fa))

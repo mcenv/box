@@ -1,7 +1,9 @@
-package mcx.util.collections
+package mcx.util.egraph
+
+import mcx.util.collections.UnionFind
 
 @Suppress("NAME_SHADOWING")
-class EquivalenceGraph {
+class EGraph {
   private val unionFind: UnionFind = UnionFind()
   private val classes: MutableMap<EClassId, EClass> = hashMapOf()
   private val hashcons: MutableMap<ENode, EClassId> = hashMapOf()
@@ -84,19 +86,5 @@ class EquivalenceGraph {
 
   private fun getEClass(id: EClassId): EClass {
     return classes[id]!!
-  }
-
-  data class ENode(
-    val op: String,
-    val args: List<EClassId> = emptyList(),
-  )
-
-  @JvmInline
-  value class EClassId(val value: Int)
-
-  class EClass(var uses: MutableList<Pair<ENode, EClassId>>) {
-    fun use(node: ENode, id: EClassId) {
-      uses += node to id
-    }
   }
 }
