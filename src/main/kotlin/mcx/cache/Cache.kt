@@ -68,7 +68,7 @@ fun Path.saveFromStream(input: InputStream) {
 @OptIn(ExperimentalSerializationApi::class)
 fun playServer(
   id: String,
-  args: String? = null,
+  args: Array<String>,
   rconAction: (suspend (Rcon) -> Unit)? = null,
 ): Int {
   return runBlocking {
@@ -95,9 +95,7 @@ fun playServer(
 
     val minecraft = thread {
       val command = mutableListOf(java, bundlerRepoDir, "-jar", serverPath.pathString).also {
-        if (args != null) {
-          it.addAll(args.split(' '))
-        }
+        it += args
       }
       ProcessBuilder(command)
         .directory(workspace.toFile())
