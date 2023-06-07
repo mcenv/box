@@ -10,9 +10,9 @@ class UnionFind {
   /**
    * Creates a new disjoint-set.
    */
-  fun make(): Id {
-    return Id(parents.size).also {
-      parents += it.value
+  fun make(): Int {
+    return parents.size.also {
+      parents += it
       ranks += 0
     }
   }
@@ -20,7 +20,7 @@ class UnionFind {
   /**
    * Finds the representative of the set containing [x].
    */
-  fun find(x: Id): Id {
+  fun find(x: Int): Int {
     var self = x
     // Do path halving
     while (self.parent != self) {
@@ -33,7 +33,7 @@ class UnionFind {
   /**
    * Unions the sets containing [x] and [y].
    */
-  fun union(x: Id, y: Id): Id {
+  fun union(x: Int, y: Int): Int {
     val xRoot = find(x)
     val yRoot = find(y)
 
@@ -60,26 +60,23 @@ class UnionFind {
   /**
    * Checks if [x] and [y] are in the same set.
    */
-  fun equals(x: Id, y: Id): Boolean {
+  fun equals(x: Int, y: Int): Boolean {
     return find(x) == find(y)
   }
 
-  private inline var Id.parent: Id
+  private inline var Int.parent: Int
     get() {
-      return Id(parents[value])
+      return parents[this]
     }
     set(id) {
-      parents[value] = id.value
+      parents[this] = id
     }
 
-  private inline var Id.rank: Int
+  private inline var Int.rank: Int
     get() {
-      return ranks[value]
+      return ranks[this]
     }
     set(rank) {
-      ranks[value] = rank
+      ranks[this] = rank
     }
-
-  @JvmInline
-  value class Id(val value: Int)
 }
