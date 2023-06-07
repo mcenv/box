@@ -70,22 +70,13 @@ fun playServer(
   id: String,
   args: Array<String>,
   rconAction: (suspend (Rcon) -> Unit)? = null,
-): Int {
+) {
   return runBlocking {
-    val configPath = Path("pack.json")
-    if (configPath.notExists()) {
-      return@runBlocking 1
-    }
-
     // TODO: check sha1
     // TODO: print messages
-    val serverPath = getServerPath(id)
-    if (!serverPath.isRegularFile()) {
-      return@runBlocking 1
-    }
 
     val workspace = Path(".mcx").createDirectories()
-    val config = Json.decodeFromStream<Config>(configPath.inputStream().buffered())
+    val config = Json.decodeFromStream<Config>(Path("pack.json").inputStream().buffered())
     val properties = config.properties
 
     (workspace / "eula.txt").writeText("eula=${properties.eula}\n")
@@ -94,7 +85,7 @@ fun playServer(
     }
 
     val minecraft = thread {
-      val command = mutableListOf(java, bundlerRepoDir, "-jar", serverPath.pathString).also {
+      val command = mutableListOf(java, bundlerRepoDir, "-jar", getServerPath(id).pathString).also {
         it += args
       }
       ProcessBuilder(command)
@@ -109,24 +100,22 @@ fun playServer(
       }
     }
     minecraft.join()
-    0
   }
 }
 
-fun installDependencies(root: Path): Int {
+fun installDependencies(root: Path) {
   val config = (root / "pack.json").inputStream().buffered().use {
     @OptIn(ExperimentalSerializationApi::class)
     Json.decodeFromStream<Config>(it)
   }
   config.dependencies.forEach { dependency ->
     val (owner, repository, tag) = dependency.value.toDependencyTripleOrNull() ?: run {
-      println("invalid dependency triple: ${dependency.value}")
-      return 1
+      error("invalid dependency triple: ${dependency.value}")
     }
 
     try {
       println("${green("installing")} $owner/$repository@$tag")
-      ZipInputStream(getArchiveUrl(owner, repository, tag).openStream().buffered()).use { input ->
+      ZipInputStream(URL("https://github.com/$owner/$repository/archive/$tag.zip").openStream().buffered()).use { input ->
         val pack = (getOrCreateDependenciesPath() / owner).createDirectories()
         var entry = input.nextEntry
         while (entry != null) {
@@ -144,13 +133,7 @@ fun installDependencies(root: Path): Int {
         }
       }
     } catch (_: FileNotFoundException) {
-      println("not found: $owner/$repository@$tag")
+      error("not found: $owner/$repository@$tag")
     }
   }
-
-  return 0
-}
-
-private fun getArchiveUrl(owner: String, repository: String, tag: String): URL {
-  return URL("https://github.com/$owner/$repository/archive/$tag.zip")
 }

@@ -15,6 +15,7 @@ import org.eclipse.lsp4j.launch.LSPLauncher
 import java.nio.file.Paths
 import kotlin.io.path.*
 import kotlin.system.exitProcess
+import kotlin.time.measureTime
 
 fun main(args: Array<String>) {
   try {
@@ -30,7 +31,7 @@ fun main(args: Array<String>) {
         else     -> null
       }
       "lsp"           -> lsp()
-      "test"          -> test(args[2], args.copyOfRange(3, args.size))
+      "test"          -> test(args[1], args.copyOfRange(2, args.size))
       "version"       -> version()
       else            -> null
     } ?: error("unknown command: ${args.joinToString(" ")}")
@@ -41,21 +42,29 @@ fun main(args: Array<String>) {
 }
 
 private fun build() {
-  val result = runBlocking {
-    Build(Path(""))()
-  }
-  result.diagnosticsByPath.forEach { (path, diagnostics) ->
-    diagnostics.forEach {
-      println(diagnosticMessage(path, it))
+  measureTime {
+    val result = runBlocking {
+      Build(Path(""))()
     }
-  }
-  if (!result.success) {
-    error("build failed")
+    result.diagnosticsByPath.forEach { (path, diagnostics) ->
+      diagnostics.forEach {
+        println(diagnosticMessage(path, it))
+      }
+    }
+    if (!result.success) {
+      error("build failed")
+    }
+  }.also {
+    println("${green("finished")} in $it")
   }
 }
 
 fun dependencies() {
-  installDependencies(Path(""))
+  measureTime {
+    installDependencies(Path(""))
+  }.also {
+    println("${green("finished")} in $it")
+  }
 }
 
 fun help() {
@@ -133,41 +142,45 @@ fun lsp() {
 }
 
 fun test(version: String, args: Array<String>) {
-  val buildResult = runBlocking {
-    Build(Path(""))()
-  }
-  if (!buildResult.success) {
-    error("build failed")
-  }
+  measureTime {
+    val buildResult = runBlocking {
+      Build(Path(""))()
+    }
+    if (!buildResult.success) {
+      error("build failed")
+    }
 
-  var success = true
-  playServer(version, args) { rcon ->
-    rcon.exec("function ${Pack.INIT.namespace}:${Pack.INIT.path}")
+    var success = true
+    playServer(version, args) { rcon ->
+      rcon.exec("function ${Pack.INIT.namespace}:${Pack.INIT.path}")
 
-    success = buildResult.tests.fold(true) { acc, test ->
-      val name = Pack.packDefinitionLocation(test)
-      val path = (test.module.parts + test.name).joinToString(".")
-      rcon.exec("function ${name.namespace}:${name.path}")
-      val message = rcon.exec("data get storage mcx_test: $path")
-      acc and when (message.takeLast(2)) {
-        "0b" -> {
-          println("test $test ${red("failed")}")
-          false
-        }
-        "1b" -> {
-          println("test $test ${green("passed")}")
-          true
-        }
-        else -> {
-          println("test $test ${red("fatal")} $message")
-          false
+      success = buildResult.tests.fold(true) { acc, test ->
+        val name = Pack.packDefinitionLocation(test)
+        val path = (test.module.parts + test.name).joinToString(".")
+        rcon.exec("function ${name.namespace}:${name.path}")
+        val message = rcon.exec("data get storage mcx_test: $path")
+        acc and when (message.takeLast(2)) {
+          "0b" -> {
+            println("test $test ${red("failed")}")
+            false
+          }
+          "1b" -> {
+            println("test $test ${green("passed")}")
+            true
+          }
+          else -> {
+            println("test $test ${red("fatal")} $message")
+            false
+          }
         }
       }
+      rcon.exec("stop")
     }
-    rcon.exec("stop")
-  }
-  if (!success) {
-    error("test failed")
+    if (!success) {
+      error("test failed")
+    }
+  }.also {
+    println("${green("finished")} in $it")
   }
 }
 
