@@ -7,3 +7,4 @@
 * [type telescope in nLab](https://ncatlab.org/nlab/show/type+telescope)
 * [Modifiers vs Annotations | The Kotlin Blog](https://blog.jetbrains.com/kotlin/2015/08/modifiers-vs-annotations/)
 * [Cranelift: Using E-Graphs for Verified, Cooperating Middle-End Optimizations](https://github.com/bytecodealliance/rfcs/blob/19e1dc47edaa26d1d900e57a9ed8ce5e91a7262b/accepted/cranelift-egraph.md)
+* [Intro to EGraphs](https://colab.research.google.com/drive/1tNOQijJqe5tw-Pk9iqd6HHb2abC5aRid)
