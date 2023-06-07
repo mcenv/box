@@ -93,8 +93,28 @@ class EGraph {
     return classes[id]!!
   }
 
+  fun saturate(rewrites: List<Rewrite>) {
+    while (true) {
+      val matches = mutableListOf<Triple<Rewrite, Map<String, EClassId>, EClassId>>()
+
+      rewrites.forEach { rewrite ->
+        match(rewrite.before).forEach { (subst, id) ->
+          matches += Triple(rewrite, subst, id)
+        }
+      }
+
+      matches.forEach { (rewrite, subst, id) ->
+        union(id, subst.subst(rewrite.after))
+      }
+
+      if (rebuild()) {
+        break
+      }
+    }
+  }
+
   // TODO: refactor
-  fun match(pattern: Pattern): List<Pair<Map<String, EClassId>, EClassId>> {
+  internal fun match(pattern: Pattern): List<Pair<Map<String, EClassId>, EClassId>> {
     val nodes: Map<EClassId, List<ENode>> = mutableMapOf<EClassId, MutableList<ENode>>().also { nodes ->
       hashcons.forEach { (node, id) ->
         nodes.computeIfAbsent(find(id)) { mutableListOf() } += node
@@ -130,26 +150,6 @@ class EGraph {
       }
     }
     return matched
-  }
-
-  fun saturate(rewrites: List<Rewrite>) {
-    while (true) {
-      val matches = mutableListOf<Triple<Rewrite, Map<String, EClassId>, EClassId>>()
-
-      rewrites.forEach { rewrite ->
-        match(rewrite.before).forEach { (subst, id) ->
-          matches += Triple(rewrite, subst, id)
-        }
-      }
-
-      matches.forEach { (rewrite, subst, id) ->
-        union(id, subst.subst(rewrite.after))
-      }
-
-      if (rebuild()) {
-        break
-      }
-    }
   }
 
   private fun Map<String, EClassId>.subst(pattern: Pattern): EClassId {
