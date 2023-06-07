@@ -1,5 +1,8 @@
 package mcx.util.egraph
 
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.persistentHashMapOf
+import kotlinx.collections.immutable.plus
 import mcx.util.collections.UnionFind
 
 @Suppress("NAME_SHADOWING")
@@ -26,7 +29,7 @@ class EGraph {
     return EClassId(unionFind.make())
   }
 
-  fun merge(a: EClassId, b: EClassId): EClassId {
+  fun union(a: EClassId, b: EClassId): EClassId {
     val a = find(a)
     val b = find(b)
     return if (a == b) {
@@ -66,7 +69,7 @@ class EGraph {
     val newUses = hashMapOf<ENode, EClassId>()
     oldUses.forEach { (node, id) ->
       val node = canonicalize(node)
-      newUses[node]?.let { merge(id, it) }
+      newUses[node]?.let { union(id, it) }
       newUses[node] = find(id)
     }
     cl.uses = newUses.mapTo(mutableListOf()) { (node, id) -> node to id }
@@ -86,5 +89,40 @@ class EGraph {
 
   private fun getEClass(id: EClassId): EClass {
     return classes[id]!!
+  }
+
+  fun match(pattern: Pattern): List<Pair<Map<String, EClassId>, EClassId>> {
+    val nodes: Map<EClassId, List<ENode>> = mutableMapOf<EClassId, MutableList<ENode>>().also { nodes ->
+      hashcons.forEach { (node, id) ->
+        nodes.computeIfAbsent(find(id)) { mutableListOf() } += node
+      }
+    }
+
+    fun match(pattern: Pattern, id: EClassId): PersistentMap<String, EClassId>? {
+      return when (pattern) {
+        is Pattern.Var   -> {
+          persistentHashMapOf(pattern.name to id)
+        }
+        is Pattern.Apply -> {
+          nodes[id]!!.forEach { node ->
+            if (pattern.op != node.op || pattern.args.size != node.args.size) {
+              return null
+            }
+            return (pattern.args zip node.args).fold(persistentHashMapOf()) { acc, (pattern, id) ->
+              acc + (match(pattern, id) ?: return null)
+            }
+          }
+          null
+        }
+      }
+    }
+
+    val matched = mutableListOf<Pair<Map<String, EClassId>, EClassId>>()
+    nodes.keys.forEach { id ->
+      match(pattern, id)?.let {
+        matched += it to id
+      }
+    }
+    return matched
   }
 }

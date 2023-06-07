@@ -1,12 +1,21 @@
 package mcx.util.egraph
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 object EGraphTests {
   private fun EGraph.add(op: String, args: List<EClassId> = emptyList()): EClassId {
     return add(ENode(op, args))
+  }
+
+  private operator fun String.not(): Pattern.Var {
+    return Pattern.Var(this)
+  }
+
+  private operator fun String.invoke(vararg args: Pattern): Pattern.Apply {
+    return Pattern.Apply(this, args.toList())
   }
 
   @Test
@@ -16,7 +25,7 @@ object EGraphTests {
       val b = add("b")
       assertFalse(equals(a, b))
 
-      merge(a, b)
+      union(a, b)
       rebuild()
       assertTrue(equals(a, b))
     }
@@ -29,7 +38,7 @@ object EGraphTests {
       val a2 = add("a")
       assertTrue(equals(a1, a2))
 
-      merge(a1, a2)
+      union(a1, a2)
       rebuild()
       assertTrue(equals(a1, a2))
     }
@@ -43,7 +52,7 @@ object EGraphTests {
       val ga = add("g", listOf(a))
       assertFalse(equals(fa, ga))
 
-      merge(fa, ga)
+      union(fa, ga)
       rebuild()
       assertTrue(equals(fa, ga))
     }
@@ -56,7 +65,7 @@ object EGraphTests {
       val b = add("b")
       assertFalse(equals(a1, b))
 
-      merge(a1, b)
+      union(a1, b)
       rebuild()
       assertTrue(equals(a1, b))
 
@@ -79,7 +88,7 @@ object EGraphTests {
       assertFalse(equals(fab, fac))
       assertFalse(equals(gfab, gfac))
 
-      merge(b, c)
+      union(b, c)
       rebuild()
       assertTrue(equals(b, c))
       assertTrue(equals(fab, fac))
@@ -94,7 +103,7 @@ object EGraphTests {
       val fa = add("f", listOf(a))
       assertFalse(equals(a, fa))
 
-      merge(a, fa)
+      union(a, fa)
       rebuild()
       assertTrue(equals(a, fa))
 
@@ -103,6 +112,102 @@ object EGraphTests {
 
       val fffa = add("f", listOf(ffa))
       assertTrue(equals(ffa, fffa))
+    }
+  }
+
+  @Test
+  fun `match nothing`() {
+    EGraph().run {
+      add("a")
+      assertEquals(
+        emptyList(),
+        match("b"()),
+      )
+    }
+  }
+
+  @Test
+  fun `match one`() {
+    EGraph().run {
+      val a = add("a")
+      assertEquals(
+        listOf(emptyMap<String, EClassId>() to a),
+        match("a"()),
+      )
+    }
+  }
+
+  @Test
+  fun `match var`() {
+    EGraph().run {
+      val a = add("a")
+      assertEquals(
+        listOf(mapOf("x" to a) to a),
+        match(!"x"),
+      )
+    }
+  }
+
+  @Test
+  fun `match nested`() {
+    EGraph().run {
+      val a = add("a")
+      val b = add("b", listOf(a))
+      assertEquals(
+        listOf(mapOf("x" to a) to a, mapOf("x" to b) to b),
+        match(!"x"),
+      )
+    }
+  }
+
+  @Test
+  fun `match apply`() {
+    EGraph().run {
+      val a = add("a")
+      val b = add("b", listOf(a))
+      assertEquals(
+        listOf(mapOf("x" to a) to b),
+        match("b"(!"x")),
+      )
+    }
+  }
+
+  @Test
+  fun `match apply binary`() {
+    EGraph().run {
+      val a = add("a")
+      val b = add("b")
+      val c = add("c", listOf(a, b))
+      assertEquals(
+        listOf(mapOf("x" to a, "y" to b) to c),
+        match("c"(!"x", !"y")),
+      )
+    }
+  }
+
+  @Test
+  fun `match arity mismatch`() {
+    EGraph().run {
+      val a = add("a")
+      val b = add("b", listOf(a))
+      assertEquals(
+        emptyList(),
+        match("b"(!"x", !"y")),
+      )
+    }
+  }
+
+  @Test
+  fun `match arithmetic`() {
+    EGraph().run {
+      val `2` = add("2")
+      val a = add("a")
+      val `a mul 2` = add("*", listOf(a, `2`))
+      val `a mul 2 div 2` = add("/", listOf(`a mul 2`, `2`))
+      assertEquals(
+        listOf(mapOf("x" to a, "y" to `2`, "z" to `2`) to `a mul 2 div 2`),
+        match("/"("*"(!"x", !"y"), !"z")),
+      )
     }
   }
 }
