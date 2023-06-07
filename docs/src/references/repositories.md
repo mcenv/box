@@ -14,6 +14,8 @@
 
 * <a href="https://github.com/bytecodealliance/wasmtime"><img align="center" src="https://gh-card.dev/repos/bytecodealliance/wasmtime.svg?fullname"></a>
 
+* <a href="https://github.com/rust-lang/cargo"><img align="center" src="https://gh-card.dev/repos/rust-lang/cargo.svg?fullname"></a>
+
 * <a href="https://github.com/rust-lang/rust"><img align="center" src="https://gh-card.dev/repos/rust-lang/rust.svg?fullname"></a>
 
 * <a href="https://github.com/snowleopard/build"><img align="center" src="https://gh-card.dev/repos/snowleopard/build.svg?fullname"></a>
