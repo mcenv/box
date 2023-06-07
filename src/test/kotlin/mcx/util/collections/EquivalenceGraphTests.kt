@@ -5,11 +5,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 object EquivalenceGraphTests {
+  private fun EquivalenceGraph.add(op: String, args: List<EquivalenceGraph.EClassId> = emptyList()): EquivalenceGraph.EClassId {
+    return add(EquivalenceGraph.ENode(op, args))
+  }
+
   @Test
   fun `different nodes`() {
     EquivalenceGraph().run {
-      val a = add(EquivalenceGraph.ENode("a"))
-      val b = add(EquivalenceGraph.ENode("b"))
+      val a = add("a")
+      val b = add("b")
       assertFalse(equals(a, b))
 
       merge(a, b)
@@ -21,8 +25,8 @@ object EquivalenceGraphTests {
   @Test
   fun `same nodes`() {
     EquivalenceGraph().run {
-      val a1 = add(EquivalenceGraph.ENode("a"))
-      val a2 = add(EquivalenceGraph.ENode("a"))
+      val a1 = add("a")
+      val a2 = add("a")
       assertTrue(equals(a1, a2))
 
       merge(a1, a2)
@@ -34,9 +38,9 @@ object EquivalenceGraphTests {
   @Test
   fun `merge functions`() {
     EquivalenceGraph().run {
-      val a = add(EquivalenceGraph.ENode("a"))
-      val fa = add(EquivalenceGraph.ENode("f", listOf(a)))
-      val ga = add(EquivalenceGraph.ENode("g", listOf(a)))
+      val a = add("a")
+      val fa = add("f", listOf(a))
+      val ga = add("g", listOf(a))
       assertFalse(equals(fa, ga))
 
       merge(fa, ga)
@@ -48,15 +52,15 @@ object EquivalenceGraphTests {
   @Test
   fun `already equivalent`() {
     EquivalenceGraph().run {
-      val a1 = add(EquivalenceGraph.ENode("a"))
-      val b = add(EquivalenceGraph.ENode("b"))
+      val a1 = add("a")
+      val b = add("b")
       assertFalse(equals(a1, b))
 
       merge(a1, b)
       rebuild()
       assertTrue(equals(a1, b))
 
-      val a2 = add(EquivalenceGraph.ENode("a"))
+      val a2 = add("a")
       assertTrue(equals(a1, a2))
     }
   }
@@ -64,13 +68,13 @@ object EquivalenceGraphTests {
   @Test
   fun `upward merging`() {
     EquivalenceGraph().run {
-      val a = add(EquivalenceGraph.ENode("a"))
-      val b = add(EquivalenceGraph.ENode("b"))
-      val c = add(EquivalenceGraph.ENode("c"))
-      val fab = add(EquivalenceGraph.ENode("f", listOf(a, b)))
-      val fac = add(EquivalenceGraph.ENode("f", listOf(a, c)))
-      val gfab = add(EquivalenceGraph.ENode("g", listOf(fab)))
-      val gfac = add(EquivalenceGraph.ENode("g", listOf(fac)))
+      val a = add("a")
+      val b = add("b")
+      val c = add("c")
+      val fab = add("f", listOf(a, b))
+      val fac = add("f", listOf(a, c))
+      val gfab = add("g", listOf(fab))
+      val gfac = add("g", listOf(fac))
       assertFalse(equals(b, c))
       assertFalse(equals(fab, fac))
       assertFalse(equals(gfab, gfac))
@@ -86,18 +90,18 @@ object EquivalenceGraphTests {
   @Test
   fun recursive() {
     EquivalenceGraph().run {
-      val a = add(EquivalenceGraph.ENode("a"))
-      val fa = add(EquivalenceGraph.ENode("f", listOf(a)))
+      val a = add("a")
+      val fa = add("f", listOf(a))
       assertFalse(equals(a, fa))
 
       merge(a, fa)
       rebuild()
       assertTrue(equals(a, fa))
 
-      val ffa = add(EquivalenceGraph.ENode("f", listOf(fa)))
+      val ffa = add("f", listOf(fa))
       assertTrue(equals(fa, ffa))
 
-      val fffa = add(EquivalenceGraph.ENode("f", listOf(ffa)))
+      val fffa = add("f", listOf(ffa))
       assertTrue(equals(ffa, fffa))
     }
   }
