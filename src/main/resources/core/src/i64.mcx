@@ -1,2 +1,24 @@
+export builtin def to_i8(i64) : i8 :=
+  let _ as nothing := /"data modify storage mcx: byte append value 0b";
+  /"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: long[-1]";
+
+export builtin def to_i16(i64) : i16 :=
+  let _ as nothing := /"data modify storage mcx: short append value 0s";
+  /"execute store result storage mcx: short[-1] short 1 run data get storage mcx: long[-1]";
+
+export builtin def to_i32(i64) : i32 :=
+  let _ as nothing := /"data modify storage mcx: int append value 0";
+  /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: long[-1]";
+
+export def to_i64(self : i64) : i64 := self;
+
+export builtin def to_f32(i64) : f32 :=
+  let _ as nothing := /"data modify storage mcx: float append value 0f";
+  /"execute store result storage mcx: float[-1] float 1 run data get storage mcx: long[-1]";
+
+export builtin def to_f64(i64) : f64 :=
+  let _ as nothing := /"data modify storage mcx: double append value 0d";
+  /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: long[-1]";
+
 export builtin def to_str(i64) : str :=
   /"data modify storage mcx: string append string storage mcx: long[-1]";
