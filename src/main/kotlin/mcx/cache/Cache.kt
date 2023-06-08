@@ -86,6 +86,7 @@ fun playServer(
     (workspace / "server.properties").outputStream().buffered().use { output ->
       JProperties().apply {
         putAll(Properties.encodeToStringMap(properties))
+        put("enable-rcon", "true")
         put("rcon.password", password)
       }.store(output, null)
     }
@@ -100,7 +101,7 @@ fun playServer(
         .start()
         .waitFor()
     }
-    if (rconAction != null && properties.enableRcon) {
+    if (rconAction != null) {
       Rcon.connect(password, "localhost", properties.rcon.port, properties.maxTickTime).use {
         rconAction(it)
       }

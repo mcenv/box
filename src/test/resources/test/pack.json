@@ -7,7 +7,6 @@
   },
   "properties": {
     "eula": true,
-    "enable-rcon": true,
     "function-permission-level": 4,
     "max-tick-time": -1,
     "max-players": 0,
