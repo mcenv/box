@@ -8,9 +8,6 @@
   "properties": {
     "eula": true,
     "enable-rcon": true,
-    "rcon": {
-      "password": "mcx"
-    },
     "function-permission-level": 4,
     "max-tick-time": -1,
     "max-players": 0,

@@ -8,6 +8,7 @@ import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.encodeToStringMap
 import mcx.pass.Config
 import mcx.util.green
+import mcx.util.secureRandomString
 import mcx.util.toDependencyTripleOrNull
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -80,8 +81,13 @@ fun playServer(
     val properties = config.properties
 
     (workspace / "eula.txt").writeText("eula=${properties.eula}\n")
+
+    val password = secureRandomString()
     (workspace / "server.properties").outputStream().buffered().use { output ->
-      JProperties().apply { putAll(Properties.encodeToStringMap(properties)) }.store(output, null)
+      JProperties().apply {
+        putAll(Properties.encodeToStringMap(properties))
+        put("rcon.password", password)
+      }.store(output, null)
     }
 
     val minecraft = thread {
@@ -94,8 +100,8 @@ fun playServer(
         .start()
         .waitFor()
     }
-    if (rconAction != null && properties.enableRcon && properties.rcon.password.isNotEmpty()) {
-      Rcon.connect(properties.rcon.password, "localhost", properties.rcon.port, properties.maxTickTime).use {
+    if (rconAction != null && properties.enableRcon) {
+      Rcon.connect(password, "localhost", properties.rcon.port, properties.maxTickTime).use {
         rconAction(it)
       }
     }

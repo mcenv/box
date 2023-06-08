@@ -20,6 +20,5 @@ data class DedicatedServerProperties(
   @Serializable
   data class Rcon(
     val port: Int = 25575,
-    val password: String = "",
   )
 }

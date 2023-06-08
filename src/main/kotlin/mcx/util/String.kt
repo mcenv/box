@@ -1,5 +1,9 @@
 package mcx.util
 
+import java.security.SecureRandom
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+
 fun String.quoted(
   quote: Char,
 ): String {
@@ -23,4 +27,15 @@ fun Int.toSubscript(): String {
         .toChar()
         .toString()
     }
+}
+
+/**
+ * Generates a cryptographically secure random string of 16 bytes.
+ */
+@OptIn(ExperimentalEncodingApi::class)
+fun secureRandomString(): String {
+  val random = SecureRandom()
+  val bytes = ByteArray(16)
+  random.nextBytes(bytes)
+  return Base64.encode(bytes)
 }
