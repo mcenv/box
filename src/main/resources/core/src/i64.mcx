@@ -1,6 +1,2 @@
-export def min_value : i64 := -9223372036854775808i64;
-
-export def max_value : i64 := 9223372036854775807i64;
-
 export builtin def to_str(i64) : str :=
   /"data modify storage mcx: string append string storage mcx: long[-1]";
