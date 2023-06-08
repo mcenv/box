@@ -36,6 +36,10 @@
 
 * Eisenberg, R.A., & Jones, S.L. **Levity polymorphism**. Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation.
 
+## 2019
+
+* Pédrot, P., & Tabareau, N. **The fire triangle: how to mix substitution, dependent elimination, and effects**. Proceedings of the ACM on Programming Languages, 4, 1 - 28.
+
 ## 2020
 
 * Downen, P., Ariola, Z.M., Jones, S.L., & Eisenberg, R.A. **Kinds are calling conventions**. Proceedings of the ACM on Programming Languages, 4, 1 - 29.
