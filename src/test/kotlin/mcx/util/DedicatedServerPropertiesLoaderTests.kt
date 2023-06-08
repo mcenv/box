@@ -26,7 +26,6 @@ object DedicatedServerPropertiesLoaderTests {
       DedicatedServerProperties(
         levelName = "world",
         serverPort = 25565,
-        enableRcon = true,
         functionPermissionLevel = 4,
         maxTickTime = 60000,
         broadcastRconToOps = true,
@@ -45,7 +44,6 @@ object DedicatedServerPropertiesLoaderTests {
       DedicatedServerProperties(
         levelName = "world",
         serverPort = 25565,
-        enableRcon = false,
         functionPermissionLevel = 2,
         maxTickTime = 60000,
         broadcastRconToOps = true,
