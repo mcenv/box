@@ -32,7 +32,6 @@ object DedicatedServerPropertiesLoaderTests {
         broadcastRconToOps = true,
         rcon = DedicatedServerProperties.Rcon(
           port = 25575,
-          password = "password",
         ),
       ),
       properties,
@@ -52,7 +51,6 @@ object DedicatedServerPropertiesLoaderTests {
         broadcastRconToOps = true,
         rcon = DedicatedServerProperties.Rcon(
           port = 25575,
-          password = "",
         ),
       ),
       properties,
