@@ -17,3 +17,6 @@
 
 * [[OOPSLA] Effects,capabilities,and boxes: from scope-based reasoning to type-based reasoning and back](https://youtu.be/P7X5Qy9KYLU)
   <iframe width="560" height="315" src="https://www.youtube.com/embed/P7X5Qy9KYLU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+* [The Fire Triangle - How to Mix Substitution, Dependent Elimination, and Effects](https://youtu.be/Gm54pWnQgtU)
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/Gm54pWnQgtU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
