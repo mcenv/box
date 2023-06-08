@@ -61,7 +61,6 @@ jobs:
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           cd ./src/test/resources/test
-          jq '.properties.rcon.password = "${{ secrets.RCON_PASSWORD }}"' pack.json > pack.json.tmp && mv pack.json.tmp pack.json
           mcx dependencies install
           mcx test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Upload data packs
