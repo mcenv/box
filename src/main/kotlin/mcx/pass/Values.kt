@@ -81,13 +81,6 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
-  data class Is(
-    val scrutinee: Lazy<Value>,
-    val scrutineer: Pattern,
-  ) : Value() {
-    override val type: Lazy<Value> get() = Bool.LAZY
-  }
-
   data object I8 : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
 

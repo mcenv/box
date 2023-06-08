@@ -116,11 +116,6 @@ class Resolve private constructor(
         val elseBranch = resolveTerm(term.elseBranch)
         R.Term.If(condition, thenBranch, elseBranch, range)
       }
-      is S.Term.Is          -> {
-        val scrutinee = resolveTerm(term.scrutinee)
-        val scrutineer = resolvePattern(term.scrutineer)
-        R.Term.Is(scrutinee, scrutineer, range)
-      }
       is S.Term.I8          -> R.Term.I8(range)
       is S.Term.I8Of        -> R.Term.I8Of(term.value, range)
       is S.Term.I16         -> R.Term.I16(range)

@@ -32,13 +32,6 @@ object Lifted {
       override val type: NbtType,
     ) : Term()
 
-    data class Is(
-      val scrutinee: Term,
-      val scrutineer: Pattern,
-    ) : Term() {
-      override val type: NbtType get() = NbtType.BYTE
-    }
-
     data class I8Of(
       val value: Byte,
     ) : Term() {

@@ -74,12 +74,6 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class Is(
-      val scrutinee: Term,
-      val scrutineer: Term,
-      override val range: Range,
-    ) : Term()
-
     data class I8(
       override val range: Range,
     ) : Term()

@@ -4,7 +4,6 @@ package mcx.pass
 
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
-import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Modifier
@@ -59,15 +58,6 @@ fun Env.evalTerm(term: Term): Value {
           val type = term.type.map { evalTerm(it) }
           Value.If(condition, thenBranch, elseBranch, type)
         }
-      }
-    }
-
-    is Term.Is         -> {
-      val scrutinee = lazy { evalTerm(term.scrutinee) }
-      val scrutineer = term.scrutineer
-      when (val result = scrutineer matches scrutinee) {
-        null -> Value.Is(scrutinee, scrutineer)
-        else -> Value.BoolOf(result)
       }
     }
 
@@ -304,11 +294,6 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.If(condition, thenBranch, elseBranch, type)
     }
 
-    is Value.Is         -> {
-      val scrutinee = quoteValue(value.scrutinee.value)
-      Term.Is(scrutinee, value.scrutineer)
-    }
-
     is Value.I8         -> {
       Term.I8
     }
@@ -510,16 +495,4 @@ fun Closure.open(
   return this(types.mapIndexed { i, type ->
     lazyOf(Value.Var("#${next + i}", next + i, type))
   })
-}
-
-infix fun Pattern.matches(value: Lazy<Value>): Boolean? {
-  return when (this) {
-    is Pattern.I32Of -> {
-      val value = value.value as? Value.I32Of ?: return null
-      this.value == value.value
-    }
-    is Pattern.Var   -> true
-    is Pattern.Drop  -> true
-    is Pattern.Hole  -> null
-  }
 }

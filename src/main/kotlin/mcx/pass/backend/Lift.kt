@@ -72,14 +72,6 @@ class Lift private constructor(
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
 
-      is C.Term.Is         -> {
-        val scrutinee = liftTerm(term.scrutinee)
-        restoring {
-          val scrutineer = liftPattern(term.scrutineer, term.scrutinee.type.value)
-          L.Term.Is(scrutinee, scrutineer)
-        }
-      }
-
       is C.Term.I8         -> {
         UNIT
       }
@@ -316,7 +308,6 @@ class Lift private constructor(
       is C.Term.Bool     -> linkedMapOf()
       is C.Term.BoolOf   -> linkedMapOf()
       is C.Term.If       -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.Is         -> freeVars(term.scrutinee)
       is C.Term.I8         -> linkedMapOf()
       is C.Term.I8Of       -> linkedMapOf()
       is C.Term.I16        -> linkedMapOf()

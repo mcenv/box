@@ -87,13 +87,6 @@ object Core {
       override val type: Lazy<Term>,
     ) : Term()
 
-    data class Is(
-      val scrutinee: Term,
-      val scrutineer: Pattern,
-    ) : Term() {
-      override val type: Lazy<Term> get() = Bool.LAZY
-    }
-
     data object I8 : Term() {
       override val type: Lazy<Term> get() = Type.BYTE_LAZY
 

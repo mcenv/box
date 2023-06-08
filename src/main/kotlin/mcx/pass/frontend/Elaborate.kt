@@ -129,10 +129,6 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Is && synth(type)                                           -> {
-        TODO()
-      }
-
       term is R.Term.I8 && synth(type)                                           -> {
         C.Term.I8 to Value.Type.BYTE
       }

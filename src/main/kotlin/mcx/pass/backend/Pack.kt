@@ -6,7 +6,6 @@ import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
 import mcx.ast.Packed.Command.Execute.Mode.RESULT
-import mcx.ast.Packed.Command.Execute.StoreStorage.Type
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.SourceProvider
@@ -22,7 +21,7 @@ class Pack private constructor(
   private val context: Context,
 ) {
   private val commands: MutableList<Command> = mutableListOf()
-  private val entries: Map<NbtType, MutableList<String?>> = NbtType.values().associateWith { mutableListOf() }
+  private val entries: Map<NbtType, MutableList<String?>> = NbtType.entries.associateWith { mutableListOf() }
 
   private fun packDefinition(
     definition: L.Definition,
@@ -108,10 +107,6 @@ class Pack private constructor(
           )
         )
         push(term.type, null)
-      }
-      is L.Term.Is         -> {
-        packTerm(term.scrutinee)
-        matchPattern(term.scrutineer)
       }
       is L.Term.I8Of       -> push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
       is L.Term.I16Of      -> push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
@@ -259,45 +254,6 @@ class Pack private constructor(
       is L.Pattern.Var      -> drop(pattern.type, keeps)
       is L.Pattern.Drop     -> drop(pattern.type, keeps)
     }
-  }
-
-  private fun matchPattern(
-    scrutineer: L.Pattern,
-  ) {
-    +SetScore(REG_0, REG, 1)
-    fun visit(
-      scrutineer: L.Pattern,
-    ) {
-      when (scrutineer) {
-        is L.Pattern.I32Of -> {
-          +Execute.StoreScore(
-            RESULT, REG_1, REG,
-            Execute.Run(
-              GetData(INT_TOP)
-            )
-          )
-          drop(NbtType.INT)
-          +Execute.ConditionalScoreMatches(
-            false, REG_1, REG, scrutineer.value..scrutineer.value,
-            Execute.Run(
-              SetScore(REG_0, REG, 0)
-            )
-          )
-        }
-
-        is L.Pattern.StructOf -> TODO()
-        is L.Pattern.Var -> drop(scrutineer.type)
-        is L.Pattern.Drop -> drop(scrutineer.type)
-      }
-    }
-    visit(scrutineer)
-    push(NbtType.BYTE, SourceProvider.Value(ByteTag(0)))
-    +Execute.StoreStorage(
-      RESULT, BYTE_TOP, Type.BYTE, 1.0,
-      Execute.Run(
-        GetScore(REG_0, REG)
-      )
-    )
   }
 
   private fun push(

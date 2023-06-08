@@ -89,20 +89,6 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Is          -> {
-        val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
-        val scrutineer = term.scrutineer
-        when (phase) {
-          Phase.WORLD -> Value.Is(scrutinee, scrutineer)
-          Phase.CONST -> {
-            when (val result = scrutineer matches scrutinee) {
-              null -> Value.Is(scrutinee, scrutineer)
-              else -> Value.BoolOf(result)
-            }
-          }
-        }
-      }
-
       is Term.I8          -> {
         Value.I8
       }
@@ -358,11 +344,6 @@ class Stage private constructor() {
         val elseBranch = quoteValue(value.elseBranch.value, phase)
         val type = value.type.map { quoteValue(it, phase) }
         Term.If(condition, thenBranch, elseBranch, type)
-      }
-
-      is Value.Is          -> {
-        val scrutinee = quoteValue(value.scrutinee.value, phase)
-        Term.Is(scrutinee, value.scrutineer)
       }
 
       is Value.I8          -> {

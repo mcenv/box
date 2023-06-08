@@ -466,11 +466,6 @@ class Parse private constructor(
           val name = parseRanged { readWord() }
           skipTrivia()
           when (name.value) {
-            "is" -> {
-              skipTrivia()
-              val scrutineer = parseTerm()
-              S.Term.Is(term, scrutineer, until())
-            }
             "as" -> {
               skipTrivia()
               val type = parseTerm()

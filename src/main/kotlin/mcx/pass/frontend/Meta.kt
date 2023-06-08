@@ -83,11 +83,6 @@ class Meta {
         Term.If(condition, thenBranch, elseBranch, type)
       }
 
-      is Term.Is         -> {
-        val scrutinee = zonkTerm(term.scrutinee)
-        Term.Is(scrutinee, term.scrutineer)
-      }
-
       is Term.I8         -> {
         term
       }
@@ -319,10 +314,6 @@ class Meta {
         unifyValue(value1.condition, value2.condition) &&
         unifyValue(value1.thenBranch.value, value2.elseBranch.value) &&
         unifyValue(value1.elseBranch.value, value2.elseBranch.value)
-      }
-      value1 is Value.Is && value2 is Value.Is                 -> {
-        unifyValue(value1.scrutinee.value, value2.scrutinee.value) &&
-        value1.scrutineer == value2.scrutineer // TODO: unify patterns
       }
       value1 is Value.I8 && value2 is Value.I8                 -> true
       value1 is Value.I8Of && value2 is Value.I8Of             -> value1.value == value2.value

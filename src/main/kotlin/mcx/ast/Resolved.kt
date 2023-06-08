@@ -74,12 +74,6 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class Is(
-      val scrutinee: Term,
-      val scrutineer: Pattern,
-      override val range: Range,
-    ) : Term()
-
     data class I8(
       override val range: Range,
     ) : Term()

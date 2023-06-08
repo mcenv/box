@@ -20,7 +20,6 @@ fun prettyTerm(
       is Term.Bool       -> "bool"
       is Term.BoolOf     -> term.value.toString()
       is Term.If         -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
-      is Term.Is         -> "(${go(term.scrutinee)} is ${prettyPattern(term.scrutineer)})"
       is Term.I8         -> "i8"
       is Term.I8Of       -> "${term.value}i8"
       is Term.I16        -> "i16"
