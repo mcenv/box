@@ -6,5 +6,7 @@ sealed class Annotation {
 
   data object Unstable : Annotation()
 
+  data object Delicate : Annotation()
+
   data object Hole : Annotation()
 }

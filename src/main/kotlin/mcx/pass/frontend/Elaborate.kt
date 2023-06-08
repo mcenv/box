@@ -422,6 +422,9 @@ class Elaborate private constructor(
             if (Annotation.Unstable in definition.annotations) {
               diagnostics += unstable(term.range)
             }
+            if (Annotation.Delicate in definition.annotations) {
+              diagnostics += delicate(term.range)
+            }
 
             val actualPhase = getPhase(definition.modifiers)
             val def = C.Term.Def(definition, lazyOf(definition.type))
@@ -844,6 +847,16 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "unstable",
+        DiagnosticSeverity.Warning,
+      )
+    }
+
+    private fun delicate(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "delicate",
         DiagnosticSeverity.Warning,
       )
     }

@@ -8,8 +8,14 @@ def unstable_zero : i32 := 0;
 
 def use_unstable : i32 := unstable_zero;
 
+@delicate
+def delicate_zero : i32 := 0;
+
+def use_delicate : i32 := delicate_zero;
+
 @deprecated
 @unstable
-def deprecated_unstable_zero : i32 := 0;
+@delicate
+def deprecated_unstable_delicate_zero : i32 := 0;
 
-def use_deprecated_unstable : i32 := deprecated_unstable_zero;
+def use_deprecated_unstable_delicate : i32 := deprecated_unstable_delicate_zero;

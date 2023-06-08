@@ -177,6 +177,7 @@ class Parse private constructor(
         when (readWord()) {
           "deprecated" -> Ranged(Annotation.Deprecated, until())
           "unstable"   -> Ranged(Annotation.Unstable, until())
+          "delicate"   -> Ranged(Annotation.Delicate, until())
           else         -> Ranged(Annotation.Hole, until())
         }
       }
