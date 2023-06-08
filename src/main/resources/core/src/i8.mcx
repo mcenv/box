@@ -1,3 +1,9 @@
+export builtin def =(i8, i8) : bool :=
+  let _ as nothing := /"execute store result score #0 mcx run data get storage mcx: byte[-2]";
+  let _ as nothing := /"execute store result score #1 mcx run data get storage mcx: byte[-1]";
+  let _ as nothing := /"data modify storage mcx: byte append value 0b";
+  /"execute if score #0 mcx = #1 mcx run data modify storage mcx: byte[-1] set value 1b";
+
 export def to_i8(self : i8) : i8 := self;
 
 export builtin def to_i16(i8) : i16 :=

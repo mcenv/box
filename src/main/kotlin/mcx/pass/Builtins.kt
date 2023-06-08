@@ -37,6 +37,14 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
+  object : Builtin(i8 / "=") {
+    override fun eval(args: List<Lazy<Value>>): Value? {
+      val a = args[0].value as? Value.I8Of ?: return null
+      val b = args[1].value as? Value.I8Of ?: return null
+      return Value.BoolOf(a.value == b.value)
+    }
+  },
+
   object : Builtin(i8 / "to_i16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.I8Of ?: return null
@@ -79,9 +87,17 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
+  object : Builtin(i16 / "=") {
+    override fun eval(args: List<Lazy<Value>>): Value? {
+      val a = args[0].value as? Value.I16Of ?: return null
+      val b = args[1].value as? Value.I16Of ?: return null
+      return Value.BoolOf(a.value == b.value)
+    }
+  },
+
   object : Builtin(i16 / "to_i8") {
     override fun eval(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
+      val a = args[0].value as? Value.I16Of ?: return null
       return Value.I8Of(a.value.toByte())
     }
   },
