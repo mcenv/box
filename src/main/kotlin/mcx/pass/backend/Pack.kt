@@ -17,6 +17,7 @@ import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
 import mcx.pass.core
+import mcx.util.green
 import mcx.util.nbt.*
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
@@ -473,6 +474,7 @@ class Pack private constructor(
 
     fun packInit(): P.Definition.Function {
       return P.Definition.Function(emptyList(), INIT, listOf(
+        Raw("say ${green("initializing")} mcx"),
         Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
         Raw("scoreboard objectives remove ${MAIN.name}"),
         Raw("scoreboard objectives add ${MAIN.name} dummy"),
