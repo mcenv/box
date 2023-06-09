@@ -70,6 +70,6 @@ jobs:
           path: |
             ./src/main/resources/core/.mcx/world/datapacks/core_main
             ./src/main/resources/core/.mcx/world/datapacks/core_test
-            ./src/test/resources/test/.mcx/world/datapacks/test_main
-            ./src/test/resources/test/.mcx/world/datapacks/test_test
+            ./src/test/resources/test/.mcx/world/datapacks/pos_main
+            ./src/test/resources/test/.mcx/world/datapacks/pos_test
           if-no-files-found: error

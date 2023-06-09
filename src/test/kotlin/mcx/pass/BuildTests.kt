@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 object BuildTests {
   val core: Path = Path("src", "main", "resources", "core")
-  val test: Path = Path("src", "test", "resources", "test")
+  val pos: Path = Path("src", "test", "resources", "pos")
   val std: Path = getOrCreateDependenciesPath() / "mcenv" / "std-main"
 
   @Test
@@ -29,10 +29,10 @@ object BuildTests {
   }
 
   @Test
-  fun test() {
+  fun pos() {
     val result = runBlocking {
-      installDependencies(test)
-      Build(test, core)()
+      installDependencies(pos)
+      Build(pos, core)()
     }
     result.diagnosticsByPath.forEach { (path, diagnostics) ->
       diagnostics.forEach {
@@ -45,7 +45,7 @@ object BuildTests {
   @Test
   fun std() {
     val result = runBlocking {
-      installDependencies(test)
+      installDependencies(pos)
       Build(std, core)()
     }
     result.diagnosticsByPath.forEach { (path, diagnostics) ->

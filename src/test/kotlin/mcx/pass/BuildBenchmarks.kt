@@ -17,6 +17,6 @@ class BuildBenchmarks {
 
   @Benchmark
   fun test() {
-    runBlocking { Build(BuildTests.test, BuildTests.core)() }
+    runBlocking { Build(BuildTests.pos, BuildTests.core)() }
   }
 }
