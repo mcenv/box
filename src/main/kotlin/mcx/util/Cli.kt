@@ -12,7 +12,6 @@ import mcx.pass.Config
 import mcx.pass.backend.Pack
 import mcx.pass.build.Build
 import org.eclipse.lsp4j.launch.LSPLauncher
-import java.nio.file.Paths
 import kotlin.io.path.*
 import kotlin.system.exitProcess
 import kotlin.time.measureTime
@@ -89,7 +88,7 @@ fun init() {
     )
     it.write('\n'.code)
   }
-  Paths.get("src").createDirectories()
+  Path("src").createDirectories()
 }
 
 @Suppress("FunctionName")
