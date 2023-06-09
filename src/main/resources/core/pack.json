@@ -1,7 +1,9 @@
 {
   "name": "core",
   "description": "The mcx core pack",
-  "debug": true,
+  "debug": {
+    "verbose": true
+  },
   "properties": {
     "eula": true,
     "function-permission-level": 4,

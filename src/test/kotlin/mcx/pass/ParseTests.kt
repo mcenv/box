@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 object ParseTests {
   @Test
   fun empty() {
-    val context = Context(Config("test", "", true))
+    val context = Context(Config("test", "", Config.Debug(true)))
     val name = ModuleLocation("test", "empty")
     val result = Parse(context, name, "")
     assertEquals(
@@ -32,7 +32,7 @@ object ParseTests {
 
   @Test
   fun simple() {
-    val context = Context(Config("test", "", true))
+    val context = Context(Config("test", "", Config.Debug(true)))
     val name = ModuleLocation("test", "simple")
     val result = Parse(
       context, name,
