@@ -43,6 +43,12 @@ class Elaborate private constructor(
   private fun elaborateModule(
     module: R.Module,
   ): C.Module {
+    module.imports.forEach { import ->
+      when (val definition = definitions[import.value]) {
+        is C.Definition.Def -> hoverDef(import.range, definition)
+        else                -> {}
+      }
+    }
     val definitions = module.definitions.values.mapNotNull { elaborateDefinition(it) }
     return C.Module(module.name, definitions)
   }
