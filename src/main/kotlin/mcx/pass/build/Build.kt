@@ -298,7 +298,7 @@ class Build(
               .bufferedWriter()
               .use {
                 if (config.debug) {
-                  debug("writing", name.pathString)
+                  debug("Writing", name.pathString)
                 }
                 it.write(definition)
               }
@@ -307,7 +307,7 @@ class Build(
           onVisitFile { file, _ ->
             if (file !in outputModules) {
               if (config.debug) {
-                debug("deleting", file.pathString)
+                debug("Deleting", file.pathString)
               }
               file.deleteExisting()
             }

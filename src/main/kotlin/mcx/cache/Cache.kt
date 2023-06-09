@@ -121,7 +121,7 @@ fun installDependencies(root: Path) {
     }
 
     try {
-      info("installing", "$owner/$repository@$tag")
+      info("Installing", "$owner/$repository@$tag")
       ZipInputStream(URL("https://github.com/$owner/$repository/archive/$tag.zip").openStream().buffered()).use { input ->
         val pack = (getOrCreateDependenciesPath() / owner).createDirectories()
         var entry = input.nextEntry
