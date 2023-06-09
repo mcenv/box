@@ -104,6 +104,12 @@ object Lifted {
       override val type: NbtType get() = NbtType.COMPOUND
     }
 
+    data class RefOf(
+      val element: Term,
+    ) : Term() {
+      override val type: NbtType get() = NbtType.INT
+    }
+
     data class ProcOf(
       val function: Definition.Function,
     ) : Term() {

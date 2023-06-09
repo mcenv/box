@@ -172,41 +172,52 @@ class Stage private constructor() {
         Value.I64ArrayOf(elements)
       }
 
-      is Term.Vec         -> {
+      is Term.Vec      -> {
         val element = lazy { evalTerm(term.element, phase) }
         Value.Vec(element)
       }
 
-      is Term.VecOf       -> {
+      is Term.VecOf    -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         val type = term.type.map { evalTerm(it, phase) }
         Value.VecOf(elements, type)
       }
 
-      is Term.Struct      -> {
+      is Term.Struct   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
         Value.Struct(elements)
       }
 
-      is Term.StructOf    -> {
+      is Term.StructOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
         val type = term.type.map { evalTerm(it, phase) }
         Value.StructOf(elements, type)
       }
 
-      is Term.Point       -> {
+      is Term.Ref      -> {
+        val element = lazy { evalTerm(term.element, phase) }
+        Value.Ref(element)
+      }
+
+      is Term.RefOf    -> {
+        val element = lazy { evalTerm(term.element, phase) }
+        val type = term.type.map { evalTerm(it, phase) }
+        Value.RefOf(element, type)
+      }
+
+      is Term.Point    -> {
         val element = lazy { evalTerm(term.element, phase) }
         val type = term.type.map { evalTerm(it, phase) }
         Value.Point(element, type)
       }
 
-      is Term.Union       -> {
+      is Term.Union    -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         val type = term.type.map { evalTerm(it, phase) }
         Value.Union(elements, type)
       }
 
-      is Term.Func        -> {
+      is Term.Func     -> {
         val (_, params) = term.params.mapWith(this) { modify, (param, type) ->
           val type = lazy { evalTerm(type, phase) }
           modify(this + lazyOf(Value.Var("#${next()}", next(), type)))
@@ -429,41 +440,52 @@ class Stage private constructor() {
         Term.I64ArrayOf(elements)
       }
 
-      is Value.Vec         -> {
+      is Value.Vec      -> {
         val element = quoteValue(value.element.value, phase)
         Term.Vec(element)
       }
 
-      is Value.VecOf       -> {
+      is Value.VecOf    -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         val type = value.type.map { quoteValue(it, phase) }
         Term.VecOf(elements, type)
       }
 
-      is Value.Struct      -> {
+      is Value.Struct   -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         Term.Struct(elements)
       }
 
-      is Value.StructOf    -> {
+      is Value.StructOf -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         val type = value.type.map { quoteValue(it, phase) }
         Term.StructOf(elements, type)
       }
 
-      is Value.Point       -> {
+      is Value.Ref      -> {
+        val element = quoteValue(value.element.value, phase)
+        Term.Ref(element)
+      }
+
+      is Value.RefOf    -> {
+        val element = quoteValue(value.element.value, phase)
+        val type = value.type.map { quoteValue(it, phase) }
+        Term.RefOf(element, type)
+      }
+
+      is Value.Point    -> {
         val element = quoteValue(value.element.value, phase)
         val type = value.type.map { quoteValue(it, phase) }
         Term.Point(element, type)
       }
 
-      is Value.Union       -> {
+      is Value.Union    -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         val type = value.type.map { quoteValue(it, phase) }
         Term.Union(elements, type)
       }
 
-      is Value.Func        -> {
+      is Value.Func     -> {
         val params = value.params.mapIndexed { i, (pattern, type) ->
           pattern to (this + i).quoteValue(type.value, phase)
         }

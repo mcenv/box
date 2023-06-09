@@ -115,6 +115,18 @@ object Packed {
       val score: Int,
     ) : Command()
 
+    data class AddScore(
+      val targets: ScoreHolder,
+      val objective: Objective,
+      val score: Int,
+    ) : Command()
+
+    data class RemoveScore(
+      val targets: ScoreHolder,
+      val objective: Objective,
+      val score: Int,
+    ) : Command()
+
     data class PerformOperation(
       val targets: ScoreHolder,
       val targetObjective: Objective,

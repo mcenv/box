@@ -276,6 +276,12 @@ class Parse private constructor(
             }
             S.Term.StructOf(elements, until())
           }
+          '&'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.RefOf(element, until())
+          }
           '\\' -> {
             skip()
             val open = if (canRead() && peek() == '\\') {
@@ -371,6 +377,11 @@ class Parse private constructor(
                   key to value
                 }
                 S.Term.Struct(elements, until())
+              }
+              "ref"          -> {
+                skipTrivia()
+                val element = parseTerm0()
+                S.Term.Ref(element, until())
               }
               "point"        -> {
                 skipTrivia()

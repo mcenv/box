@@ -44,6 +44,8 @@ fun prettyTerm(
       is Term.VecOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
       is Term.Struct     -> term.elements.entries.joinToString(", ", "(struct {", "})") { (key, element) -> "$key : ${go(element)}" }
       is Term.StructOf   -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
+      is Term.Ref        -> "(ref ${go(term.element)})"
+      is Term.RefOf      -> "(&${go(term.element)})"
       is Term.Point      -> "(point ${prettyTerm(term.element)})"
       is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
       is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"

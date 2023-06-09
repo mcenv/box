@@ -166,41 +166,52 @@ class Meta {
         Term.I64ArrayOf(elements)
       }
 
-      is Term.Vec        -> {
+      is Term.Vec      -> {
         val element = zonkTerm(term.element)
         Term.Vec(element)
       }
 
-      is Term.VecOf      -> {
+      is Term.VecOf    -> {
         val elements = term.elements.map { zonkTerm(it) }
         val type = lazyOf(zonkTerm(term.type.value))
         Term.VecOf(elements, type)
       }
 
-      is Term.Struct     -> {
+      is Term.Struct   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         Term.Struct(elements)
       }
 
-      is Term.StructOf   -> {
+      is Term.StructOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         val type = lazyOf(zonkTerm(term.type.value))
         Term.StructOf(elements, type)
       }
 
-      is Term.Point      -> {
+      is Term.Ref      -> {
+        val element = zonkTerm(term.element)
+        Term.Ref(element)
+      }
+
+      is Term.RefOf    -> {
+        val element = zonkTerm(term.element)
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.RefOf(element, type)
+      }
+
+      is Term.Point    -> {
         val element = zonkTerm(term.element)
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Point(element, type)
       }
 
-      is Term.Union      -> {
+      is Term.Union    -> {
         val elements = term.elements.map { zonkTerm(it) }
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Union(elements, type)
       }
 
-      is Term.Func       -> {
+      is Term.Func     -> {
         val (lvl, params) = term.params.mapWith(this) { transform, (param, type) ->
           val type = zonkTerm(type)
           transform(this + 1)
@@ -361,6 +372,8 @@ class Meta {
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
+      value1 is Value.Ref && value2 is Value.Ref               -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.RefOf && value2 is Value.RefOf           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Point && value2 is Value.Point           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union           -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
       value1 is Value.Func && value2 is Value.Func             -> {

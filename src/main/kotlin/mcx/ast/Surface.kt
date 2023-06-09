@@ -184,6 +184,16 @@ object Surface {
       override val range: Range,
     ) : Term()
 
+    data class Ref(
+      val element: Term,
+      override val range: Range,
+    ) : Term()
+
+    data class RefOf(
+      val element: Term,
+      override val range: Range,
+    ) : Term()
+
     data class Point(
       val element: Term,
       override val range: Range,

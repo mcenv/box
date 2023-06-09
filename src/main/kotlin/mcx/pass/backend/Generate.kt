@@ -80,6 +80,22 @@ class Generate private constructor(
         space()
         append(command.score.toString())
       }
+      is P.Command.AddScore         -> {
+        append("scoreboard players add ")
+        generateScoreHolder(command.targets)
+        space()
+        generateObjective(command.objective)
+        space()
+        append(command.score.toString())
+      }
+      is P.Command.RemoveScore      -> {
+        append("scoreboard players remove ")
+        generateScoreHolder(command.targets)
+        space()
+        generateObjective(command.objective)
+        space()
+        append(command.score.toString())
+      }
       is P.Command.PerformOperation -> {
         append("scoreboard players operation ")
         generateScoreHolder(command.targets)

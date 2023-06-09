@@ -173,6 +173,15 @@ class Lift private constructor(
         L.Term.StructOf(elements)
       }
 
+      is C.Term.Ref        -> {
+        UNIT
+      }
+
+      is C.Term.RefOf      -> {
+        val element = liftTerm(term.element)
+        L.Term.RefOf(element)
+      }
+
       is C.Term.Point      -> {
         UNIT
       }
@@ -302,12 +311,12 @@ class Lift private constructor(
 
   private fun freeVars(term: C.Term): LinkedHashMap<String, NbtType> {
     return when (term) {
-      is C.Term.Tag      -> unexpectedTerm(term)
-      is C.Term.TagOf    -> linkedMapOf()
-      is C.Term.Type     -> freeVars(term.element)
-      is C.Term.Bool     -> linkedMapOf()
-      is C.Term.BoolOf   -> linkedMapOf()
-      is C.Term.If       -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.Tag        -> unexpectedTerm(term)
+      is C.Term.TagOf      -> linkedMapOf()
+      is C.Term.Type       -> freeVars(term.element)
+      is C.Term.Bool       -> linkedMapOf()
+      is C.Term.BoolOf     -> linkedMapOf()
+      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
       is C.Term.I8         -> linkedMapOf()
       is C.Term.I8Of       -> linkedMapOf()
       is C.Term.I16        -> linkedMapOf()
@@ -331,21 +340,23 @@ class Lift private constructor(
       is C.Term.Vec        -> freeVars(term.element)
       is C.Term.VecOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.StructOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Point    -> freeVars(term.element)
-      is C.Term.Union    -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf   -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply    -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code     -> unexpectedTerm(term)
-      is C.Term.CodeOf   -> unexpectedTerm(term)
-      is C.Term.Splice   -> unexpectedTerm(term)
-      is C.Term.Command  -> linkedMapOf()
-      is C.Term.Let      -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var      -> linkedMapOf(term.name to eraseType(term.type.value))
-      is C.Term.Def      -> linkedMapOf()
-      is C.Term.Meta     -> unexpectedTerm(term)
-      is C.Term.Hole     -> unexpectedTerm(term)
+      is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Ref        -> freeVars(term.element)
+      is C.Term.RefOf      -> freeVars(term.element)
+      is C.Term.Point      -> freeVars(term.element)
+      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type.value))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 

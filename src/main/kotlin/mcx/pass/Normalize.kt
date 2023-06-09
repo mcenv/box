@@ -144,41 +144,52 @@ fun Env.evalTerm(term: Term): Value {
       Value.I64ArrayOf(elements)
     }
 
-    is Term.Vec        -> {
+    is Term.Vec      -> {
       val element = lazy { evalTerm(term.element) }
       Value.Vec(element)
     }
 
-    is Term.VecOf      -> {
+    is Term.VecOf    -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       val type = term.type.map { evalTerm(it) }
       Value.VecOf(elements, type)
     }
 
-    is Term.Struct     -> {
+    is Term.Struct   -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       Value.Struct(elements)
     }
 
-    is Term.StructOf   -> {
+    is Term.StructOf -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       val type = term.type.map { evalTerm(it) }
       Value.StructOf(elements, type)
     }
 
-    is Term.Point      -> {
+    is Term.Ref      -> {
+      val element = lazy { evalTerm(term.element) }
+      Value.Ref(element)
+    }
+
+    is Term.RefOf    -> {
+      val element = lazy { evalTerm(term.element) }
+      val type = term.type.map { evalTerm(it) }
+      Value.RefOf(element, type)
+    }
+
+    is Term.Point    -> {
       val element = lazy { evalTerm(term.element) }
       val type = term.type.map { evalTerm(it) }
       Value.Point(element, type)
     }
 
-    is Term.Union      -> {
+    is Term.Union    -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       val type = term.type.map { evalTerm(it) }
       Value.Union(elements, type)
     }
 
-    is Term.Func       -> {
+    is Term.Func     -> {
       val (_, params) = term.params.mapWith(this) { modify, (param, type) ->
         val type = lazy { evalTerm(type) }
         modify(this + lazyOf(Value.Var("#${next()}", next(), type)))
@@ -377,40 +388,51 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.I64ArrayOf(elements)
     }
 
-    is Value.Vec        -> {
+    is Value.Vec      -> {
       val element = quoteValue(value.element.value)
       Term.Vec(element)
     }
 
-    is Value.VecOf      -> {
+    is Value.VecOf    -> {
       val elements = value.elements.map { quoteValue(it.value) }
       val type = value.type.map { quoteValue(it) }
       Term.VecOf(elements, type)
     }
 
-    is Value.Struct     -> {
+    is Value.Struct   -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       Term.Struct(elements)
     }
 
-    is Value.StructOf   -> {
+    is Value.StructOf -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       val type = value.type.map { quoteValue(it) }
       Term.StructOf(elements, type)
     }
 
-    is Value.Point      -> {
+    is Value.Ref      -> {
+      val element = quoteValue(value.element.value)
+      Term.Ref(element)
+    }
+
+    is Value.RefOf    -> {
+      val element = quoteValue(value.element.value)
+      val type = value.type.map { quoteValue(it) }
+      Term.RefOf(element, type)
+    }
+
+    is Value.Point    -> {
       val element = quoteValue(value.element.value)
       val type = value.type.map { quoteValue(it) }
       Term.Point(element, type)
     }
-    is Value.Union      -> {
+    is Value.Union    -> {
       val elements = value.elements.map { quoteValue(it.value) }
       val type = value.type.map { quoteValue(it) }
       Term.Union(elements, type)
     }
 
-    is Value.Func       -> {
+    is Value.Func     -> {
       val params = value.params.mapIndexed { i, (pattern, type) ->
         pattern to (this + i).quoteValue(type.value)
       }

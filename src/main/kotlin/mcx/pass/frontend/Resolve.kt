@@ -102,73 +102,157 @@ class Resolve private constructor(
   ): R.Term {
     val range = term.range
     return when (term) {
-      is S.Term.Tag         -> R.Term.Tag(term.range)
-      is S.Term.TagOf       -> R.Term.TagOf(term.value, range)
-      is S.Term.Type        -> {
+      is S.Term.Tag        -> {
+        R.Term.Tag(term.range)
+      }
+
+      is S.Term.TagOf      -> {
+        R.Term.TagOf(term.value, range)
+      }
+
+      is S.Term.Type       -> {
         val tag = resolveTerm(term.element)
         R.Term.Type(tag, range)
       }
-      is S.Term.Bool        -> R.Term.Bool(range)
-      is S.Term.BoolOf      -> R.Term.BoolOf(term.value, range)
-      is S.Term.If          -> {
+
+      is S.Term.Bool       -> {
+        R.Term.Bool(range)
+      }
+
+      is S.Term.BoolOf     -> {
+        R.Term.BoolOf(term.value, range)
+      }
+
+      is S.Term.If         -> {
         val condition = resolveTerm(term.condition)
         val thenBranch = resolveTerm(term.thenBranch)
         val elseBranch = resolveTerm(term.elseBranch)
         R.Term.If(condition, thenBranch, elseBranch, range)
       }
-      is S.Term.I8          -> R.Term.I8(range)
-      is S.Term.I8Of        -> R.Term.I8Of(term.value, range)
-      is S.Term.I16         -> R.Term.I16(range)
-      is S.Term.I16Of       -> R.Term.I16Of(term.value, range)
-      is S.Term.I32         -> R.Term.I32(range)
-      is S.Term.I32Of       -> R.Term.I32Of(term.value, range)
-      is S.Term.I64         -> R.Term.I64(range)
-      is S.Term.I64Of       -> R.Term.I64Of(term.value, range)
-      is S.Term.F32         -> R.Term.F32(range)
-      is S.Term.F32Of       -> R.Term.F32Of(term.value, range)
-      is S.Term.F64         -> R.Term.F64(range)
-      is S.Term.F64Of       -> R.Term.F64Of(term.value, range)
-      is S.Term.Str         -> R.Term.Str(range)
-      is S.Term.StrOf       -> R.Term.StrOf(term.value, range)
-      is S.Term.I8Array     -> R.Term.I8Array(range)
-      is S.Term.I8ArrayOf   -> {
+
+      is S.Term.I8         -> {
+        R.Term.I8(range)
+      }
+
+      is S.Term.I8Of       -> {
+        R.Term.I8Of(term.value, range)
+      }
+
+      is S.Term.I16        -> {
+        R.Term.I16(range)
+      }
+
+      is S.Term.I16Of      -> {
+        R.Term.I16Of(term.value, range)
+      }
+
+      is S.Term.I32        -> {
+        R.Term.I32(range)
+      }
+
+      is S.Term.I32Of      -> {
+        R.Term.I32Of(term.value, range)
+      }
+
+      is S.Term.I64        -> {
+        R.Term.I64(range)
+      }
+
+      is S.Term.I64Of      -> {
+        R.Term.I64Of(term.value, range)
+      }
+
+      is S.Term.F32        -> {
+        R.Term.F32(range)
+      }
+
+      is S.Term.F32Of      -> {
+        R.Term.F32Of(term.value, range)
+      }
+
+      is S.Term.F64        -> {
+        R.Term.F64(range)
+      }
+
+      is S.Term.F64Of      -> {
+        R.Term.F64Of(term.value, range)
+      }
+
+      is S.Term.Str        -> {
+        R.Term.Str(range)
+      }
+
+      is S.Term.StrOf      -> {
+        R.Term.StrOf(term.value, range)
+      }
+
+      is S.Term.I8Array    -> {
+        R.Term.I8Array(range)
+      }
+
+      is S.Term.I8ArrayOf  -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I8ArrayOf(elements, range)
       }
-      is S.Term.I32Array    -> R.Term.I32Array(range)
+
+      is S.Term.I32Array   -> {
+        R.Term.I32Array(range)
+      }
+
       is S.Term.I32ArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I32ArrayOf(elements, range)
       }
-      is S.Term.I64Array   -> R.Term.I64Array(range)
+
+      is S.Term.I64Array   -> {
+        R.Term.I64Array(range)
+      }
+
       is S.Term.I64ArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I64ArrayOf(elements, range)
       }
+
       is S.Term.Vec        -> {
         val element = resolveTerm(term.element)
         R.Term.Vec(element, range)
       }
+
       is S.Term.ListOf     -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.VecOf(elements, range)
       }
+
       is S.Term.Struct     -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.Struct(elements, range)
       }
+
       is S.Term.StructOf   -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.StructOf(elements, range)
       }
+
+      is S.Term.Ref        -> {
+        val element = resolveTerm(term.element)
+        R.Term.Ref(element, range)
+      }
+
+      is S.Term.RefOf      -> {
+        val element = resolveTerm(term.element)
+        R.Term.RefOf(element, range)
+      }
+
       is S.Term.Point      -> {
         val element = resolveTerm(term.element)
         R.Term.Point(element, range)
       }
+
       is S.Term.Union      -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.Union(elements, range)
       }
+
       is S.Term.Func       -> {
         restoring(0) {
           val params = term.params.map { (binder, type) ->
@@ -180,6 +264,7 @@ class Resolve private constructor(
           R.Term.Func(term.open, params, result, range)
         }
       }
+
       is S.Term.FuncOf      -> {
         restoring(if (term.open) 0 else size) {
           val params = term.params.map { resolvePattern(it) }
@@ -187,27 +272,33 @@ class Resolve private constructor(
           R.Term.FuncOf(term.open, params, result, range)
         }
       }
+
       is S.Term.Apply       -> {
         val func = resolveTerm(term.func)
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
+
       is S.Term.Code        -> {
         val element = resolveTerm(term.element)
         R.Term.Code(element, term.range)
       }
+
       is S.Term.CodeOf      -> {
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, term.range)
       }
+
       is S.Term.Splice      -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, term.range)
       }
+
       is S.Term.Command     -> {
         val element = resolveTerm(term.element)
         R.Term.Command(element, term.range)
       }
+
       is S.Term.Let         -> {
         val init = resolveTerm(term.init)
         restoring(0) {
@@ -216,7 +307,8 @@ class Resolve private constructor(
           R.Term.Let(binder, init, body, range)
         }
       }
-      is S.Term.Var         -> {
+
+      is S.Term.Var        -> {
         when (term.name) {
           "_"  -> R.Term.Meta(range)
           else -> {
@@ -238,12 +330,16 @@ class Resolve private constructor(
           }
         }
       }
-      is S.Term.As          -> {
+
+      is S.Term.As         -> {
         val element = resolveTerm(term.element)
         val type = resolveTerm(term.type)
         R.Term.As(element, type, range)
       }
-      is S.Term.Hole        -> R.Term.Hole(range)
+
+      is S.Term.Hole       -> {
+        R.Term.Hole(range)
+      }
     }
   }
 
@@ -251,8 +347,11 @@ class Resolve private constructor(
     pattern: S.Term,
   ): R.Pattern {
     return when (pattern) {
-      is S.Term.I32Of      -> R.Pattern.I32Of(pattern.value, pattern.range)
-      is S.Term.Var        -> {
+      is S.Term.I32Of -> {
+        R.Pattern.I32Of(pattern.value, pattern.range)
+      }
+
+      is S.Term.Var   -> {
         when (pattern.name) {
           "_"  -> R.Pattern.Drop(pattern.range)
           else -> {
@@ -261,13 +360,18 @@ class Resolve private constructor(
           }
         }
       }
-      is S.Term.As         -> {
+
+      is S.Term.As    -> {
         val type = resolveTerm(pattern.type)
         val element = resolvePattern(pattern.element)
         R.Pattern.As(element, type, pattern.range)
       }
-      is S.Term.Hole       -> R.Pattern.Hole(pattern.range)
-      else                 -> {
+
+      is S.Term.Hole  -> {
+        R.Pattern.Hole(pattern.range)
+      }
+
+      else            -> {
         diagnostics += unexpectedPattern(pattern.range)
         R.Pattern.Hole(pattern.range)
       }

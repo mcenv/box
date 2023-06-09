@@ -226,7 +226,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Struct && synth(type)                                       -> {
+      term is R.Term.Struct && synth(type)                 -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
@@ -234,7 +234,7 @@ class Elaborate private constructor(
         C.Term.Struct(elements) to Value.Type.COMPOUND
       }
 
-      term is R.Term.StructOf && synth(type)                                     -> {
+      term is R.Term.StructOf && synth(type)               -> {
         val elements = linkedMapOf<String, C.Term>()
         val elementsTypes = linkedMapOf<String, Lazy<Value>>()
         term.elements.forEach { (key, element) ->
@@ -248,11 +248,24 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.StructOf && check<Value.Struct>(type)                       -> {
+      term is R.Term.StructOf && check<Value.Struct>(type) -> {
         TODO("implement")
       }
 
-      term is R.Term.Point && synth(type)                                        -> { // TODO: unify tags
+      term is R.Term.Ref && synth(type)                    -> {
+        val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
+        C.Term.Ref(element) to Value.Type.INT
+      }
+
+      term is R.Term.RefOf && match<Value.Ref>(type)       -> {
+        val (element, elementType) = elaborateTerm(term.element, phase, type?.element?.value)
+        val type = type ?: Value.Ref(lazyOf(elementType))
+        typed(type) {
+          C.Term.RefOf(element, it)
+        }
+      }
+
+      term is R.Term.Point && synth(type)                  -> { // TODO: unify tags
         val (element, elementType) = synthTerm(term.element, phase)
         val type = type ?: elementType.type.value
         typed(type) {
@@ -260,7 +273,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Union && match<Value.Type>(type)                            -> {
+      term is R.Term.Union && match<Value.Type>(type)      -> {
         val type = type ?: meta.freshType(term.range)
         val elements = term.elements.map { checkTerm(it, phase, type) }
         typed(type) {
@@ -268,7 +281,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Func && synth(type)                                         -> {
+      term is R.Term.Func && synth(type)                   -> {
         val (ctx, params) = term.params.mapWith(this) { transform, (pattern, term) ->
           val term = checkTerm(term, phase, meta.freshType(term.range))
           val vTerm = env.evalTerm(term)
@@ -576,6 +589,10 @@ class Elaborate private constructor(
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> sub(element1.value, element2.value) } ?: false
         }
+      }
+
+      value1 is Value.Ref && value2 is Value.Ref       -> {
+        sub(value1.element.value, value2.element.value)
       }
 
       value1 is Value.Point && value2 !is Value.Point  -> {

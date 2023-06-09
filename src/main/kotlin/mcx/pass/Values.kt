@@ -223,6 +223,17 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
+  data class Ref(
+    val element: Lazy<Value>,
+  ) : Value() {
+    override val type: Lazy<Value> get() = Type.INT_LAZY
+  }
+
+  data class RefOf(
+    val element: Lazy<Value>,
+    override val type: Lazy<Value>,
+  ) : Value()
+
   data class Point(
     val element: Lazy<Value>,
     override val type: Lazy<Value>,

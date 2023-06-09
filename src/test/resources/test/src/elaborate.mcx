@@ -34,31 +34,31 @@ def bool_of_false : bool := false;
 
 def bool_of_true : bool := true;
 
-def if : i32 := if true then 1 else 0;
+def if : i32 := if true then 2 else 1;
 
 def i8 : type byte := i8;
 
-def i8_of : i8 := 0i8;
+def i8_of : i8 := 1i8;
 
 def i16 : type short := i16;
 
-def i16_of : i16 := 0i16;
+def i16_of : i16 := 1i16;
 
 def i32 : type int := i32;
 
-def i32_of : i32 := 0;
+def i32_of : i32 := 1;
 
 def i64 : type long := i64;
 
-def i64_of : i64 := 0i64;
+def i64_of : i64 := 1i64;
 
 def f32 : type float := f32;
 
-def f32_of : f32 := 0.0f32;
+def f32_of : f32 := 1.0f32;
 
 def f64 : type double := f64;
 
-def f64_of : f64 := 0.0f64;
+def f64_of : f64 := 1.0f64;
 
 def str : type string := str;
 
@@ -84,30 +84,34 @@ def struct : type compound := struct {};
 
 # def struct_of : struct {} := {};
 
-def point : type int := point 0;
+def ref : type int := ref i32;
+
+def ref_of : ref i32 := &1;
+
+def point : type int := point 1;
 
 def union : type int := union {};
 
 def proc : type int := proc () -> i32;
 
-def proc_of : proc () -> i32 := \() -> 0;
+def proc_of : proc () -> i32 := \() -> 1;
 
 def func : type compound := func () -> i32;
 
-def func_of : func () -> i32 := \\() -> 0;
+def func_of : func () -> i32 := \\() -> 1;
 
-def apply : i32 := (\() -> 0)();
+def apply : i32 := (\() -> 1)();
 
 const def code : type end := code i32;
 
-const def code_of : code i32 := `0;
+const def code_of : code i32 := `1;
 
-def splice : i32 := $`0;
+def splice : i32 := $`1;
 
 def command : i32 := /"";
 
-def let : i32 := let _ := 0; 1;
+def let : i32 := let _ := 1; 2;
 
-def var : i32 := let x := 0; x;
+def var : i32 := let x := 1; x;
 
 def def : i32 := var;

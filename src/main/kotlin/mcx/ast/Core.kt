@@ -229,6 +229,17 @@ object Core {
       override val type: Lazy<Term>,
     ) : Term()
 
+    data class Ref(
+      val element: Term,
+    ) : Term() {
+      override val type: Lazy<Term> get() = Type.INT_LAZY
+    }
+
+    data class RefOf(
+      val element: Term,
+      override val type: Lazy<Term>,
+    ) : Term()
+
     data class Point(
       val element: Term,
       override val type: Lazy<Term>,
