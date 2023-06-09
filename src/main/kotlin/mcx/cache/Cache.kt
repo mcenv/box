@@ -117,7 +117,7 @@ fun installDependencies(root: Path) {
   }
   config.dependencies.forEach { dependency ->
     val (owner, repository, tag) = dependency.value.toDependencyTripleOrNull() ?: run {
-      error("invalid dependency triple: ${dependency.value}")
+      error("Invalid dependency triple: ${dependency.value}")
     }
 
     try {
@@ -140,7 +140,7 @@ fun installDependencies(root: Path) {
         }
       }
     } catch (_: FileNotFoundException) {
-      error("not found: $owner/$repository@$tag")
+      error("Not found: $owner/$repository@$tag")
     }
   }
 }

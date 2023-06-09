@@ -482,7 +482,7 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.Let        -> {
       // TODO: glued evaluation
-      error("unexpected value: $value")
+      error("Unexpected value: $value")
     }
 
     is Value.Var        -> {

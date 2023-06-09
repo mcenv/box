@@ -79,7 +79,7 @@ class Elaborate private constructor(
           hoverDef(definition.name.range, it)
         }
       }
-      is R.Definition.Hole -> error("unreachable")
+      is R.Definition.Hole -> error("Unreachable")
     }.also { definitions[name] = it }
   }
 
@@ -516,7 +516,7 @@ class Elaborate private constructor(
       }
 
       else                                                                       -> {
-        error("unreachable")
+        error("Unreachable")
       }
     }.also { (_, type) ->
       hoverType(term.range, type)
@@ -582,7 +582,7 @@ class Elaborate private constructor(
       }
 
       else                                            -> {
-        error("unreachable")
+        error("Unreachable")
       }
     }.also { (_, type) ->
       hoverType(pattern.range, type)

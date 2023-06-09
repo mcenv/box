@@ -35,7 +35,7 @@ class Lift private constructor(
       Modifier.EXPORT  -> null
       Modifier.REC     -> null
       Modifier.DIRECT  -> null // ?
-      Modifier.CONST   -> error("unexpected modifier: ${modifier.id}")
+      Modifier.CONST   -> error("Unexpected modifier: ${modifier.id}")
       Modifier.TEST    -> L.Modifier.TEST
     }
   }
@@ -426,11 +426,11 @@ class Lift private constructor(
     private val UNIT: L.Term = L.Term.I8Of(0)
 
     private fun unexpectedTerm(term: C.Term): Nothing {
-      error("unexpected term: ${prettyTerm(term)}")
+      error("Unexpected term: ${prettyTerm(term)}")
     }
 
     private fun unexpectedPattern(pattern: C.Pattern): Nothing {
-      error("unexpected pattern: ${prettyPattern(pattern)}")
+      error("Unexpected pattern: ${prettyPattern(pattern)}")
     }
 
     operator fun invoke(

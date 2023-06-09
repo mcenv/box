@@ -315,7 +315,7 @@ class Generate private constructor(
   ) {
     when (tag) {
       is EndTag       -> {
-        error("unreachable")
+        error("Unreachable")
       }
       is ByteTag      -> {
         append(tag.value.toString())

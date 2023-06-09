@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
       "test"          -> test(args[1], args.copyOfRange(2, args.size))
       "version"       -> version()
       else            -> null
-    } ?: error("unknown command: ${args.joinToString(" ")}")
+    } ?: error("Unknown command: ${args.joinToString(" ")}")
   } catch (t: Throwable) {
     System.err.println(red(t.message ?: ""))
     exitProcess(1)
@@ -52,7 +52,7 @@ private fun build() {
       }
     }
     if (!result.success) {
-      error("build failed")
+      error("Build failed")
     }
   }.also {
     info("Finished", "in $it")
@@ -147,7 +147,7 @@ fun test(version: String, args: Array<String>) {
       Build(Path(""))()
     }
     if (!buildResult.success) {
-      error("build failed")
+      error("Build failed")
     }
 
     var success = true
@@ -177,7 +177,7 @@ fun test(version: String, args: Array<String>) {
       rcon.exec("stop")
     }
     if (!success) {
-      error("test failed")
+      error("Test failed")
     }
   }.also {
     info("Finished", "in $it")

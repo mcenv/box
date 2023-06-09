@@ -604,7 +604,7 @@ class Stage private constructor() {
     }
 
     private fun unexpectedTerm(term: Term): Nothing {
-      error("unexpected term: ${prettyTerm(term)}")
+      error("Unexpected term: ${prettyTerm(term)}")
     }
 
     operator fun invoke(

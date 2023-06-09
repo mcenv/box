@@ -474,7 +474,7 @@ class Pack private constructor(
 
     fun packInit(): P.Definition.Function {
       return P.Definition.Function(emptyList(), INIT, listOf(
-        Raw("say ${green("initializing")} mcx"),
+        Raw("say ${green("Initializing")} mcx"),
         Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
         Raw("scoreboard objectives remove ${MAIN.name}"),
         Raw("scoreboard objectives add ${MAIN.name} dummy"),
