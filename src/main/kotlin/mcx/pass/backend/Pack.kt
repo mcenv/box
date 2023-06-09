@@ -8,6 +8,10 @@ import mcx.ast.Packed.Command.*
 import mcx.ast.Packed.Command.Execute.Mode.RESULT
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
+import mcx.ast.Packed.NbtNode.*
+import mcx.ast.Packed.NbtPath
+import mcx.ast.Packed.Operation.ADD
+import mcx.ast.Packed.Operation.MUL
 import mcx.ast.Packed.SourceProvider
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
@@ -55,7 +59,7 @@ class Pack private constructor(
           }
 
           if (definition.restore != null) {
-            +SetScore(REG_0, REG, definition.restore)
+            +SetScore(R0, MAIN, definition.restore)
           }
 
           // validate stacks
@@ -92,16 +96,16 @@ class Pack private constructor(
     when (term) {
       is L.Term.If         -> {
         packTerm(term.condition)
-        +Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(BYTE_TOP)))
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(BYTE_TOP)))
         drop(NbtType.BYTE)
         +Execute.ConditionalScoreMatches(
-          true, REG_0, REG, 1..Int.MAX_VALUE,
+          true, R0, MAIN, 1..Int.MAX_VALUE,
           Execute.Run(
             RunFunction(packDefinitionLocation(term.thenName))
           )
         )
         +Execute.ConditionalScoreMatches(
-          true, REG_0, REG, Int.MIN_VALUE..0,
+          true, R0, MAIN, Int.MIN_VALUE..0,
           Execute.Run(
             RunFunction(packDefinitionLocation(term.elseName))
           )
@@ -322,12 +326,16 @@ class Pack private constructor(
     private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_proc"))
     private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_func"))
 
-    private val REG_0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
-    private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
-    private val REG: Packed.Objective = Packed.Objective("mcx")
+    private val MAIN: Packed.Objective = Packed.Objective("mcx")
+    private val `65536`: Packed.Objective = Packed.Objective("mcx_65536")
+
+    private val R0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
+    private val R1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
+
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
     private val MCX_HEAP: ResourceLocation = ResourceLocation("mcx_heap", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
+
     private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) })
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
     private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.LONG.id)(-1) })
@@ -352,16 +360,16 @@ class Pack private constructor(
     }
 
     private inline fun nbtPath(
-      root: Packed.NbtNode.MatchRootObject? = null,
+      root: MatchRootObject? = null,
       block: (NbtPathBuilder) -> Unit,
-    ): Packed.NbtPath {
+    ): NbtPath {
       val builder = NbtPathBuilder(root)
       block(builder)
       return builder.build()
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private class NbtPathBuilder(root: Packed.NbtNode.MatchRootObject? = null) {
+    private class NbtPathBuilder(root: MatchRootObject? = null) {
       val nodes: MutableList<Packed.NbtNode> = mutableListOf()
 
       init {
@@ -369,58 +377,54 @@ class Pack private constructor(
       }
 
       inline operator fun invoke(pattern: CompoundTag): NbtPathBuilder {
-        return apply { nodes += Packed.NbtNode.MatchElement(pattern) }
+        return apply { nodes += MatchElement(pattern) }
       }
 
       inline operator fun invoke(): NbtPathBuilder {
-        return apply { nodes += Packed.NbtNode.AllElements }
+        return apply { nodes += AllElements }
       }
 
       inline operator fun invoke(index: Int): NbtPathBuilder {
-        return apply { nodes += Packed.NbtNode.IndexedElement(index) }
+        return apply { nodes += IndexedElement(index) }
       }
 
       inline operator fun invoke(name: String, pattern: CompoundTag): NbtPathBuilder {
-        return apply { nodes += Packed.NbtNode.MatchObject(name, pattern) }
+        return apply { nodes += MatchObject(name, pattern) }
       }
 
       inline operator fun invoke(name: String): NbtPathBuilder {
-        return apply { nodes += Packed.NbtNode.CompoundChild(name) }
+        return apply { nodes += CompoundChild(name) }
       }
 
-      fun build(): Packed.NbtPath {
-        return Packed.NbtPath(nodes)
+      fun build(): NbtPath {
+        return NbtPath(nodes)
       }
     }
 
     fun packInit(): P.Definition.Function {
       return P.Definition.Function(emptyList(), INIT, listOf(
         Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
-        Raw("scoreboard objectives remove ${REG.name}"),
-        Raw("scoreboard objectives add ${REG.name} dummy"),
+        Raw("scoreboard objectives remove ${MAIN.name}"),
+        Raw("scoreboard objectives add ${MAIN.name} dummy"),
+        SetScore(R0, `65536`, 65536),
         ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("branch") }), DataManipulator.Set(SourceProvider.Value(buildListListTag { add(buildEndListTag()); add(buildEndListTag()) }))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap") }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch") })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        *(0..<16).map { count ->
+          ManipulateData(DataAccessor(MCX_HEAP, nbtPath { (0..<count).fold(it("heap")) { acc, _ -> acc() } }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch") }))))
+        }.toTypedArray(),
         RemoveData(DataAccessor(MCX_HEAP, nbtPath { it("branch") })),
       ))
     }
 
     fun packTouch(): P.Definition.Function {
-      return P.Definition.Function(emptyList(), TOUCH, emptyList())
+      return P.Definition.Function(emptyList(), TOUCH, (0..<16).flatMap { depth ->
+        val path = nbtPath { (0..<depth).fold(it("heap")) { acc, _ -> acc(-2) } }
+        listOf(
+          PerformOperation(R0, MAIN, if (depth == 0) MUL else ADD, R0, if (depth == 0) `65536` else MAIN),
+          Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX_HEAP, path)))),
+          Execute.ConditionalScoreMatches(true, R1, MAIN, 3..Int.MAX_VALUE, Execute.ConditionalScoreMatches(true, R0, MAIN, 0..Int.MAX_VALUE, Execute.Run(RemoveData(DataAccessor(MCX_HEAP, NbtPath(path.nodes + IndexedElement(2))))))),
+          Execute.ConditionalScoreMatches(true, R1, MAIN, Int.MIN_VALUE..2, Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Set(SourceProvider.Value(buildEndListTag())))))),
+        )
+      })
     }
 
     // TODO: specialize dispatcher by type
@@ -430,12 +434,12 @@ class Pack private constructor(
       return P.Definition.Function(emptyList(), DISPATCH_PROC, run {
         val proc = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
         listOf(
-          Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(proc))),
+          Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(proc))),
           RemoveData(proc),
         )
       } + procs.sortedBy { it.restore }.map { function ->
         val tag = function.restore!!
-        Execute.ConditionalScoreMatches(true, REG_0, REG, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+        Execute.ConditionalScoreMatches(true, R0, MAIN, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
@@ -444,11 +448,11 @@ class Pack private constructor(
       funcs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_FUNC, listOf(
-        Execute.StoreScore(RESULT, REG_0, REG, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") })))),
+        Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1)("_") })))),
         RemoveData(DataAccessor(MCX, nbtPath { it(NbtType.COMPOUND.id)(-1) })),
       ) + funcs.sortedBy { it.restore }.map { function ->
         val tag = function.restore!!
-        Execute.ConditionalScoreMatches(true, REG_0, REG, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+        Execute.ConditionalScoreMatches(true, R0, MAIN, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
