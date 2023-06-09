@@ -25,7 +25,7 @@ import mcx.pass.frontend.Parse
 import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.prelude
-import mcx.util.magenta
+import mcx.util.debug
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.FileSystems
@@ -298,7 +298,7 @@ class Build(
               .bufferedWriter()
               .use {
                 if (config.debug) {
-                  println("${magenta("writing")} $name")
+                  debug("writing", name.pathString)
                 }
                 it.write(definition)
               }
@@ -307,7 +307,7 @@ class Build(
           onVisitFile { file, _ ->
             if (file !in outputModules) {
               if (config.debug) {
-                println("${magenta("deleting")} $file")
+                debug("deleting", file.pathString)
               }
               file.deleteExisting()
             }

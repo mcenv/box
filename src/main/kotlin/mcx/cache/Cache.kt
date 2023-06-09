@@ -7,7 +7,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.encodeToStringMap
 import mcx.pass.Config
-import mcx.util.green
+import mcx.util.info
 import mcx.util.secureRandomString
 import mcx.util.toDependencyTripleOrNull
 import java.io.FileNotFoundException
@@ -121,7 +121,7 @@ fun installDependencies(root: Path) {
     }
 
     try {
-      println("${green("installing")} $owner/$repository@$tag")
+      info("installing", "$owner/$repository@$tag")
       ZipInputStream(URL("https://github.com/$owner/$repository/archive/$tag.zip").openStream().buffered()).use { input ->
         val pack = (getOrCreateDependenciesPath() / owner).createDirectories()
         var entry = input.nextEntry

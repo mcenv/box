@@ -55,7 +55,7 @@ private fun build() {
       error("build failed")
     }
   }.also {
-    println("${green("finished")} in $it")
+    info("finished", "in $it")
   }
 }
 
@@ -63,7 +63,7 @@ fun dependencies() {
   measureTime {
     installDependencies(Path(""))
   }.also {
-    println("${green("finished")} in $it")
+    info("finished", "in $it")
   }
 }
 
@@ -180,7 +180,7 @@ fun test(version: String, args: Array<String>) {
       error("test failed")
     }
   }.also {
-    println("${green("finished")} in $it")
+    info("finished", "in $it")
   }
 }
 
