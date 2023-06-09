@@ -4,6 +4,9 @@ import java.security.SecureRandom
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
+/**
+ * Quotes [this] string with a given [quote] character.
+ */
 fun String.quoted(
   quote: Char,
 ): String {
@@ -19,6 +22,9 @@ fun String.quoted(
   return builder.toString()
 }
 
+/**
+ * Converts [this] integer to a subscript [String].
+ */
 fun Int.toSubscript(): String {
   return toString()
     .toCharArray()
@@ -30,7 +36,7 @@ fun Int.toSubscript(): String {
 }
 
 /**
- * Generates a cryptographically secure random string of 16 bytes.
+ * Generates a cryptographically secure random [String] of 16 bytes.
  */
 @OptIn(ExperimentalEncodingApi::class)
 fun secureRandomString(): String {
