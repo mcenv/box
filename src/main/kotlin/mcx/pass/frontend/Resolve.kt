@@ -70,6 +70,11 @@ class Resolve private constructor(
         }
       }
     }
+    module.imports.forEach { (name, use) ->
+      locations[name]?.let { def ->
+        definitionDef(name, def, use)
+      }
+    }
     return R.Module(module.name, module.imports, definitions)
   }
 
@@ -264,7 +269,7 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.FuncOf      -> {
+      is S.Term.FuncOf  -> {
         restoring(if (term.open) 0 else size) {
           val params = term.params.map { resolvePattern(it) }
           val result = resolveTerm(term.result)
@@ -272,33 +277,33 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Apply       -> {
+      is S.Term.Apply   -> {
         val func = resolveTerm(term.func)
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
 
-      is S.Term.Code        -> {
+      is S.Term.Code    -> {
         val element = resolveTerm(term.element)
         R.Term.Code(element, term.range)
       }
 
-      is S.Term.CodeOf      -> {
+      is S.Term.CodeOf  -> {
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, term.range)
       }
 
-      is S.Term.Splice      -> {
+      is S.Term.Splice  -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, term.range)
       }
 
-      is S.Term.Command     -> {
+      is S.Term.Command -> {
         val element = resolveTerm(term.element)
         R.Term.Command(element, term.range)
       }
 
-      is S.Term.Let         -> {
+      is S.Term.Let     -> {
         val init = resolveTerm(term.init)
         restoring(0) {
           val binder = resolvePattern(term.binder)
