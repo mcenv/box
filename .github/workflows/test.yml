@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
-          cd ./src/test/resources/test
+          cd ./src/test/resources/pos
           mcx dependencies install
           mcx test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Upload data packs
