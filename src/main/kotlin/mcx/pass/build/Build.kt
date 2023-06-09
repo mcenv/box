@@ -297,7 +297,7 @@ class Build(
               .also { it.parent.createDirectories() }
               .bufferedWriter()
               .use {
-                if (config.debug) {
+                if (config.debug.verbose) {
                   debug("Writing", name.pathString)
                 }
                 it.write(definition)
@@ -306,7 +306,7 @@ class Build(
         datapackRoot.visitFileTree {
           onVisitFile { file, _ ->
             if (file !in outputModules) {
-              if (config.debug) {
+              if (config.debug.verbose) {
                 debug("Deleting", file.pathString)
               }
               file.deleteExisting()

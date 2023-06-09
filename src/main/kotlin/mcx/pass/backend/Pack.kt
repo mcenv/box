@@ -80,7 +80,7 @@ class Pack private constructor(
           }
 
           // validate stacks
-          if (context.config.debug) {
+          if (context.config.debug.verbose) {
             !{ Raw("") }
             stacks.forEach { stack ->
               !{ Raw("# ${stack.key.toString().padEnd(10)}: ${stack.value.joinToString(", ", "[", "]")}") }
@@ -384,7 +384,7 @@ class Pack private constructor(
 
   @Suppress("NOTHING_TO_INLINE")
   private inline operator fun (() -> Command).not() {
-    if (context.config.debug) {
+    if (context.config.debug.verbose) {
       +this()
     }
   }

@@ -24,7 +24,7 @@ class Generate private constructor(
         StringBuilder().apply {
           definition.commands.forEachSeparated(
             separate = { append('\n') },
-            action = if (context.config.debug) {
+            action = if (context.config.debug.verbose) {
               {
                 if (it !is P.Command.Raw) {
                   append("  ")

@@ -14,5 +14,6 @@ data class Config(
   @Serializable
   data class Debug(
     val verbose: Boolean = false,
+    val negative: Boolean = false,
   )
 }
