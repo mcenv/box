@@ -3,6 +3,7 @@ package mcx.pass.frontend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
+import kotlinx.collections.immutable.toPersistentList
 import mcx.ast.*
 import mcx.ast.Annotation
 import mcx.lsp.Instruction
@@ -119,9 +120,9 @@ class Elaborate private constructor(
         C.Term.BoolOf(term.value) to Value.Bool
       }
 
-      term is R.Term.If && match<Value>(type)                                    -> {
+      term is R.Term.If && match<Value>(type)              -> {
         val condition = checkTerm(term.condition, phase, Value.Bool)
-        val (thenBranch, thenBranchType) = elaborateTerm(term.thenBranch, phase, type)
+        val (thenBranch, thenBranchType) = /* TODO: avoid duplication? */ duplicate().elaborateTerm(term.thenBranch, phase, type)
         val (elseBranch, elseBranchType) = elaborateTerm(term.elseBranch, phase, type)
         val type = type ?: Value.Union(listOf(lazyOf(thenBranchType), lazyOf(elseBranchType)), thenBranchType.type /* TODO: validate */)
         typed(type) {
@@ -397,26 +398,35 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Var && synth(type)                                          -> {
+      term is R.Term.Var && synth(type)                    -> {
         val entry = entries[next().toLvl(term.idx).value]
-        val type = meta.forceValue(entry.value.type.value)
-        when {
-          entry.phase == phase                      -> {
-            next().quoteValue(entry.value) to type
+        if (entry.used) {
+          invalidTerm(alreadyUsed(term.range))
+        } else {
+          val type = meta.forceValue(entry.value.type.value)
+          if (type is Value.Ref) {
+            entry.used = true
           }
-          entry.phase < phase                       -> {
-            inlayHint(term.range.start, "`")
-            typed(Value.Code(lazyOf(type))) {
-              C.Term.CodeOf(next().quoteValue(entry.value), it)
+          when {
+            entry.phase == phase                      -> {
+              next().quoteValue(entry.value) to type
+            }
+            entry.phase < phase                       -> {
+              inlayHint(term.range.start, "`")
+              typed(Value.Code(lazyOf(type))) {
+                C.Term.CodeOf(next().quoteValue(entry.value), it)
+              }
+            }
+            entry.phase > phase && type is Value.Code -> {
+              inlayHint(term.range.start, "$")
+              typed(type.element.value) {
+                C.Term.Splice(next().quoteValue(entry.value), it)
+              }
+            }
+            else                                      -> {
+              invalidTerm(phaseMismatch(phase, entry.phase, term.range))
             }
           }
-          entry.phase > phase && type is Value.Code -> {
-            inlayHint(term.range.start, "$")
-            typed(type.element.value) {
-              C.Term.Splice(next().quoteValue(entry.value), it)
-            }
-          }
-          else                                      -> invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
 
@@ -534,7 +544,7 @@ class Elaborate private constructor(
 
       pattern is R.Pattern.Var && match<Value>(type)  -> {
         val type = type ?: meta.freshValue(pattern.range)
-        entries += Ctx.Entry(pattern.name, phase, Value.Var(pattern.name, next(), lazyOf(type)))
+        entries += Ctx.Entry(pattern.name, phase, Value.Var(pattern.name, next(), lazyOf(type)), false)
         C.Pattern.Var(pattern.name) to type
       }
 
@@ -758,6 +768,7 @@ class Elaborate private constructor(
       val name: String,
       val phase: Phase,
       val value: Value,
+      var used: Boolean,
     )
   }
 
@@ -767,6 +778,10 @@ class Elaborate private constructor(
 
   private fun Ctx.next(): Lvl {
     return Lvl(env.size)
+  }
+
+  private fun Ctx.duplicate(): Ctx {
+    return copy(entries = entries.map { it.copy() }.toPersistentList(), env = env)
   }
 
   data class Result(
@@ -803,6 +818,16 @@ class Elaborate private constructor(
           |  expected: $expected
           |  actual  : $actual
         """.trimMargin(),
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun alreadyUsed(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "already used",
         DiagnosticSeverity.Error,
       )
     }

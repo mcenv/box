@@ -6,10 +6,3 @@ def use_ref : ref bool := def_ref;
 def drop_ref : bool :=
   let _ := &true;
   false;
-
-#| fixme
-def dup_ref : bool :=
-  let x := &true;
-  let y := x;
-  let z := x;
-  false;

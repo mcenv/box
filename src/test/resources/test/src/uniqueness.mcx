@@ -1,0 +1,9 @@
+def value : i32 :=
+  let x := 1;
+  let y := x;
+  let z := x;
+  x;
+
+def control_flow(c : bool) : i32 :=
+  let x := 1;
+  if c then x else x;
