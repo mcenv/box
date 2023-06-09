@@ -1,7 +1,6 @@
 package mcx.pass.frontend
 
 import mcx.ast.*
-import mcx.lsp.HEADER
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
@@ -24,14 +23,14 @@ class Resolve private constructor(
 ) {
   private val diagnostics: MutableList<Diagnostic> = mutableListOf()
   private var definition: Location? = null
-  private val locations: Set<DefinitionLocation> =
+  private val locations: Map<DefinitionLocation, Range> =
     input.module.definitions.mapNotNull { definition ->
       if (definition is S.Definition.Hole) {
         null
       } else {
-        input.module.name / definition.name.value
+        (input.module.name / definition.name.value) to definition.name.range
       }
-    }.toHashSet() +
+    }.toMap() +
     dependencies.mapNotNull { dependency ->
       when (val definition = dependency.module) {
         null -> {
@@ -42,7 +41,7 @@ class Resolve private constructor(
           if (definition is R.Definition.Hole || !definition.modifiers.any { it.value == Modifier.EXPORT }) {
             null
           } else {
-            definition.name.value
+            definition.name.value to definition.name.range
           }
         }
       }
@@ -314,10 +313,11 @@ class Resolve private constructor(
           else -> {
             when (val level = lookup(term.name)) {
               -1   -> {
-                when (val name = resolveName(term.name, range)) {
+                when (val resolved = resolveName(term.name, range)) {
                   null -> R.Term.Hole(range)
                   else -> {
-                    definitionDef(name, range)
+                    val (name, def) = resolved
+                    definitionDef(name, def, range)
                     R.Term.Def(name, range)
                   }
                 }
@@ -382,11 +382,11 @@ class Resolve private constructor(
   private fun resolveName(
     name: String,
     range: Range,
-  ): DefinitionLocation? {
+  ): Map.Entry<DefinitionLocation, Range>? {
     val expected = name.split("::").let {
       ModuleLocation(it.dropLast(1)) / it.last()
     }
-    val candidates = locations.filter { actual -> // TODO: optimize search
+    val candidates = locations.filter { (actual, _) -> // TODO: optimize search
       expected.module.parts.size <= actual.module.parts.size &&
       (expected.name == actual.name) &&
       (expected.module.parts.asReversed() zip actual.module.parts.asReversed()).all { it.first == it.second }
@@ -397,7 +397,7 @@ class Resolve private constructor(
         null
       }
       1    -> {
-        candidates.first()
+        candidates.entries.first()
       }
       else -> {
         diagnostics += ambiguousName(name, range)
@@ -418,11 +418,12 @@ class Resolve private constructor(
   // TODO: support goto definitions in module
   private fun definitionDef(
     name: DefinitionLocation,
-    range: Range,
+    def: Range,
+    use: Range,
   ) {
-    if (definition == null && instruction is Instruction.Definition && instruction.position in range) {
+    if (definition == null && instruction is Instruction.Definition && instruction.position in use) {
       // TODO: goto prelude
-      definition = Location(Path(name.module.parts.drop(1).joinToString("/", "src/", ".mcx")).toUri().toString(), HEADER)
+      definition = Location(Path(name.module.parts.drop(1).joinToString("/", "src/", ".mcx")).toUri().toString(), def)
     }
   }
 
