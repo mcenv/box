@@ -777,23 +777,6 @@ class Elaborate private constructor(
   )
 
   companion object {
-    private fun patternMismatch(
-      expected: C.Pattern,
-      actual: C.Pattern,
-      range: Range,
-    ): Diagnostic {
-      val expected = prettyPattern(expected)
-      val actual = prettyPattern(actual)
-      return diagnostic(
-        range,
-        """pattern mismatch:
-          |  expected: $expected
-          |  actual  : $actual
-        """.trimMargin(),
-        DiagnosticSeverity.Error,
-      )
-    }
-
     private fun arityMismatch(
       expected: Int,
       actual: Int,
