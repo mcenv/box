@@ -318,6 +318,7 @@ class Pack private constructor(
 
   companion object {
     val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":init"))
+    private val TOUCH: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":touch"))
     private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_proc"))
     private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_func"))
 
@@ -325,6 +326,7 @@ class Pack private constructor(
     private val REG_1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
     private val REG: Packed.Objective = Packed.Objective("mcx")
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
+    private val MCX_HEAP: ResourceLocation = ResourceLocation("mcx_heap", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
     private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.BYTE.id)(-1) })
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
@@ -392,12 +394,33 @@ class Pack private constructor(
     }
 
     fun packInit(): P.Definition.Function {
-      val commands = listOf(
+      return P.Definition.Function(emptyList(), INIT, listOf(
         Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
         Raw("scoreboard objectives remove ${REG.name}"),
         Raw("scoreboard objectives add ${REG.name} dummy"),
-      )
-      return P.Definition.Function(emptyList(), INIT, commands)
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("branch") }), DataManipulator.Set(SourceProvider.Value(buildListListTag { add(buildEndListTag()); add(buildEndListTag()) }))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap") }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch") })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        ManipulateData(DataAccessor(MCX_HEAP, nbtPath { it("heap")()()()()()()()()()()()()()()() }), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch")() })))),
+        RemoveData(DataAccessor(MCX_HEAP, nbtPath { it("branch") })),
+      ))
+    }
+
+    fun packTouch(): P.Definition.Function {
+      return P.Definition.Function(emptyList(), TOUCH, emptyList())
     }
 
     // TODO: specialize dispatcher by type
