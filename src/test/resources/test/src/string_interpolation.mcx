@@ -1,0 +1,19 @@
+def empty : point "" := "";
+
+def non_empty : point "a" := "a";
+
+def escaped_# : point "\#" := "\#";
+
+def interpolated_only : point "a" := "#{"a"}";
+
+const def interpolated_head : point "ab" := "#{"a"}b";
+
+const def interpolated_tail : point "ab" := "a#{"b"}";
+
+const def interpolated_middle : point "abc" := "a#{"b"}c";
+
+const def interpolated_multiple : point "ab" := "#{"a"}#{"b"}";
+
+const def interpolated_nested : point "ab" := "#{"a#{"b"}"}";
+
+const def interpolated_interleaved : point "abcde" := "a#{"b"}c#{"d"}e";

@@ -215,15 +215,15 @@ class Parse private constructor(
     return ranging {
       if (canRead()) {
         when (peek()) {
-          '('  -> {
+          '(' -> {
             skip()
             skipTrivia()
             val term = parseTerm()
             expect(')')
             term
           }
-          '"'  -> S.Term.StrOf(readQuotedString(), until())
-          '['  -> {
+          '"' -> parseInterpolatedString()
+          '[' -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ']') {
@@ -573,7 +573,9 @@ class Parse private constructor(
           '"', '\\' -> {
             builder.append(char)
           }
-          else      -> diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+          else      -> {
+            diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+          }
         }
         escaped = false
       } else {
@@ -588,6 +590,61 @@ class Parse private constructor(
 
     expect('"')
     return builder.toString()
+  }
+
+  private fun parseInterpolatedString(): S.Term {
+    var start = here()
+    val parts = mutableListOf<S.Term>()
+    var builder = StringBuilder()
+
+    expect('"')
+
+    var escaped = false
+    while (canRead()) {
+      if (escaped) {
+        when (val char = peek()) {
+          '"', '\\', '#' -> {
+            builder.append(char)
+          }
+          else           -> {
+            diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+          }
+        }
+        escaped = false
+      } else {
+        when (val char = peek()) {
+          '\\' -> escaped = true
+          '"'  -> break
+          '#'  -> {
+            if (builder.isNotEmpty()) {
+              parts += S.Term.StrOf(builder.toString(), start..here())
+            }
+
+            skip()
+            expect('{')
+            skipTrivia()
+            parts += parseTerm()
+            expect('}')
+
+            start = here()
+            builder = StringBuilder()
+            continue
+          }
+          else -> builder.append(char)
+        }
+      }
+      skip()
+    }
+
+    expect('"')
+
+    if (builder.isNotEmpty()) {
+      parts += S.Term.StrOf(builder.toString(), start..here())
+    }
+    return parts.reduceOrNull { acc, term ->
+      // TODO: keep string interpolation until resolve phase
+      S.Term.Apply(S.Term.Var("++", acc.range.end..term.range.start), listOf(acc, term), acc.range.start..term.range.end)
+    } ?: S.Term.StrOf("", start..here())
   }
 
   private fun readLocation(): String {

@@ -172,7 +172,29 @@
           "name": "string.quoted.double.json",
           "patterns": [
             {
-              "match": "\\\\(?:[\"\\\\])",
+              "begin": "#{",
+              "beginCaptures": {
+                "0": {
+                  "name": "keyword.other.mcx"
+                }
+              },
+              "end": "}",
+              "endCaptures": {
+                "0": {
+                  "name": "keyword.other.mcx"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "#comment"
+                },
+                {
+                  "include": "#term"
+                }
+              ]
+            },
+            {
+              "match": "\\\\(?:[\"\\\\#])",
               "name": "constant.character.escape.mcx"
             },
             {
