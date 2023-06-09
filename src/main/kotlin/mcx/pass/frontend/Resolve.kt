@@ -317,12 +317,13 @@ class Resolve private constructor(
                 when (val name = resolveName(term.name, range)) {
                   null -> R.Term.Hole(range)
                   else -> {
-                    definition(name, range)
+                    definitionDef(name, range)
                     R.Term.Def(name, range)
                   }
                 }
               }
               else -> {
+                definitionVar(ranges[level], range)
                 val index = Lvl(size).toIdx(Lvl(level))
                 R.Term.Var(term.name, index, range)
               }
@@ -355,7 +356,7 @@ class Resolve private constructor(
         when (pattern.name) {
           "_"  -> R.Pattern.Drop(pattern.range)
           else -> {
-            bind(pattern.name)
+            bind(pattern.name, pattern.range)
             R.Pattern.Var(pattern.name, pattern.range)
           }
         }
@@ -405,8 +406,17 @@ class Resolve private constructor(
     }
   }
 
+  private fun definitionVar(
+    def: Range,
+    use: Range,
+  ) {
+    if (definition == null && instruction is Instruction.Definition && instruction.position in use) {
+      definition = Location(Path(input.module.name.parts.drop(1).joinToString("/", "src/", ".mcx")).toUri().toString(), def)
+    }
+  }
+
   // TODO: support goto definitions in module
-  private fun definition(
+  private fun definitionDef(
     name: DefinitionLocation,
     range: Range,
   ) {
@@ -418,12 +428,15 @@ class Resolve private constructor(
 
   private class Env private constructor(
     private val _terms: MutableList<String>,
+    private val _ranges: MutableList<Range>,
   ) {
     private var frontier: Int = 0
     val size: Int get() = _terms.size
+    val ranges: List<Range> get() = _ranges
 
-    fun bind(name: String) {
+    fun bind(name: String, range: Range) {
       _terms += name
+      _ranges += range
     }
 
     fun lookup(name: String): Int {
@@ -445,6 +458,7 @@ class Resolve private constructor(
       this.frontier = restoreFrontier
       repeat(_terms.size - restoreSize) {
         _terms.removeLast()
+        _ranges.removeLast()
       }
 
       return result
@@ -452,7 +466,7 @@ class Resolve private constructor(
 
     companion object {
       fun emptyEnv(): Env {
-        return Env(mutableListOf())
+        return Env(mutableListOf(), mutableListOf())
       }
     }
   }
