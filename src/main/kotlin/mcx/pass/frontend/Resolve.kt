@@ -412,7 +412,7 @@ class Resolve private constructor(
   ) {
     if (definition == null && instruction is Instruction.Definition && instruction.position in range) {
       // TODO: goto prelude
-      definition = Location(Path(name.module.parts.joinToString("/", "src/", ".mcx")).toUri().toString(), HEADER)
+      definition = Location(Path(name.module.parts.drop(1).joinToString("/", "src/", ".mcx")).toUri().toString(), HEADER)
     }
   }
 
