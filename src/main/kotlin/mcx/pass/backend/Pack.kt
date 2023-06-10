@@ -55,9 +55,8 @@ class Pack private constructor(
 
         if (L.Modifier.TEST in definition.modifiers) {
           packTerm(definition.body!!)
-          val accessor = DataAccessor(MCX_TEST, nbtPath { it(path.namespace)(path.path) })
-          +RemoveData(accessor)
-          +ManipulateData(accessor, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
+          +RemoveData(TEST_CELL)
+          +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
           drop(NbtType.BYTE)
         } else {
           definition.params.forEach {
@@ -408,6 +407,7 @@ class Pack private constructor(
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.INT.id)(-1) })
     private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath { it(NbtType.LONG.id)(-1) })
     private val HEAP_CELL: DataAccessor = DataAccessor(MCX_HEAP, nbtPath { it("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)() })
+    private val TEST_CELL: DataAccessor = DataAccessor(MCX_TEST, nbtPath { it("test") })
 
     fun packDefinitionLocation(
       location: DefinitionLocation,
