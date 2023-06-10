@@ -1,0 +1,21 @@
+export def pack : type compound := struct {
+  name: str,
+  description: str,
+  debug: struct {
+    verbose: bool,
+  },
+  # todo: dependencies
+  properties: struct {
+    eula: bool,
+    level-name: str,
+    server-port: i32,
+    function-permission-level: i32,
+    max-tick-time: i64,
+    max-players: i32,
+    broadcast-rcon-to-ops: bool,
+    level-type: str,
+    rcon: struct {
+      port: i32,
+    },
+  },
+};
