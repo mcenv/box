@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
-          cd ./src/test/resources/test
+          cd ./packs/test
           mcx dependencies install
           mcx test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Upload data packs
@@ -68,8 +68,8 @@ jobs:
         with:
           name: datapacks
           path: |
-            ./src/main/resources/core/.mcx/world/datapacks/core_main
-            ./src/main/resources/core/.mcx/world/datapacks/core_test
-            ./src/test/resources/test/.mcx/world/datapacks/test_main
-            ./src/test/resources/test/.mcx/world/datapacks/test_test
+            ./packs/core/.mcx/world/datapacks/core_main
+            ./packs/core/.mcx/world/datapacks/core_test
+            ./packs/test/.mcx/world/datapacks/test_main
+            ./packs/test/.mcx/world/datapacks/test_test
           if-no-files-found: error

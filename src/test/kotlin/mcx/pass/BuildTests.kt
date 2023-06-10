@@ -11,8 +11,9 @@ import kotlin.io.path.div
 import kotlin.test.Test
 
 object BuildTests {
-  val core: Path = Path("src", "main", "resources", "core")
-  val test: Path = Path("src", "test", "resources", "test")
+  val packs: Path = Path("packs")
+  val core: Path = packs / "core"
+  val test: Path = packs / "test"
   val std: Path = getOrCreateDependenciesPath() / "mcenv" / "std-main"
 
   @Test

@@ -38,7 +38,13 @@ dependencies {
 sourceSets {
   main {
     resources {
-      exclude("core/.mcx")
+      srcDirs("packs")
+      exclude("core/.mcx", "pack/.mcx", "test")
+    }
+  }
+  test {
+    resources {
+      srcDirs("packs")
     }
   }
 }
