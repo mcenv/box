@@ -303,7 +303,20 @@ class Generate private constructor(
         append(']')
       }
       is P.NbtNode.MatchObject     -> {
-        append(node.name)
+        append(
+          if (
+            node.name.any {
+              when (it) {
+                ' ', '"', '\'', '[', ']', '.', '{', '}' -> true
+                else                                    -> false
+              }
+            }
+          ) {
+            node.name.quoted('"')
+          } else {
+            node.name
+          }
+        )
         generateNbt(node.pattern)
       }
       is P.NbtNode.CompoundChild   -> append(node.name)
