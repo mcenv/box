@@ -55,9 +55,7 @@ class Pack private constructor(
 
         if (L.Modifier.TEST in definition.modifiers) {
           packTerm(definition.body!!)
-          val accessor = DataAccessor(MCX_TEST, nbtPath {
-            definition.name.module.parts.fold(it) { acc, part -> acc(part) }(definition.name.name)
-          })
+          val accessor = DataAccessor(MCX_TEST, nbtPath { it(path.namespace)(path.path) })
           +RemoveData(accessor)
           +ManipulateData(accessor, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
           drop(NbtType.BYTE)
