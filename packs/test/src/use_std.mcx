@@ -1,5 +1,6 @@
 import {
-  std::bool::not,
+  core::i32::=,
+  std::i32::max_value,
 }
 
-test def use_not := not(false);
+test def use_max_value := 2147483647 = max_value;
