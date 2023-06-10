@@ -21,7 +21,6 @@ version = "0.1.0"
 
 repositories {
   mavenCentral()
-  maven("https://libraries.minecraft.net")
 }
 
 dependencies {
