@@ -417,6 +417,14 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
+  object : Builtin(str / "=") {
+    override fun eval(args: List<Lazy<Value>>): Value? {
+      val a = args[0].value as? Value.StrOf ?: return null
+      val b = args[1].value as? Value.StrOf ?: return null
+      return Value.BoolOf(a.value == b.value)
+    }
+  },
+
   object : Builtin(str / "size") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.StrOf ?: return null

@@ -1,0 +1,7 @@
+import {
+  core::str::=,
+}
+
+test def ""="" := "" = "";
+
+test def "a"="a" := "a" = "a";
