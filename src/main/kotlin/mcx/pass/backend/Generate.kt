@@ -289,37 +289,45 @@ class Generate private constructor(
   private fun StringBuilder.generateNbtNode(
     node: P.NbtNode,
   ) {
+    fun String.normalized(): String {
+      return if (
+        any {
+          when (it) {
+            ' ', '"', '\'', '[', ']', '.', '{', '}' -> true
+            else                                    -> false
+          }
+        }
+      ) {
+        quoted('"')
+      } else {
+        this
+      }
+    }
+
     when (node) {
-      is P.NbtNode.MatchRootObject -> generateNbt(node.pattern)
+      is P.NbtNode.MatchRootObject -> {
+        generateNbt(node.pattern)
+      }
       is P.NbtNode.MatchElement    -> {
         append('[')
         generateNbt(node.pattern)
         append(']')
       }
-      is P.NbtNode.AllElements     -> append("[]")
+      is P.NbtNode.AllElements     -> {
+        append("[]")
+      }
       is P.NbtNode.IndexedElement  -> {
         append('[')
         append(node.index.toString())
         append(']')
       }
       is P.NbtNode.MatchObject     -> {
-        append(
-          if (
-            node.name.any {
-              when (it) {
-                ' ', '"', '\'', '[', ']', '.', '{', '}' -> true
-                else                                    -> false
-              }
-            }
-          ) {
-            node.name.quoted('"')
-          } else {
-            node.name
-          }
-        )
+        append(node.name.normalized())
         generateNbt(node.pattern)
       }
-      is P.NbtNode.CompoundChild   -> append(node.name)
+      is P.NbtNode.CompoundChild   -> {
+        append(node.name.normalized())
+      }
     }
   }
 
