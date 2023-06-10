@@ -1,7 +1,13 @@
+import {
+  core::bool::not,
+}
+
 export builtin def !=(str, str) : bool :=
   let _ as nothing := /"data modify storage mcx: byte append value 0b";
   let _ as nothing := /"data modify storage mcx: string append from storage mcx: string[-2]";
   /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: string[-1] set from storage mcx: string[-2]";
+
+export def =(a : str, b : str) : bool := not(a != b);
 
 export builtin def size(str) : i32 :=
   let _ as nothing := /"data modify storage mcx: int append value 0";
