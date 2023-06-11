@@ -474,7 +474,7 @@ class Parse private constructor(
       skipTrivia()
       while (canRead()) {
         term = if (peek().isWordPart()) {
-          val name = parseRanged { readWord() }
+          val name = parseRanged { readLocation() }
           skipTrivia()
           when (name.value) {
             "as" -> {
