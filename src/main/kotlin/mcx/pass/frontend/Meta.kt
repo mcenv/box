@@ -275,15 +275,15 @@ class Meta {
         Term.Def(term.def, type)
       }
 
-      is Term.Meta       -> {
-        when (val solution = values.getOrNull(term.index)) {
-          null, is Value.Meta -> {
-            val type = lazyOf(zonkTerm(term.type.value))
-            Term.Meta(term.index, term.source, type).also { unsolvedMetas += it.index to it.source }
+      is Term.Meta     -> {
+        val solution = values.getOrNull(term.index)
+        if (solution == null || (solution is Value.Meta && term.index == solution.index)) {
+          val type = lazyOf(zonkTerm(term.type.value))
+          Term.Meta(term.index, term.source, type).also {
+            unsolvedMetas += it.index to it.source
           }
-          else                -> {
-            zonkTerm(quoteValue(solution))
-          }
+        } else {
+          zonkTerm(quoteValue(solution))
         }
       }
 
