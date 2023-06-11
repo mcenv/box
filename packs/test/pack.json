@@ -1,6 +1,7 @@
 {
   "name": "test",
   "description": "The mcx test pack",
+  "zip": true,
   "debug": {
     "verbose": true
   },

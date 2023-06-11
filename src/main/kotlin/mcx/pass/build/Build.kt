@@ -36,6 +36,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.*
 
 // TODO: redesign
@@ -288,36 +290,54 @@ class Build(
         return@coroutineScope Result(false, diagnosticsByPath, tests)
       }
 
+      val verbose = config.debug.verbose
       fun generate(suffix: String, definitions: Map<String, String>) {
-        val datapackRoot = (datapacks / "${config.name}_$suffix").also { it.createDirectories() }
-        val outputModules = definitions
-          .mapKeys { (name, _) -> datapackRoot / name }
-          .onEach { (name, definition) ->
-            name
-              .also { it.parent.createDirectories() }
-              .bufferedWriter()
-              .use {
-                if (config.debug.verbose) {
-                  debug("Writing", name.pathString)
+        datapacks.createDirectories()
+        val datapackPath = (datapacks / "${config.name}_$suffix.zip")
+        val datapackRoot = (datapacks / "${config.name}_$suffix")
+
+        if (config.zip) {
+          datapackRoot.deleteRecursively()
+
+          ZipOutputStream(datapackPath.outputStream().buffered()).use { output ->
+            output.putNextEntry(ZipEntry("pack.mcmeta"))
+            Json.encodeToStream(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)), output)
+
+            definitions.onEach { (name, definition) ->
+              if (verbose) {
+                debug("Writing", name)
+              }
+              output.putNextEntry(ZipEntry(name))
+              output.write(definition.encodeToByteArray())
+            }
+          }
+        } else {
+          datapackPath.deleteIfExists()
+          datapackRoot.createDirectories()
+
+          val outputModules = definitions
+            .mapKeys { (name, _) -> datapackRoot / name }
+            .onEach { (path, definition) ->
+              path.createParentDirectories().bufferedWriter().use {
+                if (verbose) {
+                  debug("Writing", path.pathString)
                 }
                 it.write(definition)
               }
-          }
-        datapackRoot.visitFileTree {
-          onVisitFile { file, _ ->
-            if (file !in outputModules) {
-              if (config.debug.verbose) {
-                debug("Deleting", file.pathString)
-              }
-              file.deleteExisting()
             }
-            FileVisitResult.CONTINUE
+          datapackRoot.visitFileTree {
+            onVisitFile { file, _ ->
+              if (file !in outputModules) {
+                if (verbose) {
+                  debug("Deleting", file.pathString)
+                }
+                file.deleteExisting()
+              }
+              FileVisitResult.CONTINUE
+            }
           }
-        }
-        (datapackRoot / "pack.mcmeta")
-          .outputStream()
-          .buffered()
-          .use {
+
+          (datapackRoot / "pack.mcmeta").outputStream().buffered().use {
             Json.encodeToStream(
               PackMetadata(
                 pack = PackMetadataSection(
@@ -328,6 +348,7 @@ class Build(
               it,
             )
           }
+        }
       }
 
       val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value

@@ -54,7 +54,7 @@ jobs:
         uses: mcenv/setup-minecraft@v3
         with:
           version: snapshot
-      - name: Install mcx
+      - name: Setup mcx
         run: |
           echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
@@ -74,8 +74,8 @@ jobs:
         with:
           name: datapacks
           path: |
-            ./packs/core/.mcx/world/datapacks/core_main
-            ./packs/core/.mcx/world/datapacks/core_test
-            ./packs/test/.mcx/world/datapacks/test_main
-            ./packs/test/.mcx/world/datapacks/test_test
+            ./packs/core/.mcx/world/datapacks/core_main.zip
+            ./packs/core/.mcx/world/datapacks/core_test.zip
+            ./packs/test/.mcx/world/datapacks/test_main.zip
+            ./packs/test/.mcx/world/datapacks/test_test.zip
           if-no-files-found: error

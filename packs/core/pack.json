@@ -1,6 +1,7 @@
 {
   "name": "core",
   "description": "The mcx core pack",
+  "zip": true,
   "debug": {
     "verbose": true
   },
