@@ -1,3 +1,14 @@
+import {
+  core::bool::!,
+}
+
+export builtin def !=(f64, f64) : bool :=
+  let _ as nothing := /"data modify storage mcx: byte append value 0b";
+  let _ as nothing := /"data modify storage mcx: double append from storage mcx: double[-2]";
+  /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: double[-1] set from storage mcx: double[-2]";
+
+export def =(a : f64, b : f64) : bool := !(a != b);
+
 export builtin def to_i8(f64) : i8 :=
   let _ as nothing := /"data modify storage mcx: byte append value 0b";
   /"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: double[-1]";
