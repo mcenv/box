@@ -17,13 +17,13 @@ export builtin def size(str) : i32 :=
 
 export def is_empty(a : str) : bool := size(a) i32::= 0;
 
-export const def from(start_index : i32) : proc(code str) -> code str := \(a) -> `(
-  let _ := $a;
+export const def from(self : code str, start_index : i32) : code str := `(
+  let _ := $self;
   /"data modify storage mcx: string append string storage mcx: string[-1] #{ i32::to_str(start_index) }"
 );
 
-export const def between(start_index : i32, end_index : i32) : proc(code str) -> code str := \(a) -> `(
-  let _ := $a;
+export const def between(self : code str, start_index : i32, end_index : i32) : code str := `(
+  let _ := $self;
   /"data modify storage mcx: string append string storage mcx: string[-1] #{ i32::to_str(start_index) } #{ i32::to_str(end_index) }"
 );
 
@@ -39,18 +39,18 @@ test def is_empty_"" := is_empty("");
 
 test def !_is_empty_"a" := !(is_empty("a"));
 
-test def from_0_""_=_"" := $(from(0)(`"")) str::= "";
+test def from_0_""_=_"" := $(from(`"", 0)) str::= "";
 
-test def from_0_"abc"_="abc" := $(from(0)(`"abc")) str::= "abc";
+test def from_0_"abc"_="abc" := $(from(`"abc", 0)) str::= "abc";
 
-test def from_1_"abc"_="bc" := $(from(1)(`"abc")) str::= "bc";
+test def from_1_"abc"_="bc" := $(from(`"abc", 1)) str::= "bc";
 
-test def from_-1_"abc"_="c" := $(from(-1)(`"abc")) str::= "c";
+test def from_-1_"abc"_="c" := $(from(`"abc", -1)) str::= "c";
 
-test def between_0_0_""_=_"" := $(between(0, 0)(`"")) str::= "";
+test def between_0_0_""_=_"" := $(between(`"", 0, 0)) str::= "";
 
-test def between_0_0_"abc"_="" := $(between(0, 0)(`"abc")) str::= "";
+test def between_0_0_"abc"_="" := $(between(`"abc", 0, 0)) str::= "";
 
-test def between_0_1_"abc"_="a" := $(between(0, 1)(`"abc")) str::= "a";
+test def between_0_1_"abc"_="a" := $(between(`"abc", 0, 1)) str::= "a";
 
-test def between_-2_3_"abc"_="c" := $(between(-2, 3)(`"abc")) str::= "bc";
+test def between_-2_3_"abc"_="c" := $(between(`"abc", -2, 3)) str::= "bc";
