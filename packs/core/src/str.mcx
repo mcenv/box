@@ -19,12 +19,14 @@ export def is_empty(a : str) : bool := size(a) i32::= 0;
 
 export const def from(self : code str, start_index : i32) : code str := `(
   let _ := $self;
-  /"data modify storage mcx: string append string storage mcx: string[-1] #{ i32::to_str(start_index) }"
+  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_str(start_index) }"
 );
 
 export const def between(self : code str, start_index : i32, end_index : i32) : code str := `(
   let _ := $self;
-  /"data modify storage mcx: string append string storage mcx: string[-1] #{ i32::to_str(start_index) } #{ i32::to_str(end_index) }"
+  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_str(start_index) } #{ i32::to_str(end_index) }"
 );
 
 test def ""_!=_"a" := "" != "a";
@@ -39,18 +41,26 @@ test def is_empty_"" := is_empty("");
 
 test def !_is_empty_"a" := !(is_empty("a"));
 
-test def from_0_""_=_"" := $(from("", 0)) str::= "";
+test def from_""_0_=_"" := $(from("", 0)) str::= "";
 
-test def from_0_"abc"_="abc" := $(from("abc", 0)) str::= "abc";
+test def from_"abc"_0_="abc" := $(from("abc", 0)) str::= "abc";
 
-test def from_1_"abc"_="bc" := $(from("abc", 1)) str::= "bc";
+test def from_"abc"_1_="bc" := $(from("abc", 1)) str::= "bc";
 
-test def from_-1_"abc"_="c" := $(from("abc", -1)) str::= "c";
+test def from_"abc"_-1_="c" := $(from("abc", -1)) str::= "c";
 
-test def between_0_0_""_=_"" := $(between("", 0, 0)) str::= "";
+test def from_"abc"_3_="" := $(from("abc", 3)) str::= "";
 
-test def between_0_0_"abc"_="" := $(between("abc", 0, 0)) str::= "";
+test def from_"abc"_4_="" := $(from("abc", 4)) str::= "";
 
-test def between_0_1_"abc"_="a" := $(between("abc", 0, 1)) str::= "a";
+test def between_""_0_0_=_"" := $(between("", 0, 0)) str::= "";
 
-test def between_-2_3_"abc"_="c" := $(between("abc", -2, 3)) str::= "bc";
+test def between_"abc"_0_0_="" := $(between("abc", 0, 0)) str::= "";
+
+test def between_"abc"_0_1_="a" := $(between("abc", 0, 1)) str::= "a";
+
+test def between_"abc"_-2_3_="c" := $(between("abc", -2, 3)) str::= "bc";
+
+test def between_"abc"_3_3_="" := $(between("abc", 3, 3)) str::= "";
+
+test def between_"abc"_3_4_="" := $(between("abc", 3, 4)) str::= "";
