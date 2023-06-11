@@ -17,15 +17,15 @@ value class Lvl(val value: Int) {
 }
 
 /**
- * Converts [idx] to the corresponding [Lvl] under the context of the [this] [Lvl] size.
+ * Converts [this] [Idx] to the corresponding [Lvl] under the context of the [size].
  */
-fun Lvl.toLvl(idx: Idx): Lvl {
-  return Lvl(this.value - idx.value - 1)
+fun Idx.toLvl(size: Lvl): Lvl {
+  return Lvl(size.value - this.value - 1)
 }
 
 /**
- * Converts [lvl] to the corresponding [Idx] under the context of the [this] [Lvl] size.
+ * Converts [this] [Lvl] to the corresponding [Idx] under the context of the [size].
  */
-fun Lvl.toIdx(lvl: Lvl): Idx {
-  return Idx(this.value - lvl.value - 1)
+fun Lvl.toIdx(size: Lvl): Idx {
+  return Idx(size.value - this.value - 1)
 }

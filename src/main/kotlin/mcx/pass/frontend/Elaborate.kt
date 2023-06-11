@@ -405,7 +405,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Var && synth(type)                    -> {
-        val entry = entries[Lvl(entries.size).toLvl(term.idx).value]
+        val entry = entries[term.idx.toLvl(Lvl(entries.size)).value]
         if (entry.used) {
           invalidTerm(alreadyUsed(term.range))
         } else {

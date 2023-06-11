@@ -258,7 +258,7 @@ fun Env.evalTerm(term: Term): Value {
     }
 
     is Term.Var        -> {
-      this[next().toLvl(term.idx).value].value
+      this[term.idx.toLvl(next()).value].value
     }
 
     is Term.Def        -> {
@@ -497,7 +497,7 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.Var        -> {
       val type = value.type.map { quoteValue(it) }
-      Term.Var(value.name, toIdx(value.lvl), type)
+      Term.Var(value.name, value.lvl.toIdx(this), type)
     }
 
     is Value.Def        -> {

@@ -293,7 +293,7 @@ class Stage private constructor() {
       }
 
       is Term.Var        -> {
-        val lvl = next().toLvl(term.idx)
+        val lvl = term.idx.toLvl(next())
         when (phase) {
           Phase.WORLD -> {
             val type = term.type.map { evalTerm(it, phase) }
@@ -548,7 +548,7 @@ class Stage private constructor() {
 
       is Value.Var         -> {
         val type = value.type.map { quoteValue(it, phase) }
-        Term.Var(value.name, toIdx(value.lvl), type)
+        Term.Var(value.name, value.lvl.toIdx(this), type)
       }
 
       is Value.Def         -> {

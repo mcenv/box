@@ -329,7 +329,7 @@ class Resolve private constructor(
               }
               else -> {
                 definitionVar(ranges[level], range)
-                val index = Lvl(size).toIdx(Lvl(level))
+                val index = Lvl(level).toIdx(Lvl(size))
                 R.Term.Var(term.name, index, range)
               }
             }
