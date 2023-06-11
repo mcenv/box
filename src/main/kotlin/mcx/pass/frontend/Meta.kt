@@ -277,11 +277,13 @@ class Meta {
 
       is Term.Meta       -> {
         when (val solution = values.getOrNull(term.index)) {
-          null -> {
+          null, is Value.Meta -> {
             val type = lazyOf(zonkTerm(term.type.value))
             Term.Meta(term.index, term.source, type).also { unsolvedMetas += it.index to it.source }
           }
-          else -> zonkTerm(quoteValue(solution))
+          else                -> {
+            zonkTerm(quoteValue(solution))
+          }
         }
       }
 
