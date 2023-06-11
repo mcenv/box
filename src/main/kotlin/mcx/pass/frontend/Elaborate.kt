@@ -504,26 +504,40 @@ class Elaborate private constructor(
 
       check<Value>(type)                                   -> {
         val (synth, synthType) = synthTerm(term, phase)
-        if (next().sub(synthType, type)) {
+        lateinit var diagnostic: Lazy<Diagnostic>
+
+        fun sub(value1: Value, value2: Value): Boolean {
+          return if (next().sub(value1, value2)) {
+            true
+          } else if (value2 is Value.Point) {
+            val element1 = env.evalTerm(synth)
+            val element2 = value2.element.value
+            with(meta) { next().unifyValue(element1, element2) }.also {
+              if (!it) {
+                diagnostic = lazy { next().typeMismatch(element1, element2, term.range) }
+              }
+            }
+          } else {
+            diagnostic = lazy { next().typeMismatch(value1, value2, term.range) }
+            false
+          }
+        }
+
+        if (sub(synthType, type)) {
           return synth to type
-        } else if (type is Value.Code && next().sub(synthType, type.element.value)) {
+        } else if (type is Value.Code && sub(synthType, type.element.value)) {
           inlayHint(term.range.start, "`")
           return typed(type) {
             C.Term.CodeOf(synth, it)
           }
-        } else if (synthType is Value.Code && next().sub(synthType.element.value, type)) {
+        } else if (synthType is Value.Code && sub(synthType.element.value, type)) {
           inlayHint(term.range.start, "$")
           return typed(type) {
             C.Term.Splice(synth, it)
           }
-        } else if (type is Value.Point) {
-          val value = env.evalTerm(synth)
-          if (with(meta) { next().unifyValue(value, type.element.value) }) {
-            return synth to type
-          }
         }
 
-        invalidTerm(next().typeMismatch(type, synthType, term.range))
+        invalidTerm(diagnostic.value)
       }
 
       else                                                                       -> {
