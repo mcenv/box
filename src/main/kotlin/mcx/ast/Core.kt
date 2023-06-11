@@ -300,6 +300,12 @@ object Core {
       override val type: Lazy<Term>,
     ) : Term()
 
+    data class Match(
+      val scrutinee: Term,
+      val branches: List<Pair<Pattern, Term>>,
+      override val type: Lazy<Term>,
+    ) : Term()
+
     data class Var(
       val name: String,
       val idx: Idx,

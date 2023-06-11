@@ -294,6 +294,12 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
+  data class Match(
+    val scrutinee: Lazy<Value>,
+    val branches: List<Pair<Pattern, Lazy<Value>>>,
+    override val type: Lazy<Value>,
+  ) : Value()
+
   data class Var(
     val name: String,
     val lvl: Lvl,

@@ -4,6 +4,7 @@ package mcx.pass
 
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
+import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Modifier
@@ -236,7 +237,7 @@ fun Env.evalTerm(term: Term): Value {
       Value.CodeOf(element, type)
     }
 
-    is Term.Splice     -> {
+    is Term.Splice  -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> {
@@ -246,22 +247,44 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Command    -> {
+    is Term.Command -> {
       val element = lazy { evalTerm(term.element) }
       val type = term.type.map { evalTerm(it) }
       Value.Command(element, type)
     }
 
-    is Term.Let        -> {
+    is Term.Let     -> {
       val init = lazy { evalTerm(term.init) }
       (this + init).evalTerm(term.body)
     }
 
-    is Term.Var        -> {
+    is Term.Match   -> {
+      val scrutinee = lazy { evalTerm(term.scrutinee) }
+      var matchedIndex = -1
+      val branches = term.branches.mapIndexed { index, (pattern, body) ->
+        val body = lazy { evalTerm(body) }
+        if (matchedIndex == -1 && pattern matches scrutinee) {
+          matchedIndex = index
+        }
+        pattern to body
+      }
+      when (matchedIndex) {
+        -1   -> {
+          val type = term.type.map { evalTerm(it) }
+          Value.Match(scrutinee, branches, type)
+        }
+        else -> {
+          val (_, body) = term.branches[matchedIndex]
+          (this + scrutinee).evalTerm(body)
+        }
+      }
+    }
+
+    is Term.Var     -> {
       this[term.idx.toLvl(next()).value].value
     }
 
-    is Term.Def        -> {
+    is Term.Def     -> {
       if (Modifier.BUILTIN in term.def.modifiers) {
         // Builtin definitions have compiler-defined semantics and need to be handled specially.
         val type = term.type.map { evalTerm(it) }
@@ -270,12 +293,12 @@ fun Env.evalTerm(term: Term): Value {
         evalTerm(term.def.body!!)
       }
     }
-    is Term.Meta       -> {
+    is Term.Meta    -> {
       val type = term.type.map { evalTerm(it) }
       Value.Meta(term.index, term.source, type)
     }
 
-    is Term.Hole       -> {
+    is Term.Hole    -> {
       Value.Hole
     }
   }
@@ -472,45 +495,55 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.Code(element)
     }
 
-    is Value.CodeOf     -> {
+    is Value.CodeOf  -> {
       val element = quoteValue(value.element.value)
       val type = value.type.map { quoteValue(it) }
       Term.CodeOf(element, type)
     }
 
-    is Value.Splice     -> {
+    is Value.Splice  -> {
       val element = quoteValue(value.element)
       val type = value.type.map { quoteValue(it) }
       Term.Splice(element, type)
     }
 
-    is Value.Command    -> {
+    is Value.Command -> {
       val element = quoteValue(value.element.value)
       val type = value.type.map { quoteValue(it) }
       Term.Command(element, type)
     }
 
-    is Value.Let        -> {
+    is Value.Let     -> {
       // TODO: glued evaluation
       error("Unexpected value: $value")
     }
 
-    is Value.Var        -> {
+    is Value.Match   -> {
+      val scrutinee = quoteValue(value.scrutinee.value)
+      val branches = value.branches.map { (pattern, body) ->
+        val body = (this + 1).quoteValue(body.value)
+        pattern to body
+      }
+      val type = value.type.map { quoteValue(it) }
+      Term.Match(scrutinee, branches, type)
+    }
+
+    is Value.Var     -> {
       val type = value.type.map { quoteValue(it) }
       Term.Var(value.name, value.lvl.toIdx(this), type)
     }
 
-    is Value.Def        -> {
+    is Value.Def     -> {
       val type = value.type.map { quoteValue(it) }
       Term.Def(value.def, type)
     }
 
-    is Value.Meta       -> {
+    is Value.Meta    -> {
       val type = value.type.map { quoteValue(it) }
       Term.Meta(value.index, value.source, type)
     }
 
-    is Value.Hole       -> {
+    is Value.Hole    -> {
       Term.Hole
     }
   }
@@ -533,4 +566,21 @@ fun Closure.open(
   return this(types.mapIndexed { i, type ->
     lazyOf(Value.Var("#${size + i}", size + i, type))
   })
+}
+
+infix fun Pattern.matches(value: Lazy<Value>): Boolean {
+  return when (this) {
+    is Pattern.I32Of -> {
+      when (val value = value.value) {
+        is Value.I32Of -> value.value == this.value
+        else           -> false
+      }
+    }
+
+    is Pattern.Drop  -> true
+
+    is Pattern.Var   -> true
+
+    is Pattern.Hole  -> false
+  }
 }

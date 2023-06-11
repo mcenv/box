@@ -382,7 +382,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Command && match<Value>(type)                               -> {
+      term is R.Term.Command && match<Value>(type) -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.Str)
         typed(type) {
@@ -390,7 +390,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Let && match<Value>(type)                                   -> {
+      term is R.Term.Let && match<Value>(type)     -> {
         val (init, initType) = synthTerm(term.init, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
           if (!next().sub(initType, binderType)) {
@@ -404,7 +404,24 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Var && synth(type)                    -> {
+      term is R.Term.Match && match<Value>(type)   -> {
+        val (scrutinee, scrutineeType) = synthTerm(term.scrutinee, phase)
+        val vScrutinee = lazy { env.evalTerm(scrutinee) }
+        // TODO: duplicate context
+        // TODO: check exhaustiveness
+        val (branches, branchesTypes) = term.branches.map { (pattern, body) ->
+          elaboratePattern(pattern, phase, scrutineeType, vScrutinee) { (pattern, _) ->
+            val (body, bodyType) = elaborateTerm(body, phase, type)
+            (pattern to body) to bodyType
+          }
+        }.unzip()
+        val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.let { lazyOf(it) } ?: Value.Type.END_LAZY /* TODO: validate */)
+        typed(type) {
+          C.Term.Match(scrutinee, branches, it)
+        }
+      }
+
+      term is R.Term.Var && synth(type)            -> {
         val entry = entries[term.idx.toLvl(Lvl(entries.size)).value]
         if (entry.used) {
           invalidTerm(alreadyUsed(term.range))

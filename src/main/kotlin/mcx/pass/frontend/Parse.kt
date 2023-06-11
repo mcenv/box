@@ -429,6 +429,18 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
+              "match"        -> {
+                skipTrivia()
+                val scrutinee = parseTerm()
+                val branches = parseList(',', '[', ']') {
+                  val pattern = parseTerm()
+                  expect(":->")
+                  skipTrivia()
+                  val body = parseTerm()
+                  pattern to body
+                }
+                S.Term.Match(scrutinee, branches, until())
+              }
               else           -> {
                 val name = word.value
                 when {

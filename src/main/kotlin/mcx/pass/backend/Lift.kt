@@ -243,17 +243,17 @@ class Lift private constructor(
         unexpectedTerm(term)
       }
 
-      is C.Term.Splice     -> {
+      is C.Term.Splice  -> {
         unexpectedTerm(term)
       }
 
-      is C.Term.Command    -> {
+      is C.Term.Command -> {
         val element = (term.element as C.Term.StrOf).value
         val type = eraseType(term.type.value)
         L.Term.Command(element, type)
       }
 
-      is C.Term.Let        -> {
+      is C.Term.Let     -> {
         val init = liftTerm(term.init)
         restoring {
           val binder = liftPattern(term.binder, term.init.type.value)
@@ -262,22 +262,26 @@ class Lift private constructor(
         }
       }
 
-      is C.Term.Var        -> {
+      is C.Term.Match   -> {
+        TODO()
+      }
+
+      is C.Term.Var     -> {
         val type = eraseType(term.type.value)
         L.Term.Var(term.name, term.idx, type)
       }
 
-      is C.Term.Def        -> {
+      is C.Term.Def     -> {
         val direct = Modifier.DIRECT in term.def.modifiers
         val type = eraseType(term.def.type)
         L.Term.Def(direct, term.def.name, type)
       }
 
-      is C.Term.Meta       -> {
+      is C.Term.Meta    -> {
         unexpectedTerm(term)
       }
 
-      is C.Term.Hole       -> {
+      is C.Term.Hole    -> {
         unexpectedTerm(term)
       }
     }
@@ -342,21 +346,22 @@ class Lift private constructor(
       is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Ref        -> freeVars(term.element)
-      is C.Term.RefOf      -> freeVars(term.element)
-      is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type.value))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.RefOf   -> freeVars(term.element)
+      is C.Term.Point   -> freeVars(term.element)
+      is C.Term.Union   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func    -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf  -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code    -> unexpectedTerm(term)
+      is C.Term.CodeOf  -> unexpectedTerm(term)
+      is C.Term.Splice  -> unexpectedTerm(term)
+      is C.Term.Command -> linkedMapOf()
+      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Match   -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Var     -> linkedMapOf(term.name to eraseType(term.type.value))
+      is C.Term.Def     -> linkedMapOf()
+      is C.Term.Meta    -> unexpectedTerm(term)
+      is C.Term.Hole    -> unexpectedTerm(term)
     }
   }
 

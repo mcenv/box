@@ -251,6 +251,12 @@ object Surface {
       override val range: Range,
     ) : Term()
 
+    data class Match(
+      val scrutinee: Term,
+      val branches: List<Pair<Term, Term>>,
+      override val range: Range,
+    ) : Term()
+
     data class Var(
       val name: String,
       override val range: Range,

@@ -312,7 +312,19 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Var        -> {
+      is S.Term.Match   -> {
+        val scrutinee = resolveTerm(term.scrutinee)
+        val branches = term.branches.map { (pattern, body) ->
+          restoring(0) {
+            val pattern = resolvePattern(pattern)
+            val body = resolveTerm(body)
+            pattern to body
+          }
+        }
+        R.Term.Match(scrutinee, branches, range)
+      }
+
+      is S.Term.Var     -> {
         when (term.name) {
           "_"  -> R.Term.Meta(range)
           else -> {

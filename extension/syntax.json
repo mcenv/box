@@ -137,7 +137,7 @@
           "name": "constant.language.mcx"
         },
         {
-          "match": "(?:\\b(?:if|then|else|is|as)\\b)|(?:->)|[&\\\\`$/_]",
+          "match": "(?:\\b(?:match|if|then|else|as)\\b)|(?::->)|(?:->)|[&\\\\`$/_]",
           "name": "keyword.control.mcx"
         },
         {

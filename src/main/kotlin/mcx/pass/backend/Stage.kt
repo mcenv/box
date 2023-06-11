@@ -270,14 +270,14 @@ class Stage private constructor() {
         element.element.value
       }
 
-      is Term.Command    -> {
+      is Term.Command -> {
         requireWorld(term, phase)
         val element = lazy { evalTerm(term.element, Phase.CONST) }
         val type = term.type.map { evalTerm(it, phase /* ? */) }
         Value.Command(element, type)
       }
 
-      is Term.Let        -> {
+      is Term.Let     -> {
         when (phase) {
           Phase.WORLD -> {
             val init = lazy { evalTerm(term.init, phase) }
@@ -292,7 +292,42 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Var        -> {
+      is Term.Match   -> {
+        when (phase) {
+          Phase.WORLD -> {
+            val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
+            val branches = term.branches.mapIndexed { index, (pattern, body) ->
+              val body = lazy { evalTerm(body, phase) }
+              pattern to body
+            }
+            val type = term.type.map { evalTerm(it, phase) }
+            Value.Match(scrutinee, branches, type)
+          }
+          Phase.CONST -> {
+            val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
+            var matchedIndex = -1
+            val branches = term.branches.mapIndexed { index, (pattern, body) ->
+              val body = lazy { evalTerm(body, phase) }
+              if (matchedIndex == -1 && pattern matches scrutinee) {
+                matchedIndex = index
+              }
+              pattern to body
+            }
+            when (matchedIndex) {
+              -1   -> {
+                val type = term.type.map { evalTerm(it, phase) }
+                Value.Match(scrutinee, branches, type)
+              }
+              else -> {
+                val (_, body) = term.branches[matchedIndex]
+                (this + scrutinee).evalTerm(body, phase)
+              }
+            }
+          }
+        }
+      }
+
+      is Term.Var     -> {
         val lvl = term.idx.toLvl(next())
         when (phase) {
           Phase.WORLD -> {
@@ -305,7 +340,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Def        -> {
+      is Term.Def     -> {
         when (phase) {
           Phase.WORLD -> null
           Phase.CONST -> {
@@ -535,41 +570,51 @@ class Stage private constructor() {
         Term.CodeOf(element, type)
       }
 
-      is Value.Splice     -> {
+      is Value.Splice  -> {
         val element = quoteValue(value.element, Phase.CONST)
         val type = value.type.map { quoteValue(it, phase) }
         Term.Splice(element, type)
       }
 
-      is Value.Command    -> {
+      is Value.Command -> {
         val element = quoteValue(value.element.value, Phase.CONST)
         val type = value.type.map { quoteValue(it, phase) }
         Term.Command(element, type)
       }
 
-      is Value.Let        -> {
+      is Value.Let     -> {
         val init = quoteValue(value.init.value, phase)
         val body = quoteValue(value.body.value, phase)
         val type = value.type.map { quoteValue(it, phase) }
         Term.Let(value.binder, init, body, type)
       }
 
-      is Value.Var        -> {
+      is Value.Match   -> {
+        val scrutinee = quoteValue(value.scrutinee.value, phase)
+        val branches = value.branches.map { (pattern, body) ->
+          val body = (this + 1).quoteValue(body.value, phase)
+          pattern to body
+        }
+        val type = value.type.map { quoteValue(it, phase) }
+        Term.Match(scrutinee, branches, type)
+      }
+
+      is Value.Var     -> {
         val type = value.type.map { quoteValue(it, phase) }
         Term.Var(value.name, value.lvl.toIdx(this), type)
       }
 
-      is Value.Def        -> {
+      is Value.Def     -> {
         val type = value.type.map { quoteValue(it, phase) }
         Term.Def(value.def, type)
       }
 
-      is Value.Meta       -> {
+      is Value.Meta    -> {
         val type = value.type.map { quoteValue(it, phase) }
         Term.Meta(value.index, value.source, type)
       }
 
-      is Value.Hole       -> {
+      is Value.Hole    -> {
         Term.Hole
       }
     }

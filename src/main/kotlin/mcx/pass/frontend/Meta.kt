@@ -246,36 +246,46 @@ class Meta {
         Term.CodeOf(element, type)
       }
 
-      is Term.Splice     -> {
+      is Term.Splice  -> {
         val element = zonkTerm(term.element)
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Splice(element, type)
       }
 
-      is Term.Command    -> {
+      is Term.Command -> {
         val element = zonkTerm(term.element)
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Command(element, type)
       }
 
-      is Term.Let        -> {
+      is Term.Let     -> {
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Let(term.binder, init, body, type)
       }
 
-      is Term.Var        -> {
+      is Term.Match   -> {
+        val scrutinee = zonkTerm(term.scrutinee)
+        val branches = term.branches.map { (pattern, body) ->
+          val body = zonkTerm(body)
+          pattern to body
+        }
+        val type = lazyOf(zonkTerm(term.type.value))
+        Term.Match(scrutinee, branches, type)
+      }
+
+      is Term.Var     -> {
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Var(term.name, term.idx, type)
       }
 
-      is Term.Def        -> {
+      is Term.Def     -> {
         val type = lazyOf(zonkTerm(term.type.value))
         Term.Def(term.def, type)
       }
 
-      is Term.Meta     -> {
+      is Term.Meta    -> {
         val solution = values.getOrNull(term.index)
         if (solution == null || (solution is Value.Meta && term.index == solution.index)) {
           val type = lazyOf(zonkTerm(term.type.value))
