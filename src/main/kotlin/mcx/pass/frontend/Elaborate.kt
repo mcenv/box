@@ -398,14 +398,14 @@ class Elaborate private constructor(
           }
           val (body, bodyType) = elaborateTerm(term.body, phase, type)
           val type = type ?: bodyType
-          typed(type) {
+          this@elaborateTerm.typed(type) {
             C.Term.Let(binder, init, body, it)
           }
         }
       }
 
       term is R.Term.Var && synth(type)                    -> {
-        val entry = entries[next().toLvl(term.idx).value]
+        val entry = entries[Lvl(entries.size).toLvl(term.idx).value]
         if (entry.used) {
           invalidTerm(alreadyUsed(term.range))
         } else {
