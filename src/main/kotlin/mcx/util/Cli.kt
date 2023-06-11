@@ -36,6 +36,7 @@ fun main(args: Array<String>) {
     } ?: error("Unknown command: ${args.joinToString(" ")}")
   } catch (t: Throwable) {
     System.err.println(red(t.message ?: ""))
+    t.printStackTrace()
     exitProcess(1)
   }
 }
