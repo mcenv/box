@@ -10,11 +10,15 @@
 
 * <a href="https://github.com/Mojang/brigadier"><img align="center" src="https://gh-card.dev/repos/Mojang/brigadier.svg?fullname"></a>
 
+* <a href="https://github.com/agda/agda"><img align="center" src="https://gh-card.dev/repos/agda/agda.svg?fullname"></a>
+
+* <a href="https://github.com/bytecodealliance/wasmtime"><img align="center" src="https://gh-card.dev/repos/bytecodealliance/wasmtime.svg?fullname"></a>
+
 * <a href="https://github.com/egraphs-good/egg"><img align="center" src="https://gh-card.dev/repos/egraphs-good/egg.svg?fullname"></a>
 
 * <a href="https://github.com/flix/flix"><img align="center" src="https://gh-card.dev/repos/flix/flix.svg?fullname"></a>
 
-* <a href="https://github.com/bytecodealliance/wasmtime"><img align="center" src="https://gh-card.dev/repos/bytecodealliance/wasmtime.svg?fullname"></a>
+* <a href="https://github.com/leanprover/lean4"><img align="center" src="https://gh-card.dev/repos/leanprover/lean4.svg?fullname"></a>
 
 * <a href="https://github.com/rust-lang/cargo"><img align="center" src="https://gh-card.dev/repos/rust-lang/cargo.svg?fullname"></a>
 

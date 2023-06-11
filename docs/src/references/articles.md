@@ -9,3 +9,4 @@
 * [Cranelift: Using E-Graphs for Verified, Cooperating Middle-End Optimizations](https://github.com/bytecodealliance/rfcs/blob/19e1dc47edaa26d1d900e57a9ed8ce5e91a7262b/accepted/cranelift-egraph.md)
 * [Intro to EGraphs](https://colab.research.google.com/drive/1tNOQijJqe5tw-Pk9iqd6HHb2abC5aRid)
 * [OwnershipManifesto](https://github.com/apple/swift/blob/4fe20a82a0e4a714fecb96521a91615b0613761e/docs/OwnershipManifesto.md#a-bit-more-detail)
+* [Two-Level Type Theory](https://github.com/agda/agda/blob/b1647631c9287b4e64b225510ffb61e9f2aa88e6/doc/user-manual/language/two-level.lagda.rst)
