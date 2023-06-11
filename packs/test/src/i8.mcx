@@ -1,5 +1,0 @@
-import {
-  core::i8::=,
-}
-
-test def 1i8=1i8 := 1i8 = 1i8;

@@ -1,5 +1,0 @@
-import {
-  core::i16::=,
-}
-
-test def 1=1 := 1i16 = 1i16;

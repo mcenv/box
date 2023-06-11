@@ -54,13 +54,19 @@ jobs:
         uses: mcenv/setup-minecraft@v3
         with:
           version: snapshot
-      - name: Add mcx to path
-        run: echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
-      - name: Test pack
+      - name: Install mcx
         run: |
+          echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
           mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
           mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
+      - name: Test test pack
+        run: |
           cd ./packs/test
+          mcx dependencies install
+          mcx test ${{ steps.minecraft.outputs.version }} --nogui
+      - name: Test core pack
+        run: |
+          cd ./packs/core
           mcx dependencies install
           mcx test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Upload data packs

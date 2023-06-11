@@ -6,3 +6,21 @@ export def &(a : bool, b : bool) : bool :=
 
 export def |(a : bool, b : bool) : bool :=
   if a then true else b;
+
+test def !false := !(false);
+
+test def !_false&false := !(false & false);
+
+test def !_false&true := !(false & true);
+
+test def !_true&false := !(true & false);
+
+test def true&true := true & true;
+
+test def !_false|false := !(false | false);
+
+test def false|true := false | true;
+
+test def true|false := true | false;
+
+test def true|true := true | true;

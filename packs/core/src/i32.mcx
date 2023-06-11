@@ -100,3 +100,53 @@ export builtin def to_f64(i32) : f64 :=
 
 export builtin def to_str(i32) : str :=
   /"data modify storage mcx: string append string storage mcx: int[-1]";
+
+test def 1+2=3 := (1 + 2) = 3;
+
+test def 1-2=-1 := (1 - 2) = -1;
+
+test def 2*3=6 := (2 * 3) = 6;
+
+test def 4/3=1 := (4 / 3) = 1;
+
+test def -4/-3=1 := (-4 / -3) = 1;
+
+test def 4/-3=-2 := (4 / -3) = -2;
+
+test def -4/3=-2 := (-4 / 3) = -2;
+
+test def 1/0=0 := (1 / 0) = 0;
+
+test def 4%3=1 := (4 % 3) = 1;
+
+test def -4%-3=-1 := (-4 % -3) = -1;
+
+test def 4%-3=-2 := (4 % -3) = -2;
+
+test def -4%3=2 := (-4 % 3) = 2;
+
+test def 1%0=0 := (1 % 0) = 0;
+
+test def 1_min_2=1 := (1 min 2) = 1;
+
+test def 2_min_1=1 := (2 min 1) = 1;
+
+test def 1_max_2=2 := (1 max 2) = 2;
+
+test def 2_max_1=2 := (2 max 1) = 2;
+
+test def 1=1 := 1 = 1;
+
+test def 1<2 := 1 < 2;
+
+test def 1<=2 := 1 <= 2;
+
+test def 1<=1 := 1 <= 1;
+
+test def 2>1 := 2 > 1;
+
+test def 2>=1 := 2 >= 1;
+
+test def 2>=2 := 2 >= 2;
+
+test def 1!=2 := 1 != 2;
