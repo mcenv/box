@@ -39,18 +39,18 @@ test def is_empty_"" := is_empty("");
 
 test def !_is_empty_"a" := !(is_empty("a"));
 
-test def from_0_""_=_"" := $(from(`"", 0)) str::= "";
+test def from_0_""_=_"" := $(from("", 0)) str::= "";
 
-test def from_0_"abc"_="abc" := $(from(`"abc", 0)) str::= "abc";
+test def from_0_"abc"_="abc" := $(from("abc", 0)) str::= "abc";
 
-test def from_1_"abc"_="bc" := $(from(`"abc", 1)) str::= "bc";
+test def from_1_"abc"_="bc" := $(from("abc", 1)) str::= "bc";
 
-test def from_-1_"abc"_="c" := $(from(`"abc", -1)) str::= "c";
+test def from_-1_"abc"_="c" := $(from("abc", -1)) str::= "c";
 
-test def between_0_0_""_=_"" := $(between(`"", 0, 0)) str::= "";
+test def between_0_0_""_=_"" := $(between("", 0, 0)) str::= "";
 
-test def between_0_0_"abc"_="" := $(between(`"abc", 0, 0)) str::= "";
+test def between_0_0_"abc"_="" := $(between("abc", 0, 0)) str::= "";
 
-test def between_0_1_"abc"_="a" := $(between(`"abc", 0, 1)) str::= "a";
+test def between_0_1_"abc"_="a" := $(between("abc", 0, 1)) str::= "a";
 
-test def between_-2_3_"abc"_="c" := $(between(`"abc", -2, 3)) str::= "bc";
+test def between_-2_3_"abc"_="c" := $(between("abc", -2, 3)) str::= "bc";

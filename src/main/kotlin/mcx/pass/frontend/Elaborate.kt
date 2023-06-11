@@ -502,10 +502,20 @@ class Elaborate private constructor(
         invalidTerm(cannotSynthesize(term.range))
       }
 
-      check<Value>(type)                                                         -> {
+      check<Value>(type)                                   -> {
         val (synth, synthType) = synthTerm(term, phase)
         if (next().sub(synthType, type)) {
           return synth to type
+        } else if (type is Value.Code && next().sub(synthType, type.element.value)) {
+          inlayHint(term.range.start, "`")
+          return typed(type) {
+            C.Term.CodeOf(synth, it)
+          }
+        } else if (synthType is Value.Code && next().sub(synthType.element.value, type)) {
+          inlayHint(term.range.start, "$")
+          return typed(type) {
+            C.Term.Splice(synth, it)
+          }
         } else if (type is Value.Point) {
           val value = env.evalTerm(synth)
           if (with(meta) { next().unifyValue(value, type.element.value) }) {
