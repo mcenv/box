@@ -1,3 +1,18 @@
+import {
+  core::bool::!,
+  core::i32::=,
+}
+
 export builtin def size(i32_array) : i32 :=
   let _ as nothing := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: int_array[-1]";
+
+export def is_empty(a : i32_array) : bool := size(a) = 0;
+
+test def size_0 := size([i32;]) = 0;
+
+test def size_1 := size([i32; 1i32]) = 1;
+
+test def is_empty_0 := is_empty([i32;]);
+
+test def !_is_empty_1 := !(is_empty([i32; 1i32]));

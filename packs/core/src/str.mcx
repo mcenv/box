@@ -1,5 +1,6 @@
 import {
   core::bool::!,
+  core::i32::=,
 }
 
 export builtin def !=(str, str) : bool :=
@@ -13,10 +14,16 @@ export builtin def size(str) : i32 :=
   let _ as nothing := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";
 
-test def ""!="a" := "" != "a";
+export def is_empty(a : str) : bool := size(a) i32::= 0;
 
-test def "a"!="b" := "a" != "b";
+test def ""_!=_"a" := "" != "a";
 
-test def ""="" := "" = "";
+test def "a"_!=_"b" := "a" != "b";
 
-test def "a"="a" := "a" = "a";
+test def ""_=_"" := "" str::= "";
+
+test def "a"_=_"a" := "a" str::= "a";
+
+test def is_empty_"" := is_empty("");
+
+test def !_is_empty_"a" := !(is_empty("a"));
