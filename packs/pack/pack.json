@@ -1,5 +1,5 @@
 {
   "name": "pack",
   "description": "The mcx pack pack",
-  "zip": true
+  "output": "file"
 }

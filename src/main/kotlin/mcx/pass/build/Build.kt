@@ -290,70 +290,76 @@ class Build(
         return@coroutineScope Result(false, diagnosticsByPath, tests)
       }
 
-      val verbose = config.debug.verbose
-      fun generate(suffix: String, definitions: Map<String, String>) {
-        datapacks.createDirectories()
-        val datapackPath = (datapacks / "${config.name}_$suffix.zip")
-        val datapackRoot = (datapacks / "${config.name}_$suffix")
+      if (config.output != Config.Output.NONE) {
+        val verbose = config.debug.verbose
+        fun generate(suffix: String, definitions: Map<String, String>) {
+          datapacks.createDirectories()
+          val datapackPath = (datapacks / "${config.name}_$suffix.zip")
+          val datapackRoot = (datapacks / "${config.name}_$suffix")
 
-        if (config.zip) {
-          datapackRoot.deleteRecursively()
+          when (config.output) {
+            Config.Output.PATH -> {
+              datapackPath.deleteIfExists()
+              datapackRoot.createDirectories()
 
-          ZipOutputStream(datapackPath.outputStream().buffered()).use { output ->
-            output.putNextEntry(ZipEntry("pack.mcmeta"))
-            Json.encodeToStream(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)), output)
-
-            definitions.onEach { (name, definition) ->
-              if (verbose) {
-                debug("Writing", name)
-              }
-              output.putNextEntry(ZipEntry(name))
-              output.write(definition.encodeToByteArray())
-            }
-          }
-        } else {
-          datapackPath.deleteIfExists()
-          datapackRoot.createDirectories()
-
-          val outputModules = definitions
-            .mapKeys { (name, _) -> datapackRoot / name }
-            .onEach { (path, definition) ->
-              path.createParentDirectories().bufferedWriter().use {
-                if (verbose) {
-                  debug("Writing", path.pathString)
+              val outputModules = definitions
+                .mapKeys { (name, _) -> datapackRoot / name }
+                .onEach { (path, definition) ->
+                  path.createParentDirectories().bufferedWriter().use {
+                    if (verbose) {
+                      debug("Writing", path.pathString)
+                    }
+                    it.write(definition)
+                  }
                 }
-                it.write(definition)
-              }
-            }
-          datapackRoot.visitFileTree {
-            onVisitFile { file, _ ->
-              if (file !in outputModules) {
-                if (verbose) {
-                  debug("Deleting", file.pathString)
+              datapackRoot.visitFileTree {
+                onVisitFile { file, _ ->
+                  if (file !in outputModules) {
+                    if (verbose) {
+                      debug("Deleting", file.pathString)
+                    }
+                    file.deleteExisting()
+                  }
+                  FileVisitResult.CONTINUE
                 }
-                file.deleteExisting()
               }
-              FileVisitResult.CONTINUE
-            }
-          }
 
-          (datapackRoot / "pack.mcmeta").outputStream().buffered().use {
-            Json.encodeToStream(
-              PackMetadata(
-                pack = PackMetadataSection(
-                  description = config.description,
-                  packFormat = DATA_PACK_FORMAT,
+              (datapackRoot / "pack.mcmeta").outputStream().buffered().use {
+                Json.encodeToStream(
+                  PackMetadata(
+                    pack = PackMetadataSection(
+                      description = config.description,
+                      packFormat = DATA_PACK_FORMAT,
+                    )
+                  ),
+                  it,
                 )
-              ),
-              it,
-            )
+              }
+            }
+            Config.Output.FILE -> {
+              datapackRoot.deleteRecursively()
+
+              ZipOutputStream(datapackPath.outputStream().buffered()).use { output ->
+                output.putNextEntry(ZipEntry("pack.mcmeta"))
+                Json.encodeToStream(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)), output)
+
+                definitions.onEach { (name, definition) ->
+                  if (verbose) {
+                    debug("Writing", name)
+                  }
+                  output.putNextEntry(ZipEntry(name))
+                  output.write(definition.encodeToByteArray())
+                }
+              }
+            }
+            Config.Output.NONE -> error("Unreachable")
           }
         }
-      }
 
-      val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
-      generate("main", packs.main)
-      generate("test", packs.test)
+        val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
+        generate("main", packs.main)
+        generate("test", packs.test)
+      }
 
       Result(true, diagnosticsByPath, tests)
     }

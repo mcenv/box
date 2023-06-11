@@ -1,5 +1,6 @@
 package mcx.pass
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import mcx.data.DedicatedServerProperties
 
@@ -7,7 +8,7 @@ import mcx.data.DedicatedServerProperties
 data class Config(
   val name: String,
   val description: String, // TODO: use [Component]
-  val zip: Boolean = true,
+  val output: Output = Output.FILE,
   val debug: Debug = Debug(),
   val dependencies: Map<String, String> = emptyMap(),
   val properties: DedicatedServerProperties = DedicatedServerProperties(),
@@ -16,4 +17,16 @@ data class Config(
   data class Debug(
     val verbose: Boolean = false,
   )
+
+  @Serializable
+  enum class Output {
+    @SerialName("path")
+    PATH,
+
+    @SerialName("file")
+    FILE,
+
+    @SerialName("none")
+    NONE,
+  }
 }
