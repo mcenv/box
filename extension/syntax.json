@@ -198,6 +198,10 @@
               "name": "constant.character.escape.mcx"
             },
             {
+              "match": "\\\\u[0-9a-f]{4}",
+              "name": "constant.character.escape.mcx"
+            },
+            {
               "match": "\\\\.",
               "name": "invalid.illegal.mcx"
             }

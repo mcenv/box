@@ -573,6 +573,19 @@ class Parse private constructor(
           '"', '\\' -> {
             builder.append(char)
           }
+          'u'       -> {
+            skip()
+            if (canRead(4)) {
+              text.substring(cursor, cursor + 4).toIntOrNull(16)?.let {
+                skip(3)
+                builder.append(it.toChar())
+              }
+            } else {
+              null
+            } ?: run {
+              diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+            }
+          }
           else      -> {
             diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
           }
@@ -605,6 +618,19 @@ class Parse private constructor(
         when (val char = peek()) {
           '"', '\\', '#' -> {
             builder.append(char)
+          }
+          'u'            -> {
+            skip()
+            if (canRead(4)) {
+              text.substring(cursor, cursor + 4).toIntOrNull(16)?.let {
+                skip(3)
+                builder.append(it.toChar())
+              }
+            } else {
+              null
+            } ?: run {
+              diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
+            }
           }
           else           -> {
             diagnostics += invalidEscape(char, Position(line, character - 1)..Position(line, character + 1))
