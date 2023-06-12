@@ -22,6 +22,7 @@ import mcx.util.nbt.*
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
+// TODO: refactor
 class Pack private constructor(
   private val context: Context,
 ) {
@@ -400,6 +401,7 @@ class Pack private constructor(
     private val R1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
 
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
+    private val MCX_DATA: ResourceLocation = ResourceLocation("mcx_data", "")
     private val MCX_HEAP: ResourceLocation = ResourceLocation("mcx_heap", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
 
@@ -487,6 +489,9 @@ class Pack private constructor(
           ManipulateData(DataAccessor(MCX_HEAP, nbtPath { (0..<count).fold(it("heap")) { acc, _ -> acc() } }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath { it("branch") }))))
         }.toTypedArray(),
         RemoveData(DataAccessor(MCX_HEAP, nbtPath { it("branch") })),
+        ManipulateData(DataAccessor(MCX_DATA, nbtPath { it("surrogate_pairs") }), DataManipulator.Set(SourceProvider.Value(StringTag(
+          ((Char.MIN_HIGH_SURROGATE..Char.MAX_HIGH_SURROGATE) zip (Char.MIN_LOW_SURROGATE..Char.MAX_LOW_SURROGATE)).joinToString("") { (high, low) -> "$high$low" }
+        ))))
       ))
     }
 
