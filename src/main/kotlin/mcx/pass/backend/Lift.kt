@@ -37,6 +37,7 @@ class Lift private constructor(
       Modifier.DIRECT  -> null // ?
       Modifier.CONST   -> error("Unexpected modifier: ${modifier.id}")
       Modifier.TEST    -> L.Modifier.TEST
+      Modifier.ERROR   -> error("Unexpected modifier: ${modifier.id}")
     }
   }
 

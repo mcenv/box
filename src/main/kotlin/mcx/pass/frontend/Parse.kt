@@ -201,6 +201,7 @@ class Parse private constructor(
           "rec"     -> Ranged(Modifier.REC, until())
           "const"   -> Ranged(Modifier.CONST, until())
           "test"    -> Ranged(Modifier.TEST, until())
+          "error"   -> Ranged(Modifier.ERROR, until())
           else      -> return modifiers to word
         }
       }

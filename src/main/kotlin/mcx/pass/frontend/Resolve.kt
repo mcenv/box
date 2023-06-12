@@ -65,7 +65,7 @@ class Resolve private constructor(
       val definition = resolveDefinition(definition)
       if (definition !is R.Definition.Hole) {
         if (definition.name.value in definitions) {
-          diagnostics.computeIfAbsent(definition.name.value) { mutableListOf() } += duplicatedName(definition.name.value.name, definition.name.range)
+          diagnose(duplicatedName(definition.name.value.name, definition.name.range))
         } else {
           definitions[definition.name.value] = definition
         }

@@ -262,7 +262,7 @@
       "name": "keyword.annotation.mcx"
     },
     "modifier": {
-      "match": "\\b(?:builtin|export|rec|const|test)\\b",
+      "match": "\\b(?:builtin|export|rec|const|test|error)\\b",
       "name": "keyword.modifier.mcx"
     },
     "location": {

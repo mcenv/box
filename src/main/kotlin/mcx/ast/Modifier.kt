@@ -6,7 +6,8 @@ enum class Modifier(val id: String) {
   REC("rec"),
   DIRECT("direct"),
   CONST("const"),
-  TEST("test");
+  TEST("test"),
+  ERROR("error");
 
   override fun toString(): String =
     id

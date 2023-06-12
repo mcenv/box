@@ -33,9 +33,12 @@ class Elaborate private constructor(
 
   private fun elaborate(): Result {
     val module = elaborateModule(input.module)
+    val diagnostics = (input.diagnostics.keys + diagnostics.keys).associateWith { location ->
+      (input.diagnostics[location] ?: emptyList()) + (diagnostics[location] ?: emptyList())
+    }
     return Result(
       module,
-      input.diagnostics + diagnostics,
+      diagnostics,
       hover,
       inlayHints,
     )
@@ -384,7 +387,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Command && match<Value>(type) -> {
+      term is R.Term.Command && match<Value>(type)         -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.Str)
         typed(type) {
@@ -392,7 +395,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Let && match<Value>(type)     -> {
+      term is R.Term.Let && match<Value>(type)             -> {
         val (init, initType) = synthTerm(term.init, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
           if (!next().sub(initType, binderType)) {
@@ -406,7 +409,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Match && match<Value>(type)   -> {
+      term is R.Term.Match && match<Value>(type)           -> {
         val (scrutinee, scrutineeType) = synthTerm(term.scrutinee, phase)
         val vScrutinee = lazy { env.evalTerm(scrutinee) }
         // TODO: duplicate context
@@ -423,7 +426,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Var && synth(type)            -> {
+      term is R.Term.Var && synth(type)                    -> {
         val entry = entries[term.idx.toLvl(Lvl(entries.size)).value]
         if (entry.used) {
           invalidTerm(alreadyUsed(term.range))

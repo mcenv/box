@@ -267,18 +267,36 @@ class Build(
         .map { path ->
           async {
             val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation(context.config.name)))
-            if (elaborated.value.diagnostics.isNotEmpty()) {
-              diagnosticsByPath += path to elaborated.value.diagnostics.values.flatten().also { diagnostics ->
-                if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
-                  success.set(false)
-                }
+            val diagnostics = elaborated.value.diagnostics
+
+            diagnostics[null]?.let { topLevelDiagnostics ->
+              if (success.get() && topLevelDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
+                success.set(false)
               }
+              diagnosticsByPath += path to topLevelDiagnostics
             }
-            elaborated.value.module.definitions.map {
-              if (Modifier.TEST in it.modifiers) {
-                tests += it.name
+
+            elaborated.value.module.definitions.mapNotNull { definition ->
+              if (Modifier.TEST in definition.modifiers) {
+                tests += definition.name
               }
-              it.name
+              if (Modifier.ERROR in definition.modifiers) {
+                diagnostics[definition.name]?.let { diagnostics ->
+                  if (success.get() && diagnostics.none { it.severity == DiagnosticSeverity.Error }) {
+                    success.set(false)
+                  }
+                  diagnosticsByPath += path to diagnostics
+                } ?: success.set(false)
+                null
+              } else {
+                diagnostics[definition.name]?.let { diagnostics ->
+                  if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
+                    success.set(false)
+                  }
+                  diagnosticsByPath += path to diagnostics
+                }
+                definition.name
+              }
             }
           }
         }
