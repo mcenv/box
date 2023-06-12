@@ -588,7 +588,7 @@ class Parse private constructor(
           'u'       -> {
             skip()
             if (canRead(4)) {
-              text.substring(cursor, cursor + 4).toIntOrNull(16)?.let {
+              text.substring(cursor, cursor + 4).toIntOrNull(16)?.takeUnless { it.toChar() in Char.MIN_HIGH_SURROGATE..Char.MAX_LOW_SURROGATE }?.let {
                 skip(3)
                 builder.append(it.toChar())
               }
@@ -634,7 +634,7 @@ class Parse private constructor(
           'u'            -> {
             skip()
             if (canRead(4)) {
-              text.substring(cursor, cursor + 4).toIntOrNull(16)?.let {
+              text.substring(cursor, cursor + 4).toIntOrNull(16)?.takeUnless { it.toChar() in Char.MIN_HIGH_SURROGATE..Char.MAX_LOW_SURROGATE }?.let {
                 skip(3)
                 builder.append(it.toChar())
               }
