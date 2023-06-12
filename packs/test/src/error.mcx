@@ -1,7 +1,5 @@
 error def name_not_found : i32 := x;
 
-error def name_not_found : i32 := 0;
-
 error builtin def a : i32 := 0;
 
 error def type_mismatch : i32 := "0";

@@ -281,7 +281,7 @@ class Build(
                 tests += definition.name
               }
               if (Modifier.ERROR in definition.modifiers) {
-                diagnostics[definition.name]?.let { diagnostics ->
+                diagnostics[definition.name]?.takeIf { it.isNotEmpty() }?.let { diagnostics ->
                   if (success.get() && diagnostics.none { it.severity == DiagnosticSeverity.Error }) {
                     success.set(false)
                   }
