@@ -26,7 +26,8 @@ class Elaborate private constructor(
 ) {
   private val meta: Meta = Meta()
   private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
-  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private lateinit var location: DefinitionLocation
+  private val diagnostics: MutableMap<DefinitionLocation, MutableList<Diagnostic>> = hashMapOf()
   private var hover: (() -> Hover)? = null
   private var inlayHints: MutableList<InlayHint> = mutableListOf()
 
@@ -64,6 +65,7 @@ class Elaborate private constructor(
     val annotations = definition.annotations.map { it.value }
     val modifiers = definition.modifiers.map { it.value }
     val name = definition.name.value
+    location = name
     return when (definition) {
       is R.Definition.Def  -> {
         val modifiers = if (definition.body.let { it is R.Term.FuncOf && !it.open }) modifiers + Modifier.DIRECT else modifiers
@@ -74,7 +76,7 @@ class Elaborate private constructor(
           definitions[name] = C.Definition.Def(doc, annotations, modifiers, name, type, null)
         }
         val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.env.evalTerm(type)) }
-        val (zonkedType, zonkedBody) = meta.checkSolved(diagnostics, type, body)
+        val (zonkedType, zonkedBody) = meta.checkSolved(diagnostics.computeIfAbsent(location) { mutableListOf() }, type, body)
         C.Definition.Def(doc, annotations, modifiers, name, zonkedType!!, zonkedBody).also {
           hoverDef(definition.name.range, it)
         }
@@ -394,7 +396,7 @@ class Elaborate private constructor(
         val (init, initType) = synthTerm(term.init, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
           if (!next().sub(initType, binderType)) {
-            diagnostics += next().typeMismatch(initType, binderType, term.init.range)
+            diagnose(next().typeMismatch(initType, binderType, term.init.range))
           }
           val (body, bodyType) = elaborateTerm(term.body, phase, type)
           val type = type ?: bodyType
@@ -459,13 +461,13 @@ class Elaborate private constructor(
             hoverDef(term.range, definition)
 
             if (Annotation.Deprecated in definition.annotations) {
-              diagnostics += deprecated(term.range)
+              diagnose(deprecated(term.range))
             }
             if (Annotation.Unstable in definition.annotations) {
-              diagnostics += unstable(term.range)
+              diagnose(unstable(term.range))
             }
             if (Annotation.Delicate in definition.annotations) {
-              diagnostics += delicate(term.range)
+              diagnose(delicate(term.range))
             }
 
             val actualPhase = getPhase(definition.modifiers)
@@ -790,15 +792,19 @@ class Elaborate private constructor(
   private fun invalidTerm(
     diagnostic: Diagnostic,
   ): Pair<C.Term, Value> {
-    diagnostics += diagnostic
+    diagnose(diagnostic)
     return C.Term.Hole to Value.Hole
   }
 
   private fun invalidPattern(
     diagnostic: Diagnostic,
   ): Pair<C.Pattern, Value> {
-    diagnostics += diagnostic
+    diagnose(diagnostic)
     return C.Pattern.Hole to Value.Hole
+  }
+
+  private fun diagnose(diagnostic: Diagnostic) {
+    diagnostics.computeIfAbsent(location) { mutableListOf() } += diagnostic
   }
 
   private inline fun Ctx.typed(
@@ -834,7 +840,7 @@ class Elaborate private constructor(
 
   data class Result(
     val module: C.Module,
-    val diagnostics: List<Diagnostic>,
+    val diagnostics: Map<DefinitionLocation?, List<Diagnostic>>,
     val hover: (() -> Hover)?,
     val inlayHints: List<InlayHint>,
   )

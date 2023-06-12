@@ -87,7 +87,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
       val oldHash = diagnosticsHashes[uri]
       if (oldHash == null || newHash != oldHash) {
         diagnosticsHashes[uri] = newHash
-        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(elaborated.value.diagnostics))
+        DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(elaborated.value.diagnostics.values.flatten()))
       } else {
         DocumentDiagnosticReport(RelatedUnchangedDocumentDiagnosticReport())
       }

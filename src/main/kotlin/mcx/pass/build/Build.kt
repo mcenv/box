@@ -268,7 +268,7 @@ class Build(
           async {
             val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation(context.config.name)))
             if (elaborated.value.diagnostics.isNotEmpty()) {
-              diagnosticsByPath += path to elaborated.value.diagnostics.also { diagnostics ->
+              diagnosticsByPath += path to elaborated.value.diagnostics.values.flatten().also { diagnostics ->
                 if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
                   success.set(false)
                 }

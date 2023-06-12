@@ -21,7 +21,8 @@ class Resolve private constructor(
   private val input: Parse.Result,
   private val instruction: Instruction?,
 ) {
-  private val diagnostics: MutableList<Diagnostic> = mutableListOf()
+  private lateinit var location: DefinitionLocation
+  private val diagnostics: MutableMap<DefinitionLocation?, MutableList<Diagnostic>> = hashMapOf()
   private var definition: Location? = null
   private val locations: Map<DefinitionLocation, Range> =
     input.module.definitions.mapNotNull { definition ->
@@ -34,7 +35,7 @@ class Resolve private constructor(
     dependencies.mapNotNull { dependency ->
       when (val definition = dependency.module) {
         null -> {
-          diagnostics += nameNotFound(dependency.location.toString(), dependency.range!!)
+          diagnostics.computeIfAbsent(null) { mutableListOf() } += nameNotFound(dependency.location.toString(), dependency.range!!)
           null
         }
         else -> {
@@ -51,7 +52,7 @@ class Resolve private constructor(
     val module = resolveModule(input.module)
     return Result(
       module,
-      input.diagnostics + diagnostics,
+      diagnostics.also { it.computeIfAbsent(null) { mutableListOf() } += input.diagnostics },
       definition,
     )
   }
@@ -64,7 +65,7 @@ class Resolve private constructor(
       val definition = resolveDefinition(definition)
       if (definition !is R.Definition.Hole) {
         if (definition.name.value in definitions) {
-          diagnostics += duplicatedName(definition.name.value.name, definition.name.range)
+          diagnostics.computeIfAbsent(definition.name.value) { mutableListOf() } += duplicatedName(definition.name.value.name, definition.name.range)
         } else {
           definitions[definition.name.value] = definition
         }
@@ -87,11 +88,12 @@ class Resolve private constructor(
     }
 
     val name = definition.name.map { input.module.name / it }
+    location = name.value
     return when (definition) {
       is S.Definition.Def  -> {
         val builtin = definition.modifiers.find { it.value == Modifier.BUILTIN }
         if (builtin != null && lookupBuiltin(name.value) == null) {
-          diagnostics += undefinedBuiltin(name.value, builtin.range)
+          diagnose(undefinedBuiltin(name.value, builtin.range))
         }
         val type = emptyEnv().resolveTerm(definition.type)
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
@@ -390,7 +392,7 @@ class Resolve private constructor(
       }
 
       else            -> {
-        diagnostics += unexpectedPattern(pattern.range)
+        diagnose(unexpectedPattern(pattern.range))
         R.Pattern.Hole(pattern.range)
       }
     }
@@ -410,14 +412,14 @@ class Resolve private constructor(
     }
     return when (candidates.size) {
       0    -> {
-        diagnostics += nameNotFound(name, range)
+        diagnose(nameNotFound(name, range))
         null
       }
       1    -> {
         candidates.entries.first()
       }
       else -> {
-        diagnostics += ambiguousName(name, range)
+        diagnose(ambiguousName(name, range))
         null
       }
     }
@@ -442,6 +444,10 @@ class Resolve private constructor(
       // TODO: goto prelude
       definition = Location(Path(name.module.parts.drop(1).joinToString("/", "src/", ".mcx")).toUri().toString(), def)
     }
+  }
+
+  private fun diagnose(diagnostic: Diagnostic) {
+    diagnostics.computeIfAbsent(location) { mutableListOf() } += diagnostic
   }
 
   private class Env private constructor(
@@ -551,7 +557,7 @@ class Resolve private constructor(
 
   data class Result(
     val module: R.Module,
-    val diagnostics: List<Diagnostic>,
+    val diagnostics: Map<DefinitionLocation?, List<Diagnostic>>,
     val definition: Location?,
   )
 
