@@ -13,6 +13,7 @@ import mcx.util.toDependencyTripleOrNull
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.net.URI
 import java.net.URL
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
@@ -21,7 +22,7 @@ import kotlin.io.path.*
 import java.util.Properties as JProperties
 
 val versionManifestUrl: URL by lazy {
-  URL("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
+  URI("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json").toURL()
 }
 
 val json: Json by lazy {
@@ -122,7 +123,7 @@ fun installDependencies(root: Path) {
 
     try {
       info("Installing", "$owner/$repository@$tag")
-      ZipInputStream(URL("https://github.com/$owner/$repository/archive/$tag.zip").openStream().buffered()).use { input ->
+      ZipInputStream(URI("https://github.com/$owner/$repository/archive/$tag.zip").toURL().openStream().buffered()).use { input ->
         val pack = (getOrCreateDependenciesPath() / owner).createDirectories()
         var entry = input.nextEntry
         while (entry != null) {

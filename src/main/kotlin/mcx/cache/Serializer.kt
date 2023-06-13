@@ -14,6 +14,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.net.URI
 import java.net.URL
 import java.time.Instant
 import java.util.*
@@ -88,7 +89,7 @@ object URLSerializer : KSerializer<URL> {
   override fun deserialize(
     decoder: Decoder,
   ): URL {
-    return URL(decoder.decodeString())
+    return URI(decoder.decodeString()).toURL()
   }
 }
 

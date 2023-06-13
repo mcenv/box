@@ -49,7 +49,7 @@ sourceSets {
 }
 
 kotlin {
-  jvmToolchain(19)
+  jvmToolchain(20)
 }
 
 tasks.withType<@Suppress("UnstableApiUsage") ProcessResources> {
