@@ -30,9 +30,11 @@ export const def between(self : code str, start_index : i32, end_index : i32) : 
   /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_str(start_index) } #{ i32::to_str(end_index) }"
 );
 
-export const def until(self : code str, end_index : i32) : code str := between(self, 0, end_index);
+export const def until(self : code str, end_index : i32) : code str :=
+  between(self, 0, end_index);
 
-export const def code_unit_at(self : code str, index : i32) : code str := between(self, index, index + 1);
+export const def code_unit_at(self : code str, index : i32) : code str :=
+  if (index i32::= -1) then from(self, -1) else between(self, index, index + 1);
 
 test def ""_!=_"a" := "" != "a";
 
@@ -73,6 +75,12 @@ test def between_"abc"_3_4_="" := $(between("abc", 3, 4)) str::= "";
 test def until_"abc"_1_="a" := $(until("abc", 1)) str::= "a";
 
 test def code_unit_at_"abc"_0_="a" := $(code_unit_at("abc", 0)) str::= "a";
+
+test def code_unit_at_"abc"_-2_="b" := $(code_unit_at("abc", -2)) str::= "b";
+
+test def code_unit_at_"abc"_-1_="c" := $(code_unit_at("abc", -1)) str::= "c";
+
+test def code_unit_at_"abc"_3_="" := $(code_unit_at("abc", 3)) str::= "";
 
 # test def code_unit_at_"🤔"_0_="\ud83e" := $(code_unit_at("🤔", 0)) str::= "\ud83e";
 
