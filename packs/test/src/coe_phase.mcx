@@ -2,14 +2,14 @@ def world_zero : bool := true;
 
 const def def_world_to_const : code bool := world_zero;
 
-test def test_def_world_to_const := def_world_to_const;
+test def test_def_world_to_const := $def_world_to_const;
 
 const def const_code_of_zero : code bool := `true;
 
-test def test_def_const_to_world := const_code_of_zero;
+test def test_def_const_to_world := $const_code_of_zero;
 
 const def var_const_to_world : code bool := let x := `true; `x;
 
-test def test_var_const_to_world := var_const_to_world;
+test def test_var_const_to_world := $var_const_to_world;
 
 test def test_var_world_to_const := let x := true; $x;

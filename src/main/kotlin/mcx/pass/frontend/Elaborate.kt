@@ -474,30 +474,12 @@ class Elaborate private constructor(
             }
 
             val actualPhase = getPhase(definition.modifiers)
-            val def = C.Term.Def(definition, lazyOf(definition.type))
-            val type = env.evalTerm(definition.type)
-            when {
-              // builtin definitions are always phase-polymorphic
-              actualPhase == phase || Modifier.BUILTIN in definition.modifiers -> {
-                def to type
-              }
-              actualPhase < phase                                              -> {
-                inlayHint(term.range.start, "`")
-                val type = Value.Code(lazyOf(type))
-                typed(type) {
-                  C.Term.CodeOf(def, it)
-                }
-              }
-              actualPhase > phase && type is Value.Code                        -> {
-                inlayHint(term.range.start, "$")
-                val type = type.element.value
-                typed(type) {
-                  C.Term.Splice(def, it)
-                }
-              }
-              else                                                             -> {
-                invalidTerm(phaseMismatch(phase, actualPhase, term.range))
-              }
+            if (actualPhase <= phase) {
+              val def = C.Term.Def(definition, lazyOf(definition.type))
+              val type = env.evalTerm(definition.type)
+              def to type
+            } else {
+              invalidTerm(phaseMismatch(phase, actualPhase, term.range))
             }
           }
           else                -> {

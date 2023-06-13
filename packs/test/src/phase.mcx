@@ -1,0 +1,7 @@
+def world_0 : i32 := 0;
+
+const def world_0_to_const_0 : i32 := world_0;
+
+const def const_0 : i32 := 0;
+
+error def const_0_to_world_0 : i32 := const_0;
