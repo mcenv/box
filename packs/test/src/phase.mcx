@@ -5,3 +5,9 @@ const def world_0_to_const_0 : i32 := world_0;
 const def const_0 : i32 := 0;
 
 error def const_0_to_world_0 : i32 := const_0;
+
+error def world_code_of_0 : code i32 := `0;
+
+const def const_code_of_0 : code i32 := `0;
+
+const def const_code_of_code_of_0 : code code i32 := `const_code_of_0;

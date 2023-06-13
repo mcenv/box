@@ -367,12 +367,12 @@ class Elaborate private constructor(
       }
 
       term is R.Term.Code && phase == Phase.CONST && synth(type)                 -> {
-        val element = checkTerm(term.element, Phase.WORLD, meta.freshType(term.element.range))
+        val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
         C.Term.Code(element) to Value.Type.END
       }
 
       term is R.Term.CodeOf && phase == Phase.CONST && match<Value.Code>(type)   -> {
-        val (element, elementType) = elaborateTerm(term.element, Phase.WORLD, type?.element?.value)
+        val (element, elementType) = elaborateTerm(term.element, phase, type?.element?.value)
         val type = type ?: Value.Code(lazyOf(elementType))
         typed(type) {
           C.Term.CodeOf(element, it)
