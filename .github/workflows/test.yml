@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/test.yml"
       - "gradle/**"
+      - "packs/**"
       - "src/**"
       - "build.gradle.kts"
       - "gradle.properties"
@@ -15,6 +16,7 @@ on:
     paths:
       - ".github/workflows/test.yml"
       - "gradle/**"
+      - "packs/**"
       - "src/**"
       - "build.gradle.kts"
       - "gradle.properties"
