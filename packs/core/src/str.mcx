@@ -12,6 +12,8 @@ export builtin def !=(str, str) : bool :=
 
 export def =(a : str, b : str) : bool := !(a != b);
 
+export def to_str(self : str) : str := self;
+
 export builtin def size(str) : i32 :=
   let _ as nothing := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";

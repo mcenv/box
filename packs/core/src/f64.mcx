@@ -2,6 +2,10 @@ import {
   core::bool::!,
 }
 
+export def min_value : f64 := 4.9e-324f64;
+
+export def max_value : f64 := 1.7976931348623157e308f64;
+
 export builtin def !=(f64, f64) : bool :=
   let _ as nothing := /"data modify storage mcx: byte append value 0b";
   let _ as nothing := /"data modify storage mcx: double append from storage mcx: double[-2]";

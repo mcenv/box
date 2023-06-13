@@ -1,3 +1,7 @@
+export def min_value : i32 := -2147483648;
+
+export def max_value : i32 := 2147483647;
+
 export builtin def +(i32, i32) : i32 :=
   let _ as nothing := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
   let _ as nothing := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
