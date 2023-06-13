@@ -101,52 +101,52 @@ export builtin def to_f64(i32) : f64 :=
 export builtin def to_str(i32) : str :=
   /"data modify storage mcx: string append string storage mcx: int[-1]";
 
-test def 1+2=3 := (1 + 2) = 3;
+test def 1_+_2_=_3 := (1 + 2) = 3;
 
-test def 1-2=-1 := (1 - 2) = -1;
+test def 1_-_2_=_-1 := (1 - 2) = -1;
 
-test def 2*3=6 := (2 * 3) = 6;
+test def 2_*_3_=_6 := (2 * 3) = 6;
 
-test def 4/3=1 := (4 / 3) = 1;
+test def 4_/_3_=_1 := (4 / 3) = 1;
 
-test def -4/-3=1 := (-4 / -3) = 1;
+test def -4_/-3_=_1 := (-4 / -3) = 1;
 
-test def 4/-3=-2 := (4 / -3) = -2;
+test def 4_/-3_=_-2 := (4 / -3) = -2;
 
-test def -4/3=-2 := (-4 / 3) = -2;
+test def -4_/_3_=_-2 := (-4 / 3) = -2;
 
-test def 1/0=0 := (1 / 0) = 0;
+test def 1_/_0_=_0 := (1 / 0) = 0;
 
-test def 4%3=1 := (4 % 3) = 1;
+test def 4_%_3_=_1 := (4 % 3) = 1;
 
-test def -4%-3=-1 := (-4 % -3) = -1;
+test def -4_%_-3_=_-1 := (-4 % -3) = -1;
 
-test def 4%-3=-2 := (4 % -3) = -2;
+test def 4_%_-3_=_-2 := (4 % -3) = -2;
 
-test def -4%3=2 := (-4 % 3) = 2;
+test def -4_%_3_=_2 := (-4 % 3) = 2;
 
-test def 1%0=0 := (1 % 0) = 0;
+test def 1_%_0_=_0 := (1 % 0) = 0;
 
-test def 1_min_2=1 := (1 min 2) = 1;
+test def 1_min_2_=_1 := (1 min 2) = 1;
 
-test def 2_min_1=1 := (2 min 1) = 1;
+test def 2_min_1_=_1 := (2 min 1) = 1;
 
-test def 1_max_2=2 := (1 max 2) = 2;
+test def 1_max_2_=_2 := (1 max 2) = 2;
 
-test def 2_max_1=2 := (2 max 1) = 2;
+test def 2_max_1_=_2 := (2 max 1) = 2;
 
-test def 1=1 := 1 = 1;
+test def 1_=_1 := 1 = 1;
 
-test def 1<2 := 1 < 2;
+test def 1_<_2 := 1 < 2;
 
-test def 1<=2 := 1 <= 2;
+test def 1_<=_2 := 1 <= 2;
 
-test def 1<=1 := 1 <= 1;
+test def 1_<=_1 := 1 <= 1;
 
-test def 2>1 := 2 > 1;
+test def 2_>_1 := 2 > 1;
 
-test def 2>=1 := 2 >= 1;
+test def 2_>=_1 := 2 >= 1;
 
-test def 2>=2 := 2 >= 2;
+test def 2_>=_2 := 2 >= 2;
 
-test def 1!=2 := 1 != 2;
+test def 1_!=_2 := 1 != 2;
