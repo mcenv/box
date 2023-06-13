@@ -501,7 +501,7 @@ class Pack private constructor(
         listOf(
           PerformOperation(R0, MAIN, if (depth == 0) MUL else ADD, R0, if (depth == 0) `65536` else MAIN),
           RemoveData(DataAccessor(MCX_HEAP, NbtPath(path.nodes + IndexedElement(2)))),
-          Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Set(SourceProvider.Value(buildEndListTag()))))),
+          Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Append(SourceProvider.Value(buildEndListTag()))))),
         )
       })
     }
