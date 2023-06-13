@@ -142,7 +142,7 @@ object Packed {
 
   data class DataAccessor(
     val target: ResourceLocation,
-    val path: NbtPath,
+    val path: List<NbtNode>,
   )
 
   sealed class DataManipulator {
@@ -172,8 +172,6 @@ object Packed {
     MAX,
     SWAP,
   }
-
-  data class NbtPath(val nodes: List<NbtNode>)
 
   sealed class NbtNode {
     data class MatchRootObject(val pattern: CompoundTag) : NbtNode()

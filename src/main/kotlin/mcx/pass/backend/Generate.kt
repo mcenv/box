@@ -270,19 +270,17 @@ class Generate private constructor(
   }
 
   private fun StringBuilder.generateNbtPath(
-    path: P.NbtPath,
+    path: List<P.NbtNode>,
   ) {
-    generateNbtNode(path.nodes.first())
-    if (path.nodes.size > 1) {
-      path.nodes
-        .drop(1)
-        .forEach {
-          when (it) {
-            is P.NbtNode.MatchObject, is P.NbtNode.CompoundChild -> append('.')
-            else                                                 -> Unit
-          }
-          generateNbtNode(it)
+    generateNbtNode(path.first())
+    if (path.size > 1) {
+      path.drop(1).forEach {
+        when (it) {
+          is P.NbtNode.MatchObject, is P.NbtNode.CompoundChild -> append('.')
+          else                                                 -> Unit
         }
+        generateNbtNode(it)
+      }
     }
   }
 
