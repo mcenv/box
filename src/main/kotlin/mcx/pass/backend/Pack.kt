@@ -500,9 +500,8 @@ class Pack private constructor(
         val path = nbtPath { (0..<depth).fold(it("heap")) { acc, _ -> acc(-2) } }
         listOf(
           PerformOperation(R0, MAIN, if (depth == 0) MUL else ADD, R0, if (depth == 0) `65536` else MAIN),
-          Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX_HEAP, path)))),
-          Execute.ConditionalScoreMatches(true, R1, MAIN, 3..Int.MAX_VALUE, Execute.ConditionalScoreMatches(true, R0, MAIN, 0..Int.MAX_VALUE, Execute.Run(RemoveData(DataAccessor(MCX_HEAP, NbtPath(path.nodes + IndexedElement(2))))))),
-          Execute.ConditionalScoreMatches(true, R1, MAIN, Int.MIN_VALUE..2, Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Set(SourceProvider.Value(buildEndListTag())))))),
+          RemoveData(DataAccessor(MCX_HEAP, NbtPath(path.nodes + IndexedElement(2)))),
+          Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Set(SourceProvider.Value(buildEndListTag()))))),
         )
       })
     }
