@@ -258,7 +258,7 @@
       ]
     },
     "annotation": {
-      "match": "@(?:deprecated|unstable)\\b",
+      "match": "@(?:deprecated|unstable|delicate)\\b",
       "name": "keyword.annotation.mcx"
     },
     "modifier": {
