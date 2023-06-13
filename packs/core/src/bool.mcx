@@ -1,7 +1,3 @@
-import {
-  core::str::=,
-}
-
 export def !(a : bool) : bool :=
   if a then false else true;
 
@@ -31,7 +27,3 @@ test def false_|_true := false | true;
 test def true_|_false := true | false;
 
 test def true_|_true := true | true;
-
-test def to_str_false_=_"false" := to_str(false) = "false";
-
-test def to_str_true_=_"true" := to_str(true) = "true";
