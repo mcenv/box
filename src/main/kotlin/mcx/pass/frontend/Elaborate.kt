@@ -279,7 +279,7 @@ class Elaborate private constructor(
 
       term is R.Term.Point && synth(type)                  -> { // TODO: unify tags
         val (element, elementType) = synthTerm(term.element, phase)
-        val type = type ?: elementType.type.value
+        val type = elementType.type.value
         typed(type) {
           C.Term.Point(element, it)
         }
