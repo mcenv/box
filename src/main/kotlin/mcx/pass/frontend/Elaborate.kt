@@ -488,21 +488,25 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Meta && match<Value>(type)                                  -> {
+      term is R.Term.Meta && match<Value>(type)            -> {
         val type = type ?: meta.freshValue(term.range)
         next().quoteValue(meta.freshValue(term.range)) to type
       }
 
-      term is R.Term.As && synth(type)                                           -> {
+      term is R.Term.As && synth(type)                     -> {
         val type = env.evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
 
-      term is R.Term.Hole && match<Value>(type)                                  -> {
+      term is R.Term.Hole && match<Value>(type)            -> {
         C.Term.Hole to Value.Hole
       }
 
-      synth(type)                                                                -> {
+      synth(type) && phase == Phase.WORLD                  -> {
+        invalidTerm(phaseMismatch(Phase.CONST, phase, term.range))
+      }
+
+      synth(type)                                          -> {
         invalidTerm(cannotSynthesize(term.range))
       }
 
