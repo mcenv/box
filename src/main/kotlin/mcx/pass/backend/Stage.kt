@@ -9,7 +9,6 @@ import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.pass.*
 import mcx.util.collections.mapWith
-import mcx.util.map
 
 @Suppress("NAME_SHADOWING")
 class Stage private constructor() {
@@ -83,7 +82,7 @@ class Stage private constructor() {
           else                                              -> {
             val thenBranch = lazy { evalTerm(term.thenBranch, phase) }
             val elseBranch = lazy { evalTerm(term.elseBranch, phase) }
-            val type = term.type.map { evalTerm(it, phase) }
+            val type = lazy { evalTerm(term.type, phase) }
             Value.If(condition, thenBranch, elseBranch, type)
           }
         }
@@ -179,7 +178,7 @@ class Stage private constructor() {
 
       is Term.VecOf      -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.VecOf(elements, type)
       }
 
@@ -190,7 +189,7 @@ class Stage private constructor() {
 
       is Term.StructOf   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.StructOf(elements, type)
       }
 
@@ -201,19 +200,19 @@ class Stage private constructor() {
 
       is Term.RefOf      -> {
         val element = lazy { evalTerm(term.element, phase) }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.RefOf(element, type)
       }
 
       is Term.Point      -> {
         val element = lazy { evalTerm(term.element, phase) }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.Point(element, type)
       }
 
       is Term.Union      -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.Union(elements, type)
       }
 
@@ -229,7 +228,7 @@ class Stage private constructor() {
 
       is Term.FuncOf     -> {
         val result = Closure(this, term.result)
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.FuncOf(term.open, term.params, result, type)
       }
 
@@ -246,7 +245,7 @@ class Stage private constructor() {
             }
           }
         } ?: run {
-          val type = term.type.map { evalTerm(it, phase) }
+          val type = lazy { evalTerm(term.type, phase) }
           Value.Apply(term.open, func, args, type)
         }
       }
@@ -260,7 +259,7 @@ class Stage private constructor() {
       is Term.CodeOf     -> {
         requireConst(term, phase)
         val element = lazy { evalTerm(term.element, Phase.WORLD) }
-        val type = term.type.map { evalTerm(it, phase) }
+        val type = lazy { evalTerm(term.type, phase) }
         Value.CodeOf(element, type)
       }
 
@@ -273,7 +272,7 @@ class Stage private constructor() {
       is Term.Command -> {
         requireWorld(term, phase)
         val element = lazy { evalTerm(term.element, Phase.CONST) }
-        val type = term.type.map { evalTerm(it, phase /* ? */) }
+        val type = lazy { evalTerm(term.type, phase /* ? */) }
         Value.Command(element, type)
       }
 
@@ -282,7 +281,7 @@ class Stage private constructor() {
           Phase.WORLD -> {
             val init = lazy { evalTerm(term.init, phase) }
             val body = lazy { (this + init).evalTerm(term.body, phase) }
-            val type = term.type.map { evalTerm(it, phase) }
+            val type = lazy { evalTerm(term.type, phase) }
             Value.Let(term.binder, init, body, type)
           }
           Phase.CONST -> {
@@ -296,11 +295,11 @@ class Stage private constructor() {
         when (phase) {
           Phase.WORLD -> {
             val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
-            val branches = term.branches.mapIndexed { index, (pattern, body) ->
+            val branches = term.branches.map { (pattern, body) ->
               val body = lazy { evalTerm(body, phase) }
               pattern to body
             }
-            val type = term.type.map { evalTerm(it, phase) }
+            val type = lazy { evalTerm(term.type, phase) }
             Value.Match(scrutinee, branches, type)
           }
           Phase.CONST -> {
@@ -315,7 +314,7 @@ class Stage private constructor() {
             }
             when (matchedIndex) {
               -1   -> {
-                val type = term.type.map { evalTerm(it, phase) }
+                val type = lazy { evalTerm(term.type, phase) }
                 Value.Match(scrutinee, branches, type)
               }
               else -> {
@@ -331,7 +330,7 @@ class Stage private constructor() {
         val lvl = term.idx.toLvl(next())
         when (phase) {
           Phase.WORLD -> {
-            val type = term.type.map { evalTerm(it, phase) }
+            val type = lazy { evalTerm(term.type, phase) }
             Value.Var(term.name, lvl, type)
           }
           Phase.CONST -> {
@@ -351,7 +350,7 @@ class Stage private constructor() {
             }
           }
         } ?: run {
-          val type = term.type.map { evalTerm(it, phase) }
+          val type = lazy { evalTerm(term.type, phase) }
           Value.Def(term.def, type)
         }
       }
@@ -396,7 +395,7 @@ class Stage private constructor() {
         val condition = quoteValue(value.condition, phase)
         val thenBranch = quoteValue(value.thenBranch.value, phase)
         val elseBranch = quoteValue(value.elseBranch.value, phase)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.If(condition, thenBranch, elseBranch, type)
       }
 
@@ -490,7 +489,7 @@ class Stage private constructor() {
 
       is Value.VecOf      -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.VecOf(elements, type)
       }
 
@@ -501,7 +500,7 @@ class Stage private constructor() {
 
       is Value.StructOf   -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.StructOf(elements, type)
       }
 
@@ -512,19 +511,19 @@ class Stage private constructor() {
 
       is Value.RefOf      -> {
         val element = quoteValue(value.element.value, phase)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.RefOf(element, type)
       }
 
       is Value.Point      -> {
         val element = quoteValue(value.element.value, phase)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Point(element, type)
       }
 
       is Value.Union      -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Union(elements, type)
       }
 
@@ -548,14 +547,14 @@ class Stage private constructor() {
           ),
           phase,
         )
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.FuncOf(value.open, value.params, result, type)
       }
 
       is Value.Apply      -> {
         val func = quoteValue(value.func, phase)
         val args = value.args.map { quoteValue(it.value, phase) }
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Apply(value.open, func, args, type)
       }
 
@@ -566,26 +565,26 @@ class Stage private constructor() {
 
       is Value.CodeOf     -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.CodeOf(element, type)
       }
 
       is Value.Splice  -> {
         val element = quoteValue(value.element, Phase.CONST)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Splice(element, type)
       }
 
       is Value.Command -> {
         val element = quoteValue(value.element.value, Phase.CONST)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Command(element, type)
       }
 
       is Value.Let     -> {
         val init = quoteValue(value.init.value, phase)
         val body = quoteValue(value.body.value, phase)
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Let(value.binder, init, body, type)
       }
 
@@ -595,22 +594,22 @@ class Stage private constructor() {
           val body = (this + 1).quoteValue(body.value, phase)
           pattern to body
         }
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Match(scrutinee, branches, type)
       }
 
       is Value.Var     -> {
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Var(value.name, value.lvl.toIdx(this), type)
       }
 
       is Value.Def     -> {
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Def(value.def, type)
       }
 
       is Value.Meta    -> {
-        val type = value.type.map { quoteValue(it, phase) }
+        val type = quoteValue(value.type.value, phase)
         Term.Meta(value.index, value.source, type)
       }
 

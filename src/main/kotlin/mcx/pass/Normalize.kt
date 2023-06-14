@@ -11,7 +11,6 @@ import mcx.ast.Modifier
 import mcx.ast.toIdx
 import mcx.ast.toLvl
 import mcx.util.collections.mapWith
-import mcx.util.map
 
 /**
  * Creates an empty [Env].
@@ -63,7 +62,7 @@ fun Env.evalTerm(term: Term): Value {
         else            -> {
           val thenBranch = lazy { evalTerm(term.thenBranch) }
           val elseBranch = lazy { evalTerm(term.elseBranch) }
-          val type = term.type.map { evalTerm(it) }
+          val type = lazy { evalTerm(term.type) }
           Value.If(condition, thenBranch, elseBranch, type)
         }
       }
@@ -159,7 +158,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.VecOf      -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.VecOf(elements, type)
     }
 
@@ -170,7 +169,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.StructOf   -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.StructOf(elements, type)
     }
 
@@ -181,19 +180,19 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.RefOf      -> {
       val element = lazy { evalTerm(term.element) }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.RefOf(element, type)
     }
 
     is Term.Point      -> {
       val element = lazy { evalTerm(term.element) }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.Point(element, type)
     }
 
     is Term.Union      -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.Union(elements, type)
     }
 
@@ -209,7 +208,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.FuncOf     -> {
       val result = Closure(this, term.result)
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.FuncOf(term.open, term.params, result, type)
     }
 
@@ -221,7 +220,7 @@ fun Env.evalTerm(term: Term): Value {
         is Value.Def    -> lookupBuiltin(func.def.name)!!.eval(args)
         else            -> null
       } ?: run {
-        val type = term.type.map { evalTerm(it) }
+        val type = lazy { evalTerm(term.type) }
         Value.Apply(term.open, func, args, type)
       }
     }
@@ -233,7 +232,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.CodeOf     -> {
       val element = lazy { evalTerm(term.element) }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.CodeOf(element, type)
     }
 
@@ -241,7 +240,7 @@ fun Env.evalTerm(term: Term): Value {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> {
-          val type = term.type.map { evalTerm(it) }
+          val type = lazy { evalTerm(term.type) }
           Value.Splice(element, type)
         }
       }
@@ -249,7 +248,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.Command -> {
       val element = lazy { evalTerm(term.element) }
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.Command(element, type)
     }
 
@@ -270,7 +269,7 @@ fun Env.evalTerm(term: Term): Value {
       }
       when (matchedIndex) {
         -1   -> {
-          val type = term.type.map { evalTerm(it) }
+          val type = lazy { evalTerm(term.type) }
           Value.Match(scrutinee, branches, type)
         }
         else -> {
@@ -287,14 +286,14 @@ fun Env.evalTerm(term: Term): Value {
     is Term.Def     -> {
       if (Modifier.BUILTIN in term.def.modifiers) {
         // Builtin definitions have compiler-defined semantics and need to be handled specially.
-        val type = term.type.map { evalTerm(it) }
+        val type = lazy { evalTerm(term.type) }
         Value.Def(term.def, type)
       } else {
         evalTerm(term.def.body!!)
       }
     }
     is Term.Meta    -> {
-      val type = term.type.map { evalTerm(it) }
+      val type = lazy { evalTerm(term.type) }
       Value.Meta(term.index, term.source, type)
     }
 
@@ -334,7 +333,7 @@ fun Lvl.quoteValue(value: Value): Term {
       val condition = quoteValue(value.condition)
       val thenBranch = quoteValue(value.thenBranch.value)
       val elseBranch = quoteValue(value.elseBranch.value)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.If(condition, thenBranch, elseBranch, type)
     }
 
@@ -428,7 +427,7 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.VecOf      -> {
       val elements = value.elements.map { quoteValue(it.value) }
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.VecOf(elements, type)
     }
 
@@ -439,7 +438,7 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.StructOf   -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.StructOf(elements, type)
     }
 
@@ -450,18 +449,18 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.RefOf      -> {
       val element = quoteValue(value.element.value)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.RefOf(element, type)
     }
 
     is Value.Point      -> {
       val element = quoteValue(value.element.value)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Point(element, type)
     }
     is Value.Union      -> {
       val elements = value.elements.map { quoteValue(it.value) }
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Union(elements, type)
     }
 
@@ -479,14 +478,14 @@ fun Lvl.quoteValue(value: Value): Term {
       val result = (this + value.params.size).quoteValue(
         value.result.open(this, (value.type.value as Value.Func /* TODO: unify */).params.map { (_, type) -> type })
       )
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.FuncOf(value.open, value.params, result, type)
     }
 
     is Value.Apply      -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Apply(value.open, func, args, type)
     }
 
@@ -497,19 +496,19 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.CodeOf  -> {
       val element = quoteValue(value.element.value)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.CodeOf(element, type)
     }
 
     is Value.Splice  -> {
       val element = quoteValue(value.element)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Splice(element, type)
     }
 
     is Value.Command -> {
       val element = quoteValue(value.element.value)
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Command(element, type)
     }
 
@@ -524,22 +523,22 @@ fun Lvl.quoteValue(value: Value): Term {
         val body = (this + 1).quoteValue(body.value)
         pattern to body
       }
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Match(scrutinee, branches, type)
     }
 
     is Value.Var     -> {
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Var(value.name, value.lvl.toIdx(this), type)
     }
 
     is Value.Def     -> {
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Def(value.def, type)
     }
 
     is Value.Meta    -> {
-      val type = value.type.map { quoteValue(it) }
+      val type = quoteValue(value.type.value)
       Term.Meta(value.index, value.source, type)
     }
 

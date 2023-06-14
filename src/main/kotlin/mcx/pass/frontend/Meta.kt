@@ -79,7 +79,7 @@ class Meta {
         val condition = zonkTerm(term.condition)
         val thenBranch = zonkTerm(term.thenBranch)
         val elseBranch = zonkTerm(term.elseBranch)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.If(condition, thenBranch, elseBranch, type)
       }
 
@@ -173,7 +173,7 @@ class Meta {
 
       is Term.VecOf    -> {
         val elements = term.elements.map { zonkTerm(it) }
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.VecOf(elements, type)
       }
 
@@ -184,7 +184,7 @@ class Meta {
 
       is Term.StructOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.StructOf(elements, type)
       }
 
@@ -195,19 +195,19 @@ class Meta {
 
       is Term.RefOf    -> {
         val element = zonkTerm(term.element)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.RefOf(element, type)
       }
 
       is Term.Point    -> {
         val element = zonkTerm(term.element)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Point(element, type)
       }
 
       is Term.Union    -> {
         val elements = term.elements.map { zonkTerm(it) }
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Union(elements, type)
       }
 
@@ -224,14 +224,14 @@ class Meta {
       is Term.FuncOf     -> {
         val params = term.params
         val result = (this + params.size).zonkTerm(term.result)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.FuncOf(term.open, params, result, type)
       }
 
       is Term.Apply      -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Apply(term.open, func, args, type)
       }
 
@@ -242,26 +242,26 @@ class Meta {
 
       is Term.CodeOf     -> {
         val element = zonkTerm(term.element)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.CodeOf(element, type)
       }
 
       is Term.Splice  -> {
         val element = zonkTerm(term.element)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Splice(element, type)
       }
 
       is Term.Command -> {
         val element = zonkTerm(term.element)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Command(element, type)
       }
 
       is Term.Let     -> {
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Let(term.binder, init, body, type)
       }
 
@@ -271,24 +271,24 @@ class Meta {
           val body = zonkTerm(body)
           pattern to body
         }
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Match(scrutinee, branches, type)
       }
 
       is Term.Var     -> {
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
 
       is Term.Def     -> {
-        val type = lazyOf(zonkTerm(term.type.value))
+        val type = zonkTerm(term.type)
         Term.Def(term.def, type)
       }
 
       is Term.Meta    -> {
         val solution = values.getOrNull(term.index)
         if (solution == null || (solution is Value.Meta && term.index == solution.index)) {
-          val type = lazyOf(zonkTerm(term.type.value))
+          val type = zonkTerm(term.type)
           Term.Meta(term.index, term.source, type).also {
             unsolvedMetas += it.index to it.source
           }

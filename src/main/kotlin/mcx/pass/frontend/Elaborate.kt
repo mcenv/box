@@ -475,7 +475,7 @@ class Elaborate private constructor(
 
             val actualPhase = getPhase(definition.modifiers)
             if (actualPhase <= phase) {
-              val def = C.Term.Def(definition, lazyOf(definition.type))
+              val def = C.Term.Def(definition, definition.type)
               val type = env.evalTerm(definition.type)
               def to type
             } else {
@@ -794,9 +794,9 @@ class Elaborate private constructor(
 
   private inline fun Ctx.typed(
     type: Value,
-    build: (Lazy<C.Term>) -> C.Term,
+    build: (C.Term) -> C.Term,
   ): Pair<C.Term, Value> {
-    return build(lazy { next().quoteValue(type) }) to type
+    return build(next().quoteValue(type)) to type
   }
 
   private data class Ctx(
