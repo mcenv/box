@@ -113,7 +113,7 @@ class Resolve private constructor(
       }
 
       is S.Term.TagOf      -> {
-        R.Term.TagOf(term.value, range)
+        R.Term.TagOf(term.repr, range)
       }
 
       is S.Term.Type       -> {

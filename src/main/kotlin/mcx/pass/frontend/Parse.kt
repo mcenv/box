@@ -3,8 +3,7 @@ package mcx.pass.frontend
 import mcx.ast.Annotation
 import mcx.ast.Modifier
 import mcx.ast.ModuleLocation
-import mcx.ast.Surface
-import mcx.data.NbtType
+import mcx.ast.Repr
 import mcx.lsp.Ranged
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo
@@ -27,7 +26,7 @@ class Parse private constructor(
 
   private fun parseModule(
     module: ModuleLocation,
-  ): Surface.Module {
+  ): S.Module {
     skipTrivia()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
@@ -321,19 +320,19 @@ class Parse private constructor(
             when (word.value) {
               ""             -> null
               "tag"          -> S.Term.Tag(until())
-              "end"          -> S.Term.TagOf(NbtType.END, until())
-              "byte"         -> S.Term.TagOf(NbtType.BYTE, until())
-              "short"        -> S.Term.TagOf(NbtType.SHORT, until())
-              "int"          -> S.Term.TagOf(NbtType.INT, until())
-              "long"         -> S.Term.TagOf(NbtType.LONG, until())
-              "float"        -> S.Term.TagOf(NbtType.FLOAT, until())
-              "double"       -> S.Term.TagOf(NbtType.DOUBLE, until())
-              "string"       -> S.Term.TagOf(NbtType.STRING, until())
-              "byte_array"   -> S.Term.TagOf(NbtType.BYTE_ARRAY, until())
-              "int_array"    -> S.Term.TagOf(NbtType.INT_ARRAY, until())
-              "long_array"   -> S.Term.TagOf(NbtType.LONG_ARRAY, until())
-              "list"         -> S.Term.TagOf(NbtType.LIST, until())
-              "compound"     -> S.Term.TagOf(NbtType.COMPOUND, until())
+              "end"          -> S.Term.TagOf(Repr.End, until())
+              "byte"         -> S.Term.TagOf(Repr.Byte, until())
+              "short"        -> S.Term.TagOf(Repr.Short, until())
+              "int"          -> S.Term.TagOf(Repr.Int, until())
+              "long"         -> S.Term.TagOf(Repr.Long, until())
+              "float"        -> S.Term.TagOf(Repr.Float, until())
+              "double"       -> S.Term.TagOf(Repr.Double, until())
+              "string"       -> S.Term.TagOf(Repr.String, until())
+              "byte_array"   -> S.Term.TagOf(Repr.ByteArray, until())
+              "int_array"    -> S.Term.TagOf(Repr.IntArray, until())
+              "long_array"   -> S.Term.TagOf(Repr.LongArray, until())
+              "list"         -> S.Term.TagOf(Repr.List, until())
+              "compound"     -> S.Term.TagOf(Repr.Compound, until())
               "type"         -> {
                 skipTrivia()
                 val tag = parseTerm0()
@@ -884,7 +883,7 @@ class Parse private constructor(
   }
 
   data class Result(
-    val module: Surface.Module,
+    val module: S.Module,
     val diagnostics: List<Diagnostic>,
   )
 

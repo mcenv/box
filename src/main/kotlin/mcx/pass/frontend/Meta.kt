@@ -310,7 +310,7 @@ class Meta {
     val value1 = forceValue(value1)
     val value2 = forceValue(value2)
     return when {
-      value1 is Value.Meta                                     -> {
+      value1 is Value.Meta                             -> {
         when (val solution1 = values[value1.index]) {
           null -> {
             values[value1.index] = value2
@@ -319,7 +319,7 @@ class Meta {
           else -> unifyValue(solution1, value2)
         }
       }
-      value2 is Value.Meta                                     -> {
+      value2 is Value.Meta                             -> {
         when (val solution2 = values[value2.index]) {
           null -> {
             values[value2.index] = value1
@@ -328,19 +328,19 @@ class Meta {
           else -> unifyValue(value1, solution2)
         }
       }
-      value1 is Value.Tag && value2 is Value.Tag               -> true
-      value1 is Value.TagOf && value2 is Value.TagOf           -> value1.value == value2.value
-      value1 is Value.Type && value2 is Value.Type             -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Bool && value2 is Value.Bool             -> true
-      value1 is Value.BoolOf && value2 is Value.BoolOf         -> value1.value == value2.value
-      value1 is Value.If && value2 is Value.If                 -> {
+      value1 is Value.Tag && value2 is Value.Tag       -> true
+      value1 is Value.TagOf && value2 is Value.TagOf   -> value1.repr == value2.repr
+      value1 is Value.Type && value2 is Value.Type     -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Bool && value2 is Value.Bool     -> true
+      value1 is Value.BoolOf && value2 is Value.BoolOf -> value1.value == value2.value
+      value1 is Value.If && value2 is Value.If         -> {
         unifyValue(value1.condition, value2.condition) &&
         unifyValue(value1.thenBranch.value, value2.elseBranch.value) &&
         unifyValue(value1.elseBranch.value, value2.elseBranch.value)
       }
-      value1 is Value.I8 && value2 is Value.I8                 -> true
-      value1 is Value.I8Of && value2 is Value.I8Of             -> value1.value == value2.value
-      value1 is Value.I16 && value2 is Value.I16               -> true
+      value1 is Value.I8 && value2 is Value.I8         -> true
+      value1 is Value.I8Of && value2 is Value.I8Of     -> value1.value == value2.value
+      value1 is Value.I16 && value2 is Value.I16       -> true
       value1 is Value.I16Of && value2 is Value.I16Of           -> value1.value == value2.value
       value1 is Value.I32 && value2 is Value.I32               -> true
       value1 is Value.I32Of && value2 is Value.I32Of           -> value1.value == value2.value

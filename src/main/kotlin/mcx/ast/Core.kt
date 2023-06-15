@@ -1,6 +1,5 @@
 package mcx.ast
 
-import mcx.data.NbtType
 import org.eclipse.lsp4j.Range
 
 object Core {
@@ -39,7 +38,7 @@ object Core {
     }
 
     data class TagOf(
-      val value: NbtType,
+      val repr: Repr,
     ) : Term() {
       override val type: Term get() = Tag
     }
@@ -50,19 +49,19 @@ object Core {
       override val type: Term get() = BYTE
 
       companion object {
-        val END: Type = Type(TagOf(NbtType.END))
-        val BYTE: Type = Type(TagOf(NbtType.BYTE))
-        val SHORT: Type = Type(TagOf(NbtType.SHORT))
-        val INT: Type = Type(TagOf(NbtType.INT))
-        val LONG: Type = Type(TagOf(NbtType.LONG))
-        val FLOAT: Type = Type(TagOf(NbtType.FLOAT))
-        val DOUBLE: Type = Type(TagOf(NbtType.DOUBLE))
-        val STRING: Type = Type(TagOf(NbtType.STRING))
-        val BYTE_ARRAY: Type = Type(TagOf(NbtType.BYTE_ARRAY))
-        val INT_ARRAY: Type = Type(TagOf(NbtType.INT_ARRAY))
-        val LONG_ARRAY: Type = Type(TagOf(NbtType.LONG_ARRAY))
-        val LIST: Type = Type(TagOf(NbtType.LIST))
-        val COMPOUND: Type = Type(TagOf(NbtType.COMPOUND))
+        val END: Type = Type(TagOf(Repr.End))
+        val BYTE: Type = Type(TagOf(Repr.Byte))
+        val SHORT: Type = Type(TagOf(Repr.Short))
+        val INT: Type = Type(TagOf(Repr.Int))
+        val LONG: Type = Type(TagOf(Repr.Long))
+        val FLOAT: Type = Type(TagOf(Repr.Float))
+        val DOUBLE: Type = Type(TagOf(Repr.Double))
+        val STRING: Type = Type(TagOf(Repr.String))
+        val BYTE_ARRAY: Type = Type(TagOf(Repr.ByteArray))
+        val INT_ARRAY: Type = Type(TagOf(Repr.IntArray))
+        val LONG_ARRAY: Type = Type(TagOf(Repr.LongArray))
+        val LIST: Type = Type(TagOf(Repr.List))
+        val COMPOUND: Type = Type(TagOf(Repr.Compound))
       }
     }
 

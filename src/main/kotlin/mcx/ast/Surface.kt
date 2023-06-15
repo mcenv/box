@@ -1,6 +1,5 @@
 package mcx.ast
 
-import mcx.data.NbtType
 import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 
@@ -49,7 +48,7 @@ object Surface {
     ) : Term()
 
     data class TagOf(
-      val value: NbtType,
+      val repr: Repr,
       override val range: Range,
     ) : Term()
 

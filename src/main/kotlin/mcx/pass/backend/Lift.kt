@@ -1,6 +1,7 @@
 package mcx.pass.backend
 
 import mcx.ast.Modifier
+import mcx.ast.Repr
 import mcx.data.NbtType
 import mcx.pass.Context
 import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx
@@ -377,7 +378,21 @@ class Lift private constructor(
   }
 
   private fun eraseType(type: C.Term): NbtType {
-    return ((type.type as C.Term.Type).element as C.Term.TagOf).value
+    return when (((type.type as C.Term.Type).element as C.Term.TagOf).repr) {
+      Repr.End       -> NbtType.END
+      Repr.Byte      -> NbtType.BYTE
+      Repr.Short     -> NbtType.SHORT
+      Repr.Int       -> NbtType.INT
+      Repr.Long      -> NbtType.LONG
+      Repr.Float     -> NbtType.FLOAT
+      Repr.Double    -> NbtType.DOUBLE
+      Repr.ByteArray -> NbtType.BYTE_ARRAY
+      Repr.IntArray  -> NbtType.INT_ARRAY
+      Repr.LongArray -> NbtType.LONG_ARRAY
+      Repr.String    -> NbtType.STRING
+      Repr.List      -> NbtType.LIST
+      Repr.Compound  -> NbtType.COMPOUND
+    }
   }
 
   private fun Ctx.createFreshFunction(

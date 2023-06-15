@@ -53,7 +53,7 @@ class Stage private constructor() {
 
       is Term.TagOf      -> {
         requireConst(term, phase)
-        Value.TagOf(term.value)
+        Value.TagOf(term.repr)
       }
 
       is Term.Type       -> {
@@ -375,7 +375,7 @@ class Stage private constructor() {
       }
 
       is Value.TagOf      -> {
-        Term.TagOf(value.value)
+        Term.TagOf(value.repr)
       }
 
       is Value.Type       -> {

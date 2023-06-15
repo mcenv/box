@@ -5,7 +5,7 @@ import mcx.ast.Core.Definition
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
-import mcx.data.NbtType
+import mcx.ast.Repr
 import org.eclipse.lsp4j.Range
 
 /**
@@ -21,7 +21,7 @@ sealed class Value {
   }
 
   data class TagOf(
-    val value: NbtType,
+    val repr: Repr,
   ) : Value() {
     override val type: Lazy<Value> get() = Tag.LAZY
   }
@@ -32,19 +32,19 @@ sealed class Value {
     override val type: Lazy<Value> get() = BYTE_LAZY
 
     companion object {
-      val END: Value = Type(lazyOf(TagOf(NbtType.END)))
-      val BYTE: Value = Type(lazyOf(TagOf(NbtType.BYTE)))
-      val SHORT: Value = Type(lazyOf(TagOf(NbtType.SHORT)))
-      val INT: Value = Type(lazyOf(TagOf(NbtType.INT)))
-      val LONG: Value = Type(lazyOf(TagOf(NbtType.LONG)))
-      val FLOAT: Value = Type(lazyOf(TagOf(NbtType.FLOAT)))
-      val DOUBLE: Value = Type(lazyOf(TagOf(NbtType.DOUBLE)))
-      val STRING: Value = Type(lazyOf(TagOf(NbtType.STRING)))
-      val BYTE_ARRAY: Value = Type(lazyOf(TagOf(NbtType.BYTE_ARRAY)))
-      val INT_ARRAY: Value = Type(lazyOf(TagOf(NbtType.INT_ARRAY)))
-      val LONG_ARRAY: Value = Type(lazyOf(TagOf(NbtType.LONG_ARRAY)))
-      val LIST: Value = Type(lazyOf(TagOf(NbtType.LIST)))
-      val COMPOUND: Value = Type(lazyOf(TagOf(NbtType.COMPOUND)))
+      val END: Value = Type(lazyOf(TagOf(Repr.End)))
+      val BYTE: Value = Type(lazyOf(TagOf(Repr.Byte)))
+      val SHORT: Value = Type(lazyOf(TagOf(Repr.Short)))
+      val INT: Value = Type(lazyOf(TagOf(Repr.Int)))
+      val LONG: Value = Type(lazyOf(TagOf(Repr.Long)))
+      val FLOAT: Value = Type(lazyOf(TagOf(Repr.Float)))
+      val DOUBLE: Value = Type(lazyOf(TagOf(Repr.Double)))
+      val STRING: Value = Type(lazyOf(TagOf(Repr.String)))
+      val BYTE_ARRAY: Value = Type(lazyOf(TagOf(Repr.ByteArray)))
+      val INT_ARRAY: Value = Type(lazyOf(TagOf(Repr.IntArray)))
+      val LONG_ARRAY: Value = Type(lazyOf(TagOf(Repr.LongArray)))
+      val LIST: Value = Type(lazyOf(TagOf(Repr.List)))
+      val COMPOUND: Value = Type(lazyOf(TagOf(Repr.Compound)))
 
       val END_LAZY: Lazy<Value> = lazyOf(END)
       val BYTE_LAZY: Lazy<Value> = lazyOf(BYTE)

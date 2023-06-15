@@ -115,7 +115,7 @@ class Elaborate private constructor(
       }
 
       term is R.Term.TagOf && phase == Phase.CONST && synth(type)                -> {
-        C.Term.TagOf(term.value) to Value.Tag
+        C.Term.TagOf(term.repr) to Value.Tag
       }
 
       term is R.Term.Type && synth(type)                                         -> {

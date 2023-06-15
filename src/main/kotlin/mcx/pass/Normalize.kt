@@ -34,7 +34,7 @@ fun Env.evalTerm(term: Term): Value {
     }
 
     is Term.TagOf      -> {
-      Value.TagOf(term.value)
+      Value.TagOf(term.repr)
     }
 
     is Term.Type       -> {
@@ -313,7 +313,7 @@ fun Lvl.quoteValue(value: Value): Term {
     }
 
     is Value.TagOf      -> {
-      Term.TagOf(value.value)
+      Term.TagOf(value.repr)
     }
 
     is Value.Type       -> {

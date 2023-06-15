@@ -14,19 +14,19 @@ fun prettyTerm(
     term: Term,
   ): String {
     return when (term) {
-      is Term.Tag        -> "tag"
-      is Term.TagOf      -> term.value.toString()
-      is Term.Type       -> "(type ${go(term.element)})"
-      is Term.Bool       -> "bool"
-      is Term.BoolOf     -> term.value.toString()
-      is Term.If         -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
-      is Term.I8         -> "i8"
-      is Term.I8Of       -> "${term.value}i8"
-      is Term.I16        -> "i16"
-      is Term.I16Of      -> "${term.value}i16"
-      is Term.I32        -> "i32"
-      is Term.I32Of      -> "${term.value}i32"
-      is Term.I64        -> "i64"
+      is Term.Tag    -> "tag"
+      is Term.TagOf  -> term.repr.toString()
+      is Term.Type   -> "(type ${go(term.element)})"
+      is Term.Bool   -> "bool"
+      is Term.BoolOf -> term.value.toString()
+      is Term.If     -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
+      is Term.I8     -> "i8"
+      is Term.I8Of   -> "${term.value}i8"
+      is Term.I16    -> "i16"
+      is Term.I16Of  -> "${term.value}i16"
+      is Term.I32    -> "i32"
+      is Term.I32Of  -> "${term.value}i32"
+      is Term.I64    -> "i64"
       is Term.I64Of      -> "${term.value}i64"
       is Term.F32        -> "f32"
       is Term.F32Of      -> "${term.value}f32"
