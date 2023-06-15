@@ -40,10 +40,6 @@ jobs:
           java-version: "20"
       - name: Validate gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-      - name: Generate Dokka documentation
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: dokkaHtml
       - name: Upload book
         uses: actions/upload-pages-artifact@v1
         with:
