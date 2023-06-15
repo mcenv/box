@@ -66,6 +66,7 @@
 * [Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Step toward Programming with Versions in Real-World Functional Languages**. Proceedings of the 14th ACM International Workshop on Context-Oriented Programming and Advanced Modularity.](https://doi.org/10.1145/3570353.3570359)
 * [Lubis, L.A., Tanabe, Y., Aotani, T., & Masuhara, H. **BatakJava: An Object-Oriented Programming Language with Versions**. Proceedings of the 15th ACM SIGPLAN International Conference on Software Language Engineering.](https://doi.org/10.1145/3567512.3567531)
 * [Lionel Parreaux. **The Ultimate Conditional Syntax**.](https://icfp22.sigplan.org/details/mlfamilyworkshop-2022-papers/6/The-Ultimate-Conditional-Syntax)
+* [Levy, P.B. **Call-by-push-value**. ACM SIGLOG News, 9, 7 - 29.](https://doi.org/10.1145/3537668.3537670)
 
 ## 2023
 
