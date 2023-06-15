@@ -23,4 +23,3 @@
   - [Issues](./references/issues.md)
   - [Quotes](./references/quotes.md)
 - [Formal Definitions](./formal-definitions.md)
-- [API Documentation](./api/index.html)
