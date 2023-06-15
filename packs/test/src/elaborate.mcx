@@ -1,34 +1,34 @@
-const def tag : type end := tag;
+const def tag : type %end := tag;
 
-const def tag_of_end : tag := end;
+const def tag_of_end : tag := %end;
 
-const def tag_of_byte : tag := byte;
+const def tag_of_byte : tag := %byte;
 
-const def tag_of_short : tag := short;
+const def tag_of_short : tag := %short;
 
-const def tag_of_int : tag := int;
+const def tag_of_int : tag := %int;
 
-const def tag_of_long : tag := long;
+const def tag_of_long : tag := %long;
 
-const def tag_of_float : tag := float;
+const def tag_of_float : tag := %float;
 
-const def tag_of_double : tag := double;
+const def tag_of_double : tag := %double;
 
-const def tag_of_string : tag := string;
+const def tag_of_string : tag := %string;
 
-const def tag_of_byte_array : tag := byte_array;
+const def tag_of_byte_array : tag := %byte_array;
 
-const def tag_of_int_array : tag := int_array;
+const def tag_of_int_array : tag := %int_array;
 
-const def tag_of_long_array : tag := long_array;
+const def tag_of_long_array : tag := %long_array;
 
-const def tag_of_list : tag := list;
+const def tag_of_list : tag := %list;
 
-const def tag_of_compound : tag := compound;
+const def tag_of_compound : tag := %compound;
 
-def type : type byte := type byte;
+def type : type %byte := type %byte;
 
-def bool : type byte := bool;
+def bool : type %byte := bool;
 
 def bool_of_false : bool := false;
 
@@ -36,73 +36,73 @@ def bool_of_true : bool := true;
 
 def if : i32 := if true then 2 else 1;
 
-def i8 : type byte := i8;
+def i8 : type %byte := i8;
 
 def i8_of : i8 := 1i8;
 
-def i16 : type short := i16;
+def i16 : type %short := i16;
 
 def i16_of : i16 := 1i16;
 
-def i32 : type int := i32;
+def i32 : type %int := i32;
 
 def i32_of : i32 := 1;
 
-def i64 : type long := i64;
+def i64 : type %long := i64;
 
 def i64_of : i64 := 1i64;
 
-def f32 : type float := f32;
+def f32 : type %float := f32;
 
 def f32_of : f32 := 1.0f32;
 
-def f64 : type double := f64;
+def f64 : type %double := f64;
 
 def f64_of : f64 := 1.0f64;
 
-def str : type string := str;
+def str : type %string := str;
 
 def str_of : str := "";
 
-def i8_array : type byte_array := i8_array;
+def i8_array : type %byte_array := i8_array;
 
 def i8_array_of : i8_array := [i8;];
 
-def i32_array : type int_array := i32_array;
+def i32_array : type %int_array := i32_array;
 
 def i32_array_of : i32_array := [i32;];
 
-def i64_array : type long_array := i64_array;
+def i64_array : type %long_array := i64_array;
 
 def i64_array_of : i64_array := [i64;];
 
-def vec : type list := vec i32;
+def vec : type %list := vec i32;
 
 def vec_of : vec i32 := [];
 
-def struct : type compound := struct {};
+def struct : type %compound := struct {};
 
 # def struct_of : struct {} := {};
 
-def ref : type int := ref i32;
+def ref : type %int := ref i32;
 
 def ref_of : ref i32 := &1;
 
-def point : type int := point 1;
+def point : type %int := point 1;
 
-def union : type int := union {};
+def union : type %int := union {};
 
-def proc : type int := proc () -> i32;
+def proc : type %int := proc () -> i32;
 
 def proc_of : proc () -> i32 := \() -> 1;
 
-def func : type compound := func () -> i32;
+def func : type %compound := func () -> i32;
 
 def func_of : func () -> i32 := \\() -> 1;
 
 def apply : i32 := (\() -> 1)();
 
-const def code : type end := code i32;
+const def code : type %end := code i32;
 
 const def code_of : code i32 := `1;
 

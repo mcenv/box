@@ -133,8 +133,12 @@
           "name": "entity.name.type.mcx"
         },
         {
-          "match": "\\b(?:true|false|end|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound)\\b",
+          "match": "\\b(?:true|false)\\b",
           "name": "constant.language.mcx"
+        },
+        {
+          "match": "%(?:end|byte|short|int|long|float|double|string|byte_array|int_array|long_array|list|compound)\\b",
+          "name": "constant.language.tag.mcx"
         },
         {
           "match": "(?:\\b(?:match|if|then|else|as)\\b)|(?::->)|(?:->)|[&\\\\`$/_]",

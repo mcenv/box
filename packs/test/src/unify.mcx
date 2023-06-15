@@ -2,6 +2,6 @@ def meta≤end : nothing := /"";
 
 def unify_tag : i32 := $(identity(_))(i32)(0);
 
-def unify_type : i32 := $(identity(int))(_)(0);
+def unify_type : i32 := $(identity(%int))(_)(0);
 
 # def unify_tag_and_type : i32 := $(identity(_))(_)(0);

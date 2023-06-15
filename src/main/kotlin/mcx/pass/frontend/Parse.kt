@@ -222,6 +222,25 @@ class Parse private constructor(
             expect(')')
             term
           }
+          '%' -> {
+            skip()
+            when (readWord()) {
+              "end"        -> S.Term.TagOf(Repr.End, until())
+              "byte"       -> S.Term.TagOf(Repr.Byte, until())
+              "short"      -> S.Term.TagOf(Repr.Short, until())
+              "int"        -> S.Term.TagOf(Repr.Int, until())
+              "long"       -> S.Term.TagOf(Repr.Long, until())
+              "float"      -> S.Term.TagOf(Repr.Float, until())
+              "double"     -> S.Term.TagOf(Repr.Double, until())
+              "string"     -> S.Term.TagOf(Repr.String, until())
+              "byte_array" -> S.Term.TagOf(Repr.ByteArray, until())
+              "int_array"  -> S.Term.TagOf(Repr.IntArray, until())
+              "long_array" -> S.Term.TagOf(Repr.LongArray, until())
+              "list"       -> S.Term.TagOf(Repr.List, until())
+              "compound"   -> S.Term.TagOf(Repr.Compound, until())
+              else         -> null
+            }
+          }
           '"' -> parseInterpolatedString()
           '[' -> {
             skip()
@@ -320,19 +339,6 @@ class Parse private constructor(
             when (word.value) {
               ""             -> null
               "tag"          -> S.Term.Tag(until())
-              "end"          -> S.Term.TagOf(Repr.End, until())
-              "byte"         -> S.Term.TagOf(Repr.Byte, until())
-              "short"        -> S.Term.TagOf(Repr.Short, until())
-              "int"          -> S.Term.TagOf(Repr.Int, until())
-              "long"         -> S.Term.TagOf(Repr.Long, until())
-              "float"        -> S.Term.TagOf(Repr.Float, until())
-              "double"       -> S.Term.TagOf(Repr.Double, until())
-              "string"       -> S.Term.TagOf(Repr.String, until())
-              "byte_array"   -> S.Term.TagOf(Repr.ByteArray, until())
-              "int_array"    -> S.Term.TagOf(Repr.IntArray, until())
-              "long_array"   -> S.Term.TagOf(Repr.LongArray, until())
-              "list"         -> S.Term.TagOf(Repr.List, until())
-              "compound"     -> S.Term.TagOf(Repr.Compound, until())
               "type"         -> {
                 skipTrivia()
                 val tag = parseTerm0()
