@@ -140,48 +140,28 @@ class Resolve private constructor(
         R.Term.I8(range)
       }
 
-      is S.Term.I8Of       -> {
-        R.Term.I8Of(term.value, range)
-      }
-
       is S.Term.I16        -> {
         R.Term.I16(range)
-      }
-
-      is S.Term.I16Of      -> {
-        R.Term.I16Of(term.value, range)
       }
 
       is S.Term.I32        -> {
         R.Term.I32(range)
       }
 
-      is S.Term.I32Of      -> {
-        R.Term.I32Of(term.value, range)
-      }
-
       is S.Term.I64        -> {
         R.Term.I64(range)
-      }
-
-      is S.Term.I64Of      -> {
-        R.Term.I64Of(term.value, range)
       }
 
       is S.Term.F32        -> {
         R.Term.F32(range)
       }
 
-      is S.Term.F32Of      -> {
-        R.Term.F32Of(term.value, range)
-      }
-
       is S.Term.F64        -> {
         R.Term.F64(range)
       }
 
-      is S.Term.F64Of      -> {
-        R.Term.F64Of(term.value, range)
+      is S.Term.NumOf      -> {
+        R.Term.NumOf(term.checked, term.value, range)
       }
 
       is S.Term.Str        -> {
@@ -367,8 +347,8 @@ class Resolve private constructor(
     pattern: S.Term,
   ): R.Pattern {
     return when (pattern) {
-      is S.Term.I32Of -> {
-        R.Pattern.I32Of(pattern.value, pattern.range)
+      is S.Term.NumOf -> {
+        R.Pattern.I32Of(pattern.value.toInt() /* TODO */, pattern.range)
       }
 
       is S.Term.Var   -> {

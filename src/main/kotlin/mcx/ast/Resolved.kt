@@ -77,17 +77,7 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class I8Of(
-      val value: Byte,
-      override val range: Range,
-    ) : Term()
-
     data class I16(
-      override val range: Range,
-    ) : Term()
-
-    data class I16Of(
-      val value: Short,
       override val range: Range,
     ) : Term()
 
@@ -95,17 +85,7 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class I32Of(
-      val value: Int,
-      override val range: Range,
-    ) : Term()
-
     data class I64(
-      override val range: Range,
-    ) : Term()
-
-    data class I64Of(
-      val value: Long,
       override val range: Range,
     ) : Term()
 
@@ -113,17 +93,13 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class F32Of(
-      val value: Float,
-      override val range: Range,
-    ) : Term()
-
     data class F64(
       override val range: Range,
     ) : Term()
 
-    data class F64Of(
-      val value: Double,
+    data class NumOf(
+      val checked: Boolean,
+      val value: Number,
       override val range: Range,
     ) : Term()
 

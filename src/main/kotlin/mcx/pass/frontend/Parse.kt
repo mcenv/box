@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import mcx.ast.Surface as S
 
+// TODO: refactor
 @Suppress("NOTHING_TO_INLINE")
 class Parse private constructor(
   private val text: String,
@@ -215,14 +216,14 @@ class Parse private constructor(
     return ranging {
       if (canRead()) {
         when (peek()) {
-          '(' -> {
+          '('  -> {
             skip()
             skipTrivia()
             val term = parseTerm()
             expect(')')
             term
           }
-          '%' -> {
+          '%'  -> {
             skip()
             when (readWord()) {
               "end"        -> S.Term.TagOf(Repr.End, until())
@@ -241,8 +242,8 @@ class Parse private constructor(
               else         -> null
             }
           }
-          '"' -> parseInterpolatedString()
-          '[' -> {
+          '"'  -> parseInterpolatedString()
+          '['  -> {
             skip()
             skipTrivia()
             if (canRead() && peek() == ']') {
@@ -450,16 +451,15 @@ class Parse private constructor(
               else           -> {
                 val name = word.value
                 when {
-                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }
-                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.I16Of(it, until()) }
-                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.I32Of(it, until()) }
-                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.I64Of(it, until()) }
-                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.F32Of(it, until()) }
-                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.F64Of(it, until()) }
-                  else                 -> name.toIntOrNull()?.let { S.Term.I32Of(it, until()) }
-                                          ?: name.toDoubleOrNull()?.let { S.Term.F64Of(it, until()) }
-                                          ?: S.Term.Var(name, until())
-                }
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.NumOf(true, it, until()) }
+                  else                 -> name.toLongOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                } ?: S.Term.Var(name, until())
               }
             }
           }

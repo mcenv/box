@@ -50,15 +50,15 @@ def i32_of : i32 := 1;
 
 def i64 : type %long := i64;
 
-def i64_of : i64 := 1i64;
+def i64_of : i64 := 1;
 
 def f32 : type %float := f32;
 
-def f32_of : f32 := 1.0f32;
+def f32_of : f32 := 1.0;
 
 def f64 : type %double := f64;
 
-def f64_of : f64 := 1.0f64;
+def f64_of : f64 := 1.0;
 
 def str : type %string := str;
 
