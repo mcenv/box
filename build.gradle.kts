@@ -9,12 +9,6 @@ plugins {
   application
 }
 
-buildscript {
-  dependencies {
-    classpath("org.jetbrains.dokka:dokka-base:1.8.20")
-  }
-}
-
 version = "0.1.0"
 
 repositories {
