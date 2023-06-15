@@ -451,14 +451,14 @@ class Parse private constructor(
               else           -> {
                 val name = word.value
                 when {
-                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.NumOf(true, it, until()) }
-                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.NumOf(true, it, until()) }
-                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.NumOf(true, it, until()) }
-                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.NumOf(true, it, until()) }
-                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.NumOf(true, it, until()) }
-                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.NumOf(true, it, until()) }
-                  else                 -> name.toLongOrNull()?.let { S.Term.NumOf(false, it, until()) }
-                                          ?: name.toDoubleOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.NumOf(false, it, until()) }
+                  else                 -> name.toLongOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.NumOf(true, it, until()) }
                 } ?: S.Term.Var(name, until())
               }
             }

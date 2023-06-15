@@ -161,7 +161,7 @@ class Resolve private constructor(
       }
 
       is S.Term.NumOf      -> {
-        R.Term.NumOf(term.checked, term.value, range)
+        R.Term.NumOf(term.inferred, term.value, range)
       }
 
       is S.Term.Str        -> {

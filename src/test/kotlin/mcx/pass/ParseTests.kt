@@ -51,7 +51,7 @@ object ParseTests {
               modifiers = emptyList(),
               name = Ranged("a", Range(Position(0, 4), Position(0, 5))),
               type = Term.I32(Range(Position(0, 8), Position(0, 11))),
-              body = Term.NumOf(false, 0L, Range(Position(0, 15), Position(0, 16))),
+              body = Term.NumOf(true, 0L, Range(Position(0, 15), Position(0, 16))),
               range = Range(Position(0, 0), Position(0, 16)),
             )
           ),

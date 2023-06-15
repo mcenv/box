@@ -149,7 +149,7 @@ class Elaborate private constructor(
         C.Term.I8Of(term.value) to Value.I8
       }
 
-      term is R.Term.NumOf && !term.checked && term.value is Long && check<Value.I8>(type)    -> {
+      term is R.Term.NumOf && term.inferred && term.value is Long && check<Value.I8>(type)    -> {
         C.Term.I8Of(term.value.toByte() /* TODO: check range */) to Value.I8
       }
 
@@ -161,7 +161,7 @@ class Elaborate private constructor(
         C.Term.I16Of(term.value) to Value.I16
       }
 
-      term is R.Term.NumOf && !term.checked && term.value is Long && check<Value.I16>(type)   -> {
+      term is R.Term.NumOf && term.inferred && term.value is Long && check<Value.I16>(type)   -> {
         C.Term.I16Of(term.value.toShort() /* TODO: check range */) to Value.I16
       }
 
@@ -173,7 +173,7 @@ class Elaborate private constructor(
         C.Term.I32Of(term.value) to Value.I32
       }
 
-      term is R.Term.NumOf && !term.checked && term.value is Long && synth(type)              -> {
+      term is R.Term.NumOf && term.inferred && term.value is Long && synth(type)              -> {
         C.Term.I32Of(term.value.toInt() /* TODO: check range */) to Value.I32
       }
 
@@ -185,7 +185,7 @@ class Elaborate private constructor(
         C.Term.I64Of(term.value) to Value.I64
       }
 
-      term is R.Term.NumOf && !term.checked && term.value is Long && check<Value.I64>(type)   -> {
+      term is R.Term.NumOf && term.inferred && term.value is Long && check<Value.I64>(type)   -> {
         C.Term.I64Of(term.value) to Value.I64
       }
 
@@ -197,7 +197,7 @@ class Elaborate private constructor(
         C.Term.F32Of(term.value) to Value.F32
       }
 
-      term is R.Term.NumOf && !term.checked && term.value is Double && check<Value.F32>(type) -> {
+      term is R.Term.NumOf && term.inferred && term.value is Double && check<Value.F32>(type) -> {
         C.Term.F32Of(term.value.toFloat() /* TODO: check range */) to Value.F32
       }
 

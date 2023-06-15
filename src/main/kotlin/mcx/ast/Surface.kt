@@ -98,7 +98,7 @@ object Surface {
     ) : Term()
 
     data class NumOf(
-      val checked: Boolean,
+      val inferred: Boolean,
       val value: Number,
       override val range: Range,
     ) : Term()
