@@ -1,6 +1,7 @@
 package mcx.pass.backend
 
 import mcx.ast.Modifier
+import mcx.ast.Projection
 import mcx.ast.Repr
 import mcx.data.NbtType
 import mcx.pass.Context
@@ -246,7 +247,7 @@ class Lift private constructor(
         unexpectedTerm(term)
       }
 
-      is C.Term.Splice     -> {
+      is C.Term.Splice  -> {
         unexpectedTerm(term)
       }
 
@@ -270,14 +271,28 @@ class Lift private constructor(
       }
 
       is C.Term.Proj    -> {
-        val target = liftTerm(term.target)
-        val type = eraseType(term.type)
-        L.Term.Proj(target, term.projection, type)
+        val projections = mutableListOf<Projection>()
+        tailrec fun go(target: C.Term): L.Term {
+          return when (target) {
+            is C.Term.Proj -> {
+              projections += target.projection
+              go(target.target)
+            }
+            is C.Term.Var  -> {
+              val type = eraseType(term.type)
+              L.Term.Proj(target.name, projections, type)
+            }
+            else           -> {
+              error("Unexpected: ${prettyTerm(target)}")
+            }
+          }
+        }
+        go(term.target)
       }
 
       is C.Term.Var     -> {
         val type = eraseType(term.type)
-        L.Term.Var(term.name, term.idx, type)
+        L.Term.Var(term.name, type)
       }
 
       is C.Term.Def     -> {
@@ -363,22 +378,22 @@ class Lift private constructor(
       is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Ref        -> freeVars(term.element)
       is C.Term.RefOf      -> freeVars(term.element)
-      is C.Term.Point   -> freeVars(term.element)
-      is C.Term.Union   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func    -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf  -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code    -> unexpectedTerm(term)
-      is C.Term.CodeOf  -> unexpectedTerm(term)
-      is C.Term.Splice  -> unexpectedTerm(term)
-      is C.Term.Command -> linkedMapOf()
-      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Match   -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Proj    -> freeVars(term.target)
-      is C.Term.Var     -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def     -> linkedMapOf()
-      is C.Term.Meta    -> unexpectedTerm(term)
-      is C.Term.Hole    -> unexpectedTerm(term)
+      is C.Term.Point      -> freeVars(term.element)
+      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Proj       -> freeVars(term.target)
+      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 

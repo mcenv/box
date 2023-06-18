@@ -149,14 +149,13 @@ object Lifted {
     }
 
     data class Proj(
-      val target: Term,
-      val projection: Projection,
+      val name: String,
+      val projections: List<Projection>,
       override val type: NbtType,
     ) : Term()
 
     data class Var(
       val name: String,
-      val idx: Idx,
       override val type: NbtType,
     ) : Term()
 
