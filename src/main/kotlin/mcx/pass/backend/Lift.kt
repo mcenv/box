@@ -250,13 +250,13 @@ class Lift private constructor(
         unexpectedTerm(term)
       }
 
-      is C.Term.Command    -> {
+      is C.Term.Command -> {
         val element = (term.element as C.Term.StrOf).value
         val type = eraseType(term.type)
         L.Term.Command(element, type)
       }
 
-      is C.Term.Let        -> {
+      is C.Term.Let     -> {
         val init = liftTerm(term.init)
         restoring {
           val binder = liftPattern(term.binder, term.init.type)
@@ -265,26 +265,30 @@ class Lift private constructor(
         }
       }
 
-      is C.Term.Match      -> {
+      is C.Term.Match   -> {
         TODO()
       }
 
-      is C.Term.Var        -> {
+      is C.Term.Proj    -> {
+        TODO()
+      }
+
+      is C.Term.Var     -> {
         val type = eraseType(term.type)
         L.Term.Var(term.name, term.idx, type)
       }
 
-      is C.Term.Def        -> {
+      is C.Term.Def     -> {
         val direct = Modifier.DIRECT in term.def.modifiers
         val type = eraseType(term.def.type)
         L.Term.Def(direct, term.def.name, type)
       }
 
-      is C.Term.Meta       -> {
+      is C.Term.Meta    -> {
         unexpectedTerm(term)
       }
 
-      is C.Term.Hole       -> {
+      is C.Term.Hole    -> {
         unexpectedTerm(term)
       }
     }
@@ -295,22 +299,29 @@ class Lift private constructor(
     type: C.Term,
   ): L.Pattern {
     return when (pattern) {
-      is C.Pattern.I32Of -> {
+      is C.Pattern.I32Of    -> {
         L.Pattern.I32Of(pattern.value)
       }
 
-      is C.Pattern.Var   -> {
+      is C.Pattern.StructOf -> {
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) ->
+          liftPattern(element, type)
+        }
+        L.Pattern.StructOf(elements)
+      }
+
+      is C.Pattern.Var      -> {
         val type = eraseType(type)
         bind(pattern.name, type)
         L.Pattern.Var(pattern.name, type)
       }
 
-      is C.Pattern.Drop  -> {
+      is C.Pattern.Drop     -> {
         val type = eraseType(type)
         L.Pattern.Drop(type)
       }
 
-      is C.Pattern.Hole  -> {
+      is C.Pattern.Hole     -> {
         unexpectedPattern(pattern)
       }
     }
@@ -350,30 +361,32 @@ class Lift private constructor(
       is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Ref        -> freeVars(term.element)
       is C.Term.RefOf      -> freeVars(term.element)
-      is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.Point   -> freeVars(term.element)
+      is C.Term.Union   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func    -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf  -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code    -> unexpectedTerm(term)
+      is C.Term.CodeOf  -> unexpectedTerm(term)
+      is C.Term.Splice  -> unexpectedTerm(term)
+      is C.Term.Command -> linkedMapOf()
+      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Match   -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Proj    -> freeVars(term.target)
+      is C.Term.Var     -> linkedMapOf(term.name to eraseType(term.type))
+      is C.Term.Def     -> linkedMapOf()
+      is C.Term.Meta    -> unexpectedTerm(term)
+      is C.Term.Hole    -> unexpectedTerm(term)
     }
   }
 
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
-      is C.Pattern.I32Of -> emptySet()
-      is C.Pattern.Var   -> setOf(pattern.name)
-      is C.Pattern.Drop  -> emptySet()
-      is C.Pattern.Hole  -> unexpectedPattern(pattern)
+      is C.Pattern.I32Of    -> emptySet()
+      is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.Var      -> setOf(pattern.name)
+      is C.Pattern.Drop     -> emptySet()
+      is C.Pattern.Hole     -> unexpectedPattern(pattern)
     }
   }
 

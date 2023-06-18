@@ -3,6 +3,7 @@ package mcx.pass
 import kotlinx.collections.immutable.PersistentList
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Pattern
+import mcx.ast.Core.Projection
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Repr
@@ -297,6 +298,12 @@ sealed class Value {
   data class Match(
     val scrutinee: Lazy<Value>,
     val branches: List<Pair<Pattern, Lazy<Value>>>,
+    override val type: Lazy<Value>,
+  ) : Value()
+
+  data class Proj(
+    val target: Value,
+    val projection: Projection,
     override val type: Lazy<Value>,
   ) : Value()
 

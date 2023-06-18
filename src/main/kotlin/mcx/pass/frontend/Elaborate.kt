@@ -597,35 +597,39 @@ class Elaborate private constructor(
   ): Pair<C.Pattern, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      pattern is R.Pattern.I32Of && synth(type)       -> {
+      pattern is R.Pattern.I32Of && synth(type)                  -> {
         C.Pattern.I32Of(pattern.value) to Value.I32
       }
 
-      pattern is R.Pattern.Var && match<Value>(type)  -> {
+      pattern is R.Pattern.StructOf && check<Value.Struct>(type) -> {
+        TODO()
+      }
+
+      pattern is R.Pattern.Var && match<Value>(type)             -> {
         val type = type ?: meta.freshValue(pattern.range)
         entries += Ctx.Entry(pattern.name, phase, Value.Var(pattern.name, next(), lazyOf(type)), false)
         C.Pattern.Var(pattern.name) to type
       }
 
-      pattern is R.Pattern.Drop && match<Value>(type) -> {
+      pattern is R.Pattern.Drop && match<Value>(type)            -> {
         val type = type ?: meta.freshValue(pattern.range)
         C.Pattern.Drop to type
       }
 
-      pattern is R.Pattern.As && synth(type)          -> {
+      pattern is R.Pattern.As && synth(type)                     -> {
         val type = env.evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
         bindPattern(entries, pattern.element, phase, type)
       }
 
-      pattern is R.Pattern.Hole && match<Value>(type) -> {
+      pattern is R.Pattern.Hole && match<Value>(type)            -> {
         C.Pattern.Hole to Value.Hole
       }
 
-      synth(type)                                     -> {
+      synth(type)                                                -> {
         invalidPattern(cannotSynthesize(pattern.range))
       }
 
-      check<Value>(type)                              -> {
+      check<Value>(type)                                         -> {
         val synth = bindPattern(entries, pattern, phase, null)
         if (next().sub(synth.second, type)) {
           synth
@@ -634,7 +638,7 @@ class Elaborate private constructor(
         }
       }
 
-      else                                            -> {
+      else                                                       -> {
         error("Unreachable")
       }
     }.also { (_, type) ->

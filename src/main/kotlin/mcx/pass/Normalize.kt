@@ -5,6 +5,7 @@ package mcx.pass
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Pattern
+import mcx.ast.Core.Projection
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Modifier
@@ -257,7 +258,7 @@ fun Env.evalTerm(term: Term): Value {
       (this + init).evalTerm(term.body)
     }
 
-    is Term.Match   -> {
+    is Term.Match -> {
       val scrutinee = lazy { evalTerm(term.scrutinee) }
       var matchedIndex = -1
       val branches = term.branches.mapIndexed { index, (pattern, body) ->
@@ -279,11 +280,24 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Var     -> {
+    is Term.Proj  -> {
+      when (val target = evalTerm(term.target)) {
+        is Value.StructOf -> {
+          val projection = term.projection as Projection.StructOf
+          target.elements[projection.name]!!.value
+        }
+        else              -> {
+          val type = lazy { evalTerm(term.type) }
+          Value.Proj(target, term.projection, type)
+        }
+      }
+    }
+
+    is Term.Var   -> {
       this[term.idx.toLvl(next()).value].value
     }
 
-    is Term.Def     -> {
+    is Term.Def   -> {
       if (Modifier.BUILTIN in term.def.modifiers) {
         // Builtin definitions have compiler-defined semantics and need to be handled specially.
         val type = lazy { evalTerm(term.type) }
@@ -292,12 +306,12 @@ fun Env.evalTerm(term: Term): Value {
         evalTerm(term.def.body!!)
       }
     }
-    is Term.Meta    -> {
+    is Term.Meta  -> {
       val type = lazy { evalTerm(term.type) }
       Value.Meta(term.index, term.source, type)
     }
 
-    is Term.Hole    -> {
+    is Term.Hole  -> {
       Value.Hole
     }
   }
@@ -527,6 +541,12 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.Match(scrutinee, branches, type)
     }
 
+    is Value.Proj    -> {
+      val target = quoteValue(value.target)
+      val type = quoteValue(value.type.value)
+      Term.Proj(target, value.projection, type)
+    }
+
     is Value.Var     -> {
       val type = quoteValue(value.type.value)
       Term.Var(value.name, value.lvl.toIdx(this), type)
@@ -569,17 +589,28 @@ fun Closure.open(
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {
   return when (this) {
-    is Pattern.I32Of -> {
+    is Pattern.I32Of    -> {
       when (val value = value.value) {
         is Value.I32Of -> value.value == this.value
         else           -> false
       }
     }
 
-    is Pattern.Drop  -> true
+    is Pattern.StructOf -> {
+      when (val value = value.value) {
+        is Value.StructOf -> {
+          elements.all { (name, pattern) ->
+            value.elements[name]?.let { pattern matches it } ?: false
+          }
+        }
+        else              -> false
+      }
+    }
 
-    is Pattern.Var   -> true
+    is Pattern.Drop     -> true
 
-    is Pattern.Hole  -> false
+    is Pattern.Var      -> true
+
+    is Pattern.Hole     -> false
   }
 }

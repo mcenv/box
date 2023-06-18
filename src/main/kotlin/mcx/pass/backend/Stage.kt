@@ -2,6 +2,7 @@ package mcx.pass.backend
 
 import kotlinx.collections.immutable.plus
 import mcx.ast.Core.Definition
+import mcx.ast.Core.Projection
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.ast.Modifier
@@ -326,6 +327,28 @@ class Stage private constructor() {
         }
       }
 
+      is Term.Proj    -> {
+        val target = evalTerm(term.target, phase)
+        when (phase) {
+          Phase.WORLD -> {
+            val type = lazy { evalTerm(term.type, phase) }
+            Value.Proj(target, term.projection, type)
+          }
+          Phase.CONST -> {
+            when (target) {
+              is Value.StructOf -> {
+                val projection = term.projection as Projection.StructOf
+                target.elements[projection.name]!!.value
+              }
+              else              -> {
+                val type = lazy { evalTerm(term.type, phase) }
+                Value.Proj(target, term.projection, type)
+              }
+            }
+          }
+        }
+      }
+
       is Term.Var     -> {
         val lvl = term.idx.toLvl(next())
         when (phase) {
@@ -596,6 +619,12 @@ class Stage private constructor() {
         }
         val type = quoteValue(value.type.value, phase)
         Term.Match(scrutinee, branches, type)
+      }
+
+      is Value.Proj    -> {
+        val target = quoteValue(value.target, phase)
+        val type = quoteValue(value.type.value, phase)
+        Term.Proj(target, value.projection, type)
       }
 
       is Value.Var     -> {

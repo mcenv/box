@@ -281,6 +281,12 @@ object Core {
       override val type: Term,
     ) : Term()
 
+    data class Proj(
+      val target: Term,
+      val projection: Projection,
+      override val type: Term,
+    ) : Term()
+
     data class Var(
       val name: String,
       val idx: Idx,
@@ -311,6 +317,10 @@ object Core {
       val value: Int,
     ) : Pattern()
 
+    data class StructOf(
+      val elements: LinkedHashMap<String, Pattern>,
+    ) : Pattern()
+
     data class Var(
       val name: String,
     ) : Pattern()
@@ -318,5 +328,11 @@ object Core {
     data object Drop : Pattern()
 
     data object Hole : Pattern()
+  }
+
+  sealed class Projection {
+    data class StructOf(
+      val name: String,
+    ) : Projection()
   }
 }

@@ -346,34 +346,40 @@ class Resolve private constructor(
   private fun Env.resolvePattern(
     pattern: S.Term,
   ): R.Pattern {
+    val range = pattern.range
     return when (pattern) {
-      is S.Term.NumOf -> {
-        R.Pattern.I32Of(pattern.value.toInt() /* TODO */, pattern.range)
+      is S.Term.NumOf    -> {
+        R.Pattern.I32Of(pattern.value.toInt() /* TODO */, range)
       }
 
-      is S.Term.Var   -> {
+      is S.Term.StructOf -> {
+        val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
+        R.Pattern.StructOf(elements, range)
+      }
+
+      is S.Term.Var      -> {
         when (pattern.name) {
-          "_"  -> R.Pattern.Drop(pattern.range)
+          "_"  -> R.Pattern.Drop(range)
           else -> {
-            bind(pattern.name, pattern.range)
-            R.Pattern.Var(pattern.name, pattern.range)
+            bind(pattern.name, range)
+            R.Pattern.Var(pattern.name, range)
           }
         }
       }
 
-      is S.Term.As    -> {
+      is S.Term.As       -> {
         val type = resolveTerm(pattern.type)
         val element = resolvePattern(pattern.element)
-        R.Pattern.As(element, type, pattern.range)
+        R.Pattern.As(element, type, range)
       }
 
-      is S.Term.Hole  -> {
-        R.Pattern.Hole(pattern.range)
+      is S.Term.Hole     -> {
+        R.Pattern.Hole(range)
       }
 
-      else            -> {
-        diagnose(unexpectedPattern(pattern.range))
-        R.Pattern.Hole(pattern.range)
+      else               -> {
+        diagnose(unexpectedPattern(range))
+        R.Pattern.Hole(range)
       }
     }
   }
