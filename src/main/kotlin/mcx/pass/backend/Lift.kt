@@ -270,7 +270,9 @@ class Lift private constructor(
       }
 
       is C.Term.Proj    -> {
-        TODO()
+        val target = liftTerm(term.target)
+        val type = eraseType(term.type)
+        L.Term.Proj(target, term.projection, type)
       }
 
       is C.Term.Var     -> {

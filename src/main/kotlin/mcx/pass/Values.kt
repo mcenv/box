@@ -3,9 +3,9 @@ package mcx.pass
 import kotlinx.collections.immutable.PersistentList
 import mcx.ast.Core.Definition
 import mcx.ast.Core.Pattern
-import mcx.ast.Core.Projection
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
+import mcx.ast.Projection
 import mcx.ast.Repr
 import org.eclipse.lsp4j.Range
 

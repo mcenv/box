@@ -1,13 +1,9 @@
 package mcx.pass.backend
 
 import kotlinx.collections.immutable.plus
+import mcx.ast.*
 import mcx.ast.Core.Definition
-import mcx.ast.Core.Projection
 import mcx.ast.Core.Term
-import mcx.ast.Lvl
-import mcx.ast.Modifier
-import mcx.ast.toIdx
-import mcx.ast.toLvl
 import mcx.pass.*
 import mcx.util.collections.mapWith
 

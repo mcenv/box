@@ -242,7 +242,7 @@ class Pack private constructor(
         }
       }
 
-      is L.Term.Apply      -> {
+      is L.Term.Apply   -> {
         term.args.forEach { packTerm(it) }
         val func = term.func
         when {
@@ -263,12 +263,12 @@ class Pack private constructor(
         term.args.forEach { drop(it.type, keeps, false) }
       }
 
-      is L.Term.Command    -> {
+      is L.Term.Command -> {
         +Raw(term.element)
         push(term.type, null)
       }
 
-      is L.Term.Let        -> {
+      is L.Term.Let     -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -276,13 +276,19 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.type))
       }
 
-      is L.Term.Var        -> {
+      is L.Term.Proj    -> {
+        // TODO
+        push(term.type, null)
+        +Raw("TODO: $term")
+      }
+
+      is L.Term.Var     -> {
         val type = term.type
         val index = this[term.name, term.type]
         push(type, SourceProvider.From(DataAccessor(MCX, nbtPath(type.id)(index))))
       }
 
-      is L.Term.Def        -> {
+      is L.Term.Def     -> {
         +RunFunction(packDefinitionLocation(term.name))
         push(term.type, null)
       }

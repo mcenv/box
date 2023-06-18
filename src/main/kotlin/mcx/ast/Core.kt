@@ -329,10 +329,4 @@ object Core {
 
     data object Hole : Pattern()
   }
-
-  sealed class Projection {
-    data class StructOf(
-      val name: String,
-    ) : Projection()
-  }
 }

@@ -82,7 +82,7 @@ def vec_of : vec i32 := [];
 
 def struct : type %compound := struct {};
 
-# def struct_of : struct {} := {};
+def struct_of : struct {} := {};
 
 def ref : type %int := ref i32;
 

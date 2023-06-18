@@ -1,0 +1,19 @@
+def proj_struct_of : point 1 :=
+  let {a: a} := {a: 1};
+  a;
+
+error def proj_struct_of_unknown_key : point 1 :=
+  let {x: a} := {a: 1};
+  a;
+
+def proj_struct_of_nested : point 1 :=
+  let {a: {b: b}} := {a: {b: 1}};
+  b;
+
+error def proj_struct_of_nested_unknown_key : point 1 :=
+  let {x: {b: b}} := {a: {b: 1}};
+  b;
+
+error def proj_struct_of_nested_unknown_key' : point 1 :=
+  let {a: {x: b}} := {a: {b: 1}};
+  b;

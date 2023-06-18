@@ -281,7 +281,13 @@ class Elaborate private constructor(
       }
 
       term is R.Term.StructOf && check<Value.Struct>(type)                                    -> {
-        TODO("implement")
+        val elements = term.elements.associateTo(linkedMapOf()) { (name, element) ->
+          val (element, elementType) = elaborateTerm(element, phase, type.elements[name.value]?.value)
+          name.value to element
+        }
+        typed(type) {
+          C.Term.StructOf(elements, it)
+        }
       }
 
       term is R.Term.Ref && synth(type)                                                       -> {
@@ -418,13 +424,14 @@ class Elaborate private constructor(
       term is R.Term.Let && match<Value>(type)                                                -> {
         val (init, initType) = synthTerm(term.init, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
-          if (!next().sub(initType, binderType)) {
-            diagnose(next().typeMismatch(initType, binderType, term.init.range))
-          }
-          val (body, bodyType) = elaborateTerm(term.body, phase, type)
-          val type = type ?: bodyType
-          this@elaborateTerm.typed(type) {
-            C.Term.Let(binder, init, body, it)
+          if (next().sub(initType, binderType)) {
+            val (body, bodyType) = elaborateTerm(term.body, phase, type)
+            val type = type ?: bodyType
+            this@elaborateTerm.typed(type) {
+              C.Term.Let(binder, init, body, it)
+            }
+          } else {
+            invalidTerm(next().typeMismatch(initType, binderType, term.init.range))
           }
         }
       }
@@ -579,12 +586,12 @@ class Elaborate private constructor(
   private inline fun <T> Ctx.elaboratePattern(
     pattern: R.Pattern,
     phase: Phase,
-    type: Value?,
+    type: Value,
     value: Lazy<Value>,
     block: Ctx.(Pair<C.Pattern, Value>) -> T,
   ): T {
     val entries = mutableListOf<Ctx.Entry>()
-    val result = bindPattern(entries, pattern, phase, type)
+    val result = bindPattern(entries, pattern, phase, type) { it }
     val ctx = Ctx(this.entries + entries, env + value)
     return ctx.block(result)
   }
@@ -594,6 +601,7 @@ class Elaborate private constructor(
     pattern: R.Pattern,
     phase: Phase,
     type: Value?,
+    make: (Value) -> Value,
   ): Pair<C.Pattern, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
@@ -601,13 +609,22 @@ class Elaborate private constructor(
         C.Pattern.I32Of(pattern.value) to Value.I32
       }
 
-      pattern is R.Pattern.StructOf && check<Value.Struct>(type) -> {
-        TODO()
+      pattern is R.Pattern.StructOf && match<Value.Struct>(type) -> {
+        val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
+          val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
+          val (element, elementType) = bindPattern(entries, element, phase, type) {
+            Value.Proj(make(it), Projection.StructOf(name.value), lazyOf(type))
+          }
+          name.value to (element to elementType)
+        }
+        val elements = results.mapValuesTo(linkedMapOf()) { it.value.first }
+        val type = type ?: Value.Struct(results.mapValuesTo(linkedMapOf()) { lazyOf(it.value.second) })
+        C.Pattern.StructOf(elements) to type
       }
 
       pattern is R.Pattern.Var && match<Value>(type)             -> {
         val type = type ?: meta.freshValue(pattern.range)
-        entries += Ctx.Entry(pattern.name, phase, Value.Var(pattern.name, next(), lazyOf(type)), false)
+        entries += Ctx.Entry(pattern.name, phase, make(Value.Var(pattern.name, next(), lazyOf(type))), false)
         C.Pattern.Var(pattern.name) to type
       }
 
@@ -618,7 +635,7 @@ class Elaborate private constructor(
 
       pattern is R.Pattern.As && synth(type)                     -> {
         val type = env.evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
-        bindPattern(entries, pattern.element, phase, type)
+        bindPattern(entries, pattern.element, phase, type, make)
       }
 
       pattern is R.Pattern.Hole && match<Value>(type)            -> {
@@ -630,7 +647,7 @@ class Elaborate private constructor(
       }
 
       check<Value>(type)                                         -> {
-        val synth = bindPattern(entries, pattern, phase, null)
+        val synth = bindPattern(entries, pattern, phase, null, make)
         if (next().sub(synth.second, type)) {
           synth
         } else {
@@ -859,6 +876,17 @@ class Elaborate private constructor(
   )
 
   companion object {
+    private fun unknownKey(
+      name: String,
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "unknown key: $name",
+        DiagnosticSeverity.Error,
+      )
+    }
+
     private fun arityMismatch(
       expected: Int,
       actual: Int,

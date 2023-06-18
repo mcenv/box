@@ -148,6 +148,12 @@ object Lifted {
       override val type: NbtType = body.type
     }
 
+    data class Proj(
+      val target: Term,
+      val projection: Projection,
+      override val type: NbtType,
+    ) : Term()
+
     data class Var(
       val name: String,
       val idx: Idx,
