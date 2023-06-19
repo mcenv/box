@@ -1,4 +1,4 @@
-package mcx.pass.frontend
+package mcx.pass.frontend.parse
 
 import mcx.ast.Annotation
 import mcx.ast.Modifier

@@ -1,11 +1,9 @@
-package mcx.pass.frontend
+package mcx.pass.frontend.elaborate
 
 import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.lsp.diagnostic
 import mcx.pass.Value
-import mcx.pass.open
-import mcx.pass.quoteValue
 import mcx.util.collections.mapWith
 import mcx.util.toSubscript
 import org.eclipse.lsp4j.Diagnostic

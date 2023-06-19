@@ -6,6 +6,7 @@ import mcx.lsp.contains
 import mcx.lsp.diagnostic
 import mcx.pass.Context
 import mcx.pass.frontend.Resolve.Env.Companion.emptyEnv
+import mcx.pass.frontend.parse.Parse
 import mcx.pass.lookupBuiltin
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity

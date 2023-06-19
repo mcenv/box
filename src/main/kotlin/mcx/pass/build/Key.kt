@@ -5,9 +5,9 @@ import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.lsp.Instruction
 import mcx.pass.backend.Lift
-import mcx.pass.frontend.Elaborate
-import mcx.pass.frontend.Parse
 import mcx.pass.frontend.Resolve
+import mcx.pass.frontend.elaborate.Elaborate
+import mcx.pass.frontend.parse.Parse
 
 sealed class Key<V> {
   data class Read(

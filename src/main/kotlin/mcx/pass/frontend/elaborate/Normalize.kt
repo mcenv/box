@@ -1,12 +1,16 @@
 @file:Suppress("NAME_SHADOWING")
 
-package mcx.pass
+package mcx.pass.frontend.elaborate
 
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import mcx.ast.*
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
+import mcx.pass.Closure
+import mcx.pass.Env
+import mcx.pass.Value
+import mcx.pass.lookupBuiltin
 import mcx.util.collections.mapWith
 
 /**

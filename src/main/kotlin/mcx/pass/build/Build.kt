@@ -20,10 +20,10 @@ import mcx.pass.backend.Generate
 import mcx.pass.backend.Lift
 import mcx.pass.backend.Pack
 import mcx.pass.backend.Stage
-import mcx.pass.frontend.Elaborate
-import mcx.pass.frontend.Parse
 import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
+import mcx.pass.frontend.elaborate.Elaborate
+import mcx.pass.frontend.parse.Parse
 import mcx.pass.prelude
 import mcx.util.debug
 import org.eclipse.lsp4j.Diagnostic
