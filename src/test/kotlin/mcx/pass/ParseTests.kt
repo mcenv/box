@@ -1,9 +1,9 @@
 package mcx.pass
 
 import mcx.ast.ModuleLocation
-import mcx.ast.Surface.Definition
-import mcx.ast.Surface.Module
-import mcx.ast.Surface.Term
+import mcx.ast.Parsed.Definition
+import mcx.ast.Parsed.Module
+import mcx.ast.Parsed.Term
 import mcx.lsp.Ranged
 import mcx.pass.frontend.parse.Parse
 import org.eclipse.lsp4j.Position

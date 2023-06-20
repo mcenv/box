@@ -13,8 +13,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Location
 import org.eclipse.lsp4j.Range
 import kotlin.io.path.Path
+import mcx.ast.Parsed as P
 import mcx.ast.Resolved as R
-import mcx.ast.Surface as S
 
 @Suppress("NAME_SHADOWING")
 class Resolve private constructor(
@@ -27,7 +27,7 @@ class Resolve private constructor(
   private var definition: Location? = null
   private val locations: Map<DefinitionLocation, Range> =
     input.module.definitions.mapNotNull { definition ->
-      if (definition is S.Definition.Hole) {
+      if (definition is P.Definition.Hole) {
         null
       } else {
         (input.module.name / definition.name.value) to definition.name.range
@@ -59,7 +59,7 @@ class Resolve private constructor(
   }
 
   private fun resolveModule(
-    module: S.Module,
+    module: P.Module,
   ): R.Module {
     val definitions = linkedMapOf<DefinitionLocation, R.Definition>()
     module.definitions.forEach { definition ->
@@ -81,17 +81,17 @@ class Resolve private constructor(
   }
 
   private fun resolveDefinition(
-    definition: S.Definition,
+    definition: P.Definition,
   ): R.Definition {
     val range = definition.range
-    if (definition is S.Definition.Hole) {
+    if (definition is P.Definition.Hole) {
       return R.Definition.Hole(range)
     }
 
     val name = definition.name.map { input.module.name / it }
     location = name.value
     return when (definition) {
-      is S.Definition.Def  -> {
+      is P.Definition.Def  -> {
         val builtin = definition.modifiers.find { it.value == Modifier.BUILTIN }
         if (builtin != null && lookupBuiltin(name.value) == null) {
           diagnose(undefinedBuiltin(name.value, builtin.range))
@@ -100,147 +100,147 @@ class Resolve private constructor(
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
         R.Definition.Def(definition.doc, definition.annotations, definition.modifiers, name, type, body, range)
       }
-      is S.Definition.Hole -> error("Unreachable")
+      is P.Definition.Hole -> error("Unreachable")
     }
   }
 
   private fun Env.resolveTerm(
-    term: S.Term,
+    term: P.Term,
   ): R.Term {
     val range = term.range
     return when (term) {
-      is S.Term.Tag        -> {
+      is P.Term.Tag        -> {
         R.Term.Tag(term.range)
       }
 
-      is S.Term.TagOf      -> {
+      is P.Term.TagOf      -> {
         R.Term.TagOf(term.repr, range)
       }
 
-      is S.Term.Type       -> {
+      is P.Term.Type       -> {
         val tag = resolveTerm(term.element)
         R.Term.Type(tag, range)
       }
 
-      is S.Term.Bool       -> {
+      is P.Term.Bool       -> {
         R.Term.Bool(range)
       }
 
-      is S.Term.BoolOf     -> {
+      is P.Term.BoolOf     -> {
         R.Term.BoolOf(term.value, range)
       }
 
-      is S.Term.If         -> {
+      is P.Term.If         -> {
         val condition = resolveTerm(term.condition)
         val thenBranch = resolveTerm(term.thenBranch)
         val elseBranch = resolveTerm(term.elseBranch)
         R.Term.If(condition, thenBranch, elseBranch, range)
       }
 
-      is S.Term.I8         -> {
+      is P.Term.I8         -> {
         R.Term.I8(range)
       }
 
-      is S.Term.I16        -> {
+      is P.Term.I16        -> {
         R.Term.I16(range)
       }
 
-      is S.Term.I32        -> {
+      is P.Term.I32        -> {
         R.Term.I32(range)
       }
 
-      is S.Term.I64        -> {
+      is P.Term.I64        -> {
         R.Term.I64(range)
       }
 
-      is S.Term.F32        -> {
+      is P.Term.F32        -> {
         R.Term.F32(range)
       }
 
-      is S.Term.F64        -> {
+      is P.Term.F64        -> {
         R.Term.F64(range)
       }
 
-      is S.Term.NumOf      -> {
+      is P.Term.NumOf      -> {
         R.Term.NumOf(term.inferred, term.value, range)
       }
 
-      is S.Term.Str        -> {
+      is P.Term.Str        -> {
         R.Term.Str(range)
       }
 
-      is S.Term.StrOf      -> {
+      is P.Term.StrOf      -> {
         R.Term.StrOf(term.value, range)
       }
 
-      is S.Term.I8Array    -> {
+      is P.Term.I8Array    -> {
         R.Term.I8Array(range)
       }
 
-      is S.Term.I8ArrayOf  -> {
+      is P.Term.I8ArrayOf  -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I8ArrayOf(elements, range)
       }
 
-      is S.Term.I32Array   -> {
+      is P.Term.I32Array   -> {
         R.Term.I32Array(range)
       }
 
-      is S.Term.I32ArrayOf -> {
+      is P.Term.I32ArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I32ArrayOf(elements, range)
       }
 
-      is S.Term.I64Array   -> {
+      is P.Term.I64Array   -> {
         R.Term.I64Array(range)
       }
 
-      is S.Term.I64ArrayOf -> {
+      is P.Term.I64ArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I64ArrayOf(elements, range)
       }
 
-      is S.Term.Vec        -> {
+      is P.Term.Vec        -> {
         val element = resolveTerm(term.element)
         R.Term.Vec(element, range)
       }
 
-      is S.Term.ListOf     -> {
+      is P.Term.ListOf     -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.VecOf(elements, range)
       }
 
-      is S.Term.Struct     -> {
+      is P.Term.Struct     -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.Struct(elements, range)
       }
 
-      is S.Term.StructOf   -> {
+      is P.Term.StructOf   -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
         R.Term.StructOf(elements, range)
       }
 
-      is S.Term.Ref        -> {
+      is P.Term.Ref        -> {
         val element = resolveTerm(term.element)
         R.Term.Ref(element, range)
       }
 
-      is S.Term.RefOf      -> {
+      is P.Term.RefOf      -> {
         val element = resolveTerm(term.element)
         R.Term.RefOf(element, range)
       }
 
-      is S.Term.Point      -> {
+      is P.Term.Point      -> {
         val element = resolveTerm(term.element)
         R.Term.Point(element, range)
       }
 
-      is S.Term.Union      -> {
+      is P.Term.Union      -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.Union(elements, range)
       }
 
-      is S.Term.Func       -> {
+      is P.Term.Func       -> {
         restoring(0) {
           val params = term.params.map { (binder, type) ->
             val type = resolveTerm(type)
@@ -252,7 +252,7 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.FuncOf  -> {
+      is P.Term.FuncOf     -> {
         restoring(if (term.open) 0 else size) {
           val params = term.params.map { resolvePattern(it) }
           val result = resolveTerm(term.result)
@@ -260,33 +260,33 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Apply   -> {
+      is P.Term.Apply      -> {
         val func = resolveTerm(term.func)
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
 
-      is S.Term.Code    -> {
+      is P.Term.Code       -> {
         val element = resolveTerm(term.element)
         R.Term.Code(element, term.range)
       }
 
-      is S.Term.CodeOf  -> {
+      is P.Term.CodeOf     -> {
         val element = resolveTerm(term.element)
         R.Term.CodeOf(element, term.range)
       }
 
-      is S.Term.Splice  -> {
+      is P.Term.Splice     -> {
         val element = resolveTerm(term.element)
         R.Term.Splice(element, term.range)
       }
 
-      is S.Term.Command -> {
+      is P.Term.Command    -> {
         val element = resolveTerm(term.element)
         R.Term.Command(element, term.range)
       }
 
-      is S.Term.Let     -> {
+      is P.Term.Let        -> {
         val init = resolveTerm(term.init)
         restoring(0) {
           val binder = resolvePattern(term.binder)
@@ -295,7 +295,7 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Match   -> {
+      is P.Term.Match      -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           restoring(0) {
@@ -307,7 +307,7 @@ class Resolve private constructor(
         R.Term.Match(scrutinee, branches, range)
       }
 
-      is S.Term.Var     -> {
+      is P.Term.Var        -> {
         when (term.name) {
           "_"  -> R.Term.Meta(range)
           else -> {
@@ -332,33 +332,33 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.As         -> {
+      is P.Term.As         -> {
         val element = resolveTerm(term.element)
         val type = resolveTerm(term.type)
         R.Term.As(element, type, range)
       }
 
-      is S.Term.Hole       -> {
+      is P.Term.Hole       -> {
         R.Term.Hole(range)
       }
     }
   }
 
   private fun Env.resolvePattern(
-    pattern: S.Term,
+    pattern: P.Term,
   ): R.Pattern {
     val range = pattern.range
     return when (pattern) {
-      is S.Term.NumOf    -> {
+      is P.Term.NumOf    -> {
         R.Pattern.I32Of(pattern.value.toInt() /* TODO */, range)
       }
 
-      is S.Term.StructOf -> {
+      is P.Term.StructOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.StructOf(elements, range)
       }
 
-      is S.Term.Var      -> {
+      is P.Term.Var      -> {
         when (pattern.name) {
           "_"  -> R.Pattern.Drop(range)
           else -> {
@@ -368,13 +368,13 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.As       -> {
+      is P.Term.As       -> {
         val type = resolveTerm(pattern.type)
         val element = resolvePattern(pattern.element)
         R.Pattern.As(element, type, range)
       }
 
-      is S.Term.Hole     -> {
+      is P.Term.Hole     -> {
         R.Pattern.Hole(range)
       }
 
