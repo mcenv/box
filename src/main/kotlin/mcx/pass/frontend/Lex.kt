@@ -1,7 +1,9 @@
 package mcx.pass.frontend
 
+import mcx.ast.Lexed
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo
+import mcx.pass.Context
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
@@ -16,11 +18,19 @@ class Lex private constructor(
   private var line: Int = 0
   private var character: Int = 0
 
+  private fun lex(): List<Lexed> {
+    TODO()
+  }
+
   private inline fun <A> bracketed(prefix: Char, suffix: Char, parseA: () -> A): A {
     !prefix
+    skipTrivia()
     val a = parseA()
-    skipWhile { it != suffix }
-    !suffix
+    skipTrivia()
+    if (!suffix == null) {
+      skipWhile { it != suffix }
+      !suffix
+    }
     return a
   }
 
@@ -36,14 +46,19 @@ class Lex private constructor(
     prefix?.let { !prefix }
     val `as` = mutableListOf<A>()
     while (canRead() && peek() != suffix) {
+      skipTrivia()
       `as` += parseA() ?: break
+      skipTrivia()
       if (!separator == null) {
         break
       }
     }
     suffix?.let {
-      skipWhile { it != suffix }
-      !suffix
+      skipTrivia()
+      if (!suffix == null) {
+        skipWhile { it != suffix }
+        !suffix
+      }
     }
     return `as`
   }
@@ -51,8 +66,10 @@ class Lex private constructor(
   private inline fun <A> list(parseA: () -> A?): List<A> {
     val `as` = mutableListOf<A>()
     while (canRead()) {
+      skipTrivia()
       `as` += parseA() ?: break
     }
+    skipTrivia()
     return `as`
   }
 
@@ -90,17 +107,12 @@ class Lex private constructor(
 
   private inline fun skipWhile(predicate: (Char) -> Boolean) {
     while (canRead() && predicate(peek())) {
-      if (!skipWhitespace()) {
-        skipUnsafe()
-      }
+      skipUnsafe()
     }
   }
 
   private inline fun skipTrivia() {
-    while (canRead()) {
-      if (!skipWhitespace()) {
-        break
-      }
+    while (canRead() && skipWhitespace()) {
     }
   }
 
@@ -162,13 +174,26 @@ class Lex private constructor(
     return text[cursor]
   }
 
+  private inline fun peek(offset: Int): Char {
+    return text[cursor + offset]
+  }
+
   private inline fun canRead(): Boolean {
     return cursor < length
+  }
+
+  private inline fun canRead(size: Int): Boolean {
+    return cursor + size < length
   }
 
   private inline fun here(): Position {
     return Position(line, character)
   }
+
+  data class Result(
+    val tokens: List<Lexed>,
+    val diagnostics: List<Diagnostic>,
+  )
 
   companion object {
     private fun expectedString(
@@ -191,6 +216,15 @@ class Lex private constructor(
         "expected: '$char'",
         DiagnosticSeverity.Error,
       )
+    }
+
+    operator fun invoke(
+      context: Context,
+      text: String,
+    ): Result {
+      return Lex(text).run {
+        Result(lex(), diagnostics)
+      }
     }
   }
 }
