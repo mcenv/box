@@ -2,8 +2,8 @@ package mcx.pass.backend
 
 import kotlinx.collections.immutable.plus
 import mcx.ast.*
-import mcx.ast.Core.Definition
-import mcx.ast.Core.Term
+import mcx.ast.Elaborated.Definition
+import mcx.ast.Elaborated.Term
 import mcx.pass.*
 import mcx.pass.frontend.elaborate.emptyEnv
 import mcx.pass.frontend.elaborate.matches
