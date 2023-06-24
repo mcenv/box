@@ -1,7 +1,7 @@
 package mcx.pass.frontend.elaborate
 
 import mcx.ast.Core.Term
-import mcx.ast.Lvl
+import mcx.ast.common.Lvl
 import mcx.lsp.diagnostic
 import mcx.pass.Value
 import mcx.util.collections.mapWith

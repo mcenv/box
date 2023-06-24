@@ -1,5 +1,7 @@
 package mcx.ast
 
+import mcx.ast.common.DefinitionLocation
+import mcx.ast.common.Projection
 import mcx.data.NbtType
 
 object Lifted {

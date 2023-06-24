@@ -4,8 +4,8 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentList
-import mcx.ast.*
-import mcx.ast.Annotation
+import mcx.ast.common.*
+import mcx.ast.common.Annotation
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic

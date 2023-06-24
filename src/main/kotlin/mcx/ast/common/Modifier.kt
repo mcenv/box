@@ -1,4 +1,4 @@
-package mcx.ast
+package mcx.ast.common
 
 enum class Modifier(val id: String) {
   BUILTIN("builtin"),

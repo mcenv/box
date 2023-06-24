@@ -1,7 +1,7 @@
 package mcx.pass
 
-import mcx.ast.DefinitionLocation
-import mcx.ast.ModuleLocation
+import mcx.ast.common.DefinitionLocation
+import mcx.ast.common.ModuleLocation
 import kotlin.math.max
 import kotlin.math.min
 

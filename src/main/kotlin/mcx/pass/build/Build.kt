@@ -7,10 +7,10 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import mcx.ast.DefinitionLocation
-import mcx.ast.Modifier
-import mcx.ast.ModuleLocation
 import mcx.ast.Packed
+import mcx.ast.common.DefinitionLocation
+import mcx.ast.common.Modifier
+import mcx.ast.common.ModuleLocation
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection

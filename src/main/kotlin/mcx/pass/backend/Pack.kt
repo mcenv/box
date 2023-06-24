@@ -3,8 +3,6 @@ package mcx.pass.backend
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
-import mcx.ast.DefinitionLocation
-import mcx.ast.ModuleLocation
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
@@ -16,6 +14,8 @@ import mcx.ast.Packed.NbtNode
 import mcx.ast.Packed.NbtNode.*
 import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
+import mcx.ast.common.DefinitionLocation
+import mcx.ast.common.ModuleLocation
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context

@@ -1,8 +1,8 @@
 package mcx.pass.backend
 
-import mcx.ast.Modifier
-import mcx.ast.Projection
-import mcx.ast.Repr
+import mcx.ast.common.Modifier
+import mcx.ast.common.Projection
+import mcx.ast.common.Repr
 import mcx.data.NbtType
 import mcx.pass.Context
 import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx

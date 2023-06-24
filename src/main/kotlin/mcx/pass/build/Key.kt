@@ -1,8 +1,8 @@
 package mcx.pass.build
 
 import mcx.ast.Core
-import mcx.ast.DefinitionLocation
-import mcx.ast.ModuleLocation
+import mcx.ast.common.DefinitionLocation
+import mcx.ast.common.ModuleLocation
 import mcx.lsp.Instruction
 import mcx.pass.backend.Lift
 import mcx.pass.frontend.Resolve

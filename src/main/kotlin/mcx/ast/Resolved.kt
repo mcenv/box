@@ -1,5 +1,7 @@
 package mcx.ast
 
+import mcx.ast.common.*
+import mcx.ast.common.Annotation
 import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 

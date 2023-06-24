@@ -1,4 +1,4 @@
-package mcx.ast
+package mcx.ast.common
 
 // TODO: Merge [ModuleLocation] and [DefinitionLocation] into one class.
 

@@ -1,9 +1,9 @@
 package mcx.pass.frontend.parse
 
-import mcx.ast.Annotation
-import mcx.ast.Modifier
-import mcx.ast.ModuleLocation
-import mcx.ast.Repr
+import mcx.ast.common.Annotation
+import mcx.ast.common.Modifier
+import mcx.ast.common.ModuleLocation
+import mcx.ast.common.Repr
 import mcx.lsp.Ranged
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo

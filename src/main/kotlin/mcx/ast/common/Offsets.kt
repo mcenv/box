@@ -1,4 +1,4 @@
-package mcx.ast
+package mcx.ast.common
 
 /**
  * A de Bruijn index.

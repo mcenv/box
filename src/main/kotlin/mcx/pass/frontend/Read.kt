@@ -1,6 +1,6 @@
 package mcx.pass.frontend
 
-import mcx.ast.ModuleLocation
+import mcx.ast.common.ModuleLocation
 import mcx.cache.getOrCreateDependenciesPath
 import mcx.pass.Context
 import mcx.util.toDependencyTripleOrNull

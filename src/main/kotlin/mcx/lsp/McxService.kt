@@ -8,7 +8,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import mcx.ast.ModuleLocation
+import mcx.ast.common.ModuleLocation
 import mcx.pass.Context
 import mcx.pass.build.Build
 import mcx.pass.build.Key

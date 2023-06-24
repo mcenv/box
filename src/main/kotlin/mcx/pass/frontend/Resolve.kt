@@ -1,6 +1,6 @@
 package mcx.pass.frontend
 
-import mcx.ast.*
+import mcx.ast.common.*
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic

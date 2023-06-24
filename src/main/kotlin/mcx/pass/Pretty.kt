@@ -2,7 +2,7 @@ package mcx.pass
 
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.Projection
+import mcx.ast.common.Projection
 import mcx.util.quoted
 import mcx.util.toSubscript
 

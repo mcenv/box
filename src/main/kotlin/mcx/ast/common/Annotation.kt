@@ -1,4 +1,4 @@
-package mcx.ast
+package mcx.ast.common
 
 sealed class Annotation {
   // TODO: add [reason] field
