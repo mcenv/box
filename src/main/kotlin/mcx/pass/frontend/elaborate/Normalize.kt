@@ -5,8 +5,8 @@ package mcx.pass.frontend.elaborate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import mcx.ast.*
-import mcx.ast.Elaborated.Pattern
-import mcx.ast.Elaborated.Term
+import mcx.ast.Core.Pattern
+import mcx.ast.Core.Term
 import mcx.pass.Closure
 import mcx.pass.Env
 import mcx.pass.Value

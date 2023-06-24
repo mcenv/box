@@ -1,6 +1,6 @@
 package mcx.pass.frontend.parse
 
-import mcx.ast.Parsed as P
+import mcx.ast.Surface as S
 
 sealed class Node {
   abstract val children: MutableList<Node>?
@@ -13,7 +13,7 @@ sealed class Node {
     override val children: MutableList<Node> = mutableListOf()
   }
 
-  data class Arg(val term: P.Term) : Node() {
+  data class Arg(val term: S.Term) : Node() {
     override val children: MutableList<Node> = mutableListOf()
   }
 

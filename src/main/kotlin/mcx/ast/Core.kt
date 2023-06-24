@@ -2,7 +2,7 @@ package mcx.ast
 
 import org.eclipse.lsp4j.Range
 
-object Elaborated {
+object Core {
   data class Module(
     val name: ModuleLocation,
     val definitions: List<Definition>,

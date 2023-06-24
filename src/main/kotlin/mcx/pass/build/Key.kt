@@ -1,5 +1,6 @@
 package mcx.pass.build
 
+import mcx.ast.Core
 import mcx.ast.DefinitionLocation
 import mcx.ast.ModuleLocation
 import mcx.lsp.Instruction
@@ -7,7 +8,6 @@ import mcx.pass.backend.Lift
 import mcx.pass.frontend.Resolve
 import mcx.pass.frontend.elaborate.Elaborate
 import mcx.pass.frontend.parse.Parse
-import mcx.ast.Elaborated as E
 
 sealed class Key<V> {
   data class Read(
@@ -30,7 +30,7 @@ sealed class Key<V> {
 
   data class Staged(
     val location: DefinitionLocation,
-  ) : Key<E.Definition?>()
+  ) : Key<Core.Definition?>()
 
   data class Lifted(
     val location: DefinitionLocation,

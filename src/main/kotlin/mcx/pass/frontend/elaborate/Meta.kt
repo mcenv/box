@@ -1,6 +1,6 @@
 package mcx.pass.frontend.elaborate
 
-import mcx.ast.Elaborated.Term
+import mcx.ast.Core.Term
 import mcx.ast.Lvl
 import mcx.lsp.diagnostic
 import mcx.pass.Value

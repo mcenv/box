@@ -12,7 +12,7 @@ import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
-import mcx.ast.Parsed as P
+import mcx.ast.Surface as S
 
 // TODO: refactor
 @Suppress("NOTHING_TO_INLINE")
@@ -27,7 +27,7 @@ class Parse private constructor(
 
   private fun parseModule(
     module: ModuleLocation,
-  ): P.Module {
+  ): S.Module {
     skipTrivia()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
@@ -42,7 +42,7 @@ class Parse private constructor(
       emptyList()
     }
 
-    val definitions = mutableListOf<P.Definition>().also {
+    val definitions = mutableListOf<S.Definition>().also {
       while (true) {
         skipTrivia()
         if (!canRead()) {
@@ -62,10 +62,10 @@ class Parse private constructor(
       diagnostics += expectedEndOfFile(here())
     }
 
-    return P.Module(module, imports, definitions)
+    return S.Module(module, imports, definitions)
   }
 
-  private fun parseDefinition(): P.Definition {
+  private fun parseDefinition(): S.Definition {
     return ranging {
       val doc = parseDoc()
       val annotations = parseAnnotations()
@@ -76,13 +76,13 @@ class Parse private constructor(
           val name = parseRanged { readWord() }
 
           if (modifiers.find { it.value == Modifier.TEST } != null) {
-            val type = P.Term.Bool(until())
+            val type = S.Term.Bool(until())
             val body = run {
               expect(":=")
               skipTrivia()
               parseTerm()
             }
-            return P.Definition.Def(doc, annotations, modifiers, name, type, body, until())
+            return S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
           }
 
           skipTrivia()
@@ -102,7 +102,7 @@ class Parse private constructor(
                   skipTrivia()
                   parseTerm()
                 }
-                P.Definition.Def(doc, annotations, modifiers, name, type, body, until())
+                S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
               }
               '('  -> {
                 val params = parseList(',', '(', ')') {
@@ -114,14 +114,14 @@ class Parse private constructor(
                     val type = parseTerm()
                     binderOrType to type
                   } else {
-                    P.Term.Var("_", binderOrType.range) to binderOrType
+                    S.Term.Var("_", binderOrType.range) to binderOrType
                   }
                 }
                 val type = run {
                   expect(':')
                   skipTrivia()
                   val result = parseTerm()
-                  P.Term.Func(false, params, result, until())
+                  S.Term.Func(false, params, result, until())
                 }
                 val body = if (
                   modifiers.find { it.value == Modifier.BUILTIN } != null &&
@@ -132,9 +132,9 @@ class Parse private constructor(
                   expect(":=")
                   skipTrivia()
                   val body = parseTerm()
-                  P.Term.FuncOf(false, params.map { it.first }, body, until())
+                  S.Term.FuncOf(false, params.map { it.first }, body, until())
                 }
-                P.Definition.Def(doc, annotations, modifiers, name, type, body, until())
+                S.Definition.Def(doc, annotations, modifiers, name, type, body, until())
               }
               else -> null
             }
@@ -146,7 +146,7 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += expectedDefinition(range)
-        P.Definition.Hole(range)
+        S.Definition.Hole(range)
       }
     }
   }
@@ -212,7 +212,7 @@ class Parse private constructor(
     return modifiers to null
   }
 
-  private fun parseTerm0(): P.Term {
+  private fun parseTerm0(): S.Term {
     return ranging {
       if (canRead()) {
         when (peek()) {
@@ -226,19 +226,19 @@ class Parse private constructor(
           '%'  -> {
             skip()
             when (readWord()) {
-              "end"        -> P.Term.TagOf(Repr.End, until())
-              "byte"       -> P.Term.TagOf(Repr.Byte, until())
-              "short"      -> P.Term.TagOf(Repr.Short, until())
-              "int"        -> P.Term.TagOf(Repr.Int, until())
-              "long"       -> P.Term.TagOf(Repr.Long, until())
-              "float"      -> P.Term.TagOf(Repr.Float, until())
-              "double"     -> P.Term.TagOf(Repr.Double, until())
-              "string"     -> P.Term.TagOf(Repr.String, until())
-              "byte_array" -> P.Term.TagOf(Repr.ByteArray, until())
-              "int_array"  -> P.Term.TagOf(Repr.IntArray, until())
-              "long_array" -> P.Term.TagOf(Repr.LongArray, until())
-              "list"       -> P.Term.TagOf(Repr.List, until())
-              "compound"   -> P.Term.TagOf(Repr.Compound, until())
+              "end"        -> S.Term.TagOf(Repr.End, until())
+              "byte"       -> S.Term.TagOf(Repr.Byte, until())
+              "short"      -> S.Term.TagOf(Repr.Short, until())
+              "int"        -> S.Term.TagOf(Repr.Int, until())
+              "long"       -> S.Term.TagOf(Repr.Long, until())
+              "float"      -> S.Term.TagOf(Repr.Float, until())
+              "double"     -> S.Term.TagOf(Repr.Double, until())
+              "string"     -> S.Term.TagOf(Repr.String, until())
+              "byte_array" -> S.Term.TagOf(Repr.ByteArray, until())
+              "int_array"  -> S.Term.TagOf(Repr.IntArray, until())
+              "long_array" -> S.Term.TagOf(Repr.LongArray, until())
+              "list"       -> S.Term.TagOf(Repr.List, until())
+              "compound"   -> S.Term.TagOf(Repr.Compound, until())
               else         -> null
             }
           }
@@ -248,7 +248,7 @@ class Parse private constructor(
             skipTrivia()
             if (canRead() && peek() == ']') {
               skip()
-              P.Term.ListOf(emptyList(), until())
+              S.Term.ListOf(emptyList(), until())
             } else {
               val first = parseTerm()
               skipTrivia()
@@ -256,28 +256,28 @@ class Parse private constructor(
                 when (peek()) {
                   ']'  -> {
                     skip()
-                    P.Term.ListOf(listOf(first), until())
+                    S.Term.ListOf(listOf(first), until())
                   }
                   ';'  -> {
                     when (first) {
-                      is P.Term.I8  -> {
+                      is S.Term.I8  -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        P.Term.I8ArrayOf(elements, until())
+                        S.Term.I8ArrayOf(elements, until())
                       }
-                      is P.Term.I32 -> {
+                      is S.Term.I32 -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        P.Term.I32ArrayOf(elements, until())
+                        S.Term.I32ArrayOf(elements, until())
                       }
-                      is P.Term.I64 -> {
+                      is S.Term.I64 -> {
                         val elements = parseList(',', ';', ']') { parseTerm() }
-                        P.Term.I64ArrayOf(elements, until())
+                        S.Term.I64ArrayOf(elements, until())
                       }
                       else          -> null // TODO: improve error message
                     }
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ']') { parseTerm() }
-                    P.Term.ListOf(listOf(first) + tail, until())
+                    S.Term.ListOf(listOf(first) + tail, until())
                   }
                   else -> null
                 }
@@ -294,13 +294,13 @@ class Parse private constructor(
               val element = parseTerm()
               key to element
             }
-            P.Term.StructOf(elements, until())
+            S.Term.StructOf(elements, until())
           }
           '&'  -> {
             skip()
             skipTrivia()
             val element = parseTerm0()
-            P.Term.RefOf(element, until())
+            S.Term.RefOf(element, until())
           }
           '\\' -> {
             skip()
@@ -315,39 +315,39 @@ class Parse private constructor(
             expect("->")
             skipTrivia()
             val result = parseTerm()
-            P.Term.FuncOf(open, params, result, until())
+            S.Term.FuncOf(open, params, result, until())
           }
           '`'  -> {
             skip()
             skipTrivia()
             val element = parseTerm0()
-            P.Term.CodeOf(element, until())
+            S.Term.CodeOf(element, until())
           }
           '$'  -> {
             skip()
             skipTrivia()
             val element = parseTerm0()
-            P.Term.Splice(element, until())
+            S.Term.Splice(element, until())
           }
           '/'  -> {
             skip()
             skipTrivia()
             val element = parseTerm0()
-            P.Term.Command(element, until())
+            S.Term.Command(element, until())
           }
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
               ""             -> null
-              "tag"          -> P.Term.Tag(until())
+              "tag"          -> S.Term.Tag(until())
               "type"         -> {
                 skipTrivia()
                 val tag = parseTerm0()
-                P.Term.Type(tag, until())
+                S.Term.Type(tag, until())
               }
-              "bool"         -> P.Term.Bool(until())
-              "false"        -> P.Term.BoolOf(false, until())
-              "true"         -> P.Term.BoolOf(true, until())
+              "bool"         -> S.Term.Bool(until())
+              "false"        -> S.Term.BoolOf(false, until())
+              "true"         -> S.Term.BoolOf(true, until())
               "if"           -> {
                 skipTrivia()
                 val condition = parseTerm1()
@@ -357,22 +357,22 @@ class Parse private constructor(
                 expect("else")
                 skipTrivia()
                 val elseBranch = parseTerm1()
-                P.Term.If(condition, thenBranch, elseBranch, until())
+                S.Term.If(condition, thenBranch, elseBranch, until())
               }
-              "i8"           -> P.Term.I8(until())
-              "i16"          -> P.Term.I16(until())
-              "i32"          -> P.Term.I32(until())
-              "i64"          -> P.Term.I64(until())
-              "f32"          -> P.Term.F32(until())
-              "f64"          -> P.Term.F64(until())
-              "str"          -> P.Term.Str(until())
-              "i8_array"     -> P.Term.I8Array(until())
-              "i32_array"    -> P.Term.I32Array(until())
-              "i64_array"    -> P.Term.I64Array(until())
+              "i8"           -> S.Term.I8(until())
+              "i16"          -> S.Term.I16(until())
+              "i32"          -> S.Term.I32(until())
+              "i64"          -> S.Term.I64(until())
+              "f32"          -> S.Term.F32(until())
+              "f64"          -> S.Term.F64(until())
+              "str"          -> S.Term.Str(until())
+              "i8_array"     -> S.Term.I8Array(until())
+              "i32_array"    -> S.Term.I32Array(until())
+              "i64_array"    -> S.Term.I64Array(until())
               "vec"          -> {
                 skipTrivia()
                 val element = parseTerm0()
-                P.Term.Vec(element, until())
+                S.Term.Vec(element, until())
               }
               "struct"       -> {
                 skipTrivia()
@@ -383,22 +383,22 @@ class Parse private constructor(
                   val value = parseTerm()
                   key to value
                 }
-                P.Term.Struct(elements, until())
+                S.Term.Struct(elements, until())
               }
               "ref"          -> {
                 skipTrivia()
                 val element = parseTerm0()
-                P.Term.Ref(element, until())
+                S.Term.Ref(element, until())
               }
               "point"        -> {
                 skipTrivia()
                 val element = parseTerm0()
-                P.Term.Point(element, until())
+                S.Term.Point(element, until())
               }
               "union"        -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
-                P.Term.Union(elements, until())
+                S.Term.Union(elements, until())
               }
               "proc", "func" -> {
                 skipTrivia()
@@ -412,18 +412,18 @@ class Parse private constructor(
                     val type = parseTerm()
                     binderOrType to type
                   } else {
-                    P.Term.Var("_", binderOrType.range) to binderOrType
+                    S.Term.Var("_", binderOrType.range) to binderOrType
                   }
                 }
                 expect("->")
                 skipTrivia()
                 val result = parseTerm()
-                P.Term.Func(open, params, result, until())
+                S.Term.Func(open, params, result, until())
               }
               "code"         -> {
                 skipTrivia()
                 val element = parseTerm0()
-                P.Term.Code(element, until())
+                S.Term.Code(element, until())
               }
               "let"          -> {
                 skipTrivia()
@@ -434,7 +434,7 @@ class Parse private constructor(
                 expect(';')
                 skipTrivia()
                 val body = parseTerm()
-                P.Term.Let(name, init, body, until())
+                S.Term.Let(name, init, body, until())
               }
               "match"        -> {
                 skipTrivia()
@@ -446,20 +446,20 @@ class Parse private constructor(
                   val body = parseTerm()
                   pattern to body
                 }
-                P.Term.Match(scrutinee, branches, until())
+                S.Term.Match(scrutinee, branches, until())
               }
               else           -> {
                 val name = word.value
                 when {
-                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { P.Term.NumOf(false, it, until()) }
-                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { P.Term.NumOf(false, it, until()) }
-                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { P.Term.NumOf(false, it, until()) }
-                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { P.Term.NumOf(false, it, until()) }
-                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { P.Term.NumOf(false, it, until()) }
-                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { P.Term.NumOf(false, it, until()) }
-                  else                 -> name.toLongOrNull()?.let { P.Term.NumOf(true, it, until()) }
-                                          ?: name.toDoubleOrNull()?.let { P.Term.NumOf(true, it, until()) }
-                } ?: P.Term.Var(name, until())
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.NumOf(false, it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.NumOf(false, it, until()) }
+                  else                 -> name.toLongOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                } ?: S.Term.Var(name, until())
               }
             }
           }
@@ -469,24 +469,24 @@ class Parse private constructor(
       } ?: run {
         val range = until()
         diagnostics += expectedTerm(range)
-        P.Term.Hole(range)
+        S.Term.Hole(range)
       }
     }
   }
 
-  private fun parseTerm1(): P.Term {
+  private fun parseTerm1(): S.Term {
     return ranging {
       var term = parseTerm0()
       skipTrivia()
       while (canRead() && peek() == '(') {
         val args = parseList(',', '(', ')') { parseTerm() }
-        term = P.Term.Apply(term, args, until())
+        term = S.Term.Apply(term, args, until())
       }
       term
     }
   }
 
-  private fun parseTerm(): P.Term {
+  private fun parseTerm(): S.Term {
     return ranging {
       var term = parseTerm1()
       skipTrivia()
@@ -498,13 +498,13 @@ class Parse private constructor(
             "as" -> {
               skipTrivia()
               val type = parseTerm()
-              P.Term.As(term, type, until())
+              S.Term.As(term, type, until())
             }
             else -> {
-              val func = P.Term.Var(name.value, name.range)
+              val func = S.Term.Var(name.value, name.range)
               skipTrivia()
               val arg = parseTerm1()
-              P.Term.Apply(func, listOf(term, arg), until())
+              S.Term.Apply(func, listOf(term, arg), until())
             }
           }
         } else {
@@ -623,9 +623,9 @@ class Parse private constructor(
     return builder.toString()
   }
 
-  private fun parseInterpolatedString(): P.Term {
+  private fun parseInterpolatedString(): S.Term {
     var start = here()
-    val parts = mutableListOf<P.Term>()
+    val parts = mutableListOf<S.Term>()
     var builder = StringBuilder()
 
     expect('"')
@@ -661,7 +661,7 @@ class Parse private constructor(
           '"'  -> break
           '#'  -> {
             if (builder.isNotEmpty()) {
-              parts += P.Term.StrOf(builder.toString(), start..here())
+              parts += S.Term.StrOf(builder.toString(), start..here())
             }
 
             skip()
@@ -683,12 +683,12 @@ class Parse private constructor(
     expect('"')
 
     if (builder.isNotEmpty()) {
-      parts += P.Term.StrOf(builder.toString(), start..here())
+      parts += S.Term.StrOf(builder.toString(), start..here())
     }
     return parts.reduceOrNull { acc, term ->
       // TODO: keep string interpolation until resolve phase
-      P.Term.Apply(P.Term.Var("++", acc.range.end..term.range.start), listOf(acc, term), acc.range.start..term.range.end)
-    } ?: P.Term.StrOf("", start..here())
+      S.Term.Apply(S.Term.Var("++", acc.range.end..term.range.start), listOf(acc, term), acc.range.start..term.range.end)
+    } ?: S.Term.StrOf("", start..here())
   }
 
   private fun readLocation(): String {
@@ -889,7 +889,7 @@ class Parse private constructor(
   }
 
   data class Result(
-    val module: P.Module,
+    val module: S.Module,
     val diagnostics: List<Diagnostic>,
   )
 

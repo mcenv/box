@@ -3,7 +3,7 @@ package mcx.ast
 import mcx.lsp.Ranged
 import org.eclipse.lsp4j.Range
 
-object Parsed {
+object Surface {
   data class Module(
     val name: ModuleLocation,
     val imports: List<Ranged<DefinitionLocation>>,
