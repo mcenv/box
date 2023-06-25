@@ -144,14 +144,14 @@ object Core {
       override val type: Term get() = F64
     }
 
-    data object Str : Term() {
+    data object Wtf16 : Term() {
       override val type: Term get() = Type.STRING
     }
 
-    data class StrOf(
+    data class Wtf16Of(
       val value: String,
     ) : Term() {
-      override val type: Term get() = Str
+      override val type: Term get() = Wtf16
     }
 
     data object I8Array : Term() {

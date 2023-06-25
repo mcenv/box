@@ -165,12 +165,12 @@ class Resolve private constructor(
         R.Term.NumOf(term.inferred, term.value, range)
       }
 
-      is S.Term.Str        -> {
-        R.Term.Str(range)
+      is S.Term.Wtf16      -> {
+        R.Term.Wtf16(range)
       }
 
-      is S.Term.StrOf      -> {
-        R.Term.StrOf(term.value, range)
+      is S.Term.Wtf16Of    -> {
+        R.Term.Wtf16Of(term.value, range)
       }
 
       is S.Term.I8Array    -> {

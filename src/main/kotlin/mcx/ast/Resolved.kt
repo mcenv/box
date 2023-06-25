@@ -105,11 +105,11 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class Str(
+    data class Wtf16(
       override val range: Range,
     ) : Term()
 
-    data class StrOf(
+    data class Wtf16Of(
       val value: String,
       override val range: Range,
     ) : Term()

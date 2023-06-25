@@ -15,5 +15,5 @@ export def =(a : f64, b : f64) : bool := !(a != b);
 
 export def to_f64(self : f64) : f64 := self;
 
-export builtin def to_str(f64) : str :=
+export builtin def to_wtf16(f64) : wtf16 :=
   /"data modify storage mcx: string append string storage mcx: double[-1]";

@@ -1,0 +1,89 @@
+import {
+  core::bool::!,
+  core::i32::+,
+  core::i32::=,
+  core::i32::to_wtf16,
+}
+
+export builtin def !=(wtf16, wtf16) : bool :=
+  let _ as nothing := /"data modify storage mcx: byte append value 0b";
+  let _ as nothing := /"data modify storage mcx: string append from storage mcx: string[-2]";
+  /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: string[-1] set from storage mcx: string[-2]";
+
+export def =(a : wtf16, b : wtf16) : bool := !(a != b);
+
+export def to_wtf16(self : wtf16) : wtf16 := self;
+
+export builtin def size(wtf16) : i32 :=
+  let _ as nothing := /"data modify storage mcx: int append value 0";
+  /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";
+
+export def is_empty(a : wtf16) : bool := size(a) i32::= 0;
+
+export const def from(self : code wtf16, start_index : i32) : code wtf16 := `(
+  let _ := $self;
+  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_wtf16(start_index) }"
+);
+
+export const def between(self : code wtf16, start_index : i32, end_index : i32) : code wtf16 := `(
+  let _ := $self;
+  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_wtf16(start_index) } #{ i32::to_wtf16(end_index) }"
+);
+
+export const def until(self : code wtf16, end_index : i32) : code wtf16 :=
+  between(self, 0, end_index);
+
+export const def code_unit_at(self : code wtf16, index : i32) : code wtf16 :=
+  if (index i32::= -1) then from(self, -1) else between(self, index, index + 1);
+
+test def ""_!=_"a" := "" != "a";
+
+test def "a"_!=_"b" := "a" != "b";
+
+test def ""_=_"" := "" wtf16::= "";
+
+test def "a"_=_"a" := "a" wtf16::= "a";
+
+test def is_empty_"" := is_empty("");
+
+test def !_is_empty_"a" := !(is_empty("a"));
+
+test def from_""_0_=_"" := $(from("", 0)) wtf16::= "";
+
+test def from_"abc"_0_="abc" := $(from("abc", 0)) wtf16::= "abc";
+
+test def from_"abc"_1_="bc" := $(from("abc", 1)) wtf16::= "bc";
+
+test def from_"abc"_-1_="c" := $(from("abc", -1)) wtf16::= "c";
+
+test def from_"abc"_3_="" := $(from("abc", 3)) wtf16::= "";
+
+test def from_"abc"_4_="" := $(from("abc", 4)) wtf16::= "";
+
+test def between_""_0_0_=_"" := $(between("", 0, 0)) wtf16::= "";
+
+test def between_"abc"_0_0_="" := $(between("abc", 0, 0)) wtf16::= "";
+
+test def between_"abc"_0_1_="a" := $(between("abc", 0, 1)) wtf16::= "a";
+
+test def between_"abc"_-2_3_="c" := $(between("abc", -2, 3)) wtf16::= "bc";
+
+test def between_"abc"_3_3_="" := $(between("abc", 3, 3)) wtf16::= "";
+
+test def between_"abc"_3_4_="" := $(between("abc", 3, 4)) wtf16::= "";
+
+test def until_"abc"_1_="a" := $(until("abc", 1)) wtf16::= "a";
+
+test def code_unit_at_"abc"_0_="a" := $(code_unit_at("abc", 0)) wtf16::= "a";
+
+test def code_unit_at_"abc"_-2_="b" := $(code_unit_at("abc", -2)) wtf16::= "b";
+
+test def code_unit_at_"abc"_-1_="c" := $(code_unit_at("abc", -1)) wtf16::= "c";
+
+test def code_unit_at_"abc"_3_="" := $(code_unit_at("abc", 3)) wtf16::= "";
+
+# test def code_unit_at_"🤔"_0_="\ud83e" := $(code_unit_at("🤔", 0)) wtf16::= "\ud83e";
+
+# test def code_unit_at_"🤔"_1_="\udd14" := $(code_unit_at("🤔", 1)) wtf16::= "\udd14";

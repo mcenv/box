@@ -154,16 +154,16 @@ sealed class Value {
     override val type: Lazy<Value> get() = F64.LAZY
   }
 
-  data object Str : Value() {
+  data object Wtf16 : Value() {
     override val type: Lazy<Value> get() = Type.STRING_LAZY
 
-    val LAZY: Lazy<Str> = lazyOf(Str)
+    val LAZY: Lazy<Wtf16> = lazyOf(Wtf16)
   }
 
-  data class StrOf(
+  data class Wtf16Of(
     val value: String,
   ) : Value() {
-    override val type: Lazy<Value> get() = Str.LAZY
+    override val type: Lazy<Value> get() = Wtf16.LAZY
   }
 
   data object I8Array : Value() {

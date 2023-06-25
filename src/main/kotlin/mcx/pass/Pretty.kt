@@ -33,8 +33,8 @@ fun prettyTerm(
       is Term.F32Of      -> "${term.value}f32"
       is Term.F64        -> "f64"
       is Term.F64Of      -> "${term.value}f64"
-      is Term.Str        -> "str"
-      is Term.StrOf      -> term.value.quoted('"')
+      is Term.Wtf16      -> "wtf16"
+      is Term.Wtf16Of    -> term.value.quoted('"')
       is Term.I8Array    -> "i8_array"
       is Term.I8ArrayOf  -> term.elements.joinToString(", ", "[i8; ", "]") { go(it) }
       is Term.I32Array   -> "i32_array"

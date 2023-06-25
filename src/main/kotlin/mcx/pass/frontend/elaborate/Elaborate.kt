@@ -210,12 +210,12 @@ class Elaborate private constructor(
         C.Term.F64Of(term.value) to Value.F64
       }
 
-      term is R.Term.Str && synth(type)                                                       -> {
-        C.Term.Str to Value.Type.STRING
+      term is R.Term.Wtf16 && synth(type)                                                     -> {
+        C.Term.Wtf16 to Value.Type.STRING
       }
 
-      term is R.Term.StrOf && synth(type)                                                     -> {
-        C.Term.StrOf(term.value) to Value.Str
+      term is R.Term.Wtf16Of && synth(type)                                                   -> {
+        C.Term.Wtf16Of(term.value) to Value.Wtf16
       }
 
       term is R.Term.I8Array && synth(type)                                                   -> {
@@ -416,7 +416,7 @@ class Elaborate private constructor(
 
       term is R.Term.Command && match<Value>(type)                                            -> {
         val type = type ?: meta.freshValue(term.range)
-        val element = checkTerm(term.element, Phase.CONST, Value.Str)
+        val element = checkTerm(term.element, Phase.CONST, Value.Wtf16)
         typed(type) {
           C.Term.Command(element, it)
         }

@@ -136,12 +136,12 @@ class Stage private constructor() {
         Value.F64Of(term.value)
       }
 
-      is Term.Str        -> {
-        Value.Str
+      is Term.Wtf16      -> {
+        Value.Wtf16
       }
 
-      is Term.StrOf      -> {
-        Value.StrOf(term.value)
+      is Term.Wtf16Of    -> {
+        Value.Wtf16Of(term.value)
       }
 
       is Term.I8Array    -> {
@@ -469,12 +469,12 @@ class Stage private constructor() {
         Term.F64Of(value.value)
       }
 
-      is Value.Str        -> {
-        Term.Str
+      is Value.Wtf16      -> {
+        Term.Wtf16
       }
 
-      is Value.StrOf      -> {
-        Term.StrOf(value.value)
+      is Value.Wtf16Of    -> {
+        Term.Wtf16Of(value.value)
       }
 
       is Value.I8Array    -> {

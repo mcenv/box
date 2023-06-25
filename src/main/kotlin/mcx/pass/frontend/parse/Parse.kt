@@ -348,7 +348,7 @@ class Parse private constructor(
               "bool"         -> S.Term.Bool(until())
               "false"        -> S.Term.BoolOf(false, until())
               "true"         -> S.Term.BoolOf(true, until())
-              "if"           -> {
+              "if"        -> {
                 skipTrivia()
                 val condition = parseTerm1()
                 expect("then")
@@ -359,22 +359,22 @@ class Parse private constructor(
                 val elseBranch = parseTerm1()
                 S.Term.If(condition, thenBranch, elseBranch, until())
               }
-              "i8"           -> S.Term.I8(until())
-              "i16"          -> S.Term.I16(until())
-              "i32"          -> S.Term.I32(until())
-              "i64"          -> S.Term.I64(until())
-              "f32"          -> S.Term.F32(until())
-              "f64"          -> S.Term.F64(until())
-              "str"          -> S.Term.Str(until())
-              "i8_array"     -> S.Term.I8Array(until())
-              "i32_array"    -> S.Term.I32Array(until())
-              "i64_array"    -> S.Term.I64Array(until())
-              "vec"          -> {
+              "i8"        -> S.Term.I8(until())
+              "i16"       -> S.Term.I16(until())
+              "i32"       -> S.Term.I32(until())
+              "i64"       -> S.Term.I64(until())
+              "f32"       -> S.Term.F32(until())
+              "f64"       -> S.Term.F64(until())
+              "wtf16"     -> S.Term.Wtf16(until())
+              "i8_array"  -> S.Term.I8Array(until())
+              "i32_array" -> S.Term.I32Array(until())
+              "i64_array" -> S.Term.I64Array(until())
+              "vec"       -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Vec(element, until())
               }
-              "struct"       -> {
+              "struct"    -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -661,7 +661,7 @@ class Parse private constructor(
           '"'  -> break
           '#'  -> {
             if (builder.isNotEmpty()) {
-              parts += S.Term.StrOf(builder.toString(), start..here())
+              parts += S.Term.Wtf16Of(builder.toString(), start..here())
             }
 
             skip()
@@ -683,12 +683,12 @@ class Parse private constructor(
     expect('"')
 
     if (builder.isNotEmpty()) {
-      parts += S.Term.StrOf(builder.toString(), start..here())
+      parts += S.Term.Wtf16Of(builder.toString(), start..here())
     }
     return parts.reduceOrNull { acc, term ->
       // TODO: keep string interpolation until resolve phase
       S.Term.Apply(S.Term.Var("++", acc.range.end..term.range.start), listOf(acc, term), acc.range.start..term.range.end)
-    } ?: S.Term.StrOf("", start..here())
+    } ?: S.Term.Wtf16Of("", start..here())
   }
 
   private fun readLocation(): String {

@@ -21,7 +21,7 @@ private val i32: ModuleLocation = ModuleLocation(core, "i32")
 private val i64: ModuleLocation = ModuleLocation(core, "i64")
 private val f32: ModuleLocation = ModuleLocation(core, "f32")
 private val f64: ModuleLocation = ModuleLocation(core, "f64")
-private val str: ModuleLocation = ModuleLocation(core, "str")
+private val wtf16: ModuleLocation = ModuleLocation(core, "wtf16")
 private val i8_array: ModuleLocation = ModuleLocation(core, "i8_array")
 private val i32_array: ModuleLocation = ModuleLocation(core, "i32_array")
 private val i64_array: ModuleLocation = ModuleLocation(core, "i64_array")
@@ -31,9 +31,9 @@ private val struct: ModuleLocation = ModuleLocation(core, "struct")
 private val builtins: Map<DefinitionLocation, Builtin> = listOf(
   object : Builtin(prelude / "++") {
     override fun eval(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.StrOf ?: return null
-      val b = args[1].value as? Value.StrOf ?: return null
-      return Value.StrOf(a.value + b.value)
+      val a = args[0].value as? Value.Wtf16Of ?: return null
+      val b = args[1].value as? Value.Wtf16Of ?: return null
+      return Value.Wtf16Of(a.value + b.value)
     }
   },
 
@@ -80,10 +80,10 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(i8 / "to_str") {
+  object : Builtin(i8 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.I8Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
@@ -130,10 +130,10 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(i16 / "to_str") {
+  object : Builtin(i16 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.I16Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
@@ -284,10 +284,10 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(i32 / "to_str") {
+  object : Builtin(i32 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.I32Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
@@ -299,10 +299,10 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(i64 / "to_str") {
+  object : Builtin(i64 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.I64Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
@@ -314,10 +314,10 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(f32 / "to_str") {
+  object : Builtin(f32 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.F32Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
@@ -329,24 +329,24 @@ private val builtins: Map<DefinitionLocation, Builtin> = listOf(
     }
   },
 
-  object : Builtin(f64 / "to_str") {
+  object : Builtin(f64 / "to_wtf16") {
     override fun eval(args: List<Lazy<Value>>): Value? {
       val a = args[0].value as? Value.F64Of ?: return null
-      return Value.StrOf(a.value.toString())
+      return Value.Wtf16Of(a.value.toString())
     }
   },
 
-  object : Builtin(str / "!=") {
+  object : Builtin(wtf16 / "!=") {
     override fun eval(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.StrOf ?: return null
-      val b = args[1].value as? Value.StrOf ?: return null
+      val a = args[0].value as? Value.Wtf16Of ?: return null
+      val b = args[1].value as? Value.Wtf16Of ?: return null
       return Value.BoolOf(a.value != b.value)
     }
   },
 
-  object : Builtin(str / "size") {
+  object : Builtin(wtf16 / "size") {
     override fun eval(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.StrOf ?: return null
+      val a = args[0].value as? Value.Wtf16Of ?: return null
       return Value.I32Of(a.value.length)
     }
   },

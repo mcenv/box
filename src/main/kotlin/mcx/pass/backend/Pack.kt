@@ -155,7 +155,7 @@ class Pack private constructor(
         push(NbtType.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
       }
 
-      is L.Term.StrOf      -> {
+      is L.Term.Wtf16Of -> {
         push(NbtType.STRING, SourceProvider.Value(StringTag(term.value)))
       }
 

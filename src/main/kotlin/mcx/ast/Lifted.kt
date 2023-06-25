@@ -70,7 +70,7 @@ object Lifted {
       override val type: NbtType get() = NbtType.DOUBLE
     }
 
-    data class StrOf(
+    data class Wtf16Of(
       val value: String,
     ) : Term() {
       override val type: NbtType get() = NbtType.STRING

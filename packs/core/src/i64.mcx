@@ -11,5 +11,5 @@ export def =(a : i64, b : i64) : bool := !(a != b);
 
 export def to_i64(self : i64) : i64 := self;
 
-export builtin def to_str(i64) : str :=
+export builtin def to_wtf16(i64) : wtf16 :=
   /"data modify storage mcx: string append string storage mcx: long[-1]";

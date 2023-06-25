@@ -60,9 +60,9 @@ def f64 : type %double := f64;
 
 def f64_of : f64 := 1.0;
 
-def str : type %string := str;
+def wtf16 : type %string := wtf16;
 
-def str_of : str := "";
+def wtf16_of : wtf16 := "";
 
 def i8_array : type %byte_array := i8_array;
 

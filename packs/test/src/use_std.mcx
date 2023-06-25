@@ -1,6 +1,6 @@
 import {
-  core::i32::=,
-  std::i32::max_value,
+  core::wtf16::=,
+  std::temp::test,
 }
 
-test def use_max_value := 2147483647 = max_value;
+test def use_test := "std" = test;

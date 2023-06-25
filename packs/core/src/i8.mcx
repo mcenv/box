@@ -30,5 +30,5 @@ export builtin def to_f64(i8) : f64 :=
   let _ as nothing := /"data modify storage mcx: double append value 0d";
   /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: byte[-1]";
 
-export builtin def to_str(i8) : str :=
+export builtin def to_wtf16(i8) : wtf16 :=
   /"data modify storage mcx: string append string storage mcx: byte[-1]";

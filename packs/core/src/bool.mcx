@@ -7,7 +7,7 @@ export def &(a : bool, b : bool) : bool :=
 export def |(a : bool, b : bool) : bool :=
   if a then true else b;
 
-export def to_str(a : bool) : str :=
+export def to_wtf16(a : bool) : wtf16 :=
   if a then "true" else "false";
 
 test def !_false := !(false);

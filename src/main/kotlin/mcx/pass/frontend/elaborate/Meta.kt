@@ -129,11 +129,11 @@ class Meta {
         term
       }
 
-      is Term.Str        -> {
+      is Term.Wtf16   -> {
         term
       }
 
-      is Term.StrOf      -> {
+      is Term.Wtf16Of -> {
         term
       }
 
@@ -354,8 +354,8 @@ class Meta {
       value1 is Value.F32Of && value2 is Value.F32Of           -> value1.value == value2.value
       value1 is Value.F64 && value2 is Value.F64               -> true
       value1 is Value.F64Of && value2 is Value.F64Of           -> value1.value == value2.value
-      value1 is Value.Str && value2 is Value.Str               -> true
-      value1 is Value.StrOf && value2 is Value.StrOf           -> value1.value == value2.value
+      value1 is Value.Wtf16 && value2 is Value.Wtf16           -> true
+      value1 is Value.Wtf16Of && value2 is Value.Wtf16Of       -> value1.value == value2.value
       value1 is Value.I8Array && value2 is Value.I8Array       -> true
       value1 is Value.I8ArrayOf && value2 is Value.I8ArrayOf   -> {
         value1.elements.size == value2.elements.size &&

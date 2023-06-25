@@ -129,7 +129,7 @@
     "term": {
       "patterns": [
         {
-          "match": "\\b(?:tag|type|bool|i8|i16|i32|i64|f32|f64|str|i8_array|i32_array|i64_array|vec|struct|ref|union|point|proc|func|code)\\b",
+          "match": "\\b(?:tag|type|bool|i8|i16|i32|i64|f32|f64|wtf16|i8_array|i32_array|i64_array|vec|struct|ref|union|point|proc|func|code)\\b",
           "name": "entity.name.type.mcx"
         },
         {

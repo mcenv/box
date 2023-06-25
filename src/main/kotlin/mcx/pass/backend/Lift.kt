@@ -124,12 +124,12 @@ class Lift private constructor(
         L.Term.F64Of(term.value)
       }
 
-      is C.Term.Str        -> {
+      is C.Term.Wtf16      -> {
         UNIT
       }
 
-      is C.Term.StrOf      -> {
-        L.Term.StrOf(term.value)
+      is C.Term.Wtf16Of    -> {
+        L.Term.Wtf16Of(term.value)
       }
 
       is C.Term.I8Array    -> {
@@ -252,7 +252,7 @@ class Lift private constructor(
       }
 
       is C.Term.Command    -> {
-        val element = (term.element as C.Term.StrOf).value
+        val element = (term.element as C.Term.Wtf16Of).value
         val type = eraseType(term.type)
         L.Term.Command(element, type)
       }
@@ -364,8 +364,8 @@ class Lift private constructor(
       is C.Term.F32Of      -> linkedMapOf()
       is C.Term.F64        -> linkedMapOf()
       is C.Term.F64Of      -> linkedMapOf()
-      is C.Term.Str        -> linkedMapOf()
-      is C.Term.StrOf      -> linkedMapOf()
+      is C.Term.Wtf16      -> linkedMapOf()
+      is C.Term.Wtf16Of    -> linkedMapOf()
       is C.Term.I8Array    -> linkedMapOf()
       is C.Term.I8ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.I32Array   -> linkedMapOf()

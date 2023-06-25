@@ -1,4 +1,4 @@
-export builtin const def ++(left : str, right : str) : str;
+export builtin const def ++(left : wtf16, right : wtf16) : wtf16;
 
 export def nothing : type %end := union {};
 

@@ -1,19 +1,19 @@
 export def pack : type compound := struct {
-  name: str,
-  description: str,
+  name: wtf16,
+  description: wtf16,
   debug: struct {
     verbose: bool,
   },
   # todo: dependencies
   properties: struct {
     eula: bool,
-    level-name: str,
+    level-name: wtf16,
     server-port: i32,
     function-permission-level: i32,
     max-tick-time: i64,
     max-players: i32,
     broadcast-rcon-to-ops: bool,
-    level-type: str,
+    level-type: wtf16,
     rcon: struct {
       port: i32,
     },
