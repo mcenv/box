@@ -8,8 +8,3 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-  - package-ecosystem: "npm"
-    directory: "/extension"
-    schedule:
-      interval: "daily"
-    versioning-strategy: "increase"
