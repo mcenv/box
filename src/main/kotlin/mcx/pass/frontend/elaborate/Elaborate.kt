@@ -623,6 +623,14 @@ class Elaborate private constructor(
         C.Pattern.StructOf(elements) to type
       }
 
+      pattern is R.Pattern.RefOf && match<Value.Ref>(type)       -> {
+        val (element, elementType) = bindPattern(entries, pattern.element, phase, type?.element?.value) {
+          Value.Proj(make(it), Projection.RefOf, lazyOf(type?.element?.value ?: it))
+        }
+        val type = type ?: Value.Ref(lazyOf(elementType))
+        C.Pattern.RefOf(element) to type
+      }
+
       pattern is R.Pattern.Var && match<Value>(type)             -> {
         val type = type ?: meta.freshValue(pattern.range)
         entries += Ctx.Entry(pattern.name, phase, make(Value.Var(pattern.name, next(), lazyOf(type))), false)

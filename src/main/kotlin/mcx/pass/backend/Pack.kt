@@ -291,7 +291,9 @@ class Pack private constructor(
           packPattern(element)
         }
       }
-
+      is L.Pattern.RefOf    -> {
+        // TODO
+      }
       is L.Pattern.Var      -> bind(pattern.name, pattern.repr)
       is L.Pattern.Drop     -> {}
     }
@@ -307,7 +309,9 @@ class Pack private constructor(
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(Repr.COMPOUND, keeps)
       }
-
+      is L.Pattern.RefOf    -> {
+        // TODO
+      }
       is L.Pattern.Var      -> drop(pattern.repr, keeps)
       is L.Pattern.Drop     -> drop(pattern.repr, keeps)
     }

@@ -607,6 +607,13 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
+    is Pattern.RefOf    -> {
+      when (val value = value.value) {
+        is Value.RefOf -> element matches value.element
+        else           -> false
+      }
+    }
+
     is Pattern.Drop     -> true
 
     is Pattern.Var      -> true

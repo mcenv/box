@@ -324,6 +324,10 @@ object Core {
       val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern()
 
+    data class RefOf(
+      val element: Pattern,
+    ) : Pattern()
+
     data class Var(
       val name: String,
     ) : Pattern()

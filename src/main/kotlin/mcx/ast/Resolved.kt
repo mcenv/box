@@ -276,6 +276,11 @@ object Resolved {
       override val range: Range,
     ) : Pattern()
 
+    data class RefOf(
+      val element: Pattern,
+      override val range: Range,
+    ) : Pattern()
+
     data class Var(
       val name: String,
       override val range: Range,

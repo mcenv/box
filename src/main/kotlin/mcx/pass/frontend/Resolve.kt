@@ -358,6 +358,11 @@ class Resolve private constructor(
         R.Pattern.StructOf(elements, range)
       }
 
+      is S.Term.RefOf    -> {
+        val element = resolvePattern(pattern.element)
+        R.Pattern.RefOf(element, range)
+      }
+
       is S.Term.Var      -> {
         when (pattern.name) {
           "_"  -> R.Pattern.Drop(range)

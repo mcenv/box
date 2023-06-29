@@ -319,10 +319,17 @@ class Lift private constructor(
       }
 
       is C.Pattern.StructOf -> {
-        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (_, element) ->
-          liftPattern(element, type)
+        val type = type as C.Term.Struct
+        val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (name, element) ->
+          liftPattern(element, type.elements[name]!!)
         }
         L.Pattern.StructOf(elements)
+      }
+
+      is C.Pattern.RefOf    -> {
+        val type = type as C.Term.Ref
+        val element = liftPattern(pattern.element, type.element)
+        L.Pattern.RefOf(element)
       }
 
       is C.Pattern.Var      -> {
@@ -344,25 +351,25 @@ class Lift private constructor(
 
   private fun freeVars(term: C.Term): LinkedHashMap<String, Repr> {
     return when (term) {
-      is C.Term.Tag     -> unexpectedTerm(term)
-      is C.Term.TagOf   -> linkedMapOf()
-      is C.Term.Type    -> freeVars(term.element)
-      is C.Term.Bool    -> linkedMapOf()
-      is C.Term.BoolOf  -> linkedMapOf()
-      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.I8      -> linkedMapOf()
-      is C.Term.I8Of    -> linkedMapOf()
-      is C.Term.I16     -> linkedMapOf()
-      is C.Term.I16Of   -> linkedMapOf()
-      is C.Term.I32     -> linkedMapOf()
-      is C.Term.I32Of   -> linkedMapOf()
-      is C.Term.I64     -> linkedMapOf()
-      is C.Term.I64Of   -> linkedMapOf()
-      is C.Term.F32     -> linkedMapOf()
-      is C.Term.F32Of   -> linkedMapOf()
-      is C.Term.F64     -> linkedMapOf()
-      is C.Term.F64Of   -> linkedMapOf()
-      is C.Term.Wtf16   -> linkedMapOf()
+      is C.Term.Tag        -> unexpectedTerm(term)
+      is C.Term.TagOf      -> linkedMapOf()
+      is C.Term.Type       -> freeVars(term.element)
+      is C.Term.Bool       -> linkedMapOf()
+      is C.Term.BoolOf     -> linkedMapOf()
+      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.I8         -> linkedMapOf()
+      is C.Term.I8Of       -> linkedMapOf()
+      is C.Term.I16        -> linkedMapOf()
+      is C.Term.I16Of      -> linkedMapOf()
+      is C.Term.I32        -> linkedMapOf()
+      is C.Term.I32Of      -> linkedMapOf()
+      is C.Term.I64        -> linkedMapOf()
+      is C.Term.I64Of      -> linkedMapOf()
+      is C.Term.F32        -> linkedMapOf()
+      is C.Term.F32Of      -> linkedMapOf()
+      is C.Term.F64        -> linkedMapOf()
+      is C.Term.F64Of      -> linkedMapOf()
+      is C.Term.Wtf16      -> linkedMapOf()
       is C.Term.Wtf16Of    -> linkedMapOf()
       is C.Term.I8Array    -> linkedMapOf()
       is C.Term.I8ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
@@ -377,21 +384,21 @@ class Lift private constructor(
       is C.Term.Ref        -> freeVars(term.element)
       is C.Term.RefOf      -> freeVars(term.element)
       is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func    -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf  -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code    -> unexpectedTerm(term)
-      is C.Term.CodeOf  -> unexpectedTerm(term)
-      is C.Term.Splice  -> unexpectedTerm(term)
-      is C.Term.Command -> linkedMapOf()
-      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Match   -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Proj    -> freeVars(term.target)
-      is C.Term.Var     -> linkedMapOf(term.name to eraseToRepr(term.type))
-      is C.Term.Def     -> linkedMapOf()
-      is C.Term.Meta    -> unexpectedTerm(term)
-      is C.Term.Hole    -> unexpectedTerm(term)
+      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Proj       -> freeVars(term.target)
+      is C.Term.Var        -> linkedMapOf(term.name to eraseToRepr(term.type))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 
@@ -399,6 +406,7 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.I32Of    -> emptySet()
       is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.RefOf    -> boundVars(pattern.element)
       is C.Pattern.Var      -> setOf(pattern.name)
       is C.Pattern.Drop     -> emptySet()
       is C.Pattern.Hole     -> unexpectedPattern(pattern)

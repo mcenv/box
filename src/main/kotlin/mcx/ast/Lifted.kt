@@ -183,6 +183,12 @@ object Lifted {
       override val repr: Repr get() = Repr.COMPOUND
     }
 
+    data class RefOf(
+      val element: Pattern,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.REF
+    }
+
     data class Var(
       val name: String,
       override val repr: Repr,
