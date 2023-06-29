@@ -33,19 +33,20 @@ sealed class Value {
     override val type: Lazy<Value> get() = BYTE_LAZY
 
     companion object {
-      val END: Value = Type(lazyOf(TagOf(Repr.End)))
-      val BYTE: Value = Type(lazyOf(TagOf(Repr.Byte)))
-      val SHORT: Value = Type(lazyOf(TagOf(Repr.Short)))
-      val INT: Value = Type(lazyOf(TagOf(Repr.Int)))
-      val LONG: Value = Type(lazyOf(TagOf(Repr.Long)))
-      val FLOAT: Value = Type(lazyOf(TagOf(Repr.Float)))
-      val DOUBLE: Value = Type(lazyOf(TagOf(Repr.Double)))
-      val STRING: Value = Type(lazyOf(TagOf(Repr.String)))
-      val BYTE_ARRAY: Value = Type(lazyOf(TagOf(Repr.ByteArray)))
-      val INT_ARRAY: Value = Type(lazyOf(TagOf(Repr.IntArray)))
-      val LONG_ARRAY: Value = Type(lazyOf(TagOf(Repr.LongArray)))
-      val LIST: Value = Type(lazyOf(TagOf(Repr.List)))
-      val COMPOUND: Value = Type(lazyOf(TagOf(Repr.Compound)))
+      val END: Value = Type(lazyOf(TagOf(Repr.END)))
+      val BYTE: Value = Type(lazyOf(TagOf(Repr.BYTE)))
+      val SHORT: Value = Type(lazyOf(TagOf(Repr.SHORT)))
+      val INT: Value = Type(lazyOf(TagOf(Repr.INT)))
+      val LONG: Value = Type(lazyOf(TagOf(Repr.LONG)))
+      val FLOAT: Value = Type(lazyOf(TagOf(Repr.FLOAT)))
+      val DOUBLE: Value = Type(lazyOf(TagOf(Repr.DOUBLE)))
+      val STRING: Value = Type(lazyOf(TagOf(Repr.STRING)))
+      val BYTE_ARRAY: Value = Type(lazyOf(TagOf(Repr.BYTE_ARRAY)))
+      val INT_ARRAY: Value = Type(lazyOf(TagOf(Repr.INT_ARRAY)))
+      val LONG_ARRAY: Value = Type(lazyOf(TagOf(Repr.LONG_ARRAY)))
+      val LIST: Value = Type(lazyOf(TagOf(Repr.LIST)))
+      val COMPOUND: Value = Type(lazyOf(TagOf(Repr.COMPOUND)))
+      val REF: Value = Type(lazyOf(TagOf(Repr.REF)))
 
       val END_LAZY: Lazy<Value> = lazyOf(END)
       val BYTE_LAZY: Lazy<Value> = lazyOf(BYTE)
@@ -60,6 +61,7 @@ sealed class Value {
       val LONG_ARRAY_LAZY: Lazy<Value> = lazyOf(LONG_ARRAY)
       val LIST_LAZY: Lazy<Value> = lazyOf(LIST)
       val COMPOUND_LAZY: Lazy<Value> = lazyOf(COMPOUND)
+      val REF_LAZY: Lazy<Value> = lazyOf(REF)
     }
   }
 

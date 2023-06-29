@@ -293,7 +293,7 @@ class Elaborate private constructor(
 
       term is R.Term.Ref && synth(type)                                                       -> {
         val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
-        C.Term.Ref(element) to Value.Type.INT
+        C.Term.Ref(element) to Value.Type.REF
       }
 
       term is R.Term.RefOf && match<Value.Ref>(type)                                          -> {

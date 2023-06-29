@@ -16,6 +16,7 @@ import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.ModuleLocation
+import mcx.ast.common.Repr
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
 import mcx.pass.Context
@@ -26,31 +27,15 @@ import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
 // TODO: refactor
+@Suppress("NOTHING_TO_INLINE")
 class Pack private constructor(
   private val context: Context,
+  private val definition: L.Definition,
 ) {
   private val commands: MutableList<Command> = mutableListOf()
-  private val stacks: Map<NbtType, MutableList<Entry>> = NbtType.entries.associateWith { mutableListOf() }
+  private val stacks: Map<Repr, MutableList<String?>> = Repr.entries.associateWith { mutableListOf() }
 
-  private sealed class Entry {
-    abstract var name: String?
-
-    data class Val(override var name: String?) : Entry() {
-      override fun toString(): String {
-        return name ?: "_"
-      }
-    }
-
-    data class Ref(override var name: String?) : Entry() {
-      override fun toString(): String {
-        return "&${name ?: "_"}"
-      }
-    }
-  }
-
-  private fun packDefinition(
-    definition: L.Definition,
-  ): P.Definition {
+  private fun packDefinition(): P.Definition {
     val modifiers = definition.modifiers.mapNotNull { packModifier(it) }
     val path = packDefinitionLocation(definition.name)
     return when (definition) {
@@ -61,10 +46,10 @@ class Pack private constructor(
           packTerm(definition.body!!)
           +RemoveData(TEST_CELL)
           +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
-          drop(NbtType.BYTE)
+          drop(Repr.BYTE)
         } else {
           definition.params.forEach {
-            push(it.type, null)
+            push(it.repr, null)
             packPattern(it)
           }
 
@@ -73,7 +58,7 @@ class Pack private constructor(
 
           val drop = L.Modifier.NO_DROP !in definition.modifiers
           if (drop) {
-            definition.params.forEach { dropPattern(it, listOf(body.type)) }
+            definition.params.forEach { dropPattern(it, listOf(body.repr)) }
           }
 
           if (definition.restore != null) {
@@ -86,7 +71,7 @@ class Pack private constructor(
             stacks.forEach { stack ->
               !{ Raw("# ${stack.key.toString().padEnd(10)}: ${stack.value.joinToString(", ", "[", "]")}") }
             }
-            val remaining = if (drop) listOf(body.type) else definition.params.map { it.type } + body.type
+            val remaining = if (drop) listOf(body.repr) else definition.params.map { it.repr } + body.repr
             remaining.forEach {
               drop(it, relevant = false)
             }
@@ -115,7 +100,7 @@ class Pack private constructor(
       is L.Term.If         -> {
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(BYTE_TOP)))
-        drop(NbtType.BYTE)
+        drop(Repr.BYTE)
         +Execute.ConditionalScoreMatches(
           true, R0, MAIN, 1..Int.MAX_VALUE,
           Execute.Run(
@@ -128,117 +113,117 @@ class Pack private constructor(
             RunFunction(packDefinitionLocation(term.elseName))
           )
         )
-        push(term.type, null)
+        push(term.repr, null)
       }
 
       is L.Term.I8Of       -> {
-        push(NbtType.BYTE, SourceProvider.Value(ByteTag(term.value)))
+        push(Repr.BYTE, SourceProvider.Value(ByteTag(term.value)))
       }
 
       is L.Term.I16Of      -> {
-        push(NbtType.SHORT, SourceProvider.Value(ShortTag(term.value)))
+        push(Repr.SHORT, SourceProvider.Value(ShortTag(term.value)))
       }
 
       is L.Term.I32Of      -> {
-        push(NbtType.INT, SourceProvider.Value(IntTag(term.value)))
+        push(Repr.INT, SourceProvider.Value(IntTag(term.value)))
       }
 
       is L.Term.I64Of      -> {
-        push(NbtType.LONG, SourceProvider.Value(LongTag(term.value)))
+        push(Repr.LONG, SourceProvider.Value(LongTag(term.value)))
       }
 
       is L.Term.F32Of      -> {
-        push(NbtType.FLOAT, SourceProvider.Value(FloatTag(term.value)))
+        push(Repr.FLOAT, SourceProvider.Value(FloatTag(term.value)))
       }
 
       is L.Term.F64Of      -> {
-        push(NbtType.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
+        push(Repr.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
       }
 
       is L.Term.Wtf16Of -> {
-        push(NbtType.STRING, SourceProvider.Value(StringTag(term.value)))
+        push(Repr.STRING, SourceProvider.Value(StringTag(term.value)))
       }
 
       is L.Term.I8ArrayOf  -> {
         val elements = term.elements.map { (it as? L.Term.I8Of)?.value ?: 0 }
-        push(NbtType.BYTE_ARRAY, SourceProvider.Value(ByteArrayTag(elements)))
+        push(Repr.BYTE_ARRAY, SourceProvider.Value(ByteArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I8Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
-            drop(NbtType.BYTE)
+            drop(Repr.BYTE)
           }
         }
       }
 
       is L.Term.I32ArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.I32Of)?.value ?: 0 }
-        push(NbtType.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
+        push(Repr.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I32Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.INT_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(INT_TOP)))
-            drop(NbtType.INT)
+            drop(Repr.INT)
           }
         }
       }
 
       is L.Term.I64ArrayOf -> {
         val elements = term.elements.map { (it as? L.Term.I64Of)?.value ?: 0 }
-        push(NbtType.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
+        push(Repr.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I64Of) {
             packTerm(element)
             +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LONG_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(LONG_TOP)))
-            drop(NbtType.LONG)
+            drop(Repr.LONG)
           }
         }
       }
 
       is L.Term.VecOf      -> {
-        push(NbtType.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
+        push(Repr.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
         if (term.elements.isNotEmpty()) {
-          val elementType = term.elements.first().type
+          val elementRepr = term.elements.first().repr
           term.elements.forEach { element ->
             packTerm(element)
-            val index = if (elementType == NbtType.LIST) -2 else -1
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath(elementType.id)(-1)))))
-            drop(elementType)
+            val index = if (elementRepr == Repr.LIST) -2 else -1
+            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
+            drop(elementRepr)
           }
         }
       }
 
       is L.Term.StructOf   -> {
-        push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
+        push(Repr.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
         term.elements.forEach { (key, element) ->
           packTerm(element)
-          val valueType = element.type
-          val index = if (valueType == NbtType.COMPOUND) -2 else -1
-          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(index)(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(valueType.id)(-1)))))
-          drop(valueType)
+          val elementRepr = element.repr
+          val index = if (elementRepr == Repr.COMPOUND) -2 else -1
+          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(index)(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
+          drop(elementRepr)
         }
       }
 
       is L.Term.RefOf      -> {
-        push(NbtType.INT, SourceProvider.Value(IntTag(0)), Entry.Ref(null))
+        push(Repr.REF, SourceProvider.Value(IntTag(0)))
         packTerm(term.element)
-        val elementType = term.element.type
-        val index = if (elementType == NbtType.INT) -2 else -1
-        +Execute.StoreScore(RESULT, R0, MAIN, Execute.StoreStorage(RESULT, DataAccessor(MCX, nbtPath(NbtType.INT.id)(index)), INT, 1.0, Execute.Run(AddScore(R0, FREE, 1))))
+        val elementRepr = term.element.repr
+        val index = if (elementRepr == Repr.REF) -2 else -1
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.StoreStorage(RESULT, DataAccessor(MCX, nbtPath(Repr.REF.id)(index)), INT, 1.0, Execute.Run(AddScore(R0, FREE, 1))))
         +RunFunction(TOUCH)
-        +ManipulateData(HEAP_CELL, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(elementType.id)(-1)))))
-        drop(elementType)
+        +ManipulateData(HEAP_CELL, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
+        drop(elementRepr)
       }
 
       is L.Term.ProcOf     -> {
-        push(NbtType.INT, SourceProvider.Value(IntTag(term.function.restore!!)))
+        push(Repr.INT, SourceProvider.Value(IntTag(term.function.restore!!)))
       }
 
       is L.Term.FuncOf     -> {
-        push(NbtType.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
-        term.entries.forEach { (name, type) ->
-          val index = this[name, type]
-          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(type.id)(index)))))
+        push(Repr.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
+        term.entries.forEach { (name, repr) ->
+          val index = this[name, repr]
+          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index)))))
         }
       }
 
@@ -258,14 +243,14 @@ class Pack private constructor(
           }
         }
 
-        push(term.type, null)
-        val keeps = listOf(term.type)
-        term.args.forEach { drop(it.type, keeps, false) }
+        push(term.repr, null)
+        val keeps = listOf(term.repr)
+        term.args.forEach { drop(it.repr, keeps, false) }
       }
 
       is L.Term.Command -> {
         +Raw(term.element)
-        push(term.type, null)
+        push(term.repr, null)
       }
 
       is L.Term.Let     -> {
@@ -273,24 +258,24 @@ class Pack private constructor(
         packPattern(term.binder)
         packTerm(term.body)
 
-        dropPattern(term.binder, listOf(term.body.type))
+        dropPattern(term.binder, listOf(term.body.repr))
       }
 
       is L.Term.Proj    -> {
         // TODO
-        push(term.type, null)
+        push(term.repr, null)
         +Raw("TODO: $term")
       }
 
       is L.Term.Var     -> {
-        val type = term.type
-        val index = this[term.name, term.type]
-        push(type, SourceProvider.From(DataAccessor(MCX, nbtPath(type.id)(index))))
+        val repr = term.repr
+        val index = this[term.name, term.repr]
+        push(repr, SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index))))
       }
 
       is L.Term.Def     -> {
         +RunFunction(packDefinitionLocation(term.name))
-        push(term.type, null)
+        push(term.repr, null)
       }
     }
   }
@@ -302,94 +287,99 @@ class Pack private constructor(
       is L.Pattern.I32Of    -> {}
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.type, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // TODO: avoid immediate push
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // TODO: avoid immediate push
           packPattern(element)
         }
       }
 
-      is L.Pattern.Var      -> bind(pattern.name, pattern.type)
+      is L.Pattern.Var      -> bind(pattern.name, pattern.repr)
       is L.Pattern.Drop     -> {}
     }
   }
 
   private fun dropPattern(
     pattern: L.Pattern,
-    keeps: List<NbtType>,
+    keeps: List<Repr>,
   ) {
     when (pattern) {
-      is L.Pattern.I32Of    -> drop(NbtType.INT, keeps)
+      is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
       is L.Pattern.StructOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
-        drop(NbtType.COMPOUND, keeps)
+        drop(Repr.COMPOUND, keeps)
       }
 
-      is L.Pattern.Var      -> drop(pattern.type, keeps)
-      is L.Pattern.Drop     -> drop(pattern.type, keeps)
+      is L.Pattern.Var      -> drop(pattern.repr, keeps)
+      is L.Pattern.Drop     -> drop(pattern.repr, keeps)
     }
   }
 
   private fun push(
-    type: NbtType,
+    repr: Repr,
     source: SourceProvider?,
-    entry: Entry = Entry.Val(null),
   ) {
-    if (source != null && type != NbtType.END) {
-      !{ Raw("# push ${type.id}") }
-      +ManipulateData(DataAccessor(MCX, nbtPath(type.id)), DataManipulator.Append(source))
+    if (source != null && repr != Repr.END) {
+      !{ Raw("# push ${repr.id}") }
+      +ManipulateData(DataAccessor(MCX, nbtPath(repr.id)), DataManipulator.Append(source))
     }
-    getStack(type) += entry
+    getStack(repr) += null
   }
 
   private fun drop(
-    drop: NbtType,
-    keeps: List<NbtType> = emptyList(),
+    drop: Repr,
+    keeps: List<Repr> = emptyList(),
     relevant: Boolean = true,
   ) {
+    val stack = getStack(drop)
     val index = -1 - keeps.count { it == drop }
-    if (relevant && drop != NbtType.END) {
+    if (relevant && drop != Repr.END) {
       !{ Raw("# drop ${drop.id} under ${keeps.joinToString(", ", "[", "]") { it.id }}") }
       +RemoveData(DataAccessor(MCX, nbtPath(drop.id)(index)))
+      when (drop) {
+        Repr.REF -> {
+          +PerformOperation(R0, MAIN, ASSIGN, R0, FREE)
+          +RemoveScore(R0, FREE, 1)
+          +RunFunction(TOUCH)
+          +RemoveData(HEAP_CELL)
+        }
+        else     -> {}
+      }
     }
-    val stack = getStack(drop)
-    val normalizedIndex = stack.size + index
-    if (relevant && stack[normalizedIndex] is Entry.Ref) {
-      +PerformOperation(R0, MAIN, ASSIGN, R0, FREE)
-      +RemoveScore(R0, FREE, 1)
-      +RunFunction(TOUCH)
-      +RemoveData(HEAP_CELL)
+    if (stack.size + index >= stack.size || stack.size + index < 0) {
+      println("WARNING: [$definition]: dropping $drop at $index, but it's already null")
+      stacks.forEach { stack ->
+        println("# ${stack.key.toString().padEnd(10)}: ${stack.value.joinToString(", ", "[", "]")}")
+      }
     }
-    stack.removeAt(normalizedIndex)
+    stack.removeAt(stack.size + index)
   }
 
   private fun bind(
     name: String,
-    type: NbtType,
+    repr: Repr,
   ) {
-    val stack = getStack(type)
-    val index = stack.indexOfLast { it.name == null }
-    stack[index].name = name
+    val stack = getStack(repr)
+    val index = stack.indexOfLast { it == null }
+    stack[index] = name
   }
 
   operator fun get(
     name: String,
-    type: NbtType,
+    repr: Repr,
   ): Int {
-    val stack = getStack(type)
-    return stack.indexOfLast { it.name == name }.also { require(it != -1) } - stack.size
+    val stack = getStack(repr)
+    return stack.indexOfLast { it == name }.also { require(it != -1) } - stack.size
   }
 
   private fun getStack(
-    type: NbtType,
-  ): MutableList<Entry> {
-    return stacks[type]!!
+    repr: Repr,
+  ): MutableList<String?> {
+    return stacks[repr]!!
   }
 
-  @Suppress("NOTHING_TO_INLINE")
   private inline operator fun Command.unaryPlus() {
     commands += this
   }
 
-  @Suppress("NOTHING_TO_INLINE")
   private inline operator fun (() -> Command).not() {
     if (context.config.debug.verbose) {
       +this()
@@ -439,27 +429,22 @@ class Pack private constructor(
       }
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     private inline operator fun PersistentList<NbtNode>.invoke(pattern: CompoundTag): PersistentList<NbtNode> {
       return this + MatchElement(pattern)
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     private inline operator fun PersistentList<NbtNode>.invoke(): PersistentList<NbtNode> {
       return this + AllElements
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     private inline operator fun PersistentList<NbtNode>.invoke(index: Int): PersistentList<NbtNode> {
       return this + IndexedElement(index)
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     private inline operator fun PersistentList<NbtNode>.invoke(name: String, pattern: CompoundTag): PersistentList<NbtNode> {
       return this + MatchObject(name, pattern)
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     private inline operator fun PersistentList<NbtNode>.invoke(name: String): PersistentList<NbtNode> {
       return this + CompoundChild(name)
     }
@@ -531,7 +516,7 @@ class Pack private constructor(
       context: Context,
       definition: L.Definition,
     ): P.Definition {
-      return Pack(context).packDefinition(definition)
+      return Pack(context, definition).packDefinition()
     }
   }
 }

@@ -84,7 +84,7 @@ def struct : type %compound := struct {};
 
 def struct_of : struct {} := {};
 
-def ref : type %int := ref i32;
+def ref : type %ref := ref i32;
 
 def ref_of : ref i32 := &1;
 

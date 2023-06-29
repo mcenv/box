@@ -51,19 +51,20 @@ object Core {
       override val type: Term get() = BYTE
 
       companion object {
-        val END: Type = Type(TagOf(Repr.End))
-        val BYTE: Type = Type(TagOf(Repr.Byte))
-        val SHORT: Type = Type(TagOf(Repr.Short))
-        val INT: Type = Type(TagOf(Repr.Int))
-        val LONG: Type = Type(TagOf(Repr.Long))
-        val FLOAT: Type = Type(TagOf(Repr.Float))
-        val DOUBLE: Type = Type(TagOf(Repr.Double))
-        val STRING: Type = Type(TagOf(Repr.String))
-        val BYTE_ARRAY: Type = Type(TagOf(Repr.ByteArray))
-        val INT_ARRAY: Type = Type(TagOf(Repr.IntArray))
-        val LONG_ARRAY: Type = Type(TagOf(Repr.LongArray))
-        val LIST: Type = Type(TagOf(Repr.List))
-        val COMPOUND: Type = Type(TagOf(Repr.Compound))
+        val END: Type = Type(TagOf(Repr.END))
+        val BYTE: Type = Type(TagOf(Repr.BYTE))
+        val SHORT: Type = Type(TagOf(Repr.SHORT))
+        val INT: Type = Type(TagOf(Repr.INT))
+        val LONG: Type = Type(TagOf(Repr.LONG))
+        val FLOAT: Type = Type(TagOf(Repr.FLOAT))
+        val DOUBLE: Type = Type(TagOf(Repr.DOUBLE))
+        val STRING: Type = Type(TagOf(Repr.STRING))
+        val BYTE_ARRAY: Type = Type(TagOf(Repr.BYTE_ARRAY))
+        val INT_ARRAY: Type = Type(TagOf(Repr.INT_ARRAY))
+        val LONG_ARRAY: Type = Type(TagOf(Repr.LONG_ARRAY))
+        val LIST: Type = Type(TagOf(Repr.LIST))
+        val COMPOUND: Type = Type(TagOf(Repr.COMPOUND))
+        val REF: Type = Type(TagOf(Repr.REF))
       }
     }
 
@@ -209,7 +210,7 @@ object Core {
     data class Ref(
       val element: Term,
     ) : Term() {
-      override val type: Term get() = Type.INT
+      override val type: Term get() = Type.REF
     }
 
     data class RefOf(

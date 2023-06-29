@@ -1,29 +1,18 @@
 package mcx.ast.common
 
-sealed class Repr {
-  data object End : Repr()
-
-  data object Byte : Repr()
-
-  data object Short : Repr()
-
-  data object Int : Repr()
-
-  data object Long : Repr()
-
-  data object Float : Repr()
-
-  data object Double : Repr()
-
-  data object String : Repr()
-
-  data object ByteArray : Repr()
-
-  data object IntArray : Repr()
-
-  data object LongArray : Repr()
-
-  data object List : Repr()
-
-  data object Compound : Repr()
+enum class Repr(val id: String) {
+  END("end"),
+  BYTE("byte"),
+  SHORT("short"),
+  INT("int"),
+  LONG("long"),
+  FLOAT("float"),
+  DOUBLE("double"),
+  STRING("string"),
+  BYTE_ARRAY("byte_array"),
+  INT_ARRAY("int_array"),
+  LONG_ARRAY("long_array"),
+  LIST("list"),
+  COMPOUND("compound"),
+  REF("ref"),
 }

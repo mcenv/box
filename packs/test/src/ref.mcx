@@ -1,8 +1,13 @@
 def def_ref : ref bool := &true;
 
-#| fixme
 def use_ref : ref bool := def_ref;
 
-def drop_ref : bool :=
+def drop_ref : i32 :=
   let _ := &true;
-  false;
+  1;
+
+# def nested_ref : ref ref bool := &&true;
+#
+# def drop_nested_ref : i32 :=
+#   let _ := &&true;
+#   1;

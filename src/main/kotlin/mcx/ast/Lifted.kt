@@ -2,7 +2,7 @@ package mcx.ast
 
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.Projection
-import mcx.data.NbtType
+import mcx.ast.common.Repr
 
 object Lifted {
   sealed class Definition {
@@ -25,108 +25,108 @@ object Lifted {
   }
 
   sealed class Term {
-    abstract val type: NbtType
+    abstract val repr: Repr
 
     data class If(
       val condition: Term,
       val thenName: DefinitionLocation,
       val elseName: DefinitionLocation,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
 
     data class I8Of(
       val value: Byte,
     ) : Term() {
-      override val type: NbtType get() = NbtType.BYTE
+      override val repr: Repr get() = Repr.BYTE
     }
 
     data class I16Of(
       val value: Short,
     ) : Term() {
-      override val type: NbtType get() = NbtType.SHORT
+      override val repr: Repr get() = Repr.SHORT
     }
 
     data class I32Of(
       val value: Int,
     ) : Term() {
-      override val type: NbtType get() = NbtType.INT
+      override val repr: Repr get() = Repr.INT
     }
 
     data class I64Of(
       val value: Long,
     ) : Term() {
-      override val type: NbtType get() = NbtType.LONG
+      override val repr: Repr get() = Repr.LONG
     }
 
     data class F32Of(
       val value: Float,
     ) : Term() {
-      override val type: NbtType get() = NbtType.FLOAT
+      override val repr: Repr get() = Repr.FLOAT
     }
 
     data class F64Of(
       val value: Double,
     ) : Term() {
-      override val type: NbtType get() = NbtType.DOUBLE
+      override val repr: Repr get() = Repr.DOUBLE
     }
 
     data class Wtf16Of(
       val value: String,
     ) : Term() {
-      override val type: NbtType get() = NbtType.STRING
+      override val repr: Repr get() = Repr.STRING
     }
 
     data class I8ArrayOf(
       val elements: List<Term>,
     ) : Term() {
-      override val type: NbtType get() = NbtType.BYTE_ARRAY
+      override val repr: Repr get() = Repr.BYTE_ARRAY
     }
 
     data class I32ArrayOf(
       val elements: List<Term>,
     ) : Term() {
-      override val type: NbtType get() = NbtType.INT_ARRAY
+      override val repr: Repr get() = Repr.INT_ARRAY
     }
 
     data class I64ArrayOf(
       val elements: List<Term>,
     ) : Term() {
-      override val type: NbtType get() = NbtType.LONG_ARRAY
+      override val repr: Repr get() = Repr.LONG_ARRAY
     }
 
     data class VecOf(
       val elements: List<Term>,
     ) : Term() {
-      override val type: NbtType get() = NbtType.LIST
+      override val repr: Repr get() = Repr.LIST
     }
 
     data class StructOf(
       val elements: LinkedHashMap<String, Term>,
     ) : Term() {
-      override val type: NbtType get() = NbtType.COMPOUND
+      override val repr: Repr get() = Repr.COMPOUND
     }
 
     data class RefOf(
       val element: Term,
     ) : Term() {
-      override val type: NbtType get() = NbtType.INT
+      override val repr: Repr get() = Repr.REF
     }
 
     data class ProcOf(
       val function: Definition.Function,
     ) : Term() {
-      override val type: NbtType get() = NbtType.INT
+      override val repr: Repr get() = Repr.INT
     }
 
     data class FuncOf(
       val entries: List<Entry>,
       val tag: Int,
     ) : Term() {
-      override val type: NbtType get() = NbtType.COMPOUND
+      override val repr: Repr get() = Repr.COMPOUND
 
       data class Entry(
         val name: String,
-        val type: NbtType,
+        val type: Repr,
       )
     }
 
@@ -134,12 +134,12 @@ object Lifted {
       val open: Boolean,
       val func: Term,
       val args: List<Term>,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
 
     data class Command(
       val element: String,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
 
     data class Let(
@@ -147,49 +147,49 @@ object Lifted {
       val init: Term,
       val body: Term,
     ) : Term() {
-      override val type: NbtType = body.type
+      override val repr: Repr = body.repr
     }
 
     data class Proj(
       val name: String,
       val projections: List<Projection>,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
 
     data class Var(
       val name: String,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
 
     data class Def(
       val direct: Boolean,
       val name: DefinitionLocation,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Term()
   }
 
   sealed class Pattern {
-    abstract val type: NbtType
+    abstract val repr: Repr
 
     data class I32Of(
       val value: Int,
     ) : Pattern() {
-      override val type: NbtType get() = NbtType.INT
+      override val repr: Repr get() = Repr.INT
     }
 
     data class StructOf(
       val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern() {
-      override val type: NbtType get() = NbtType.COMPOUND
+      override val repr: Repr get() = Repr.COMPOUND
     }
 
     data class Var(
       val name: String,
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Pattern()
 
     data class Drop(
-      override val type: NbtType,
+      override val repr: Repr,
     ) : Pattern()
   }
 }

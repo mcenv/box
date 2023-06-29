@@ -3,7 +3,6 @@ package mcx.pass.backend
 import mcx.ast.common.Modifier
 import mcx.ast.common.Projection
 import mcx.ast.common.Repr
-import mcx.data.NbtType
 import mcx.pass.Context
 import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx
 import mcx.pass.prettyPattern
@@ -11,7 +10,6 @@ import mcx.pass.prettyTerm
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
-@Suppress("NAME_SHADOWING")
 class Lift private constructor(
   private val context: Context,
   private val definition: C.Definition,
@@ -72,7 +70,7 @@ class Lift private constructor(
         val elseBranch = liftTerm(term.elseBranch)
         val thenFunction = createFreshFunction(thenBranch, 1)
         val elseFunction = createFreshFunction(elseBranch, null)
-        val type = thenBranch.type
+        val type = thenBranch.repr
         L.Term.If(condition, thenFunction.name, elseFunction.name, type)
       }
 
@@ -235,8 +233,8 @@ class Lift private constructor(
       is C.Term.Apply      -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
-        val type = eraseType(term.type)
-        L.Term.Apply(term.open, func, args, type)
+        val repr = eraseToRepr(term.type)
+        L.Term.Apply(term.open, func, args, repr)
       }
 
       is C.Term.Code       -> {
@@ -253,8 +251,8 @@ class Lift private constructor(
 
       is C.Term.Command    -> {
         val element = (term.element as C.Term.Wtf16Of).value
-        val type = eraseType(term.type)
-        L.Term.Command(element, type)
+        val repr = eraseToRepr(term.type)
+        L.Term.Command(element, repr)
       }
 
       is C.Term.Let        -> {
@@ -279,8 +277,8 @@ class Lift private constructor(
               go(target.target)
             }
             is C.Term.Var  -> {
-              val type = eraseType(term.type)
-              L.Term.Proj(target.name, projections, type)
+              val repr = eraseToRepr(term.type)
+              L.Term.Proj(target.name, projections, repr)
             }
             else           -> {
               error("Unexpected: ${prettyTerm(target)}")
@@ -291,14 +289,14 @@ class Lift private constructor(
       }
 
       is C.Term.Var        -> {
-        val type = eraseType(term.type)
-        L.Term.Var(term.name, type)
+        val repr = eraseToRepr(term.type)
+        L.Term.Var(term.name, repr)
       }
 
       is C.Term.Def        -> {
         val direct = Modifier.DIRECT in term.def.modifiers
-        val type = eraseType(term.def.type)
-        L.Term.Def(direct, term.def.name, type)
+        val repr = eraseToRepr(term.def.type)
+        L.Term.Def(direct, term.def.name, repr)
       }
 
       is C.Term.Meta       -> {
@@ -328,14 +326,14 @@ class Lift private constructor(
       }
 
       is C.Pattern.Var      -> {
-        val type = eraseType(type)
-        bind(pattern.name, type)
-        L.Pattern.Var(pattern.name, type)
+        val repr = eraseToRepr(type)
+        bind(pattern.name, repr)
+        L.Pattern.Var(pattern.name, repr)
       }
 
       is C.Pattern.Drop     -> {
-        val type = eraseType(type)
-        L.Pattern.Drop(type)
+        val repr = eraseToRepr(type)
+        L.Pattern.Drop(repr)
       }
 
       is C.Pattern.Hole     -> {
@@ -344,27 +342,27 @@ class Lift private constructor(
     }
   }
 
-  private fun freeVars(term: C.Term): LinkedHashMap<String, NbtType> {
+  private fun freeVars(term: C.Term): LinkedHashMap<String, Repr> {
     return when (term) {
-      is C.Term.Tag        -> unexpectedTerm(term)
-      is C.Term.TagOf      -> linkedMapOf()
-      is C.Term.Type       -> freeVars(term.element)
-      is C.Term.Bool       -> linkedMapOf()
-      is C.Term.BoolOf     -> linkedMapOf()
-      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
-      is C.Term.I8         -> linkedMapOf()
-      is C.Term.I8Of       -> linkedMapOf()
-      is C.Term.I16        -> linkedMapOf()
-      is C.Term.I16Of      -> linkedMapOf()
-      is C.Term.I32        -> linkedMapOf()
-      is C.Term.I32Of      -> linkedMapOf()
-      is C.Term.I64        -> linkedMapOf()
-      is C.Term.I64Of      -> linkedMapOf()
-      is C.Term.F32        -> linkedMapOf()
-      is C.Term.F32Of      -> linkedMapOf()
-      is C.Term.F64        -> linkedMapOf()
-      is C.Term.F64Of      -> linkedMapOf()
-      is C.Term.Wtf16      -> linkedMapOf()
+      is C.Term.Tag     -> unexpectedTerm(term)
+      is C.Term.TagOf   -> linkedMapOf()
+      is C.Term.Type    -> freeVars(term.element)
+      is C.Term.Bool    -> linkedMapOf()
+      is C.Term.BoolOf  -> linkedMapOf()
+      is C.Term.If      -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
+      is C.Term.I8      -> linkedMapOf()
+      is C.Term.I8Of    -> linkedMapOf()
+      is C.Term.I16     -> linkedMapOf()
+      is C.Term.I16Of   -> linkedMapOf()
+      is C.Term.I32     -> linkedMapOf()
+      is C.Term.I32Of   -> linkedMapOf()
+      is C.Term.I64     -> linkedMapOf()
+      is C.Term.I64Of   -> linkedMapOf()
+      is C.Term.F32     -> linkedMapOf()
+      is C.Term.F32Of   -> linkedMapOf()
+      is C.Term.F64     -> linkedMapOf()
+      is C.Term.F64Of   -> linkedMapOf()
+      is C.Term.Wtf16   -> linkedMapOf()
       is C.Term.Wtf16Of    -> linkedMapOf()
       is C.Term.I8Array    -> linkedMapOf()
       is C.Term.I8ArrayOf  -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
@@ -379,21 +377,21 @@ class Lift private constructor(
       is C.Term.Ref        -> freeVars(term.element)
       is C.Term.RefOf      -> freeVars(term.element)
       is C.Term.Point      -> freeVars(term.element)
-      is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
-      is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Proj       -> freeVars(term.target)
-      is C.Term.Var        -> linkedMapOf(term.name to eraseType(term.type))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.Union   -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Func    -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
+      is C.Term.FuncOf  -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
+      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code    -> unexpectedTerm(term)
+      is C.Term.CodeOf  -> unexpectedTerm(term)
+      is C.Term.Splice  -> unexpectedTerm(term)
+      is C.Term.Command -> linkedMapOf()
+      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.Match   -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Proj    -> freeVars(term.target)
+      is C.Term.Var     -> linkedMapOf(term.name to eraseToRepr(term.type))
+      is C.Term.Def     -> linkedMapOf()
+      is C.Term.Meta    -> unexpectedTerm(term)
+      is C.Term.Hole    -> unexpectedTerm(term)
     }
   }
 
@@ -407,29 +405,15 @@ class Lift private constructor(
     }
   }
 
-  private fun eraseType(type: C.Term): NbtType {
-    return when (((type.type as C.Term.Type).element as C.Term.TagOf).repr) {
-      Repr.End       -> NbtType.END
-      Repr.Byte      -> NbtType.BYTE
-      Repr.Short     -> NbtType.SHORT
-      Repr.Int       -> NbtType.INT
-      Repr.Long      -> NbtType.LONG
-      Repr.Float     -> NbtType.FLOAT
-      Repr.Double    -> NbtType.DOUBLE
-      Repr.ByteArray -> NbtType.BYTE_ARRAY
-      Repr.IntArray  -> NbtType.INT_ARRAY
-      Repr.LongArray -> NbtType.LONG_ARRAY
-      Repr.String    -> NbtType.STRING
-      Repr.List      -> NbtType.LIST
-      Repr.Compound  -> NbtType.COMPOUND
-    }
+  private fun eraseToRepr(type: C.Term): Repr {
+    return ((type.type as C.Term.Type).element as C.Term.TagOf).repr
   }
 
   private fun Ctx.createFreshFunction(
     body: L.Term,
     restore: Int?,
   ): L.Definition.Function {
-    val params = types.map { (name, type) -> L.Pattern.Var(name, type) }
+    val params = reprs.map { (name, type) -> L.Pattern.Var(name, type) }
     return L.Definition.Function(
       listOf(L.Modifier.NO_DROP),
       definition.name.module / "${definition.name.name}:${freshFunctionId++}",
@@ -442,21 +426,21 @@ class Lift private constructor(
   }
 
   private class Ctx private constructor() {
-    private val _types: MutableList<Pair<String, NbtType>> = mutableListOf()
-    val types: List<Pair<String, NbtType>> get() = _types
+    private val _reprs: MutableList<Pair<String, Repr>> = mutableListOf()
+    val reprs: List<Pair<String, Repr>> get() = _reprs
 
     fun bind(
       name: String,
-      type: NbtType,
+      repr: Repr,
     ) {
-      _types += name to type
+      _reprs += name to repr
     }
 
     inline fun <R> restoring(action: () -> R): R {
-      val restore = _types.size
+      val restore = _reprs.size
       val result = action()
-      repeat(_types.size - restore) {
-        _types.removeLast()
+      repeat(_reprs.size - restore) {
+        _reprs.removeLast()
       }
       return result
     }

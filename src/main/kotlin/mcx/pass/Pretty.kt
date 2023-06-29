@@ -16,19 +16,19 @@ fun prettyTerm(
     term: Term,
   ): String {
     return when (term) {
-      is Term.Tag    -> "tag"
-      is Term.TagOf  -> prettyRepr(term.repr)
-      is Term.Type   -> "(type ${go(term.element)})"
-      is Term.Bool   -> "bool"
-      is Term.BoolOf -> term.value.toString()
-      is Term.If     -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
-      is Term.I8     -> "i8"
-      is Term.I8Of   -> "${term.value}i8"
-      is Term.I16    -> "i16"
-      is Term.I16Of  -> "${term.value}i16"
-      is Term.I32    -> "i32"
-      is Term.I32Of  -> "${term.value}i32"
-      is Term.I64    -> "i64"
+      is Term.Tag        -> "tag"
+      is Term.TagOf      -> prettyRepr(term.repr)
+      is Term.Type       -> "(type ${go(term.element)})"
+      is Term.Bool       -> "bool"
+      is Term.BoolOf     -> term.value.toString()
+      is Term.If         -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
+      is Term.I8         -> "i8"
+      is Term.I8Of       -> "${term.value}i8"
+      is Term.I16        -> "i16"
+      is Term.I16Of      -> "${term.value}i16"
+      is Term.I32        -> "i32"
+      is Term.I32Of      -> "${term.value}i32"
+      is Term.I64        -> "i64"
       is Term.I64Of      -> "${term.value}i64"
       is Term.F32        -> "f32"
       is Term.F32Of      -> "${term.value}f32"
@@ -93,18 +93,19 @@ fun prettyRepr(
   repr: Repr,
 ): String {
   return when (repr) {
-    Repr.End       -> "%end"
-    Repr.Byte      -> "%byte"
-    Repr.Short     -> "%short"
-    Repr.Int       -> "%int"
-    Repr.Long      -> "%long"
-    Repr.Float     -> "%float"
-    Repr.Double    -> "%double"
-    Repr.String    -> "%string"
-    Repr.ByteArray -> "%byte_array"
-    Repr.IntArray  -> "%int_array"
-    Repr.LongArray -> "%long_array"
-    Repr.List      -> "%list"
-    Repr.Compound  -> "%compound"
+    Repr.END        -> "%end"
+    Repr.BYTE       -> "%byte"
+    Repr.SHORT      -> "%short"
+    Repr.INT        -> "%int"
+    Repr.LONG       -> "%long"
+    Repr.FLOAT      -> "%float"
+    Repr.DOUBLE     -> "%double"
+    Repr.STRING     -> "%string"
+    Repr.BYTE_ARRAY -> "%byte_array"
+    Repr.INT_ARRAY  -> "%int_array"
+    Repr.LONG_ARRAY -> "%long_array"
+    Repr.LIST       -> "%list"
+    Repr.COMPOUND   -> "%compound"
+    Repr.REF        -> "%ref"
   }
 }
