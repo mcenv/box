@@ -18,7 +18,7 @@ repositories {
 dependencies {
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.0")
   implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.2")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:1.5.1")
