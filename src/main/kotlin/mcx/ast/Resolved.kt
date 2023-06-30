@@ -161,16 +161,6 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class Ref(
-      val element: Term,
-      override val range: Range,
-    ) : Term()
-
-    data class RefOf(
-      val element: Term,
-      override val range: Range,
-    ) : Term()
-
     data class Point(
       val element: Term,
       override val range: Range,
@@ -273,11 +263,6 @@ object Resolved {
 
     data class StructOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
-      override val range: Range,
-    ) : Pattern()
-
-    data class RefOf(
-      val element: Pattern,
       override val range: Range,
     ) : Pattern()
 

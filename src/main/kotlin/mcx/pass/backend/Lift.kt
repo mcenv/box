@@ -175,15 +175,6 @@ class Lift private constructor(
         L.Term.StructOf(elements)
       }
 
-      is C.Term.Ref        -> {
-        UNIT
-      }
-
-      is C.Term.RefOf      -> {
-        val element = liftTerm(term.element)
-        L.Term.RefOf(element)
-      }
-
       is C.Term.Point      -> {
         UNIT
       }
@@ -326,12 +317,6 @@ class Lift private constructor(
         L.Pattern.StructOf(elements)
       }
 
-      is C.Pattern.RefOf    -> {
-        val type = type as C.Term.Ref
-        val element = liftPattern(pattern.element, type.element)
-        L.Pattern.RefOf(element)
-      }
-
       is C.Pattern.Var      -> {
         val repr = eraseToRepr(type)
         bind(pattern.name, repr)
@@ -381,8 +366,6 @@ class Lift private constructor(
       is C.Term.VecOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Ref        -> freeVars(term.element)
-      is C.Term.RefOf      -> freeVars(term.element)
       is C.Term.Point      -> freeVars(term.element)
       is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
@@ -406,7 +389,6 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.I32Of    -> emptySet()
       is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
-      is C.Pattern.RefOf    -> boundVars(pattern.element)
       is C.Pattern.Var      -> setOf(pattern.name)
       is C.Pattern.Drop     -> emptySet()
       is C.Pattern.Hole     -> unexpectedPattern(pattern)

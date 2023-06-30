@@ -291,19 +291,6 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Ref && synth(type)                                                       -> {
-        val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
-        C.Term.Ref(element) to Value.Type.REF
-      }
-
-      term is R.Term.RefOf && match<Value.Ref>(type)                                          -> {
-        val (element, elementType) = elaborateTerm(term.element, phase, type?.element?.value)
-        val type = type ?: Value.Ref(lazyOf(elementType))
-        typed(type) {
-          C.Term.RefOf(element, it)
-        }
-      }
-
       term is R.Term.Point && synth(type)                                                     -> { // TODO: unify tags
         val (element, elementType) = synthTerm(term.element, phase)
         val type = elementType.type.value
@@ -460,7 +447,7 @@ class Elaborate private constructor(
           invalidTerm(alreadyUsed(term.range))
         } else {
           val type = meta.forceValue(entry.value.type.value)
-          if (type is Value.Ref) {
+          if (false /* TODO: quantity */) {
             entry.used = true
           }
           when {
@@ -623,14 +610,6 @@ class Elaborate private constructor(
         C.Pattern.StructOf(elements) to type
       }
 
-      pattern is R.Pattern.RefOf && match<Value.Ref>(type)       -> {
-        val (element, elementType) = bindPattern(entries, pattern.element, phase, type?.element?.value) {
-          Value.Proj(make(it), Projection.RefOf, lazyOf(type?.element?.value ?: it))
-        }
-        val type = type ?: Value.Ref(lazyOf(elementType))
-        C.Pattern.RefOf(element) to type
-      }
-
       pattern is R.Pattern.Var && match<Value>(type)             -> {
         val type = type ?: meta.freshValue(pattern.range)
         entries += Ctx.Entry(pattern.name, phase, make(Value.Var(pattern.name, next(), lazyOf(type))), false)
@@ -688,10 +667,6 @@ class Elaborate private constructor(
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> sub(element1.value, element2.value) } ?: false
         }
-      }
-
-      value1 is Value.Ref && value2 is Value.Ref       -> {
-        sub(value1.element.value, value2.element.value)
       }
 
       value1 is Value.Point && value2 !is Value.Point  -> {

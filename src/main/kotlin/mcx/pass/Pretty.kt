@@ -46,8 +46,6 @@ fun prettyTerm(
       is Term.VecOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
       is Term.Struct     -> term.elements.entries.joinToString(", ", "(struct {", "})") { (key, element) -> "$key : ${go(element)}" }
       is Term.StructOf   -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
-      is Term.Ref        -> "(ref ${go(term.element)})"
-      is Term.RefOf      -> "(&${go(term.element)})"
       is Term.Point      -> "(point ${prettyTerm(term.element)})"
       is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
       is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
@@ -75,7 +73,6 @@ fun prettyPattern(
   return when (pattern) {
     is Pattern.I32Of    -> "${pattern.value}i32"
     is Pattern.StructOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
-    is Pattern.RefOf    -> "(&${prettyPattern(pattern.element)})"
     is Pattern.Var      -> pattern.name
     is Pattern.Drop     -> "_"
     is Pattern.Hole     -> "??"
@@ -87,7 +84,6 @@ fun prettyProjection(
 ): String {
   return when (projection) {
     is Projection.StructOf -> projection.name
-    is Projection.RefOf    -> "&"
   }
 }
 
@@ -108,6 +104,5 @@ fun prettyRepr(
     Repr.LONG_ARRAY -> "%long_array"
     Repr.LIST       -> "%list"
     Repr.COMPOUND   -> "%compound"
-    Repr.REF        -> "%ref"
   }
 }

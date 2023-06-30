@@ -7,12 +7,10 @@ import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
 import mcx.ast.Packed.Command.Execute.Mode.RESULT
-import mcx.ast.Packed.Command.Execute.StoreStorage.Type.INT
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.NbtNode
 import mcx.ast.Packed.NbtNode.*
-import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.ModuleLocation
@@ -204,17 +202,6 @@ class Pack private constructor(
         }
       }
 
-      is L.Term.RefOf      -> {
-        push(Repr.REF, SourceProvider.Value(IntTag(0)))
-        packTerm(term.element)
-        val elementRepr = term.element.repr
-        val index = if (elementRepr == Repr.REF) -2 else -1
-        +Execute.StoreScore(RESULT, R0, MAIN, Execute.StoreStorage(RESULT, DataAccessor(MCX, nbtPath(Repr.REF.id)(index)), INT, 1.0, Execute.Run(AddScore(R0, FREE, 1))))
-        +RunFunction(TOUCH)
-        +ManipulateData(HEAP_CELL, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
-        drop(elementRepr)
-      }
-
       is L.Term.ProcOf     -> {
         push(Repr.INT, SourceProvider.Value(IntTag(term.function.restore!!)))
       }
@@ -291,9 +278,6 @@ class Pack private constructor(
           packPattern(element)
         }
       }
-      is L.Pattern.RefOf    -> {
-        // TODO
-      }
       is L.Pattern.Var      -> bind(pattern.name, pattern.repr)
       is L.Pattern.Drop     -> {}
     }
@@ -308,9 +292,6 @@ class Pack private constructor(
       is L.Pattern.StructOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(Repr.COMPOUND, keeps)
-      }
-      is L.Pattern.RefOf    -> {
-        // TODO
       }
       is L.Pattern.Var      -> drop(pattern.repr, keeps)
       is L.Pattern.Drop     -> drop(pattern.repr, keeps)
@@ -338,21 +319,6 @@ class Pack private constructor(
     if (relevant && drop != Repr.END) {
       !{ Raw("# drop ${drop.id} under ${keeps.joinToString(", ", "[", "]") { it.id }}") }
       +RemoveData(DataAccessor(MCX, nbtPath(drop.id)(index)))
-      when (drop) {
-        Repr.REF -> {
-          +PerformOperation(R0, MAIN, ASSIGN, R0, FREE)
-          +RemoveScore(R0, FREE, 1)
-          +RunFunction(TOUCH)
-          +RemoveData(HEAP_CELL)
-        }
-        else     -> {}
-      }
-    }
-    if (stack.size + index >= stack.size || stack.size + index < 0) {
-      println("WARNING: [$definition]: dropping $drop at $index, but it's already null")
-      stacks.forEach { stack ->
-        println("# ${stack.key.toString().padEnd(10)}: ${stack.value.joinToString(", ", "[", "]")}")
-      }
     }
     stack.removeAt(stack.size + index)
   }
@@ -394,26 +360,21 @@ class Pack private constructor(
     private val nbtPath: PersistentList<NbtNode> = persistentListOf()
 
     val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":init"))
-    private val TOUCH: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":touch"))
     private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_proc"))
     private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_func"))
 
     private val MAIN: Packed.Objective = Packed.Objective("mcx")
-    private val FREE: Packed.Objective = Packed.Objective("mcx_free")
-    private val `65536`: Packed.Objective = Packed.Objective("mcx_65536")
 
     private val R0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
     private val R1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
 
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
     private val MCX_DATA: ResourceLocation = ResourceLocation("mcx_data", "")
-    private val MCX_HEAP: ResourceLocation = ResourceLocation("mcx_heap", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
 
     private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.BYTE.id)(-1))
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.INT.id)(-1))
     private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.LONG.id)(-1))
-    private val HEAP_CELL: DataAccessor = DataAccessor(MCX_HEAP, nbtPath("heap")(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)(-2)())
     private val TEST_CELL: DataAccessor = DataAccessor(MCX_TEST, nbtPath("test"))
 
     fun packDefinitionLocation(
@@ -459,32 +420,10 @@ class Pack private constructor(
         Raw("gamerule maxCommandChainLength ${Int.MAX_VALUE}"),
         Raw("scoreboard objectives remove ${MAIN.name}"),
         Raw("scoreboard objectives add ${MAIN.name} dummy"),
-        Raw("scoreboard objectives remove ${FREE.name}"),
-        Raw("scoreboard objectives add ${FREE.name} dummy"),
-        Raw("scoreboard objectives remove ${`65536`.name}"),
-        Raw("scoreboard objectives add ${`65536`.name} dummy"),
-        SetScore(R0, FREE, -1),
-        SetScore(R0, `65536`, 65536),
-        ManipulateData(DataAccessor(MCX_HEAP, nbtPath("branch")), DataManipulator.Set(SourceProvider.Value(buildListListTag { add(buildEndListTag()); add(buildEndListTag()) }))),
-        *(0..<16).map { count ->
-          ManipulateData(DataAccessor(MCX_HEAP, (0..<count).fold(nbtPath("heap")) { acc, _ -> acc() }), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX_HEAP, nbtPath("branch")))))
-        }.toTypedArray(),
-        RemoveData(DataAccessor(MCX_HEAP, nbtPath("branch"))),
         ManipulateData(DataAccessor(MCX_DATA, nbtPath("surrogate_pairs")), DataManipulator.Set(SourceProvider.Value(StringTag(
           ((Char.MIN_HIGH_SURROGATE..Char.MAX_HIGH_SURROGATE) zip (Char.MIN_LOW_SURROGATE..Char.MAX_LOW_SURROGATE)).joinToString("") { (high, low) -> "$high$low" }
         ))))
       ))
-    }
-
-    fun packTouch(): P.Definition.Function {
-      return P.Definition.Function(emptyList(), TOUCH, (0..<16).flatMap { depth ->
-        val path = (0..<depth).fold(nbtPath("heap")) { acc, _ -> acc(-2) }
-        listOf(
-          PerformOperation(R0, MAIN, if (depth == 0) MUL else ADD, R0, if (depth == 0) `65536` else MAIN),
-          RemoveData(DataAccessor(MCX_HEAP, path(2))),
-          Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..-1, Execute.Run(ManipulateData(DataAccessor(MCX_HEAP, path), DataManipulator.Append(SourceProvider.Value(buildEndListTag()))))),
-        )
-      })
     }
 
     // TODO: specialize dispatcher by type

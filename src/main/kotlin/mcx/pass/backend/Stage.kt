@@ -193,17 +193,6 @@ class Stage private constructor() {
         Value.StructOf(elements, type)
       }
 
-      is Term.Ref        -> {
-        val element = lazy { evalTerm(term.element, phase) }
-        Value.Ref(element)
-      }
-
-      is Term.RefOf      -> {
-        val element = lazy { evalTerm(term.element, phase) }
-        val type = lazy { evalTerm(term.type, phase) }
-        Value.RefOf(element, type)
-      }
-
       is Term.Point      -> {
         val element = lazy { evalTerm(term.element, phase) }
         val type = lazy { evalTerm(term.type, phase) }
@@ -524,17 +513,6 @@ class Stage private constructor() {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         val type = quoteValue(value.type.value, phase)
         Term.StructOf(elements, type)
-      }
-
-      is Value.Ref        -> {
-        val element = quoteValue(value.element.value, phase)
-        Term.Ref(element)
-      }
-
-      is Value.RefOf      -> {
-        val element = quoteValue(value.element.value, phase)
-        val type = quoteValue(value.type.value, phase)
-        Term.RefOf(element, type)
       }
 
       is Value.Point      -> {

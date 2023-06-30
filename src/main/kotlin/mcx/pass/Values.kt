@@ -46,7 +46,6 @@ sealed class Value {
       val LONG_ARRAY: Value = Type(lazyOf(TagOf(Repr.LONG_ARRAY)))
       val LIST: Value = Type(lazyOf(TagOf(Repr.LIST)))
       val COMPOUND: Value = Type(lazyOf(TagOf(Repr.COMPOUND)))
-      val REF: Value = Type(lazyOf(TagOf(Repr.REF)))
 
       val END_LAZY: Lazy<Value> = lazyOf(END)
       val BYTE_LAZY: Lazy<Value> = lazyOf(BYTE)
@@ -61,7 +60,6 @@ sealed class Value {
       val LONG_ARRAY_LAZY: Lazy<Value> = lazyOf(LONG_ARRAY)
       val LIST_LAZY: Lazy<Value> = lazyOf(LIST)
       val COMPOUND_LAZY: Lazy<Value> = lazyOf(COMPOUND)
-      val REF_LAZY: Lazy<Value> = lazyOf(REF)
     }
   }
 
@@ -223,17 +221,6 @@ sealed class Value {
 
   data class StructOf(
     val elements: LinkedHashMap<String, Lazy<Value>>,
-    override val type: Lazy<Value>,
-  ) : Value()
-
-  data class Ref(
-    val element: Lazy<Value>,
-  ) : Value() {
-    override val type: Lazy<Value> get() = Type.INT_LAZY
-  }
-
-  data class RefOf(
-    val element: Lazy<Value>,
     override val type: Lazy<Value>,
   ) : Value()
 

@@ -220,16 +220,6 @@ class Resolve private constructor(
         R.Term.StructOf(elements, range)
       }
 
-      is S.Term.Ref        -> {
-        val element = resolveTerm(term.element)
-        R.Term.Ref(element, range)
-      }
-
-      is S.Term.RefOf      -> {
-        val element = resolveTerm(term.element)
-        R.Term.RefOf(element, range)
-      }
-
       is S.Term.Point      -> {
         val element = resolveTerm(term.element)
         R.Term.Point(element, range)
@@ -356,11 +346,6 @@ class Resolve private constructor(
       is S.Term.StructOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.StructOf(elements, range)
-      }
-
-      is S.Term.RefOf    -> {
-        val element = resolvePattern(pattern.element)
-        R.Pattern.RefOf(element, range)
       }
 
       is S.Term.Var      -> {

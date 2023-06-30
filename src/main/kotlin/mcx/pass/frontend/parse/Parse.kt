@@ -239,7 +239,6 @@ class Parse private constructor(
               "long_array" -> S.Term.TagOf(Repr.LONG_ARRAY, until())
               "list"       -> S.Term.TagOf(Repr.LIST, until())
               "compound"   -> S.Term.TagOf(Repr.COMPOUND, until())
-              "ref"        -> S.Term.TagOf(Repr.REF, until())
               else         -> null
             }
           }
@@ -296,12 +295,6 @@ class Parse private constructor(
               key to element
             }
             S.Term.StructOf(elements, until())
-          }
-          '&'  -> {
-            skip()
-            skipTrivia()
-            val element = parseTerm0()
-            S.Term.RefOf(element, until())
           }
           '\\' -> {
             skip()
@@ -385,11 +378,6 @@ class Parse private constructor(
                   key to value
                 }
                 S.Term.Struct(elements, until())
-              }
-              "ref"          -> {
-                skipTrivia()
-                val element = parseTerm0()
-                S.Term.Ref(element, until())
               }
               "point"        -> {
                 skipTrivia()

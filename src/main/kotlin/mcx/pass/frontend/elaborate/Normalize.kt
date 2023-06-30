@@ -174,17 +174,6 @@ fun Env.evalTerm(term: Term): Value {
       Value.StructOf(elements, type)
     }
 
-    is Term.Ref        -> {
-      val element = lazy { evalTerm(term.element) }
-      Value.Ref(element)
-    }
-
-    is Term.RefOf      -> {
-      val element = lazy { evalTerm(term.element) }
-      val type = lazy { evalTerm(term.type) }
-      Value.RefOf(element, type)
-    }
-
     is Term.Point      -> {
       val element = lazy { evalTerm(term.element) }
       val type = lazy { evalTerm(term.type) }
@@ -456,17 +445,6 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.StructOf(elements, type)
     }
 
-    is Value.Ref        -> {
-      val element = quoteValue(value.element.value)
-      Term.Ref(element)
-    }
-
-    is Value.RefOf      -> {
-      val element = quoteValue(value.element.value)
-      val type = quoteValue(value.type.value)
-      Term.RefOf(element, type)
-    }
-
     is Value.Point      -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type.value)
@@ -604,13 +582,6 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
           }
         }
         else              -> false
-      }
-    }
-
-    is Pattern.RefOf    -> {
-      when (val value = value.value) {
-        is Value.RefOf -> element matches value.element
-        else           -> false
       }
     }
 

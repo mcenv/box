@@ -14,5 +14,4 @@ enum class Repr(val id: String) {
   LONG_ARRAY("long_array"),
   LIST("list"),
   COMPOUND("compound"),
-  REF("ref"),
 }

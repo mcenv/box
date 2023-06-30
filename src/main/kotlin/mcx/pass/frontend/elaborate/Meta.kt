@@ -186,17 +186,6 @@ class Meta {
         Term.StructOf(elements, type)
       }
 
-      is Term.Ref      -> {
-        val element = zonkTerm(term.element)
-        Term.Ref(element)
-      }
-
-      is Term.RefOf    -> {
-        val element = zonkTerm(term.element)
-        val type = zonkTerm(term.type)
-        Term.RefOf(element, type)
-      }
-
       is Term.Point    -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
@@ -388,8 +377,6 @@ class Meta {
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
-      value1 is Value.Ref && value2 is Value.Ref               -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.RefOf && value2 is Value.RefOf           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Point && value2 is Value.Point           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union           -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
       value1 is Value.Func && value2 is Value.Func             -> {

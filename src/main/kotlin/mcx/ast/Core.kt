@@ -64,7 +64,6 @@ object Core {
         val LONG_ARRAY: Type = Type(TagOf(Repr.LONG_ARRAY))
         val LIST: Type = Type(TagOf(Repr.LIST))
         val COMPOUND: Type = Type(TagOf(Repr.COMPOUND))
-        val REF: Type = Type(TagOf(Repr.REF))
       }
     }
 
@@ -207,17 +206,6 @@ object Core {
       override val type: Term,
     ) : Term()
 
-    data class Ref(
-      val element: Term,
-    ) : Term() {
-      override val type: Term get() = Type.REF
-    }
-
-    data class RefOf(
-      val element: Term,
-      override val type: Term,
-    ) : Term()
-
     data class Point(
       val element: Term,
       override val type: Term,
@@ -322,10 +310,6 @@ object Core {
 
     data class StructOf(
       val elements: LinkedHashMap<String, Pattern>,
-    ) : Pattern()
-
-    data class RefOf(
-      val element: Pattern,
     ) : Pattern()
 
     data class Var(
