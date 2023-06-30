@@ -26,7 +26,7 @@ class Elaborate private constructor(
   private val instruction: Instruction?,
 ) {
   private val meta: Meta = Meta()
-  private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { dependency -> dependency.definitions.map { it.name to it } }.toMap().toMutableMap()
+  private val definitions: MutableMap<DefinitionLocation, C.Definition> = dependencies.flatMap { it.definitions.entries }.associateTo(hashMapOf()) { it.key to it.value }
   private lateinit var location: DefinitionLocation
   private val diagnostics: MutableMap<DefinitionLocation, MutableList<Diagnostic>> = hashMapOf()
   private var hover: (() -> Hover)? = null
@@ -54,7 +54,9 @@ class Elaborate private constructor(
         else                -> {}
       }
     }
-    val definitions = module.definitions.values.mapNotNull { elaborateDefinition(it) }
+    val definitions = module.definitions.values
+      .mapNotNull { elaborateDefinition(it) }
+      .associateByTo(linkedMapOf()) { it.name }
     return C.Module(module.name, definitions)
   }
 

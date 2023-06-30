@@ -156,7 +156,7 @@ class Build(
             is Key.Staged     -> {
               val location = key.location
               val elaborated = fetch(Key.Elaborated(location.module))
-              val definition = elaborated.value.module.definitions.find { it.name == location }!!
+              val definition = elaborated.value.module.definitions[location] ?: error("Unknown definition: $location")
               val results = transitiveImports(fetch(Key.Parsed(location.module)).value.module.name)
                 .map { async { fetch(Key.Elaborated(it.module)) } }
                 .plus(async { fetch(Key.Elaborated(prelude)) })
@@ -275,7 +275,7 @@ class Build(
               diagnosticsByPath += path to topLevelDiagnostics
             }
 
-            elaborated.value.module.definitions.mapNotNull { definition ->
+            elaborated.value.module.definitions.values.mapNotNull { definition ->
               if (Modifier.TEST in definition.modifiers) {
                 tests += definition.name
               }
