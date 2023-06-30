@@ -5,7 +5,7 @@ import mcx.ast.Core.Definition
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
 import mcx.ast.common.Lvl
-import mcx.ast.common.Projection
+import mcx.ast.common.Proj
 import mcx.ast.common.Repr
 import org.eclipse.lsp4j.Range
 
@@ -290,9 +290,9 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
-  data class Proj(
+  data class Project(
     val target: Value,
-    val projection: Projection,
+    val proj: Proj,
     override val type: Lazy<Value>,
   ) : Value()
 

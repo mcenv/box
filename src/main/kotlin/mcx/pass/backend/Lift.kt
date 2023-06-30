@@ -1,7 +1,7 @@
 package mcx.pass.backend
 
 import mcx.ast.common.Modifier
-import mcx.ast.common.Projection
+import mcx.ast.common.Proj
 import mcx.ast.common.Repr
 import mcx.pass.Context
 import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx
@@ -259,19 +259,19 @@ class Lift private constructor(
         TODO()
       }
 
-      is C.Term.Proj       -> {
-        val projections = mutableListOf<Projection>()
+      is C.Term.Project    -> {
+        val projs = mutableListOf<Proj>()
         tailrec fun go(target: C.Term): L.Term {
           return when (target) {
-            is C.Term.Proj -> {
-              projections += target.projection
+            is C.Term.Project -> {
+              projs += target.proj
               go(target.target)
             }
-            is C.Term.Var  -> {
+            is C.Term.Var     -> {
               val repr = eraseToRepr(term.type)
-              L.Term.Proj(target.name, projections, repr)
+              L.Term.Proj(target.name, projs, repr)
             }
-            else           -> {
+            else              -> {
               error("Unexpected: ${prettyTerm(target)}")
             }
           }
@@ -300,6 +300,7 @@ class Lift private constructor(
     }
   }
 
+  @Suppress("NAME_SHADOWING")
   private fun Ctx.liftPattern(
     pattern: C.Pattern,
     type: C.Term,
@@ -307,6 +308,15 @@ class Lift private constructor(
     return when (pattern) {
       is C.Pattern.I32Of    -> {
         L.Pattern.I32Of(pattern.value)
+      }
+
+      is C.Pattern.VecOf    -> {
+        val type = type as C.Term.Vec
+        val elementType = type.element
+        val elements = pattern.elements.map { element ->
+          liftPattern(element, elementType)
+        }
+        L.Pattern.VecOf(elements)
       }
 
       is C.Pattern.StructOf -> {
@@ -377,7 +387,7 @@ class Lift private constructor(
       is C.Term.Command    -> linkedMapOf()
       is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
       is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Proj       -> freeVars(term.target)
+      is C.Term.Project    -> freeVars(term.target)
       is C.Term.Var        -> linkedMapOf(term.name to eraseToRepr(term.type))
       is C.Term.Def        -> linkedMapOf()
       is C.Term.Meta       -> unexpectedTerm(term)
@@ -388,6 +398,7 @@ class Lift private constructor(
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
       is C.Pattern.I32Of    -> emptySet()
+      is C.Pattern.VecOf    -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.Var      -> setOf(pattern.name)
       is C.Pattern.Drop     -> emptySet()

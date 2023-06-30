@@ -272,6 +272,9 @@ class Pack private constructor(
   ) {
     when (pattern) {
       is L.Pattern.I32Of    -> {}
+      is L.Pattern.VecOf    -> {
+        // TODO
+      }
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
           push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // TODO: avoid immediate push
@@ -289,8 +292,9 @@ class Pack private constructor(
   ) {
     when (pattern) {
       is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
+      is L.Pattern.VecOf    -> drop(Repr.LIST, keeps)
       is L.Pattern.StructOf -> {
-        pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
+        pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) } // TODO: avoid immediate push
         drop(Repr.COMPOUND, keeps)
       }
       is L.Pattern.Var      -> drop(pattern.repr, keeps)

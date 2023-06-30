@@ -269,15 +269,19 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Proj  -> {
+    is Term.Project -> {
       when (val target = evalTerm(term.target)) {
+        is Value.VecOf    -> {
+          val proj = term.proj as Proj.VecOf
+          target.elements[proj.index].value
+        }
         is Value.StructOf -> {
-          val projection = term.projection as Projection.StructOf
-          target.elements[projection.name]!!.value
+          val proj = term.proj as Proj.StructOf
+          target.elements[proj.name]!!.value
         }
         else              -> {
           val type = lazy { evalTerm(term.type) }
-          Value.Proj(target, term.projection, type)
+          Value.Project(target, term.proj, type)
         }
       }
     }
@@ -519,10 +523,10 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.Match(scrutinee, branches, type)
     }
 
-    is Value.Proj    -> {
+    is Value.Project -> {
       val target = quoteValue(value.target)
       val type = quoteValue(value.type.value)
-      Term.Proj(target, value.projection, type)
+      Term.Project(target, value.proj, type)
     }
 
     is Value.Var     -> {
@@ -570,6 +574,18 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
     is Pattern.I32Of    -> {
       when (val value = value.value) {
         is Value.I32Of -> value.value == this.value
+        else           -> false
+      }
+    }
+
+    is Pattern.VecOf    -> {
+      when (val value = value.value) {
+        is Value.VecOf -> {
+          elements.size == value.elements.size &&
+          (elements zip value.elements).all { (pattern, value) ->
+            pattern matches value
+          }
+        }
         else           -> false
       }
     }

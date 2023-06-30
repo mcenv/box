@@ -2,7 +2,7 @@ package mcx.pass
 
 import mcx.ast.Core.Pattern
 import mcx.ast.Core.Term
-import mcx.ast.common.Projection
+import mcx.ast.common.Proj
 import mcx.ast.common.Repr
 import mcx.util.quoted
 import mcx.util.toSubscript
@@ -46,22 +46,22 @@ fun prettyTerm(
       is Term.VecOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
       is Term.Struct     -> term.elements.entries.joinToString(", ", "(struct {", "})") { (key, element) -> "$key : ${go(element)}" }
       is Term.StructOf   -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
-      is Term.Point      -> "(point ${prettyTerm(term.element)})"
-      is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
-      is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
-      is Term.FuncOf     -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
-      is Term.Apply      -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
-      is Term.Code       -> "(code ${go(term.element)})"
-      is Term.CodeOf     -> "(`${go(term.element)})"
-      is Term.Splice     -> "($${go(term.element)})"
-      is Term.Command    -> "(/${go(term.element)})"
-      is Term.Let        -> "let ${prettyPattern(term.binder)} = ${go(term.init)};\n${go(term.body)}"
-      is Term.Match      -> "match ${go(term.scrutinee)} ${term.branches.joinToString(", ", "[", "]") { (pattern, body) -> "${prettyPattern(pattern)} -> ${go(body)}" }}"
-      is Term.Proj       -> "(${go(term.target)}.${prettyProjection(term.projection)})"
-      is Term.Var        -> term.name
-      is Term.Def        -> term.def.name.toString()
-      is Term.Meta       -> "?${term.index.toSubscript()}"
-      is Term.Hole       -> "??"
+      is Term.Point   -> "(point ${prettyTerm(term.element)})"
+      is Term.Union   -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
+      is Term.Func    -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
+      is Term.FuncOf  -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
+      is Term.Apply   -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
+      is Term.Code    -> "(code ${go(term.element)})"
+      is Term.CodeOf  -> "(`${go(term.element)})"
+      is Term.Splice  -> "($${go(term.element)})"
+      is Term.Command -> "(/${go(term.element)})"
+      is Term.Let     -> "let ${prettyPattern(term.binder)} = ${go(term.init)};\n${go(term.body)}"
+      is Term.Match   -> "match ${go(term.scrutinee)} ${term.branches.joinToString(", ", "[", "]") { (pattern, body) -> "${prettyPattern(pattern)} -> ${go(body)}" }}"
+      is Term.Project -> "(${go(term.target)}.${prettyProjection(term.proj)})"
+      is Term.Var     -> term.name
+      is Term.Def     -> term.def.name.toString()
+      is Term.Meta    -> "?${term.index.toSubscript()}"
+      is Term.Hole    -> "??"
     }
   }
   return go(term)
@@ -72,6 +72,7 @@ fun prettyPattern(
 ): String {
   return when (pattern) {
     is Pattern.I32Of    -> "${pattern.value}i32"
+    is Pattern.VecOf    -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
     is Pattern.StructOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
     is Pattern.Var      -> pattern.name
     is Pattern.Drop     -> "_"
@@ -80,10 +81,11 @@ fun prettyPattern(
 }
 
 fun prettyProjection(
-  projection: Projection,
+  proj: Proj,
 ): String {
-  return when (projection) {
-    is Projection.StructOf -> projection.name
+  return when (proj) {
+    is Proj.VecOf    -> "[${proj.index}]"
+    is Proj.StructOf -> proj.name
   }
 }
 

@@ -146,7 +146,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class ListOf(
+    data class VecOf(
       val elements: List<Term>,
       override val range: Range,
     ) : Term()

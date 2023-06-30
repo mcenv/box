@@ -16,6 +16,10 @@ import kotlin.io.path.Path
 import mcx.ast.Resolved as R
 import mcx.ast.Surface as S
 
+/**
+ * Resolves all names in a module.
+ * Also converts surface syntax to terms and patterns.
+ */
 @Suppress("NAME_SHADOWING")
 class Resolve private constructor(
   dependencies: List<Dependency>,
@@ -205,7 +209,7 @@ class Resolve private constructor(
         R.Term.Vec(element, range)
       }
 
-      is S.Term.ListOf     -> {
+      is S.Term.VecOf      -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.VecOf(elements, range)
       }
@@ -341,6 +345,11 @@ class Resolve private constructor(
     return when (pattern) {
       is S.Term.NumOf    -> {
         R.Pattern.I32Of(pattern.value.toInt() /* TODO */, range)
+      }
+
+      is S.Term.VecOf    -> {
+        val elements = pattern.elements.map { resolvePattern(it) }
+        R.Pattern.VecOf(elements, range)
       }
 
       is S.Term.StructOf -> {

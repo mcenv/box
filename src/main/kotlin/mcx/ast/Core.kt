@@ -272,9 +272,9 @@ object Core {
       override val type: Term,
     ) : Term()
 
-    data class Proj(
+    data class Project(
       val target: Term,
-      val projection: Projection,
+      val proj: Proj,
       override val type: Term,
     ) : Term()
 
@@ -306,6 +306,10 @@ object Core {
   sealed class Pattern {
     data class I32Of(
       val value: Int,
+    ) : Pattern()
+
+    data class VecOf(
+      val elements: List<Pattern>,
     ) : Pattern()
 
     data class StructOf(

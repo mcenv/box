@@ -262,10 +262,10 @@ class Meta {
         Term.Match(scrutinee, branches, type)
       }
 
-      is Term.Proj     -> {
+      is Term.Project -> {
         val target = zonkTerm(term.target)
         val type = zonkTerm(term.type)
-        Term.Proj(target, term.projection, type)
+        Term.Project(target, term.proj, type)
       }
 
       is Term.Var      -> {

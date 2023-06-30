@@ -315,22 +315,22 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Proj    -> {
+      is Term.Project -> {
         val target = evalTerm(term.target, phase)
         when (phase) {
           Phase.WORLD -> {
             val type = lazy { evalTerm(term.type, phase) }
-            Value.Proj(target, term.projection, type)
+            Value.Project(target, term.proj, type)
           }
           Phase.CONST -> {
             when (target) {
               is Value.StructOf -> {
-                val projection = term.projection as Projection.StructOf
-                target.elements[projection.name]!!.value
+                val proj = term.proj as Proj.StructOf
+                target.elements[proj.name]!!.value
               }
               else              -> {
                 val type = lazy { evalTerm(term.type, phase) }
-                Value.Proj(target, term.projection, type)
+                Value.Project(target, term.proj, type)
               }
             }
           }
@@ -598,10 +598,10 @@ class Stage private constructor() {
         Term.Match(scrutinee, branches, type)
       }
 
-      is Value.Proj    -> {
+      is Value.Project -> {
         val target = quoteValue(value.target, phase)
         val type = quoteValue(value.type.value, phase)
-        Term.Proj(target, value.projection, type)
+        Term.Project(target, value.proj, type)
       }
 
       is Value.Var     -> {

@@ -597,11 +597,23 @@ class Elaborate private constructor(
         C.Pattern.I32Of(pattern.value) to Value.I32
       }
 
+      pattern is R.Pattern.VecOf && match<Value.Vec>(type)       -> {
+        val elementType = type?.element?.value ?: meta.freshValue(pattern.range)
+        val elements = pattern.elements.mapIndexed { index, element ->
+          val (element, _) = bindPattern(entries, element, phase, elementType) {
+            Value.Project(make(it), Proj.VecOf(index), lazyOf(elementType))
+          }
+          element
+        }
+        val type = type ?: Value.Vec(lazyOf(elementType))
+        C.Pattern.VecOf(elements) to type
+      }
+
       pattern is R.Pattern.StructOf && match<Value.Struct>(type) -> {
         val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
           val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
           val (element, elementType) = bindPattern(entries, element, phase, type) {
-            Value.Proj(make(it), Projection.StructOf(name.value), lazyOf(type))
+            Value.Project(make(it), Proj.StructOf(name.value), lazyOf(type))
           }
           name.value to (element to elementType)
         }

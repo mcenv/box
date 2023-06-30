@@ -261,6 +261,11 @@ object Resolved {
       override val range: Range,
     ) : Pattern()
 
+    data class VecOf(
+      val elements: List<Pattern>,
+      override val range: Range,
+    ) : Pattern()
+
     data class StructOf(
       val elements: List<Pair<Ranged<String>, Pattern>>,
       override val range: Range,

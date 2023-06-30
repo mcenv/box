@@ -248,7 +248,7 @@ class Parse private constructor(
             skipTrivia()
             if (canRead() && peek() == ']') {
               skip()
-              S.Term.ListOf(emptyList(), until())
+              S.Term.VecOf(emptyList(), until())
             } else {
               val first = parseTerm()
               skipTrivia()
@@ -256,7 +256,7 @@ class Parse private constructor(
                 when (peek()) {
                   ']'  -> {
                     skip()
-                    S.Term.ListOf(listOf(first), until())
+                    S.Term.VecOf(listOf(first), until())
                   }
                   ';'  -> {
                     when (first) {
@@ -277,7 +277,7 @@ class Parse private constructor(
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ']') { parseTerm() }
-                    S.Term.ListOf(listOf(first) + tail, until())
+                    S.Term.VecOf(listOf(first) + tail, until())
                   }
                   else -> null
                 }

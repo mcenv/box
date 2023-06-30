@@ -1,7 +1,6 @@
 package mcx.ast
 
 import mcx.ast.common.DefinitionLocation
-import mcx.ast.common.Projection
 import mcx.ast.common.Repr
 
 object Lifted {
@@ -146,7 +145,7 @@ object Lifted {
 
     data class Proj(
       val name: String,
-      val projections: List<Projection>,
+      val projs: List<mcx.ast.common.Proj>,
       override val repr: Repr,
     ) : Term()
 
@@ -169,6 +168,12 @@ object Lifted {
       val value: Int,
     ) : Pattern() {
       override val repr: Repr get() = Repr.INT
+    }
+
+    data class VecOf(
+      val elements: List<Pattern>,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.LIST
     }
 
     data class StructOf(
