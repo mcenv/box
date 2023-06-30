@@ -33,3 +33,17 @@ test def test_proj_struct_of_nested :=
 test def test_proj_struct_of_multiple :=
   let {a: a, b: b} := {a: true, b: true};
   a & b;
+
+# todo: disallow possibly unmatched patterns
+
+test def test_proj_vec_of :=
+  let [a] := [true];
+  a;
+
+test def test_proj_vec_of_nested :=
+  let [[a]] := [[true]];
+  a;
+
+test def test_proj_vec_of_multiple :=
+  let [a, b] := [true, true];
+  a & b;

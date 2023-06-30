@@ -267,7 +267,10 @@ class Pack private constructor(
     when (pattern) {
       is L.Pattern.I32Of    -> {}
       is L.Pattern.VecOf    -> {
-        // TODO
+        pattern.elements.forEachIndexed { index, element ->
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(-1)(index))))
+          packPattern(element)
+        }
       }
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
@@ -286,7 +289,10 @@ class Pack private constructor(
   ) {
     when (pattern) {
       is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
-      is L.Pattern.VecOf    -> drop(Repr.LIST, keeps)
+      is L.Pattern.VecOf    -> {
+        pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
+        drop(Repr.LIST, keeps)
+      }
       is L.Pattern.StructOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(Repr.COMPOUND, keeps)

@@ -255,7 +255,14 @@ class Elaborate private constructor(
       term is R.Term.VecOf && match<Value.Vec>(type)                                          -> {
         val elementType = type?.element?.value
         val (elements, elementsTypes) = term.elements.map { elaborateTerm(it, phase, elementType) }.unzip()
-        val type = type ?: Value.Vec(lazyOf(Value.Union(elementsTypes.map { lazyOf(it) }, elementsTypes.firstOrNull()?.type ?: Value.Type.END_LAZY)))
+        val type = type ?: Value.Vec(lazyOf(
+          // TODO: perform more sophisticated normalization
+          if (elementsTypes.size == 1) {
+            elementsTypes.first()
+          } else {
+            Value.Union(elementsTypes.map { lazyOf(it) }, elementsTypes.firstOrNull()?.type ?: Value.Type.END_LAZY)
+          }
+        ))
         typed(type) {
           C.Term.VecOf(elements, it)
         }
