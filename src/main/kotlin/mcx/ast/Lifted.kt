@@ -143,12 +143,6 @@ object Lifted {
       override val repr: Repr = body.repr
     }
 
-    data class Proj(
-      val name: String,
-      val projs: List<mcx.ast.common.Proj>,
-      override val repr: Repr,
-    ) : Term()
-
     data class Var(
       val name: String,
       override val repr: Repr,

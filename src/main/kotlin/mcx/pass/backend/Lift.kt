@@ -1,7 +1,6 @@
 package mcx.pass.backend
 
 import mcx.ast.common.Modifier
-import mcx.ast.common.Proj
 import mcx.ast.common.Repr
 import mcx.pass.Context
 import mcx.pass.backend.Lift.Ctx.Companion.emptyCtx
@@ -260,23 +259,9 @@ class Lift private constructor(
       }
 
       is C.Term.Project    -> {
-        val projs = mutableListOf<Proj>()
-        tailrec fun go(target: C.Term): L.Term {
-          return when (target) {
-            is C.Term.Project -> {
-              projs += target.proj
-              go(target.target)
-            }
-            is C.Term.Var     -> {
-              val repr = eraseToRepr(term.type)
-              L.Term.Proj(target.name, projs, repr)
-            }
-            else              -> {
-              error("Unexpected: ${prettyTerm(target)}")
-            }
-          }
-        }
-        go(term.target)
+        val target = term.target as C.Term.Var
+        val repr = eraseToRepr(term.type)
+        L.Term.Var(target.name, repr)
       }
 
       is C.Term.Var        -> {

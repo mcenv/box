@@ -248,12 +248,6 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
-      is L.Term.Proj    -> {
-        // TODO
-        push(term.repr, null)
-        +Raw("TODO: $term")
-      }
-
       is L.Term.Var     -> {
         val repr = term.repr
         val index = this[term.name, term.repr]
@@ -277,7 +271,7 @@ class Pack private constructor(
       }
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // TODO: avoid immediate push
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name))))
           packPattern(element)
         }
       }
@@ -294,7 +288,7 @@ class Pack private constructor(
       is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
       is L.Pattern.VecOf    -> drop(Repr.LIST, keeps)
       is L.Pattern.StructOf -> {
-        pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) } // TODO: avoid immediate push
+        pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(Repr.COMPOUND, keeps)
       }
       is L.Pattern.Var      -> drop(pattern.repr, keeps)

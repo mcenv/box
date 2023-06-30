@@ -46,22 +46,22 @@ fun prettyTerm(
       is Term.VecOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
       is Term.Struct     -> term.elements.entries.joinToString(", ", "(struct {", "})") { (key, element) -> "$key : ${go(element)}" }
       is Term.StructOf   -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
-      is Term.Point   -> "(point ${prettyTerm(term.element)})"
-      is Term.Union   -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
-      is Term.Func    -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
-      is Term.FuncOf  -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
-      is Term.Apply   -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
-      is Term.Code    -> "(code ${go(term.element)})"
-      is Term.CodeOf  -> "(`${go(term.element)})"
-      is Term.Splice  -> "($${go(term.element)})"
-      is Term.Command -> "(/${go(term.element)})"
-      is Term.Let     -> "let ${prettyPattern(term.binder)} = ${go(term.init)};\n${go(term.body)}"
-      is Term.Match   -> "match ${go(term.scrutinee)} ${term.branches.joinToString(", ", "[", "]") { (pattern, body) -> "${prettyPattern(pattern)} -> ${go(body)}" }}"
-      is Term.Project -> "(${go(term.target)}.${prettyProjection(term.proj)})"
-      is Term.Var     -> term.name
-      is Term.Def     -> term.def.name.toString()
-      is Term.Meta    -> "?${term.index.toSubscript()}"
-      is Term.Hole    -> "??"
+      is Term.Point      -> "(point ${prettyTerm(term.element)})"
+      is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
+      is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
+      is Term.FuncOf     -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
+      is Term.Apply      -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
+      is Term.Code       -> "(code ${go(term.element)})"
+      is Term.CodeOf     -> "(`${go(term.element)})"
+      is Term.Splice     -> "($${go(term.element)})"
+      is Term.Command    -> "(/${go(term.element)})"
+      is Term.Let        -> "let ${prettyPattern(term.binder)} = ${go(term.init)};\n${go(term.body)}"
+      is Term.Match      -> "match ${go(term.scrutinee)} ${term.branches.joinToString(", ", "[", "]") { (pattern, body) -> "${prettyPattern(pattern)} -> ${go(body)}" }}"
+      is Term.Project    -> "(${go(term.target)}.${term.projs.joinToString(".") { prettyProjection(it) }})"
+      is Term.Var        -> term.name
+      is Term.Def        -> term.def.name.toString()
+      is Term.Meta       -> "?${term.index.toSubscript()}"
+      is Term.Hole       -> "??"
     }
   }
   return go(term)

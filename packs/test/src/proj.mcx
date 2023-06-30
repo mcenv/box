@@ -1,3 +1,7 @@
+import {
+  core::bool::&,
+}
+
 def proj_struct_of : point 1 :=
   let {a: a} := {a: 1};
   a;
@@ -17,3 +21,15 @@ error def proj_struct_of_nested_unknown_key : point 1 :=
 error def proj_struct_of_nested_unknown_key' : point 1 :=
   let {a: {x: b}} := {a: {b: 1}};
   b;
+
+test def test_proj_struct_of :=
+  let {a: a} := {a: true};
+  a;
+
+test def test_proj_struct_of_nested :=
+  let {a: {b: b}} := {a: {b: true}};
+  b;
+
+test def test_proj_struct_of_multiple :=
+  let {a: a, b: b} := {a: true, b: true};
+  a & b;

@@ -573,96 +573,97 @@ class Elaborate private constructor(
     }
   }
 
-  private inline fun <T> Ctx.elaboratePattern(
+  private fun <T> Ctx.elaboratePattern(
     pattern: R.Pattern,
     phase: Phase,
-    type: Value,
-    value: Lazy<Value>,
+    typeOfVar: Value,
+    valueOfVar: Lazy<Value>,
     block: Ctx.(Pair<C.Pattern, Value>) -> T,
   ): T {
     val entries = mutableListOf<Ctx.Entry>()
-    val result = bindPattern(entries, pattern, phase, type) { it }
-    val ctx = Ctx(this.entries + entries, env + value)
-    return ctx.block(result)
-  }
 
-  private fun Ctx.bindPattern(
-    entries: MutableList<Ctx.Entry>,
-    pattern: R.Pattern,
-    phase: Phase,
-    type: Value?,
-    make: (Value) -> Value,
-  ): Pair<C.Pattern, Value> {
-    val type = type?.let { meta.forceValue(type) }
-    return when {
-      pattern is R.Pattern.I32Of && synth(type)                  -> {
-        C.Pattern.I32Of(pattern.value) to Value.I32
-      }
+    fun bind(
+      pattern: R.Pattern,
+      phase: Phase,
+      type: Value?,
+      projs: PersistentList<Proj>,
+    ): Pair<C.Pattern, Value> {
+      val type = type?.let { meta.forceValue(type) }
+      return when {
+        pattern is R.Pattern.I32Of && synth(type)                  -> {
+          C.Pattern.I32Of(pattern.value) to Value.I32
+        }
 
-      pattern is R.Pattern.VecOf && match<Value.Vec>(type)       -> {
-        val elementType = type?.element?.value ?: meta.freshValue(pattern.range)
-        val elements = pattern.elements.mapIndexed { index, element ->
-          val (element, _) = bindPattern(entries, element, phase, elementType) {
-            Value.Project(make(it), Proj.VecOf(index), lazyOf(elementType))
+        pattern is R.Pattern.VecOf && match<Value.Vec>(type)       -> {
+          val elementType = type?.element?.value ?: meta.freshValue(pattern.range)
+          val elements = pattern.elements.mapIndexed { index, element ->
+            val (element, _) = bind(element, phase, elementType, projs + Proj.VecOf(index))
+            element
           }
-          element
+          val type = type ?: Value.Vec(lazyOf(elementType))
+          C.Pattern.VecOf(elements) to type
         }
-        val type = type ?: Value.Vec(lazyOf(elementType))
-        C.Pattern.VecOf(elements) to type
-      }
 
-      pattern is R.Pattern.StructOf && match<Value.Struct>(type) -> {
-        val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
-          val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
-          val (element, elementType) = bindPattern(entries, element, phase, type) {
-            Value.Project(make(it), Proj.StructOf(name.value), lazyOf(type))
+        pattern is R.Pattern.StructOf && match<Value.Struct>(type) -> {
+          val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
+            val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
+            val (element, elementType) = bind(element, phase, type, projs + Proj.StructOf(name.value))
+            name.value to (element to elementType)
           }
-          name.value to (element to elementType)
+          val elements = results.mapValuesTo(linkedMapOf()) { it.value.first }
+          val type = type ?: Value.Struct(results.mapValuesTo(linkedMapOf()) { lazyOf(it.value.second) })
+          C.Pattern.StructOf(elements) to type
         }
-        val elements = results.mapValuesTo(linkedMapOf()) { it.value.first }
-        val type = type ?: Value.Struct(results.mapValuesTo(linkedMapOf()) { lazyOf(it.value.second) })
-        C.Pattern.StructOf(elements) to type
-      }
 
-      pattern is R.Pattern.Var && match<Value>(type)             -> {
-        val type = type ?: meta.freshValue(pattern.range)
-        entries += Ctx.Entry(pattern.name, phase, make(Value.Var(pattern.name, next(), lazyOf(type))), false)
-        C.Pattern.Var(pattern.name) to type
-      }
-
-      pattern is R.Pattern.Drop && match<Value>(type)            -> {
-        val type = type ?: meta.freshValue(pattern.range)
-        C.Pattern.Drop to type
-      }
-
-      pattern is R.Pattern.As && synth(type)                     -> {
-        val type = env.evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
-        bindPattern(entries, pattern.element, phase, type, make)
-      }
-
-      pattern is R.Pattern.Hole && match<Value>(type)            -> {
-        C.Pattern.Hole to Value.Hole
-      }
-
-      synth(type)                                                -> {
-        invalidPattern(cannotSynthesize(pattern.range))
-      }
-
-      check<Value>(type)                                         -> {
-        val synth = bindPattern(entries, pattern, phase, null, make)
-        if (next().sub(synth.second, type)) {
-          synth
-        } else {
-          invalidPattern(next().typeMismatch(type, synth.second, pattern.range))
+        pattern is R.Pattern.Var && match<Value>(type)             -> {
+          val type = type ?: meta.freshValue(pattern.range)
+          val value = if (projs.isEmpty()) {
+            Value.Var(pattern.name, next(), lazyOf(typeOfVar))
+          } else {
+            Value.Project(Value.Var(pattern.name, next(), lazyOf(typeOfVar)), projs, lazyOf(type))
+          }
+          entries += Ctx.Entry(pattern.name, phase, value, false)
+          C.Pattern.Var(pattern.name) to type
         }
-      }
 
-      else                                                       -> {
-        error("Unreachable")
+        pattern is R.Pattern.Drop && match<Value>(type)            -> {
+          val type = type ?: meta.freshValue(pattern.range)
+          C.Pattern.Drop to type
+        }
+
+        pattern is R.Pattern.As && synth(type)                     -> {
+          val type = env.evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
+          bind(pattern.element, phase, type, projs)
+        }
+
+        pattern is R.Pattern.Hole && match<Value>(type)            -> {
+          C.Pattern.Hole to Value.Hole
+        }
+
+        synth(type)                                                -> {
+          invalidPattern(cannotSynthesize(pattern.range))
+        }
+
+        check<Value>(type)                                         -> {
+          val synth = bind(pattern, phase, null, projs)
+          if (next().sub(synth.second, type)) {
+            synth
+          } else {
+            invalidPattern(next().typeMismatch(type, synth.second, pattern.range))
+          }
+        }
+
+        else                                                       -> {
+          error("Unreachable")
+        }
+      }.also { (_, type) ->
+        hoverType(pattern.range, type)
       }
-    }.also { (_, type) ->
-      hoverType(pattern.range, type)
     }
+
+    val result = bind(pattern, phase, typeOfVar, persistentListOf())
+    val ctx = Ctx(this.entries + entries, env + valueOfVar)
+    return ctx.block(result)
   }
 
   private fun Lvl.sub(

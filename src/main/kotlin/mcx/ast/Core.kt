@@ -274,7 +274,7 @@ object Core {
 
     data class Project(
       val target: Term,
-      val proj: Proj,
+      val projs: List<Proj>,
       override val type: Term,
     ) : Term()
 

@@ -270,18 +270,19 @@ fun Env.evalTerm(term: Term): Value {
     }
 
     is Term.Project -> {
-      when (val target = evalTerm(term.target)) {
-        is Value.VecOf    -> {
-          val proj = term.proj as Proj.VecOf
-          target.elements[proj.index].value
-        }
-        is Value.StructOf -> {
-          val proj = term.proj as Proj.StructOf
-          target.elements[proj.name]!!.value
-        }
-        else              -> {
-          val type = lazy { evalTerm(term.type) }
-          Value.Project(target, term.proj, type)
+      val target = evalTerm(term.target)
+      term.projs.foldIndexed(target) { index, acc, proj ->
+        when (acc) {
+          is Value.VecOf    -> acc.elements[(proj as Proj.VecOf).index].value
+          is Value.StructOf -> acc.elements[(proj as Proj.StructOf).name]!!.value
+          else              -> {
+            if (index == term.projs.lastIndex) {
+              acc
+            } else {
+              val type = lazy { evalTerm(term.type) }
+              Value.Project(acc, term.projs.drop(index), type)
+            }
+          }
         }
       }
     }
@@ -526,7 +527,7 @@ fun Lvl.quoteValue(value: Value): Term {
     is Value.Project -> {
       val target = quoteValue(value.target)
       val type = quoteValue(value.type.value)
-      Term.Project(target, value.proj, type)
+      Term.Project(target, value.projs, type)
     }
 
     is Value.Var     -> {

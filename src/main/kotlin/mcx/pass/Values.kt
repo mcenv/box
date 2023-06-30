@@ -292,7 +292,7 @@ sealed class Value {
 
   data class Project(
     val target: Value,
-    val proj: Proj,
+    val projs: List<Proj>,
     override val type: Lazy<Value>,
   ) : Value()
 

@@ -320,17 +320,21 @@ class Stage private constructor() {
         when (phase) {
           Phase.WORLD -> {
             val type = lazy { evalTerm(term.type, phase) }
-            Value.Project(target, term.proj, type)
+            Value.Project(target, term.projs, type)
           }
           Phase.CONST -> {
-            when (target) {
-              is Value.StructOf -> {
-                val proj = term.proj as Proj.StructOf
-                target.elements[proj.name]!!.value
-              }
-              else              -> {
-                val type = lazy { evalTerm(term.type, phase) }
-                Value.Project(target, term.proj, type)
+            term.projs.foldIndexed(target) { index, acc, proj ->
+              when (acc) {
+                is Value.VecOf    -> acc.elements[(proj as Proj.VecOf).index].value
+                is Value.StructOf -> acc.elements[(proj as Proj.StructOf).name]!!.value
+                else              -> {
+                  if (index == term.projs.lastIndex) {
+                    acc
+                  } else {
+                    val type = lazy { evalTerm(term.type, phase) }
+                    Value.Project(acc, term.projs.drop(index), type)
+                  }
+                }
               }
             }
           }
@@ -601,7 +605,7 @@ class Stage private constructor() {
       is Value.Project -> {
         val target = quoteValue(value.target, phase)
         val type = quoteValue(value.type.value, phase)
-        Term.Project(target, value.proj, type)
+        Term.Project(target, value.projs, type)
       }
 
       is Value.Var     -> {

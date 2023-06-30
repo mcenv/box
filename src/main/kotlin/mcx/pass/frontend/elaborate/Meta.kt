@@ -265,7 +265,7 @@ class Meta {
       is Term.Project -> {
         val target = zonkTerm(term.target)
         val type = zonkTerm(term.type)
-        Term.Project(target, term.proj, type)
+        Term.Project(target, term.projs, type)
       }
 
       is Term.Var      -> {
