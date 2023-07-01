@@ -26,10 +26,15 @@ jobs:
               body: JSON.stringify({
                 embeds: [{
                   color: commit.data.commit.verification?.verified ? 0x3fb950 : undefined,
-                  description: `[\`${commit.data.sha.slice(0, 7)}\`](${commit.data.html_url}) ${commit.data.commit.message}`,
+                  title: `[\`${commit.data.sha.slice(0, 7)}\`](${commit.data.html_url}) ${commit.data.commit.message}`,
+                  author: {
+                    name: context.actor,
+                    url: commit.data.author?.html_url,
+                    icon_url: commit.data.author?.avatar_url,
+                  },
                   timestamp: commit.data.commit.author?.date,
                 }],
-                username: context.actor,
-                avatar_url: commit.data.author?.avatar_url,
+                username: "GitHub",
+                avatar_url: "https://github.com/github.png",
               }),
             });
