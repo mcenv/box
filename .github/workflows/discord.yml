@@ -24,7 +24,9 @@ jobs:
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                content: commit.data.commit.message,
+                embeds: [
+                  { description: `[\`${commit.data.sha.slice(0, 7)}\`](${commit.data.html_url}) ${commit.data.commit.message}` },
+                ],
                 username: context.actor,
                 avatar_url: commit.data.author?.avatar_url,
               }),
