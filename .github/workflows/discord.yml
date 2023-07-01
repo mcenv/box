@@ -26,7 +26,7 @@ jobs:
               body: JSON.stringify({
                 embeds: [{
                   description: `[\`${commit.data.sha.slice(0, 7)}\`](${commit.data.html_url}) ${commit.data.commit.message}`,
-                  timestamp: commit.data.author?.date,
+                  timestamp: commit.data.commit.author?.date,
                 }],
                 username: context.actor,
                 avatar_url: commit.data.author?.avatar_url,
