@@ -25,6 +25,7 @@ jobs:
               },
               body: JSON.stringify({
                 embeds: [{
+                  color: commit.data.commit.verification?.verified ? 0x3fb950 : undefined,
                   description: `[\`${commit.data.sha.slice(0, 7)}\`](${commit.data.html_url}) ${commit.data.commit.message}`,
                   timestamp: commit.data.commit.author?.date,
                 }],
