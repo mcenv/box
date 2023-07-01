@@ -18,13 +18,14 @@ jobs:
               repo: context.repo.repo,
               ref: context.sha,
             });
-            const message = commit.data.commit.message;
             await fetch(process.env.DISCORD_COMMITS_WEBHOOK, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                content: `${message}\n${context.actor} committed\n`,
+                content: commit.data.commit.message,
+                username: context.actor,
+                avatar_url: commit.data.author?.avatar_url,
               }),
             });
