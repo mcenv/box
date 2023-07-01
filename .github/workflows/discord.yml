@@ -1,0 +1,30 @@
+name: Discord
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        env:
+          DISCORD_COMMITS_WEBHOOK: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}
+        with:
+          script: |
+            const commit = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+            });
+            const message = commit.data.commit.message;
+            await fetch(process.env.DISCORD_COMMITS_WEBHOOK, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                content: `${message}\n${context.actor} committed\n`,
+              }),
+            });
