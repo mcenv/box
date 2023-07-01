@@ -34,7 +34,5 @@ jobs:
                   },
                   timestamp: commit.data.commit.author?.date,
                 }],
-                username: "GitHub",
-                avatar_url: "https://github.com/github.png",
               }),
             });
