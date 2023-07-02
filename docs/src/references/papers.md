@@ -72,3 +72,4 @@
 
 * [Yulong Huang, Jeremy Yallop. **Defunctionalization with Dependent Types**.](https://doi.org/10.1145/3591241)
 * [Choudhury, P. **Unifying Linearity and Dependency Analyses**.](https://doi.org/10.48550/arXiv.2304.03175)
+* [Allais, G., Brady, E.C., Corbyn, N., Kammar, O., & Yallop, J. **Frex: dependently-typed algebraic simplification**. ArXiv, abs/2306.15375.](https://doi.org/10.48550/arXiv.2306.15375) 
