@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 import mcx.cache.*
 import mcx.lsp.McxLanguageServer
 import mcx.lsp.diagnosticMessage
@@ -79,16 +78,7 @@ fun init() {
   }
 
   val name = Path("").toAbsolutePath().last().toString()
-  Path("pack.json").outputStream().buffered().use {
-    json.encodeToStream(
-      Config(
-        name = name,
-        description = "",
-      ),
-      it,
-    )
-    it.write('\n'.code)
-  }
+  Path("pack.json").encodeToJson(Config(name = name, description = ""), json)
   Path("src").createDirectories()
 }
 

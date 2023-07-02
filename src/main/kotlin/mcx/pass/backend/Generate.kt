@@ -3,6 +3,7 @@ package mcx.pass.backend
 import mcx.ast.Packed
 import mcx.data.ResourceLocation
 import mcx.pass.Context
+import mcx.util.collections.forEachSeparated
 import mcx.util.nbt.*
 import mcx.util.quoted
 import mcx.ast.Packed as P
@@ -453,22 +454,6 @@ class Generate private constructor(
   }
 
   companion object {
-    private inline fun <T> Iterable<T>.forEachSeparated(
-      separate: () -> Unit,
-      action: (T) -> Unit,
-    ) {
-      val iterator = iterator()
-      if (iterator.hasNext()) {
-        action(iterator.next())
-      } else {
-        return
-      }
-      while (iterator.hasNext()) {
-        separate()
-        action(iterator.next())
-      }
-    }
-
     operator fun invoke(
       context: Context,
       definition: P.Definition,

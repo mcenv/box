@@ -5,9 +5,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import mcx.ast.Packed
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.Modifier
 import mcx.ast.common.ModuleLocation
@@ -16,16 +14,14 @@ import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
 import mcx.pass.Config
 import mcx.pass.Context
-import mcx.pass.backend.Generate
-import mcx.pass.backend.Lift
-import mcx.pass.backend.Pack
-import mcx.pass.backend.Stage
 import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.frontend.elaborate.Elaborate
 import mcx.pass.frontend.parse.Parse
 import mcx.pass.prelude
 import mcx.util.debug
+import mcx.util.decodeFromJson
+import mcx.util.encodeToJson
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.FileSystems
@@ -65,7 +61,7 @@ class Build(
       .withLock { traces[key] = Trace(text, 0) }
   }
 
-  suspend fun Context.closeText(
+  suspend fun closeText(
     location: ModuleLocation,
   ) {
     suspend fun close(key: Key<*>) {
@@ -75,16 +71,10 @@ class Build(
       }
     }
 
-    val definitions = fetch(Key.Resolved(location)).value.module.definitions
-    return coroutineScope {
-      close(Key.Read(location))
-      close(Key.Parsed(location))
-      close(Key.Resolved(location))
-      close(Key.Elaborated(location))
-      definitions.forEach { (location, _) ->
-        close(Key.Lifted(location))
-      }
-    }
+    close(Key.Read(location))
+    close(Key.Parsed(location))
+    close(Key.Resolved(location))
+    close(Key.Elaborated(location))
   }
 
   @Suppress("UNCHECKED_CAST")
@@ -153,6 +143,7 @@ class Build(
               }
             }
 
+            /*
             is Key.Staged     -> {
               val location = key.location
               val elaborated = fetch(Key.Elaborated(location.module))
@@ -218,27 +209,12 @@ class Build(
                 trace
               }
             }
+             */
           }.also {
             traces[key] = it as Trace<V>
           }
         }
     } as Trace<V>
-  }
-
-  private suspend fun Context.transitiveImports(location: ModuleLocation): List<DefinitionLocation> {
-    val imports = mutableSetOf<DefinitionLocation>()
-    suspend fun go(location: ModuleLocation) {
-      fetch(Key.Parsed(location)).value.module.imports.forEach { (import) ->
-        imports += import
-        go(import.module)
-      }
-    }
-    go(location)
-    return imports.toList()
-  }
-
-  private fun Path.toModuleLocation(packName: String): ModuleLocation {
-    return ModuleLocation(listOf(packName) + src.relativize(this).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
   }
 
   data class Result(
@@ -250,51 +226,43 @@ class Build(
   // TODO: skip build if no changes
   @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
   suspend operator fun invoke(): Result {
-    val config = (root / "pack.json").inputStream().buffered().use { Json.decodeFromStream<Config>(it) }
-    val serverProperties = config.properties
-    val levelName = serverProperties.levelName
-    val datapacks = (mcx / levelName / "datapacks").also { it.createDirectories() }
-
+    val config = (root / "pack.json").decodeFromJson<Config>()
     return coroutineScope {
       val context = Context(config)
       val success = AtomicBoolean(true)
       val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
-      val tests = mutableListOf<DefinitionLocation>()
-      val locations = src
+      val elaboratedDefinitions = src
         .walk()
         .filter { it.extension == "mcx" }
         .map { path ->
           async {
-            val elaborated = context.fetch(Key.Elaborated(path.toModuleLocation(context.config.name)))
+            val location = ModuleLocation(listOf(context.config.name) + src.relativize(path).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
+            val elaborated = context.fetch(Key.Elaborated(location))
             val diagnostics = elaborated.value.diagnostics
 
-            diagnostics[null]?.let { topLevelDiagnostics ->
-              if (success.get() && topLevelDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
+            diagnostics[null]?.let { moduleDiagnostics ->
+              if (success.get() && moduleDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
                 success.set(false)
               }
-              diagnosticsByPath += path to topLevelDiagnostics
+              diagnosticsByPath += path to moduleDiagnostics
             }
 
             elaborated.value.module.definitions.values.mapNotNull { definition ->
-              if (Modifier.TEST in definition.modifiers) {
-                tests += definition.name
-              }
               if (Modifier.ERROR in definition.modifiers) {
-                diagnostics[definition.name]?.takeIf { it.isNotEmpty() }?.let { diagnostics ->
-                  if (success.get() && diagnostics.none { it.severity == DiagnosticSeverity.Error }) {
+                diagnostics[definition.name]?.takeIf { it.isNotEmpty() }?.let { definitionDiagnostics ->
+                  if (success.get() && definitionDiagnostics.none { it.severity == DiagnosticSeverity.Error }) {
                     success.set(false)
                   }
-                  diagnosticsByPath += path to diagnostics
                 } ?: success.set(false)
                 null
               } else {
-                diagnostics[definition.name]?.let { diagnostics ->
-                  if (success.get() && diagnostics.any { it.severity == DiagnosticSeverity.Error }) {
+                diagnostics[definition.name]?.let { definitionDiagnostics ->
+                  if (success.get() && definitionDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
                     success.set(false)
                   }
-                  diagnosticsByPath += path to diagnostics
+                  diagnosticsByPath += path to definitionDiagnostics
                 }
-                definition.name
+                definition.name to definition
               }
             }
           }
@@ -302,83 +270,80 @@ class Build(
         .toList()
         .awaitAll()
         .flatten()
+        .toMap()
 
       if (!success.get()) {
-        return@coroutineScope Result(false, diagnosticsByPath, tests)
+        return@coroutineScope Result(false, diagnosticsByPath, emptyList())
       }
 
-      if (config.output != Config.Output.NONE) {
-        val verbose = config.debug.verbose
-        fun generate(suffix: String, definitions: Map<String, String>) {
-          datapacks.createDirectories()
-          val datapackPath = (datapacks / "${config.name}_$suffix.zip")
-          val datapackRoot = (datapacks / "${config.name}_$suffix")
+      if (config.output == Config.Output.NONE) {
+        return@coroutineScope Result(true, diagnosticsByPath, emptyList())
+      }
 
-          when (config.output) {
-            Config.Output.PATH -> {
-              datapackPath.deleteIfExists()
-              datapackRoot.createDirectories()
+      val datapacks = (mcx / config.properties.levelName / "datapacks").createDirectories()
 
-              val outputModules = definitions
-                .mapKeys { (name, _) -> datapackRoot / name }
-                .onEach { (path, definition) ->
-                  path.createParentDirectories().bufferedWriter().use {
-                    if (verbose) {
-                      debug("Writing", path.pathString)
-                    }
-                    it.write(definition)
+      fun generateDatapack(suffix: String, definitions: Map<String, String>) {
+        val datapackPath = (datapacks / "${config.name}_$suffix.zip")
+        val datapackRoot = (datapacks / "${config.name}_$suffix")
+
+        when (config.output) {
+          Config.Output.PATH -> {
+            datapackPath.deleteIfExists()
+            datapackRoot.createDirectories()
+
+            val outputModules = definitions
+              .mapKeys { (name, _) -> datapackRoot / name }
+              .onEach { (path, definition) ->
+                path.createParentDirectories().bufferedWriter().use {
+                  if (config.debug.verbose) {
+                    debug("Writing", path.pathString)
                   }
-                }
-              datapackRoot.visitFileTree {
-                onVisitFile { file, _ ->
-                  if (file !in outputModules) {
-                    if (verbose) {
-                      debug("Deleting", file.pathString)
-                    }
-                    file.deleteExisting()
-                  }
-                  FileVisitResult.CONTINUE
+                  it.write(definition)
                 }
               }
-
-              (datapackRoot / "pack.mcmeta").outputStream().buffered().use {
-                Json.encodeToStream(
-                  PackMetadata(
-                    pack = PackMetadataSection(
-                      description = config.description,
-                      packFormat = DATA_PACK_FORMAT,
-                    )
-                  ),
-                  it,
-                )
+            datapackRoot.visitFileTree {
+              onVisitFile { file, _ ->
+                if (file !in outputModules) {
+                  if (config.debug.verbose) {
+                    debug("Deleting", file.pathString)
+                  }
+                  file.deleteExisting()
+                }
+                FileVisitResult.CONTINUE
               }
             }
-            Config.Output.FILE -> {
-              datapackRoot.deleteRecursively()
 
-              ZipOutputStream(datapackPath.outputStream().buffered()).use { output ->
-                output.putNextEntry(ZipEntry("pack.mcmeta"))
-                Json.encodeToStream(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)), output)
+            (datapackRoot / "pack.mcmeta").encodeToJson(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)))
+          }
+          Config.Output.FILE -> {
+            datapackRoot.deleteRecursively()
 
-                definitions.onEach { (name, definition) ->
-                  if (verbose) {
-                    debug("Writing", name)
-                  }
-                  output.putNextEntry(ZipEntry(name))
-                  output.write(definition.encodeToByteArray())
+            ZipOutputStream(datapackPath.outputStream().buffered()).use { output ->
+              output.putNextEntry(ZipEntry("pack.mcmeta"))
+              Json.encodeToStream(PackMetadata(pack = PackMetadataSection(description = config.description, packFormat = DATA_PACK_FORMAT)), output)
+
+              definitions.onEach { (name, definition) ->
+                if (config.debug.verbose) {
+                  debug("Writing", name)
                 }
+                output.putNextEntry(ZipEntry(name))
+                output.write(definition.encodeToByteArray())
               }
             }
-            Config.Output.NONE -> error("Unreachable")
+          }
+          Config.Output.NONE -> {
+            error("Unreachable")
           }
         }
-
-        val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = locations }).value
-        generate("main", packs.main)
-        generate("test", packs.test)
       }
 
-      Result(true, diagnosticsByPath, tests)
+      /*
+      val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = elaboratedDefinitions }).value
+      generateDatapack("main", packs.main)
+      generateDatapack("test", packs.test)
+       */
+
+      Result(true, diagnosticsByPath, emptyList() /* TODO */)
     }
   }
 }

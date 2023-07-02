@@ -4,14 +4,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
 import mcx.ast.common.ModuleLocation
+import mcx.pass.Config
 import mcx.pass.Context
 import mcx.pass.build.Build
 import mcx.pass.build.Key
+import mcx.util.decodeFromJson
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
@@ -65,7 +64,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
       diagnosticsHashes -= params.textDocument.uri
       with(build) {
         val context = fetchContext()
-        context.closeText(params.textDocument.uri.toModuleLocation(context))
+        closeText(params.textDocument.uri.toModuleLocation(context))
       }
     }
   }
@@ -159,7 +158,7 @@ class McxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     val path = Path("pack.json")
     context = if (path.isRegularFile()) {
       try {
-        Context(path.inputStream().buffered().use { @OptIn(ExperimentalSerializationApi::class) Json.decodeFromStream(it) })
+        Context(path.decodeFromJson<Config>())
       } catch (_: SerializationException) {
         null
       }

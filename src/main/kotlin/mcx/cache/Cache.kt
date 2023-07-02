@@ -7,6 +7,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.encodeToStringMap
 import mcx.pass.Config
+import mcx.util.decodeFromJson
 import mcx.util.info
 import mcx.util.secureRandomString
 import mcx.util.toDependencyTripleOrNull
@@ -78,7 +79,7 @@ fun playServer(
     // TODO: print messages
 
     val workspace = Path(".mcx").createDirectories()
-    val config = Json.decodeFromStream<Config>(Path("pack.json").inputStream().buffered())
+    val config = Path("pack.json").decodeFromJson<Config>()
     val properties = config.properties
 
     (workspace / "eula.txt").writeText("eula=${properties.eula}\n")
@@ -112,10 +113,7 @@ fun playServer(
 }
 
 fun installDependencies(root: Path) {
-  val config = (root / "pack.json").inputStream().buffered().use {
-    @OptIn(ExperimentalSerializationApi::class)
-    Json.decodeFromStream<Config>(it)
-  }
+  val config = (root / "pack.json").decodeFromJson<Config>()
   config.dependencies.forEach { dependency ->
     val (owner, repository, tag) = dependency.value.toDependencyTripleOrNull() ?: run {
       error("Invalid dependency triple: ${dependency.value}")
