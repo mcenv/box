@@ -145,20 +145,21 @@ fun test(version: String, args: Array<String>) {
       rcon.exec("function ${Pack.INIT.namespace}:${Pack.INIT.path}")
 
       success = buildResult.tests.fold(true) { acc, test ->
+        print("Testing $test ... ")
         val name = Pack.packDefinitionLocation(test)
         rcon.exec("function ${name.namespace}:${name.path}")
         val message = rcon.exec("data get storage mcx_test: test")
         acc and when (message.takeLast(2)) {
           "0b" -> {
-            println("test $test ${red("failed")}")
+            println(red("failed"))
             false
           }
           "1b" -> {
-            println("test $test ${green("passed")}")
+            println(green("passed"))
             true
           }
           else -> {
-            println("test $test ${red("fatal")} $message")
+            println(message)
             false
           }
         }
