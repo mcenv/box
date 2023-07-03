@@ -53,6 +53,7 @@
 * [Dunfield, J., & Krishnaswami, N.R. **Bidirectional Typing**. ACM Computing Surveys (CSUR), 54, 1 - 38.](https://doi.org/10.1145/3450952)
 * [Tanabe, Y., Lubis, L.A., Aotani, T., & Masuhara, H. **A Functional Programming Language with Versions**. Art Sci. Eng. Program., 6, 5.](https://doi.org/10.22152/programming-journal.org%2F2022%2F6%2F5)
 * [Jonathan Sterling, Robert Harper. **A metalanguage for multi-phase modularity**.](https://icfp21.sigplan.org/details/mlfamilyworkshop-2021-papers/5/A-metalanguage-for-multi-phase-modularity)
+* [Zárybnický Jakub. **Just-in-Time Compilation of Dependently-Typed Lambda Calculus**.](https://www.fit.vut.cz/study/thesis/24198/)
 
 ## 2022
 
