@@ -52,6 +52,10 @@ fun String.toDependencyTripleOrNull(): DependencyTriple? {
   return DependencyTriple(owner, repository, tag)
 }
 
+inline fun <A, B> Pair<A, A>.mapMono(transform: (A) -> B): Pair<B, B> {
+  return transform(first) to transform(second)
+}
+
 inline fun <T, R> Lazy<T>.map(crossinline transform: (T) -> R): Lazy<R> {
   return lazy { transform(value) }
 }

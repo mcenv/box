@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
+import mcx.ast.Packed
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.Modifier
 import mcx.ast.common.ModuleLocation
@@ -14,6 +15,10 @@ import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
 import mcx.pass.Config
 import mcx.pass.Context
+import mcx.pass.backend.Generate
+import mcx.pass.backend.Lift
+import mcx.pass.backend.Pack
+import mcx.pass.backend.Stage
 import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.frontend.elaborate.Elaborate
@@ -22,6 +27,7 @@ import mcx.pass.prelude
 import mcx.util.debug
 import mcx.util.decodeFromJson
 import mcx.util.encodeToJson
+import mcx.util.mapMono
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.FileSystems
@@ -142,74 +148,6 @@ class Build(
                 trace
               }
             }
-
-            /*
-            is Key.Staged     -> {
-              val location = key.location
-              val elaborated = fetch(Key.Elaborated(location.module))
-              val definition = elaborated.value.module.definitions[location] ?: error("Unknown definition: $location")
-              val results = transitiveImports(fetch(Key.Parsed(location.module)).value.module.name)
-                .map { async { fetch(Key.Elaborated(it.module)) } }
-                .plus(async { fetch(Key.Elaborated(prelude)) })
-                .awaitAll()
-              val hash = Objects.hash(elaborated.hash, results.map { it.hash })
-              if (trace == null || trace.hash != hash) {
-                Trace(Stage(this@fetch, definition), hash)
-              } else {
-                trace
-              }
-            }
-
-            is Key.Lifted     -> {
-              val staged = fetch(Key.Staged(key.location))
-              val hash = staged.hash
-              if (trace == null || trace.hash != hash) {
-                Trace(staged.value?.let { Lift(this@fetch, it) }, hash)
-              } else {
-                trace
-              }
-            }
-
-            is Key.Packed     -> {
-              val locations = Key.Packed.locations.flatMapTo(mutableSetOf()) {
-                transitiveImports(it.module) + it
-              }
-              val results = locations.map {
-                async { fetch(Key.Lifted(it)) }
-              }.awaitAll()
-              val hash = results.map { it.hash }.hashCode()
-              if (trace == null || trace.hash != hash) {
-                val definitions = results
-                  .flatMap { result -> result.value?.liftedDefinitions?.map { async { Pack(this@fetch, it) } } ?: emptyList() }
-                  .plus(async { Pack.packInit() })
-                  .plus(async { Pack.packDispatchProcs(results.flatMap { result -> result.value?.dispatchedProcs ?: emptyList() }) })
-                  .plus(async { Pack.packDispatchFuncs(results.flatMap { result -> result.value?.dispatchedFuncs ?: emptyList() }) })
-                  .awaitAll()
-                Trace(definitions, hash)
-              } else {
-                trace
-              }
-            }
-
-            is Key.Generated  -> {
-              val packed = fetch(Key.Packed.apply { locations = Key.Generated.locations })
-              val hash = packed.hash
-              if (trace == null || trace.hash != hash) {
-                val (test, main) = packed.value.partition { it.modifiers.contains(Packed.Modifier.TEST) }
-                val mainDefinitions = main
-                  .map { async { Generate(this@fetch, it) } }
-                  .awaitAll()
-                  .toMap()
-                val testDefinitions = test
-                  .map { async { Generate(this@fetch, it) } }
-                  .awaitAll()
-                  .toMap()
-                Trace(Key.Generated.Packs(mainDefinitions, testDefinitions), hash)
-              } else {
-                trace
-              }
-            }
-             */
           }.also {
             traces[key] = it as Trace<V>
           }
@@ -337,13 +275,26 @@ class Build(
         }
       }
 
-      /*
-      val packs = context.fetch(Key.Generated.apply { Key.Generated.locations = elaboratedDefinitions }).value
-      generateDatapack("main", packs.main)
-      generateDatapack("test", packs.test)
-       */
-
-      Result(true, diagnosticsByPath, emptyList() /* TODO */)
+      elaboratedDefinitions.values
+        .mapNotNull { elaboratedDefinition -> Stage(context, elaboratedDefinition) }
+        .map { stagedDefinition -> async { Lift(context, stagedDefinition) } }
+        .awaitAll()
+        .let { liftedResults ->
+          liftedResults
+            .flatMap { liftedResult -> liftedResult.liftedDefinitions.map { async { Pack(context, it) } } }
+            .plus(async { Pack.packInit() })
+            .plus(async { Pack.packDispatchProcs(liftedResults.flatMap { liftedResult -> liftedResult.dispatchedProcs }) })
+            .plus(async { Pack.packDispatchFuncs(liftedResults.flatMap { liftedResult -> liftedResult.dispatchedFuncs }) })
+            .awaitAll()
+            .partition { packedDefinition -> packedDefinition.modifiers.contains(Packed.Modifier.TEST) }
+            .mapMono { packedDefinitions -> packedDefinitions.map { async { Generate(context, it) } }.awaitAll().toMap() }
+            .let { (testDefinitions, mainDefinitions) ->
+              generateDatapack("main", mainDefinitions)
+              generateDatapack("test", testDefinitions)
+            }
+        }
+      val tests = elaboratedDefinitions.values.filter { Modifier.TEST in it.modifiers }.map { it.name }
+      Result(true, diagnosticsByPath, tests)
     }
   }
 }
