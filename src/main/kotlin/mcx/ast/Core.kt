@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.Range
 object Core {
   data class Module(
     val name: ModuleLocation,
+    val imports: List<DefinitionLocation>,
     val definitions: LinkedHashMap<DefinitionLocation, Definition>,
   )
 

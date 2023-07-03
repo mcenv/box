@@ -157,7 +157,7 @@ class Build(
 
   data class Result(
     val success: Boolean,
-    val diagnosticsByPath: List<Pair<Path, List<Diagnostic>>>,
+    val diagnosticsByPath: List<Pair<String, List<Diagnostic>>>,
     val tests: List<DefinitionLocation>,
   )
 
@@ -168,24 +168,37 @@ class Build(
     return coroutineScope {
       val context = Context(config)
       val success = AtomicBoolean(true)
-      val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<Path, List<Diagnostic>>>())
+      val diagnosticsByPath = Collections.synchronizedList(mutableListOf<Pair<String, List<Diagnostic>>>())
+
+      suspend fun transitiveImports(location: ModuleLocation): List<Elaborate.Result> {
+        val self = context.fetch(Key.Elaborated(location)).value
+        return self.module.imports.flatMap { transitiveImports(it.module) } + self
+      }
+
       val elaboratedDefinitions = src
         .walk()
         .filter { it.extension == "mcx" }
-        .map { path ->
+        .mapTo(mutableListOf()) { path ->
           async {
             val location = ModuleLocation(listOf(context.config.name) + src.relativize(path).invariantSeparatorsPathString.dropLast(".mcx".length).split('/'))
-            val elaborated = context.fetch(Key.Elaborated(location))
-            val diagnostics = elaborated.value.diagnostics
+            transitiveImports(location)
+          }
+        }
+        .awaitAll()
+        .flatten()
+        .mapTo(mutableListOf()) { elaborated ->
+          async {
+            val location = elaborated.module.name.toString() // TODO: use path
+            val diagnostics = elaborated.diagnostics
 
             diagnostics[null]?.let { moduleDiagnostics ->
               if (success.get() && moduleDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
                 success.set(false)
               }
-              diagnosticsByPath += path to moduleDiagnostics
+              diagnosticsByPath += location to moduleDiagnostics
             }
 
-            elaborated.value.module.definitions.values.mapNotNull { definition ->
+            elaborated.module.definitions.values.mapNotNull { definition ->
               if (Modifier.ERROR in definition.modifiers) {
                 diagnostics[definition.name]?.takeIf { it.isNotEmpty() }?.let { definitionDiagnostics ->
                   if (success.get() && definitionDiagnostics.none { it.severity == DiagnosticSeverity.Error }) {
@@ -198,14 +211,13 @@ class Build(
                   if (success.get() && definitionDiagnostics.any { it.severity == DiagnosticSeverity.Error }) {
                     success.set(false)
                   }
-                  diagnosticsByPath += path to definitionDiagnostics
+                  diagnosticsByPath += location to definitionDiagnostics
                 }
                 definition.name to definition
               }
             }
           }
         }
-        .toList()
         .awaitAll()
         .flatten()
         .toMap()
