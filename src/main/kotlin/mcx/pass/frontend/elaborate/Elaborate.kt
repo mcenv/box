@@ -293,7 +293,7 @@ class Elaborate private constructor(
 
       term is R.Term.StructOf && check<Value.Struct>(type)                                    -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (name, element) ->
-          val (element, elementType) = elaborateTerm(element, phase, type.elements[name.value]?.value)
+          val (element, _) = elaborateTerm(element, phase, type.elements[name.value]?.value)
           name.value to element
         }
         typed(type) {
@@ -321,7 +321,7 @@ class Elaborate private constructor(
         val (ctx, params) = term.params.mapWith(this) { transform, (pattern, term) ->
           val term = checkTerm(term, phase, meta.freshType(term.range))
           val vTerm = env.evalTerm(term)
-          elaboratePattern(pattern, phase, vTerm, lazyOf(Value.Var("#${next()}", next(), lazyOf(vTerm)))) { (pattern, patternType) ->
+          elaboratePattern(pattern, phase, vTerm, lazyOf(Value.Var("#${next()}", next(), lazyOf(vTerm)))) { (pattern, _) ->
             transform(this)
             pattern to term
           }
@@ -985,7 +985,6 @@ class Elaborate private constructor(
     }
 
     operator fun invoke(
-      context: Context,
       dependencies: List<C.Module>,
       input: Resolve.Result,
       instruction: Instruction?,

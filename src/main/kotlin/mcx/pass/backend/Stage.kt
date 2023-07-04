@@ -670,7 +670,6 @@ class Stage private constructor() {
     }
 
     operator fun invoke(
-      context: Context,
       definition: Definition,
     ): Definition? {
       return Stage().stageDefinition(definition)

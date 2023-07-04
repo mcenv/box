@@ -1,7 +1,6 @@
 package mcx.pass.frontend
 
 import mcx.ast.Token
-import mcx.pass.Context
 
 class Tokenize private constructor(
   private val text: String,
@@ -71,7 +70,6 @@ class Tokenize private constructor(
 
   companion object {
     operator fun invoke(
-      context: Context,
       text: String,
     ): List<Token> {
       return Tokenize(text).tokenize()

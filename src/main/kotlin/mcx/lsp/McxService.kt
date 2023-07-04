@@ -6,10 +6,10 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import mcx.ast.common.ModuleLocation
+import mcx.pass.Build
 import mcx.pass.Config
 import mcx.pass.Context
-import mcx.pass.build.Build
-import mcx.pass.build.Key
+import mcx.pass.Key
 import mcx.util.decodeFromJson
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either

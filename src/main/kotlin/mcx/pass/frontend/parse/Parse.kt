@@ -7,7 +7,6 @@ import mcx.ast.common.Repr
 import mcx.lsp.Ranged
 import mcx.lsp.diagnostic
 import mcx.lsp.rangeTo
-import mcx.pass.Context
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Position
@@ -884,7 +883,6 @@ class Parse private constructor(
 
   companion object {
     operator fun invoke(
-      context: Context,
       module: ModuleLocation,
       text: String,
     ): Result {

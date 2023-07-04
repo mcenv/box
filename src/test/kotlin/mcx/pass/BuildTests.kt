@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import mcx.cache.getOrCreateDependenciesPath
 import mcx.cache.installDependencies
 import mcx.lsp.diagnosticMessage
-import mcx.pass.build.Build
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.div

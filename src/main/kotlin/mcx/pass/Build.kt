@@ -1,4 +1,4 @@
-package mcx.pass.build
+package mcx.pass
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -13,8 +13,7 @@ import mcx.ast.common.ModuleLocation
 import mcx.data.DATA_PACK_FORMAT
 import mcx.data.PackMetadata
 import mcx.data.PackMetadataSection
-import mcx.pass.Config
-import mcx.pass.Context
+import mcx.lsp.Instruction
 import mcx.pass.backend.Generate
 import mcx.pass.backend.Lift
 import mcx.pass.backend.Pack
@@ -23,7 +22,6 @@ import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.frontend.elaborate.Elaborate
 import mcx.pass.frontend.parse.Parse
-import mcx.pass.prelude
 import mcx.util.debug
 import mcx.util.decodeFromJson
 import mcx.util.encodeToJson
@@ -101,7 +99,7 @@ class Build(
               val read = fetch(Key.Read(key.location))
               val hash = read.value.hashCode()
               if (trace == null || trace.hash != hash) {
-                Trace(Parse(this@fetch, key.location, read.value), hash)
+                Trace(Parse(key.location, read.value), hash)
               } else {
                 trace
               }
@@ -126,7 +124,7 @@ class Build(
                 .awaitAll()
               val hash = Objects.hash(surface.hash, dependencyHashes)
               if (trace == null || trace.hash != hash || key.instruction != null) {
-                Trace(Resolve(this@fetch, dependencies, surface.value, key.instruction), hash)
+                Trace(Resolve(dependencies, surface.value, key.instruction), hash)
               } else {
                 trace
               }
@@ -143,7 +141,7 @@ class Build(
               val dependencies = results.map { it.value.module }
               val hash = Objects.hash(resolved.hash, results.map { it.hash })
               if (trace == null || trace.hash != hash || key.instruction != null) {
-                Trace(Elaborate(this@fetch, dependencies, resolved.value, key.instruction), hash)
+                Trace(Elaborate(dependencies, resolved.value, key.instruction), hash)
               } else {
                 trace
               }
@@ -288,7 +286,7 @@ class Build(
       }
 
       elaboratedDefinitions.values
-        .mapNotNull { elaboratedDefinition -> Stage(context, elaboratedDefinition) }
+        .mapNotNull { elaboratedDefinition -> Stage(elaboratedDefinition) }
         .map { stagedDefinition -> async { Lift(context, stagedDefinition) } }
         .awaitAll()
         .let { liftedResults ->
@@ -310,3 +308,28 @@ class Build(
     }
   }
 }
+
+sealed class Key<V> {
+  data class Read(
+    val location: ModuleLocation,
+  ) : Key<String>()
+
+  data class Parsed(
+    val location: ModuleLocation,
+  ) : Key<Parse.Result>()
+
+  data class Resolved(
+    val location: ModuleLocation,
+    val instruction: Instruction? = null,
+  ) : Key<Resolve.Result>()
+
+  data class Elaborated(
+    val location: ModuleLocation,
+    val instruction: Instruction? = null,
+  ) : Key<Elaborate.Result>()
+}
+
+data class Trace<V>(
+  val value: V,
+  val hash: Int,
+)

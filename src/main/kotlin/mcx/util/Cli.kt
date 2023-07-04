@@ -7,9 +7,9 @@ import kotlinx.serialization.json.decodeFromStream
 import mcx.cache.*
 import mcx.lsp.McxLanguageServer
 import mcx.lsp.diagnosticMessage
+import mcx.pass.Build
 import mcx.pass.Config
 import mcx.pass.backend.Pack
-import mcx.pass.build.Build
 import org.eclipse.lsp4j.launch.LSPLauncher
 import kotlin.io.path.*
 import kotlin.system.exitProcess

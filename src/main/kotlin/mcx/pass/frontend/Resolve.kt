@@ -4,7 +4,6 @@ import mcx.ast.common.*
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
-import mcx.pass.Context
 import mcx.pass.frontend.Resolve.Env.Companion.emptyEnv
 import mcx.pass.frontend.parse.Parse
 import mcx.pass.lookupBuiltin
@@ -549,7 +548,6 @@ class Resolve private constructor(
 
   companion object {
     operator fun invoke(
-      context: Context,
       dependencies: List<Dependency>,
       input: Parse.Result,
       instruction: Instruction?,

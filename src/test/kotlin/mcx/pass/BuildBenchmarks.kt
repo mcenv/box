@@ -2,7 +2,6 @@ package mcx.pass
 
 import kotlinx.benchmark.*
 import kotlinx.coroutines.runBlocking
-import mcx.pass.build.Build
 import java.util.concurrent.TimeUnit
 
 @State(Scope.Benchmark)
