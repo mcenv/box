@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 object TokenizeTests {
   @Test
   fun test() {
-    val context = Context(Config(name = "test", description = "", debug = Config.Debug(true)))
     assertEquals(
       listOf(
         Token.Literal.NEWLINE,
@@ -31,7 +30,6 @@ object TokenizeTests {
         Token.Identifier("bc"),
       ),
       Tokenize(
-        context,
         "\n\r(),:;[]{} \r\n  a:::=bc",
       ),
     )

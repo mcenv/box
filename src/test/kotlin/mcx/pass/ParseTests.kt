@@ -14,9 +14,8 @@ import kotlin.test.assertEquals
 object ParseTests {
   @Test
   fun empty() {
-    val context = Context(Config(name = "test", description = "", debug = Config.Debug(true)))
     val name = ModuleLocation("test", "empty")
-    val result = Parse(context, name, "")
+    val result = Parse(name, "")
     assertEquals(
       Parse.Result(
         module = Module(
@@ -32,10 +31,9 @@ object ParseTests {
 
   @Test
   fun simple() {
-    val context = Context(Config(name = "test", description = "", debug = Config.Debug(true)))
     val name = ModuleLocation("test", "simple")
     val result = Parse(
-      context, name,
+      name,
       """def a : i32 := 0;
       """.trimIndent()
     )
