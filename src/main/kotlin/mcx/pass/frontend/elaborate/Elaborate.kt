@@ -12,6 +12,7 @@ import mcx.lsp.diagnostic
 import mcx.pass.*
 import mcx.pass.frontend.Resolve
 import mcx.util.collections.mapWith
+import mcx.util.unreachable
 import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft
 import kotlin.contracts.ExperimentalContracts
@@ -88,7 +89,7 @@ class Elaborate private constructor(
           hoverDef(definition.name.range, it)
         }
       }
-      is R.Definition.Hole -> error("Unreachable")
+      is R.Definition.Hole -> unreachable()
     }.also { definitions[name] = it }
   }
 
@@ -574,7 +575,7 @@ class Elaborate private constructor(
       }
 
       else                                                                                    -> {
-        error("Unreachable")
+        unreachable()
       }
     }.also { (_, type) ->
       hoverType(term.range, type)
@@ -662,7 +663,7 @@ class Elaborate private constructor(
         }
 
         else                                                       -> {
-          error("Unreachable")
+          unreachable()
         }
       }.also { (_, type) ->
         hoverType(pattern.range, type)

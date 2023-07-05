@@ -125,3 +125,8 @@ fun secureRandomString(): String {
   random.nextBytes(bytes)
   return Base64.encode(bytes)
 }
+
+
+inline fun unreachable(): Nothing {
+  error("Unreachable")
+}

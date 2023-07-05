@@ -22,10 +22,7 @@ import mcx.pass.frontend.Read
 import mcx.pass.frontend.Resolve
 import mcx.pass.frontend.elaborate.Elaborate
 import mcx.pass.frontend.parse.Parse
-import mcx.util.debug
-import mcx.util.decodeFromJson
-import mcx.util.encodeToJson
-import mcx.util.mapMono
+import mcx.util.*
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.FileSystems
@@ -280,7 +277,7 @@ class Build(
             }
           }
           Config.Output.NONE -> {
-            error("Unreachable")
+            unreachable()
           }
         }
       }

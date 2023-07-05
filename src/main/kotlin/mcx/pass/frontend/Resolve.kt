@@ -7,6 +7,7 @@ import mcx.lsp.diagnostic
 import mcx.pass.frontend.Resolve.Env.Companion.emptyEnv
 import mcx.pass.frontend.parse.Parse
 import mcx.pass.lookupBuiltin
+import mcx.util.unreachable
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import org.eclipse.lsp4j.Location
@@ -103,7 +104,7 @@ class Resolve private constructor(
         val body = definition.body?.let { emptyEnv().resolveTerm(it) }
         R.Definition.Def(definition.doc, definition.annotations, definition.modifiers, name, type, body, range)
       }
-      is S.Definition.Hole -> error("Unreachable")
+      is S.Definition.Hole -> unreachable()
     }
   }
 

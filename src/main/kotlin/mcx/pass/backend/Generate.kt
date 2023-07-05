@@ -6,6 +6,7 @@ import mcx.pass.Context
 import mcx.util.collections.forEachSeparated
 import mcx.util.nbt.*
 import mcx.util.quoted
+import mcx.util.unreachable
 import mcx.ast.Packed as P
 
 class Generate private constructor(
@@ -335,7 +336,7 @@ class Generate private constructor(
   ) {
     when (tag) {
       is EndTag       -> {
-        error("Unreachable")
+        unreachable()
       }
       is ByteTag      -> {
         append(tag.value.toString())
