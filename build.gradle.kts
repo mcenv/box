@@ -1,7 +1,7 @@
 import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
-  kotlin("jvm") version "1.9.0-RC"
+  kotlin("jvm") version "1.9.0"
   kotlin("plugin.serialization") version "1.9.0-RC"
   kotlin("plugin.allopen") version "1.9.0-RC"
   id("org.jetbrains.kotlinx.kover") version "0.7.2"
