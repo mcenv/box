@@ -3,7 +3,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 plugins {
   kotlin("jvm") version "1.9.0"
   kotlin("plugin.serialization") version "1.9.0"
-  kotlin("plugin.allopen") version "1.9.0-RC"
+  kotlin("plugin.allopen") version "1.9.0"
   id("org.jetbrains.kotlinx.kover") version "0.7.2"
   id("org.jetbrains.kotlinx.benchmark") version "0.4.8"
   application
