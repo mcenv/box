@@ -26,13 +26,6 @@ object Lifted {
   sealed class Term {
     abstract val repr: Repr
 
-    data class If(
-      val condition: Term,
-      val thenName: DefinitionLocation,
-      val elseName: DefinitionLocation,
-      override val repr: Repr,
-    ) : Term()
-
     data class I8Of(
       val value: Byte,
     ) : Term() {
@@ -143,6 +136,12 @@ object Lifted {
       override val repr: Repr = body.repr
     }
 
+    data class Match(
+      val scrutinee: Term,
+      val branches: List<Pair<Pattern, DefinitionLocation>>,
+      override val repr: Repr,
+    ) : Term()
+
     data class Var(
       val name: String,
       override val repr: Repr,
@@ -157,6 +156,12 @@ object Lifted {
 
   sealed class Pattern {
     abstract val repr: Repr
+
+    data class BoolOf(
+      val value: Boolean,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.BYTE
+    }
 
     data class I32Of(
       val value: Int,

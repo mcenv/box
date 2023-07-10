@@ -341,17 +341,6 @@ class Parse private constructor(
               "bool"         -> S.Term.Bool(until())
               "false"        -> S.Term.BoolOf(false, until())
               "true"         -> S.Term.BoolOf(true, until())
-              "if"        -> {
-                skipTrivia()
-                val condition = parseTerm1()
-                expect("then")
-                skipTrivia()
-                val thenBranch = parseTerm1()
-                expect("else")
-                skipTrivia()
-                val elseBranch = parseTerm1()
-                S.Term.If(condition, thenBranch, elseBranch, until())
-              }
               "i8"        -> S.Term.I8(until())
               "i16"       -> S.Term.I16(until())
               "i32"       -> S.Term.I32(until())
@@ -428,8 +417,8 @@ class Parse private constructor(
                 skipTrivia()
                 val scrutinee = parseTerm()
                 val branches = parseList(',', '[', ']') {
-                  val pattern = parseTerm()
-                  expect(":->")
+                  val pattern = parseTerm0()
+                  expect("->")
                   skipTrivia()
                   val body = parseTerm()
                   pattern to body

@@ -21,7 +21,6 @@ fun prettyTerm(
       is Term.Type       -> "(type ${go(term.element)})"
       is Term.Bool       -> "bool"
       is Term.BoolOf     -> term.value.toString()
-      is Term.If         -> "(if ${go(term.condition)} then ${go(term.thenBranch)} else ${go(term.elseBranch)})"
       is Term.I8         -> "i8"
       is Term.I8Of       -> "${term.value}i8"
       is Term.I16        -> "i16"
@@ -71,6 +70,7 @@ fun prettyPattern(
   pattern: Pattern,
 ): String {
   return when (pattern) {
+    is Pattern.BoolOf   -> pattern.value.toString()
     is Pattern.I32Of    -> "${pattern.value}i32"
     is Pattern.VecOf    -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
     is Pattern.StructOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }

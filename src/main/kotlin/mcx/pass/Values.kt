@@ -75,13 +75,6 @@ sealed class Value {
     override val type: Lazy<Value> get() = Bool.LAZY
   }
 
-  data class If(
-    val condition: Value,
-    val thenBranch: Lazy<Value>,
-    val elseBranch: Lazy<Value>,
-    override val type: Lazy<Value>,
-  ) : Value()
-
   data object I8 : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
 

@@ -95,6 +95,7 @@ class Pack private constructor(
     term: L.Term,
   ) {
     when (term) {
+      /*
       is L.Term.If         -> {
         packTerm(term.condition)
         +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(BYTE_TOP)))
@@ -113,6 +114,7 @@ class Pack private constructor(
         )
         push(term.repr, null)
       }
+       */
 
       is L.Term.I8Of       -> {
         push(Repr.BYTE, SourceProvider.Value(ByteTag(term.value)))
@@ -248,6 +250,70 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
+      is L.Term.Match   -> {
+        packTerm(term.scrutinee)
+
+        +SetScore(R0, MAIN, 0)
+        term.branches.forEach { (binder, name) ->
+          val continuation = RunFunction(packDefinitionLocation(name))
+          when (binder) {
+            is L.Pattern.BoolOf   -> {
+              +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(BYTE_TOP)))
+              // TODO: optimize
+              +Execute.ConditionalScoreMatches(
+                true, R0, MAIN, Int.MIN_VALUE..0,
+                Execute.ConditionalScoreMatches(
+                  true, R1, MAIN, if (binder.value) 1..Int.MAX_VALUE else Int.MIN_VALUE..0,
+                  Execute.Run(RemoveData(BYTE_TOP))
+                )
+              )
+              +Execute.ConditionalScoreMatches(
+                true, R0, MAIN, Int.MIN_VALUE..0,
+                Execute.ConditionalScoreMatches(
+                  true, R1, MAIN, if (binder.value) 1..Int.MAX_VALUE else Int.MIN_VALUE..0,
+                  Execute.Run(continuation)
+                )
+              )
+            }
+            is L.Pattern.I32Of    -> {
+              +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(INT_TOP)))
+              // TODO: optimize
+              +Execute.ConditionalScoreMatches(
+                true, R0, MAIN, Int.MIN_VALUE..0,
+                Execute.ConditionalScoreMatches(
+                  true, R1, MAIN, binder.value..binder.value,
+                  Execute.Run(RemoveData(INT_TOP))
+                )
+              )
+              +Execute.ConditionalScoreMatches(
+                true, R0, MAIN, Int.MIN_VALUE..0,
+                Execute.ConditionalScoreMatches(
+                  true, R1, MAIN, binder.value..binder.value,
+                  Execute.Run(continuation)
+                )
+              )
+            }
+            is L.Pattern.VecOf    -> {
+              TODO()
+            }
+            is L.Pattern.StructOf -> {
+              TODO()
+            }
+            is L.Pattern.Var      -> {
+              +RemoveData(DataAccessor(MCX, nbtPath(term.scrutinee.repr.id)(-1)))
+              +Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..0, Execute.Run(continuation))
+            }
+            is L.Pattern.Drop     -> {
+              +RemoveData(DataAccessor(MCX, nbtPath(term.scrutinee.repr.id)(-1)))
+              +Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..0, Execute.Run(continuation))
+            }
+          }
+        }
+        push(term.repr, null)
+
+        drop(term.scrutinee.repr, listOf(term.repr))
+      }
+
       is L.Term.Var     -> {
         val repr = term.repr
         val index = this[term.name, term.repr]
@@ -265,6 +331,7 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
+      is L.Pattern.BoolOf   -> {}
       is L.Pattern.I32Of    -> {}
       is L.Pattern.VecOf    -> {
         pattern.elements.forEachIndexed { index, element ->
@@ -288,6 +355,7 @@ class Pack private constructor(
     keeps: List<Repr>,
   ) {
     when (pattern) {
+      is L.Pattern.BoolOf   -> drop(Repr.BYTE, keeps)
       is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
       is L.Pattern.VecOf    -> {
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }

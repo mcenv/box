@@ -69,25 +69,6 @@ class Stage private constructor() {
         Value.BoolOf(term.value)
       }
 
-      is Term.If         -> {
-        val condition = evalTerm(term.condition, phase)
-        when {
-          phase == Phase.CONST && condition is Value.BoolOf -> {
-            if (condition.value) {
-              evalTerm(term.thenBranch, phase)
-            } else {
-              evalTerm(term.elseBranch, phase)
-            }
-          }
-          else                                              -> {
-            val thenBranch = lazy { evalTerm(term.thenBranch, phase) }
-            val elseBranch = lazy { evalTerm(term.elseBranch, phase) }
-            val type = lazy { evalTerm(term.type, phase) }
-            Value.If(condition, thenBranch, elseBranch, type)
-          }
-        }
-      }
-
       is Term.I8         -> {
         Value.I8
       }
@@ -404,14 +385,6 @@ class Stage private constructor() {
 
       is Value.BoolOf     -> {
         Term.BoolOf(value.value)
-      }
-
-      is Value.If         -> {
-        val condition = quoteValue(value.condition, phase)
-        val thenBranch = quoteValue(value.thenBranch.value, phase)
-        val elseBranch = quoteValue(value.elseBranch.value, phase)
-        val type = quoteValue(value.type.value, phase)
-        Term.If(condition, thenBranch, elseBranch, type)
       }
 
       is Value.I8         -> {

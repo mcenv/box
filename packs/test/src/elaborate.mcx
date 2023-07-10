@@ -34,8 +34,6 @@ def bool_of_false : bool := false;
 
 def bool_of_true : bool := true;
 
-def if : i32 := if true then 2 else 1;
-
 def i8 : type %byte := i8;
 
 def i8_of : i8 := 1i8;
@@ -107,6 +105,8 @@ def splice : i32 := $`1;
 def command : i32 := /"";
 
 def let : i32 := let _ := 1; 2;
+
+def match : i32 := match true [ true -> 2, false -> 1 ];
 
 def var : i32 := let x := 1; x;
 

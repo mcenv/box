@@ -78,13 +78,6 @@ object Core {
       override val type: Term get() = Bool
     }
 
-    data class If(
-      val condition: Term,
-      val thenBranch: Term,
-      val elseBranch: Term,
-      override val type: Term,
-    ) : Term()
-
     data object I8 : Term() {
       override val type: Term get() = Type.BYTE
     }
@@ -305,6 +298,10 @@ object Core {
    * A well-typed pattern.
    */
   sealed class Pattern {
+    data class BoolOf(
+      val value: Boolean,
+    ) : Pattern()
+
     data class I32Of(
       val value: Int,
     ) : Pattern()

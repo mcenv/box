@@ -51,24 +51,6 @@ fun Env.evalTerm(term: Term): Value {
       Value.BoolOf(term.value)
     }
 
-    is Term.If         -> {
-      when (val condition = evalTerm(term.condition)) {
-        is Value.BoolOf -> {
-          if (condition.value) {
-            evalTerm(term.thenBranch)
-          } else {
-            evalTerm(term.elseBranch)
-          }
-        }
-        else            -> {
-          val thenBranch = lazy { evalTerm(term.thenBranch) }
-          val elseBranch = lazy { evalTerm(term.elseBranch) }
-          val type = lazy { evalTerm(term.type) }
-          Value.If(condition, thenBranch, elseBranch, type)
-        }
-      }
-    }
-
     is Term.I8         -> {
       Value.I8
     }
@@ -337,14 +319,6 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.BoolOf(value.value)
     }
 
-    is Value.If         -> {
-      val condition = quoteValue(value.condition)
-      val thenBranch = quoteValue(value.thenBranch.value)
-      val elseBranch = quoteValue(value.elseBranch.value)
-      val type = quoteValue(value.type.value)
-      Term.If(condition, thenBranch, elseBranch, type)
-    }
-
     is Value.I8         -> {
       Term.I8
     }
@@ -572,14 +546,21 @@ fun Closure.open(
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {
   return when (this) {
-    is Pattern.I32Of    -> {
+    is Pattern.BoolOf -> {
+      when (val value = value.value) {
+        is Value.BoolOf -> value.value == this.value
+        else            -> false
+      }
+    }
+
+    is Pattern.I32Of  -> {
       when (val value = value.value) {
         is Value.I32Of -> value.value == this.value
         else           -> false
       }
     }
 
-    is Pattern.VecOf    -> {
+    is Pattern.VecOf  -> {
       when (val value = value.value) {
         is Value.VecOf -> {
           elements.size == value.elements.size &&

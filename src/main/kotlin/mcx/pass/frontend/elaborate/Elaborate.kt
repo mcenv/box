@@ -136,16 +136,6 @@ class Elaborate private constructor(
         C.Term.BoolOf(term.value) to Value.Bool
       }
 
-      term is R.Term.If && match<Value>(type)                                                 -> {
-        val condition = checkTerm(term.condition, phase, Value.Bool)
-        val (thenBranch, thenBranchType) = /* TODO: avoid duplication? */ duplicate().elaborateTerm(term.thenBranch, phase, type)
-        val (elseBranch, elseBranchType) = elaborateTerm(term.elseBranch, phase, type)
-        val type = type ?: Value.Union(listOf(lazyOf(thenBranchType), lazyOf(elseBranchType)), thenBranchType.type /* TODO: validate */)
-        typed(type) {
-          C.Term.If(condition, thenBranch, elseBranch, it)
-        }
-      }
-
       term is R.Term.I8 && synth(type)                                                        -> {
         C.Term.I8 to Value.Type.BYTE
       }
@@ -438,7 +428,6 @@ class Elaborate private constructor(
       term is R.Term.Match && match<Value>(type)                                              -> {
         val (scrutinee, scrutineeType) = synthTerm(term.scrutinee, phase)
         val vScrutinee = lazy { env.evalTerm(scrutinee) }
-        // TODO: duplicate context
         // TODO: check exhaustiveness
         val (branches, branchesTypes) = term.branches.map { (pattern, body) ->
           elaboratePattern(pattern, phase, scrutineeType, vScrutinee) { (pattern, _) ->
@@ -599,6 +588,10 @@ class Elaborate private constructor(
     ): Pair<C.Pattern, Value> {
       val type = type?.let { meta.forceValue(type) }
       return when {
+        pattern is R.Pattern.BoolOf && synth(type)                 -> {
+          C.Pattern.BoolOf(pattern.value) to Value.Bool
+        }
+
         pattern is R.Pattern.I32Of && synth(type)                  -> {
           C.Pattern.I32Of(pattern.value) to Value.I32
         }

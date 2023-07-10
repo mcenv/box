@@ -68,13 +68,6 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class If(
-      val condition: Term,
-      val thenBranch: Term,
-      val elseBranch: Term,
-      override val range: Range,
-    ) : Term()
-
     data class I8(
       override val range: Range,
     ) : Term()
@@ -255,6 +248,11 @@ object Resolved {
    */
   sealed class Pattern {
     abstract val range: Range
+
+    data class BoolOf(
+      val value: Boolean,
+      override val range: Range,
+    ) : Pattern()
 
     data class I32Of(
       val value: Int,

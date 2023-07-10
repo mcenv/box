@@ -63,16 +63,6 @@ class Lift private constructor(
         L.Term.I8Of(if (term.value) 1 else 0)
       }
 
-      is C.Term.If         -> {
-        val condition = liftTerm(term.condition)
-        val thenBranch = liftTerm(term.thenBranch)
-        val elseBranch = liftTerm(term.elseBranch)
-        val thenFunction = createFreshFunction(thenBranch, 1)
-        val elseFunction = createFreshFunction(elseBranch, null)
-        val type = thenBranch.repr
-        L.Term.If(condition, thenFunction.name, elseFunction.name, type)
-      }
-
       is C.Term.I8         -> {
         UNIT
       }
@@ -255,7 +245,17 @@ class Lift private constructor(
       }
 
       is C.Term.Match      -> {
-        TODO()
+        val scrutinee = liftTerm(term.scrutinee)
+        val branches = term.branches.mapIndexed { index, (binder, body) ->
+          restoring {
+            val binder = liftPattern(binder, term.scrutinee.type)
+            val body = liftTerm(body)
+            val function = createFreshFunction(body, index + 1)
+            binder to function.name
+          }
+        }
+        val repr = eraseToRepr(term.type)
+        L.Term.Match(scrutinee, branches, repr)
       }
 
       is C.Term.Project    -> {
@@ -291,6 +291,10 @@ class Lift private constructor(
     type: C.Term,
   ): L.Pattern {
     return when (pattern) {
+      is C.Pattern.BoolOf   -> {
+        L.Pattern.BoolOf(pattern.value)
+      }
+
       is C.Pattern.I32Of    -> {
         L.Pattern.I32Of(pattern.value)
       }
@@ -336,7 +340,6 @@ class Lift private constructor(
       is C.Term.Type       -> freeVars(term.element)
       is C.Term.Bool       -> linkedMapOf()
       is C.Term.BoolOf     -> linkedMapOf()
-      is C.Term.If         -> freeVars(term.condition).also { it += freeVars(term.thenBranch); it += freeVars(term.elseBranch) }
       is C.Term.I8         -> linkedMapOf()
       is C.Term.I8Of       -> linkedMapOf()
       is C.Term.I16        -> linkedMapOf()
@@ -382,6 +385,7 @@ class Lift private constructor(
 
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
+      is C.Pattern.BoolOf   -> emptySet()
       is C.Pattern.I32Of    -> emptySet()
       is C.Pattern.VecOf    -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }

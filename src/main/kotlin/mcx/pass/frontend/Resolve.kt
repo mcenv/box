@@ -134,13 +134,6 @@ class Resolve private constructor(
         R.Term.BoolOf(term.value, range)
       }
 
-      is S.Term.If         -> {
-        val condition = resolveTerm(term.condition)
-        val thenBranch = resolveTerm(term.thenBranch)
-        val elseBranch = resolveTerm(term.elseBranch)
-        R.Term.If(condition, thenBranch, elseBranch, range)
-      }
-
       is S.Term.I8         -> {
         R.Term.I8(range)
       }
@@ -343,6 +336,10 @@ class Resolve private constructor(
   ): R.Pattern {
     val range = pattern.range
     return when (pattern) {
+      is S.Term.BoolOf   -> {
+        R.Pattern.BoolOf(pattern.value, range)
+      }
+
       is S.Term.NumOf    -> {
         R.Pattern.I32Of(pattern.value.toInt() /* TODO */, range)
       }

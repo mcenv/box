@@ -73,14 +73,6 @@ class Meta {
         term
       }
 
-      is Term.If         -> {
-        val condition = zonkTerm(term.condition)
-        val thenBranch = zonkTerm(term.thenBranch)
-        val elseBranch = zonkTerm(term.elseBranch)
-        val type = zonkTerm(term.type)
-        Term.If(condition, thenBranch, elseBranch, type)
-      }
-
       is Term.I8         -> {
         term
       }
@@ -129,11 +121,11 @@ class Meta {
         term
       }
 
-      is Term.Wtf16   -> {
+      is Term.Wtf16    -> {
         term
       }
 
-      is Term.Wtf16Of -> {
+      is Term.Wtf16Of  -> {
         term
       }
 
@@ -262,7 +254,7 @@ class Meta {
         Term.Match(scrutinee, branches, type)
       }
 
-      is Term.Project -> {
+      is Term.Project  -> {
         val target = zonkTerm(term.target)
         val type = zonkTerm(term.type)
         Term.Project(target, term.projs, type)
@@ -326,11 +318,6 @@ class Meta {
       value1 is Value.Type && value2 is Value.Type             -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Bool && value2 is Value.Bool             -> true
       value1 is Value.BoolOf && value2 is Value.BoolOf         -> value1.value == value2.value
-      value1 is Value.If && value2 is Value.If                 -> {
-        unifyValue(value1.condition, value2.condition) &&
-        unifyValue(value1.thenBranch.value, value2.elseBranch.value) &&
-        unifyValue(value1.elseBranch.value, value2.elseBranch.value)
-      }
       value1 is Value.I8 && value2 is Value.I8                 -> true
       value1 is Value.I8Of && value2 is Value.I8Of             -> value1.value == value2.value
       value1 is Value.I16 && value2 is Value.I16               -> true
@@ -406,6 +393,7 @@ class Meta {
       value1 is Value.CodeOf && value2 is Value.CodeOf         -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Splice && value2 is Value.Splice         -> unifyValue(value1.element, value2.element)
       value1 is Value.Command && value2 is Value.Command       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Match && value2 is Value.Match           -> false // TODO
       value1 is Value.Var && value2 is Value.Var               -> value1.lvl == value2.lvl
       value1 is Value.Def && value2 is Value.Def               -> value1.def.name == value2.def.name // TODO: check body
       value1 is Value.Hole || value2 is Value.Hole             -> true // ?
