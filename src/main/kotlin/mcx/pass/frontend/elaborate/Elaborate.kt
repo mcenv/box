@@ -425,7 +425,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Match && match<Value>(type)                                              -> {
+      term is R.Term.If && match<Value>(type) -> {
         val (scrutinee, scrutineeType) = synthTerm(term.scrutinee, phase)
         val vScrutinee = lazy { env.evalTerm(scrutinee) }
         // TODO: check exhaustiveness
@@ -437,7 +437,7 @@ class Elaborate private constructor(
         }.unzip()
         val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.let { lazyOf(it) } ?: Value.Type.END_LAZY /* TODO: validate */)
         typed(type) {
-          C.Term.Match(scrutinee, branches, it)
+          C.Term.If(scrutinee, branches, it)
         }
       }
 

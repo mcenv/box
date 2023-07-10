@@ -1,8 +1,0 @@
-def var : i32 := match 0 [
-  x -> x,
-];
-
-def 0_var : i32 := match 0 [
-  0 -> 1,
-  x -> x,
-];

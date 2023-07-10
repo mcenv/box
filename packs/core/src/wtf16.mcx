@@ -36,7 +36,7 @@ export const def until(self : code wtf16, end_index : i32) : code wtf16 :=
   between(self, 0, end_index);
 
 export const def code_unit_at(self : code wtf16, index : i32) : code wtf16 :=
-  match index i32::= -1 [ true -> from(self, -1), false -> between(self, index, index + 1) ];
+  if index i32::= -1 [ true -> from(self, -1), false -> between(self, index, index + 1) ];
 
 test def ""_!=_"a" := "" != "a";
 

@@ -261,7 +261,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Match   -> {
+      is Term.If -> {
         when (phase) {
           Phase.WORLD -> {
             val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
@@ -270,7 +270,7 @@ class Stage private constructor() {
               pattern to body
             }
             val type = lazy { evalTerm(term.type, phase) }
-            Value.Match(scrutinee, branches, type)
+            Value.If(scrutinee, branches, type)
           }
           Phase.CONST -> {
             val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
@@ -285,7 +285,7 @@ class Stage private constructor() {
             when (matchedIndex) {
               -1   -> {
                 val type = lazy { evalTerm(term.type, phase) }
-                Value.Match(scrutinee, branches, type)
+                Value.If(scrutinee, branches, type)
               }
               else -> {
                 val (_, body) = term.branches[matchedIndex]
@@ -565,14 +565,14 @@ class Stage private constructor() {
         Term.Let(value.binder, init, body, type)
       }
 
-      is Value.Match   -> {
+      is Value.If -> {
         val scrutinee = quoteValue(value.scrutinee.value, phase)
         val branches = value.branches.map { (pattern, body) ->
           val body = (this + 1).quoteValue(body.value, phase)
           pattern to body
         }
         val type = quoteValue(value.type.value, phase)
-        Term.Match(scrutinee, branches, type)
+        Term.If(scrutinee, branches, type)
       }
 
       is Value.Project -> {

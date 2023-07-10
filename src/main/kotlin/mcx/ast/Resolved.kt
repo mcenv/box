@@ -211,7 +211,7 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
-    data class Match(
+    data class If(
       val scrutinee: Term,
       val branches: List<Pair<Pattern, Term>>,
       override val range: Range,

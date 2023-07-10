@@ -282,7 +282,7 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Match      -> {
+      is S.Term.If -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           restoring(0) {
@@ -291,7 +291,7 @@ class Resolve private constructor(
             pattern to body
           }
         }
-        R.Term.Match(scrutinee, branches, range)
+        R.Term.If(scrutinee, branches, range)
       }
 
       is S.Term.Var        -> {

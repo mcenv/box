@@ -211,7 +211,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class Match(
+    data class If(
       val scrutinee: Term,
       val branches: List<Pair<Term, Term>>,
       override val range: Range,

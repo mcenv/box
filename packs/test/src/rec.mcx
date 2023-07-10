@@ -6,7 +6,7 @@ import {
 }
 
 rec def fib(n : i32) : i32 :=
-  match n <= 1 [
+  if n <= 1 [
     true  -> n,
     false -> fib(n - 1) + fib(n - 2),
   ];

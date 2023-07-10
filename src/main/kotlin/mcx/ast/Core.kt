@@ -260,7 +260,7 @@ object Core {
       override val type: Term,
     ) : Term()
 
-    data class Match(
+    data class If(
       val scrutinee: Term,
       val branches: List<Pair<Pattern, Term>>,
       override val type: Term,

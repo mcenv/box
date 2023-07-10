@@ -244,14 +244,14 @@ class Meta {
         Term.Let(term.binder, init, body, type)
       }
 
-      is Term.Match    -> {
+      is Term.If -> {
         val scrutinee = zonkTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           val body = zonkTerm(body)
           pattern to body
         }
         val type = zonkTerm(term.type)
-        Term.Match(scrutinee, branches, type)
+        Term.If(scrutinee, branches, type)
       }
 
       is Term.Project  -> {
@@ -393,7 +393,7 @@ class Meta {
       value1 is Value.CodeOf && value2 is Value.CodeOf         -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Splice && value2 is Value.Splice         -> unifyValue(value1.element, value2.element)
       value1 is Value.Command && value2 is Value.Command       -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Match && value2 is Value.Match           -> false // TODO
+      value1 is Value.If && value2 is Value.If                 -> false // TODO
       value1 is Value.Var && value2 is Value.Var               -> value1.lvl == value2.lvl
       value1 is Value.Def && value2 is Value.Def               -> value1.def.name == value2.def.name // TODO: check body
       value1 is Value.Hole || value2 is Value.Hole             -> true // ?

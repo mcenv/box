@@ -9,6 +9,7 @@ import mcx.pass.prettyTerm
 import mcx.ast.Core as C
 import mcx.ast.Lifted as L
 
+@Suppress("NAME_SHADOWING")
 class Lift private constructor(
   private val context: Context,
   private val definition: C.Definition,
@@ -244,7 +245,7 @@ class Lift private constructor(
         }
       }
 
-      is C.Term.Match      -> {
+      is C.Term.If         -> {
         val scrutinee = liftTerm(term.scrutinee)
         val branches = term.branches.mapIndexed { index, (binder, body) ->
           restoring {
@@ -255,7 +256,7 @@ class Lift private constructor(
           }
         }
         val repr = eraseToRepr(term.type)
-        L.Term.Match(scrutinee, branches, repr)
+        L.Term.If(scrutinee, branches, repr)
       }
 
       is C.Term.Project    -> {
@@ -285,7 +286,6 @@ class Lift private constructor(
     }
   }
 
-  @Suppress("NAME_SHADOWING")
   private fun Ctx.liftPattern(
     pattern: C.Pattern,
     type: C.Term,
@@ -374,7 +374,7 @@ class Lift private constructor(
       is C.Term.Splice     -> unexpectedTerm(term)
       is C.Term.Command    -> linkedMapOf()
       is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.Match      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.If         -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
       is C.Term.Project    -> freeVars(term.target)
       is C.Term.Var        -> linkedMapOf(term.name to eraseToRepr(term.type))
       is C.Term.Def        -> linkedMapOf()

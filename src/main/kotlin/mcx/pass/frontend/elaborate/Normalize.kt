@@ -229,7 +229,7 @@ fun Env.evalTerm(term: Term): Value {
       (this + init).evalTerm(term.body)
     }
 
-    is Term.Match -> {
+    is Term.If -> {
       val scrutinee = lazy { evalTerm(term.scrutinee) }
       var matchedIndex = -1
       val branches = term.branches.mapIndexed { index, (pattern, body) ->
@@ -242,7 +242,7 @@ fun Env.evalTerm(term: Term): Value {
       when (matchedIndex) {
         -1   -> {
           val type = lazy { evalTerm(term.type) }
-          Value.Match(scrutinee, branches, type)
+          Value.If(scrutinee, branches, type)
         }
         else -> {
           val (_, body) = term.branches[matchedIndex]
@@ -488,14 +488,14 @@ fun Lvl.quoteValue(value: Value): Term {
       error("Unexpected value: $value")
     }
 
-    is Value.Match   -> {
+    is Value.If -> {
       val scrutinee = quoteValue(value.scrutinee.value)
       val branches = value.branches.map { (pattern, body) ->
         val body = (this + 1).quoteValue(body.value)
         pattern to body
       }
       val type = quoteValue(value.type.value)
-      Term.Match(scrutinee, branches, type)
+      Term.If(scrutinee, branches, type)
     }
 
     is Value.Project -> {

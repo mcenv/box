@@ -136,7 +136,7 @@ object Lifted {
       override val repr: Repr = body.repr
     }
 
-    data class Match(
+    data class If(
       val scrutinee: Term,
       val branches: List<Pair<Pattern, DefinitionLocation>>,
       override val repr: Repr,

@@ -250,14 +250,14 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
-      is L.Term.Match   -> {
+      is L.Term.If -> {
         packTerm(term.scrutinee)
 
         +SetScore(R0, MAIN, 0)
         term.branches.forEach { (binder, name) ->
           val continuation = RunFunction(packDefinitionLocation(name))
           when (binder) {
-            is L.Pattern.BoolOf   -> {
+            is L.Pattern.BoolOf -> {
               +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(BYTE_TOP)))
               // TODO: optimize
               +Execute.ConditionalScoreMatches(
