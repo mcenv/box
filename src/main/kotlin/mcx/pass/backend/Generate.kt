@@ -404,7 +404,10 @@ class Generate private constructor(
         )
         append(']')
       }
-      is StringTag    -> append(tag.value.quoted('"')) // TODO: optimize
+      is StringTag    -> {
+        // TODO: benchmark to see if it is faster to be parsed when not quoted (not likely due to cascading regex matching)
+        append(tag.value.quoted())
+      }
       is ListTag<*>   -> {
         append('[')
         tag.tags.forEachSeparated(
@@ -418,7 +421,7 @@ class Generate private constructor(
         tag.entries.forEachSeparated(
           separate = { append(',') },
           action = { (key, element) ->
-            append(key.quoted('"')) // TODO: optimize
+            append(key.quotedIfNecessary())
             append(':')
             generateNbt(element)
           },
@@ -463,6 +466,37 @@ class Generate private constructor(
   }
 
   companion object {
+    private fun Char.isAllowedInUnquotedString(): Boolean {
+      return when (this) {
+        in '0'..'9', in 'A'..'Z', in 'a'..'z', '_', '-', '.', '+' -> true
+        else                                                      -> false
+      }
+    }
+
+    private fun String.quotedIfNecessary(): String {
+      return if (all { it.isAllowedInUnquotedString() }) {
+        this
+      } else {
+        quoted()
+      }
+    }
+
+    private fun String.quoted(): String {
+      var single = 0
+      var double = 0
+      forEach {
+        when (it) {
+          '\'' -> single++
+          '"'  -> double++
+        }
+      }
+      return if (single < double) {
+        quoted('\'')
+      } else {
+        quoted('"')
+      }
+    }
+
     operator fun invoke(
       context: Context,
       definition: P.Definition,
