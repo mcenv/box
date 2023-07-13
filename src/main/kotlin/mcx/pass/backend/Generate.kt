@@ -467,14 +467,22 @@ class Generate private constructor(
 
   companion object {
     /**
-     * 40 > [jdk.internal.math.FloatingDecimal.SINGLE_MAX_DECIMAL_EXPONENT] + 1
+     * - 40 instead of 39
+     * - "f" instead of "F"
+     * @see [jdk.internal.math.FloatingDecimal.ASCIIToBinaryBuffer.floatValue]
+     * @see [java.util.regex.Pattern.SingleI]
      */
     private const val INFINITY_F = "1e40f"
 
     /**
-     * 310 > [jdk.internal.math.FloatingDecimal.MAX_DECIMAL_EXPONENT] + 1
+     * - 310 instead of 309
+     * - "d" instead of "D" or ""
+     * @see [jdk.internal.math.FloatingDecimal.ASCIIToBinaryBuffer.doubleValue]
+     * @see [java.util.regex.Pattern.SingleI]
+     * @see [net.minecraft.nbt.TagParser.type]
      */
-    private const val INFINITY_D = "1e310"
+    @Suppress("KDocUnresolvedReference")
+    private const val INFINITY_D = "1e310d"
 
     private fun Char.isAllowedInUnquotedString(): Boolean {
       return when (this) {
