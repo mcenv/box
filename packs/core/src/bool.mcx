@@ -1,14 +1,14 @@
 export def !(a : bool) : bool :=
-  if a [ true -> false, false -> true ];
+  if a [ true -> false, _ -> true ];
 
 export def &(a : bool, b : bool) : bool :=
-  if a [ true -> b, false -> false ];
+  if a [ true -> b, _ -> false ];
 
 export def |(a : bool, b : bool) : bool :=
-  if a [ true -> true, false -> b ];
+  if a [ true -> true, _ -> b ];
 
 export def to_wtf16(a : bool) : wtf16 :=
-  if a [ true -> "true", false -> "false" ];
+  if a [ true -> "true", _ -> "false" ];
 
 test def !_false := !(false);
 

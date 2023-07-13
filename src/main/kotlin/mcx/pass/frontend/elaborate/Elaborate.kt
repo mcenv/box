@@ -9,6 +9,7 @@ import mcx.ast.common.Annotation
 import mcx.lsp.Instruction
 import mcx.lsp.contains
 import mcx.lsp.diagnostic
+import mcx.lsp.rangeTo
 import mcx.pass.*
 import mcx.pass.frontend.Resolve
 import mcx.util.collections.mapWith
@@ -428,16 +429,26 @@ class Elaborate private constructor(
       term is R.Term.If && match<Value>(type) -> {
         val (scrutinee, scrutineeType) = synthTerm(term.scrutinee, phase)
         val vScrutinee = lazy { env.evalTerm(scrutinee) }
-        // TODO: check exhaustiveness
+
+        // TODO: implement fine-grained exhaustiveness checking
+        var exhaustive = false
         val (branches, branchesTypes) = term.branches.map { (pattern, body) ->
           elaboratePattern(pattern, phase, scrutineeType, vScrutinee) { (pattern, _) ->
+            if (!exhaustive && (pattern is C.Pattern.Var || pattern is C.Pattern.Drop)) {
+              exhaustive = true
+            }
             val (body, bodyType) = elaborateTerm(body, phase, type)
             (pattern to body) to bodyType
           }
         }.unzip()
-        val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.type ?: Value.Type.END_LAZY /* TODO: validate */)
-        typed(type) {
-          C.Term.If(scrutinee, branches, it)
+
+        if (exhaustive) {
+          val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.type ?: Value.Type.END_LAZY /* TODO: validate */)
+          typed(type) {
+            C.Term.If(scrutinee, branches, it)
+          }
+        } else {
+          invalidTerm(notExhaustive(term.range.start..term.range.start))
         }
       }
 
@@ -884,6 +895,16 @@ class Elaborate private constructor(
       return diagnostic(
         range,
         "unknown key: $name",
+        DiagnosticSeverity.Error,
+      )
+    }
+
+    private fun notExhaustive(
+      range: Range,
+    ): Diagnostic {
+      return diagnostic(
+        range,
+        "not exhaustive",
         DiagnosticSeverity.Error,
       )
     }

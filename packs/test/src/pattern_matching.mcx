@@ -69,3 +69,7 @@ test def let_if_2 :=
     _      -> false
   ];
   x;
+
+error def not_exhaustive : bool := if true [
+  false -> false,
+];

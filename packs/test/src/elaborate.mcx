@@ -106,7 +106,7 @@ def command : i32 := /"";
 
 def let : i32 := let _ := 1; 2;
 
-def if : i32 := if true [ true -> 2, false -> 1 ];
+def if : i32 := if 1 [ _ -> 2 ];
 
 def var : i32 := let x := 1; x;
 

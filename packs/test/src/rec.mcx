@@ -7,8 +7,8 @@ import {
 
 rec def fib(n : i32) : i32 :=
   if n <= 1 [
-    true  -> n,
-    false -> fib(n - 1) + fib(n - 2),
+    true -> n,
+    _    -> fib(n - 1) + fib(n - 2),
   ];
 
 test def fib_10=55 := fib(10) = 55;
