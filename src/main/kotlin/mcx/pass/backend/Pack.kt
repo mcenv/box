@@ -45,9 +45,10 @@ class Pack private constructor(
           L.Modifier.TEST in definition.modifiers
         ) {
           packTerm(definition.body!!)
+          val byteStack = DataAccessor(MCX, nbtPath(Repr.BYTE.id))
           +RemoveData(TEST_CELL)
-          +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
-          drop(Repr.BYTE)
+          +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(byteStack)))
+          +RemoveData(byteStack)
         } else {
           definition.params.forEach {
             !{ Raw("# param $it") }

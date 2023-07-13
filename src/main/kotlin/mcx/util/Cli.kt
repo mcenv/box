@@ -149,17 +149,17 @@ fun test(version: String, args: Array<String>) {
         val name = Pack.packDefinitionLocation(test)
         rcon.exec("function ${name.namespace}:${name.path}")
         val message = rcon.exec("data get storage mcx_test: test")
-        acc and when (message.takeLast(2)) {
-          "0b" -> {
+        acc and when (message.takeLast(4)) {
+          "[0b]" -> {
             println(red("failed"))
             false
           }
-          "1b" -> {
+          "[1b]" -> {
             println(green("passed"))
             true
           }
-          else -> {
-            println(message)
+          else   -> {
+            println(red(message))
             false
           }
         }
