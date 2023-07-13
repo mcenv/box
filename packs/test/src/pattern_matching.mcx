@@ -61,3 +61,11 @@ test def let_if :=
     {a: a} -> x,
     _      -> false
   ];
+
+test def let_if_2 :=
+  let x := true;
+  let y := if {a: false} [
+    {a: a} -> x,
+    _      -> false
+  ];
+  x;

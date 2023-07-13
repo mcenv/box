@@ -435,7 +435,7 @@ class Elaborate private constructor(
             (pattern to body) to bodyType
           }
         }.unzip()
-        val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.let { lazyOf(it) } ?: Value.Type.END_LAZY /* TODO: validate */)
+        val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.type ?: Value.Type.END_LAZY /* TODO: validate */)
         typed(type) {
           C.Term.If(scrutinee, branches, it)
         }
