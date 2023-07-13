@@ -57,7 +57,7 @@ object Packed {
         val comparator: Comparator,
         val source: ScoreHolder,
         val sourceObjective: Objective,
-        val redirect: Execute,
+        val redirect: Execute? = null,
       ) : Execute() {
         enum class Comparator {
           EQ,
@@ -73,12 +73,13 @@ object Packed {
         val target: ScoreHolder,
         val targetObjective: Objective,
         val range: IntRange,
-        val redirect: Execute,
+        val redirect: Execute? = null,
       ) : Execute()
 
       data class CheckMatchingData(
         val conditional: Boolean,
         val source: DataAccessor,
+        val redirect: Execute? = null,
       ) : Execute()
 
       enum class Mode {

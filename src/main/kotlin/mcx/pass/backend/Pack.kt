@@ -47,6 +47,7 @@ class Pack private constructor(
           drop(Repr.BYTE)
         } else {
           definition.params.forEach {
+            !{ Raw("# param $it") }
             push(it.repr, null)
             packPattern(it)
           }
@@ -95,27 +96,6 @@ class Pack private constructor(
     term: L.Term,
   ) {
     when (term) {
-      /*
-      is L.Term.If         -> {
-        packTerm(term.condition)
-        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(BYTE_TOP)))
-        drop(Repr.BYTE)
-        +Execute.ConditionalScoreMatches(
-          true, R0, MAIN, 1..Int.MAX_VALUE,
-          Execute.Run(
-            RunFunction(packDefinitionLocation(term.thenName))
-          )
-        )
-        +Execute.ConditionalScoreMatches(
-          true, R0, MAIN, Int.MIN_VALUE..0,
-          Execute.Run(
-            RunFunction(packDefinitionLocation(term.elseName))
-          )
-        )
-        push(term.repr, null)
-      }
-       */
-
       is L.Term.I8Of       -> {
         push(Repr.BYTE, SourceProvider.Value(ByteTag(term.value)))
       }
@@ -250,67 +230,24 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
-      is L.Term.If -> {
+      is L.Term.If      -> {
         packTerm(term.scrutinee)
 
+        // TODO: optimize this using function tree
+        val scrutinee = nbtPath(term.scrutinee.repr.id)(-1)
         +SetScore(R0, MAIN, 0)
         term.branches.forEach { (binder, name) ->
-          val continuation = RunFunction(packDefinitionLocation(name))
-          when (binder) {
-            is L.Pattern.BoolOf -> {
-              +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(BYTE_TOP)))
-              // TODO: optimize
-              +Execute.ConditionalScoreMatches(
-                true, R0, MAIN, Int.MIN_VALUE..0,
-                Execute.ConditionalScoreMatches(
-                  true, R1, MAIN, if (binder.value) 1..Int.MAX_VALUE else Int.MIN_VALUE..0,
-                  Execute.Run(RemoveData(BYTE_TOP))
-                )
-              )
-              +Execute.ConditionalScoreMatches(
-                true, R0, MAIN, Int.MIN_VALUE..0,
-                Execute.ConditionalScoreMatches(
-                  true, R1, MAIN, if (binder.value) 1..Int.MAX_VALUE else Int.MIN_VALUE..0,
-                  Execute.Run(continuation)
-                )
-              )
-            }
-            is L.Pattern.I32Of    -> {
-              +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(INT_TOP)))
-              // TODO: optimize
-              +Execute.ConditionalScoreMatches(
-                true, R0, MAIN, Int.MIN_VALUE..0,
-                Execute.ConditionalScoreMatches(
-                  true, R1, MAIN, binder.value..binder.value,
-                  Execute.Run(RemoveData(INT_TOP))
-                )
-              )
-              +Execute.ConditionalScoreMatches(
-                true, R0, MAIN, Int.MIN_VALUE..0,
-                Execute.ConditionalScoreMatches(
-                  true, R1, MAIN, binder.value..binder.value,
-                  Execute.Run(continuation)
-                )
-              )
-            }
-            is L.Pattern.VecOf    -> {
-              TODO()
-            }
-            is L.Pattern.StructOf -> {
-              TODO()
-            }
-            is L.Pattern.Var      -> {
-              +RemoveData(DataAccessor(MCX, nbtPath(term.scrutinee.repr.id)(-1)))
-              +Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..0, Execute.Run(continuation))
-            }
-            is L.Pattern.Drop     -> {
-              +RemoveData(DataAccessor(MCX, nbtPath(term.scrutinee.repr.id)(-1)))
-              +Execute.ConditionalScoreMatches(true, R0, MAIN, Int.MIN_VALUE..0, Execute.Run(continuation))
-            }
-          }
+          // if not yet matched, set R0 to 1
+          +Execute.ConditionalScoreMatches(true, R0, MAIN, until(0), Execute.Run(SetScore(R0, MAIN, 1)))
+          // if the pattern does not match, set R0 to 0, otherwise R0 remains 1
+          matchPattern(binder, scrutinee)
+          // if R0 is 1, drop the scrutinee and run the branch, setting R0 to 2
+          +Execute.ConditionalScoreMatches(true, R0, MAIN, exact(1), Execute.Run(RunFunction(packDefinitionLocation(name))))
         }
-        push(term.repr, null)
 
+        // account for the result of the branch
+        push(term.repr, null)
+        // drop the scrutinee under the result
         drop(term.scrutinee.repr, listOf(term.repr))
       }
 
@@ -324,6 +261,50 @@ class Pack private constructor(
         +RunFunction(packDefinitionLocation(term.name))
         push(term.repr, null)
       }
+    }
+  }
+
+  private fun matchPattern(
+    pattern: L.Pattern,
+    scrutinee: PersistentList<NbtNode>,
+  ) {
+    when (pattern) {
+      is L.Pattern.BoolOf   -> {
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
+        +Execute.ConditionalScoreMatches(
+          true, R1, MAIN, if (pattern.value) until(0) else from(1),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.I32Of    -> {
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
+        +Execute.ConditionalScoreMatches(
+          false, R1, MAIN, exact(pattern.value),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.VecOf    -> {
+        if (pattern.elements.isNotEmpty()) {
+          +Execute.CheckMatchingData(
+            false, DataAccessor(MCX, scrutinee(pattern.elements.lastIndex)),
+            Execute.Run(SetScore(R0, MAIN, 0))
+          )
+        }
+        +Execute.CheckMatchingData(
+          true, DataAccessor(MCX, scrutinee(pattern.elements.size)),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+        pattern.elements.forEachIndexed { index, element ->
+          matchPattern(element, scrutinee(index))
+        }
+      }
+      is L.Pattern.StructOf -> {
+        pattern.elements.forEach { (key, element) ->
+          matchPattern(element, scrutinee(key))
+        }
+      }
+      is L.Pattern.Var      -> {}
+      is L.Pattern.Drop     -> {}
     }
   }
 
@@ -464,6 +445,18 @@ class Pack private constructor(
           else                               -> ".${it.toUByte().toString(Character.MAX_RADIX)}"
         }
       }
+    }
+
+    private inline fun exact(value: Int): IntRange {
+      return value..value
+    }
+
+    private inline fun from(startInclusive: Int): IntRange {
+      return startInclusive..Int.MAX_VALUE
+    }
+
+    private inline fun until(endInclusive: Int): IntRange {
+      return Int.MIN_VALUE..endInclusive
     }
 
     private inline operator fun PersistentList<NbtNode>.invoke(pattern: CompoundTag): PersistentList<NbtNode> {

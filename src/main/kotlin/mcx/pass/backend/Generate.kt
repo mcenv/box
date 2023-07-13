@@ -155,8 +155,10 @@ class Generate private constructor(
         generateScoreHolder(execute.source)
         space()
         generateObjective(execute.sourceObjective)
-        space()
-        generateCommandExecute(execute.redirect)
+        execute.redirect?.let {
+          space()
+          generateCommandExecute(it)
+        }
       }
       is P.Command.Execute.ConditionalScoreMatches -> {
         append(if (execute.conditional) "if score " else "unless score ")
@@ -165,12 +167,18 @@ class Generate private constructor(
         generateObjective(execute.targetObjective)
         append(" matches ")
         generateIntRange(execute.range)
-        space()
-        generateCommandExecute(execute.redirect)
+        execute.redirect?.let {
+          space()
+          generateCommandExecute(it)
+        }
       }
       is P.Command.Execute.CheckMatchingData       -> {
         append(if (execute.conditional) "if data " else "unless data ")
         generateDataAccessor(execute.source)
+        execute.redirect?.let {
+          space()
+          generateCommandExecute(it)
+        }
       }
     }
   }
