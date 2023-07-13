@@ -117,64 +117,84 @@ class Resolve private constructor(
         R.Term.Tag(term.range)
       }
 
-      is S.Term.TagOf      -> {
+      is S.Term.TagOf     -> {
         R.Term.TagOf(term.repr, range)
       }
 
-      is S.Term.Type       -> {
+      is S.Term.Type      -> {
         val tag = resolveTerm(term.element)
         R.Term.Type(tag, range)
       }
 
-      is S.Term.Bool       -> {
+      is S.Term.Bool      -> {
         R.Term.Bool(range)
       }
 
-      is S.Term.BoolOf     -> {
+      is S.Term.BoolOf    -> {
         R.Term.BoolOf(term.value, range)
       }
 
-      is S.Term.I8         -> {
+      is S.Term.I8        -> {
         R.Term.I8(range)
       }
 
-      is S.Term.I16        -> {
+      is S.Term.I8Of      -> {
+        R.Term.I8Of(term.value, range)
+      }
+
+      is S.Term.I16       -> {
         R.Term.I16(range)
       }
 
-      is S.Term.I32        -> {
+      is S.Term.I16Of     -> {
+        R.Term.I16Of(term.value, range)
+      }
+
+      is S.Term.I32       -> {
         R.Term.I32(range)
       }
 
-      is S.Term.I64        -> {
+      is S.Term.I32Of     -> {
+        R.Term.I32Of(term.value, range)
+      }
+
+      is S.Term.I64       -> {
         R.Term.I64(range)
       }
 
-      is S.Term.F32        -> {
+      is S.Term.I64Of     -> {
+        R.Term.I64Of(term.value, range)
+      }
+
+      is S.Term.F32       -> {
         R.Term.F32(range)
       }
 
-      is S.Term.F64        -> {
+      is S.Term.F32Of     -> {
+        R.Term.F32Of(term.value, range)
+      }
+
+      is S.Term.F64       -> {
         R.Term.F64(range)
       }
 
-      is S.Term.NumOf      -> {
-        R.Term.NumOf(term.inferred, term.value, range)
+      is S.Term.F64Of     -> {
+        R.Term.F64Of(term.value, range)
       }
 
-      is S.Term.Wtf16      -> {
+      is S.Term.Wtf16     -> {
         R.Term.Wtf16(range)
       }
 
-      is S.Term.Wtf16Of    -> {
+      is S.Term.Wtf16Of   -> {
         R.Term.Wtf16Of(term.value, range)
       }
 
-      is S.Term.I8Array    -> {
+      is S.Term.I8Array   -> {
         R.Term.I8Array(range)
       }
 
-      is S.Term.I8ArrayOf  -> {
+      is S.Term.I8ArrayOf -> {
         val elements = term.elements.map { resolveTerm(it) }
         R.Term.I8ArrayOf(elements, range)
       }
@@ -340,8 +360,8 @@ class Resolve private constructor(
         R.Pattern.BoolOf(pattern.value, range)
       }
 
-      is S.Term.NumOf    -> {
-        R.Pattern.I32Of(pattern.value.toInt() /* TODO */, range)
+      is S.Term.I32Of    -> {
+        R.Pattern.I32Of(pattern.value, range)
       }
 
       is S.Term.VecOf    -> {

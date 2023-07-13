@@ -331,16 +331,16 @@ class Parse private constructor(
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
-              ""             -> null
-              "tag"          -> S.Term.Tag(until())
-              "type"         -> {
+              ""          -> null
+              "tag"       -> S.Term.Tag(until())
+              "type"      -> {
                 skipTrivia()
                 val tag = parseTerm0()
                 S.Term.Type(tag, until())
               }
-              "bool"         -> S.Term.Bool(until())
-              "false"        -> S.Term.BoolOf(false, until())
-              "true"         -> S.Term.BoolOf(true, until())
+              "bool"      -> S.Term.Bool(until())
+              "false"     -> S.Term.BoolOf(false, until())
+              "true"      -> S.Term.BoolOf(true, until())
               "i8"        -> S.Term.I8(until())
               "i16"       -> S.Term.I16(until())
               "i32"       -> S.Term.I32(until())
@@ -367,12 +367,12 @@ class Parse private constructor(
                 }
                 S.Term.Struct(elements, until())
               }
-              "point"        -> {
+              "point"     -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Point(element, until())
               }
-              "union"        -> {
+              "union"     -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())
@@ -425,17 +425,17 @@ class Parse private constructor(
                 }
                 S.Term.If(scrutinee, branches, until())
               }
-              else           -> {
+              else        -> {
                 val name = word.value
                 when {
-                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.NumOf(false, it, until()) }
-                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.NumOf(false, it, until()) }
-                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.NumOf(false, it, until()) }
-                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.NumOf(false, it, until()) }
-                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.NumOf(false, it, until()) }
-                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.NumOf(false, it, until()) }
-                  else                 -> name.toLongOrNull()?.let { S.Term.NumOf(true, it, until()) }
-                                          ?: name.toDoubleOrNull()?.let { S.Term.NumOf(true, it, until()) }
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.I16Of(it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.I32Of(it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.I64Of(it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.F32Of(it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.F64Of(it, until()) }
+                  else                 -> name.toIntOrNull()?.let { S.Term.I32Of(it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.F64Of(it, until()) }
                 } ?: S.Term.Var(name, until())
               }
             }
