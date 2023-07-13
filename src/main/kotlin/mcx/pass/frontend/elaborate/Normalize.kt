@@ -229,7 +229,7 @@ fun Env.evalTerm(term: Term): Value {
       (this + init).evalTerm(term.body)
     }
 
-    is Term.If -> {
+    is Term.If      -> {
       val scrutinee = lazy { evalTerm(term.scrutinee) }
       var matchedIndex = -1
       val branches = term.branches.mapIndexed { index, (pattern, body) ->
@@ -269,11 +269,11 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Var   -> {
+    is Term.Var     -> {
       this[term.idx.toLvl(next()).value].value
     }
 
-    is Term.Def   -> {
+    is Term.Def     -> {
       if (Modifier.BUILTIN in term.def.modifiers) {
         // Builtin definitions have compiler-defined semantics and need to be handled specially.
         val type = lazy { evalTerm(term.type) }
@@ -282,12 +282,12 @@ fun Env.evalTerm(term: Term): Value {
         evalTerm(term.def.body!!)
       }
     }
-    is Term.Meta  -> {
+    is Term.Meta    -> {
       val type = lazy { evalTerm(term.type) }
       Value.Meta(term.index, term.source, type)
     }
 
-    is Term.Hole  -> {
+    is Term.Hole    -> {
       Value.Hole
     }
   }
@@ -488,7 +488,7 @@ fun Lvl.quoteValue(value: Value): Term {
       error("Unexpected value: $value")
     }
 
-    is Value.If -> {
+    is Value.If      -> {
       val scrutinee = quoteValue(value.scrutinee.value)
       val branches = value.branches.map { (pattern, body) ->
         val body = (this + 1).quoteValue(body.value)
@@ -546,21 +546,63 @@ fun Closure.open(
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {
   return when (this) {
-    is Pattern.BoolOf -> {
+    is Pattern.BoolOf   -> {
       when (val value = value.value) {
         is Value.BoolOf -> value.value == this.value
         else            -> false
       }
     }
 
-    is Pattern.I32Of  -> {
+    is Pattern.I8Of     -> {
+      when (val value = value.value) {
+        is Value.I8Of -> value.value == this.value
+        else          -> false
+      }
+    }
+
+    is Pattern.I16Of    -> {
+      when (val value = value.value) {
+        is Value.I16Of -> value.value == this.value
+        else           -> false
+      }
+    }
+
+    is Pattern.I32Of    -> {
       when (val value = value.value) {
         is Value.I32Of -> value.value == this.value
         else           -> false
       }
     }
 
-    is Pattern.VecOf  -> {
+    is Pattern.I64Of    -> {
+      when (val value = value.value) {
+        is Value.I64Of -> value.value == this.value
+        else           -> false
+      }
+    }
+
+    is Pattern.F32Of    -> {
+      when (val value = value.value) {
+        is Value.F32Of -> value.value == this.value // NaN?
+        else           -> false
+      }
+    }
+
+    is Pattern.F64Of    -> {
+      when (val value = value.value) {
+        is Value.F64Of -> value.value == this.value // NaN?
+        else           -> false
+      }
+    }
+
+    is Pattern.Wtf16Of  -> {
+      when (val value = value.value) {
+        is Value.Wtf16Of -> value.value == this.value
+        else             -> false
+      }
+    }
+
+    is Pattern.VecOf    -> {
       when (val value = value.value) {
         is Value.VecOf -> {
           elements.size == value.elements.size &&

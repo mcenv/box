@@ -164,10 +164,46 @@ object Lifted {
       override val repr: Repr get() = Repr.BYTE
     }
 
+    data class I8Of(
+      val value: Byte,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.BYTE
+    }
+
+    data class I16Of(
+      val value: Short,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.SHORT
+    }
+
     data class I32Of(
       val value: Int,
     ) : Pattern() {
       override val repr: Repr get() = Repr.INT
+    }
+
+    data class I64Of(
+      val value: Long,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.LONG
+    }
+
+    data class F32Of(
+      val value: Float,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.FLOAT
+    }
+
+    data class F64Of(
+      val value: Double,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.DOUBLE
+    }
+
+    data class Wtf16Of(
+      val value: String,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.STRING
     }
 
     data class VecOf(

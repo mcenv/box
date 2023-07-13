@@ -297,8 +297,32 @@ class Lift private constructor(
         L.Pattern.BoolOf(pattern.value)
       }
 
+      is C.Pattern.I8Of     -> {
+        L.Pattern.I8Of(pattern.value)
+      }
+
+      is C.Pattern.I16Of    -> {
+        L.Pattern.I16Of(pattern.value)
+      }
+
       is C.Pattern.I32Of    -> {
         L.Pattern.I32Of(pattern.value)
+      }
+
+      is C.Pattern.I64Of    -> {
+        L.Pattern.I64Of(pattern.value)
+      }
+
+      is C.Pattern.F32Of    -> {
+        L.Pattern.F32Of(pattern.value)
+      }
+
+      is C.Pattern.F64Of    -> {
+        L.Pattern.F64Of(pattern.value)
+      }
+
+      is C.Pattern.Wtf16Of  -> {
+        L.Pattern.Wtf16Of(pattern.value)
       }
 
       is C.Pattern.VecOf    -> {
@@ -388,7 +412,13 @@ class Lift private constructor(
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
       is C.Pattern.BoolOf   -> emptySet()
+      is C.Pattern.I8Of     -> emptySet()
+      is C.Pattern.I16Of    -> emptySet()
       is C.Pattern.I32Of    -> emptySet()
+      is C.Pattern.I64Of    -> emptySet()
+      is C.Pattern.F32Of    -> emptySet()
+      is C.Pattern.F64Of    -> emptySet()
+      is C.Pattern.Wtf16Of  -> emptySet()
       is C.Pattern.VecOf    -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.Var      -> setOf(pattern.name)

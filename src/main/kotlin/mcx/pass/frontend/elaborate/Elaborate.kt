@@ -583,8 +583,32 @@ class Elaborate private constructor(
           C.Pattern.BoolOf(pattern.value) to Value.Bool
         }
 
+        pattern is R.Pattern.I8Of && synth(type)                   -> {
+          C.Pattern.I8Of(pattern.value) to Value.I8
+        }
+
+        pattern is R.Pattern.I16Of && synth(type)                  -> {
+          C.Pattern.I16Of(pattern.value) to Value.I16
+        }
+
         pattern is R.Pattern.I32Of && synth(type)                  -> {
           C.Pattern.I32Of(pattern.value) to Value.I32
+        }
+
+        pattern is R.Pattern.I64Of && synth(type)                  -> {
+          C.Pattern.I64Of(pattern.value) to Value.I64
+        }
+
+        pattern is R.Pattern.F32Of && synth(type)                  -> {
+          C.Pattern.F32Of(pattern.value) to Value.F32
+        }
+
+        pattern is R.Pattern.F64Of && synth(type)                  -> {
+          C.Pattern.F64Of(pattern.value) to Value.F64
+        }
+
+        pattern is R.Pattern.Wtf16Of && synth(type)                -> {
+          C.Pattern.Wtf16Of(pattern.value) to Value.Wtf16
         }
 
         pattern is R.Pattern.VecOf && match<Value.Vec>(type)       -> {

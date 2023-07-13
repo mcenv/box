@@ -284,10 +284,52 @@ class Pack private constructor(
           Execute.Run(SetScore(R0, MAIN, 0))
         )
       }
+      is L.Pattern.I8Of     -> {
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
+        +Execute.ConditionalScoreMatches(
+          false, R1, MAIN, exact(pattern.value.toInt()),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.I16Of    -> {
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
+        +Execute.ConditionalScoreMatches(
+          false, R1, MAIN, exact(pattern.value.toInt()),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
       is L.Pattern.I32Of    -> {
         +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
         +Execute.ConditionalScoreMatches(
           false, R1, MAIN, exact(pattern.value),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.I64Of    -> {
+        +ManipulateData(REGISTER, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, scrutinee))))
+        +Execute.CheckMatchingData(
+          false, DataAccessor(MCX, listOf(MatchRootObject(buildCompoundTag { put(REGISTER_PATH, LongTag(pattern.value)) }))),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.F32Of    -> {
+        +ManipulateData(REGISTER, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, scrutinee))))
+        +Execute.CheckMatchingData(
+          false, DataAccessor(MCX, listOf(MatchRootObject(buildCompoundTag { put(REGISTER_PATH, FloatTag(pattern.value)) }))),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.F64Of    -> {
+        +ManipulateData(REGISTER, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, scrutinee))))
+        +Execute.CheckMatchingData(
+          false, DataAccessor(MCX, listOf(MatchRootObject(buildCompoundTag { put(REGISTER_PATH, DoubleTag(pattern.value)) }))),
+          Execute.Run(SetScore(R0, MAIN, 0))
+        )
+      }
+      is L.Pattern.Wtf16Of  -> {
+        +ManipulateData(REGISTER, DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, scrutinee))))
+        +Execute.CheckMatchingData(
+          false, DataAccessor(MCX, listOf(MatchRootObject(buildCompoundTag { put(REGISTER_PATH, StringTag(pattern.value)) }))),
           Execute.Run(SetScore(R0, MAIN, 0))
         )
       }
@@ -316,22 +358,27 @@ class Pack private constructor(
     }
   }
 
-  // ?
   private fun packPattern(
     pattern: L.Pattern,
   ) {
     when (pattern) {
       is L.Pattern.BoolOf   -> {}
+      is L.Pattern.I8Of     -> {}
+      is L.Pattern.I16Of    -> {}
       is L.Pattern.I32Of    -> {}
+      is L.Pattern.I64Of    -> {}
+      is L.Pattern.F32Of    -> {}
+      is L.Pattern.F64Of    -> {}
+      is L.Pattern.Wtf16Of  -> {}
       is L.Pattern.VecOf    -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(-1)(index))))
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(-1)(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name))))
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // ?
           packPattern(element)
         }
       }
@@ -346,7 +393,13 @@ class Pack private constructor(
   ) {
     when (pattern) {
       is L.Pattern.BoolOf   -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I8Of     -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I16Of    -> drop(Repr.SHORT, keeps)
       is L.Pattern.I32Of    -> drop(Repr.INT, keeps)
+      is L.Pattern.I64Of    -> drop(Repr.LONG, keeps)
+      is L.Pattern.F32Of    -> drop(Repr.FLOAT, keeps)
+      is L.Pattern.F64Of    -> drop(Repr.DOUBLE, keeps)
+      is L.Pattern.Wtf16Of  -> drop(Repr.STRING, keeps)
       is L.Pattern.VecOf    -> {
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
         drop(Repr.LIST, keeps)
@@ -437,6 +490,9 @@ class Pack private constructor(
     private val MCX: ResourceLocation = ResourceLocation("mcx", "")
     private val MCX_DATA: ResourceLocation = ResourceLocation("mcx_data", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
+
+    private const val REGISTER_PATH: String = "register"
+    private val REGISTER: DataAccessor = DataAccessor(MCX, nbtPath(REGISTER_PATH))
 
     private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.BYTE.id)(-1))
     private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.INT.id)(-1))

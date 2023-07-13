@@ -1,3 +1,43 @@
+test def bool_of := if true [
+  true -> true,
+  _    -> false,
+];
+
+test def i8_of := if 1i8 [
+  1i8 -> true,
+  _   -> false,
+];
+
+test def i16_of := if 1i16 [
+  1i16 -> true,
+  _   -> false,
+];
+
+test def i32_of := if 1i32 [
+  1i32 -> true,
+  _    -> false,
+];
+
+test def i64_of := if 1i64 [
+  1i64 -> true,
+  _    -> false,
+];
+
+test def f32_of := if 1f32 [
+  1f32 -> true,
+  _    -> false,
+];
+
+test def f64_of := if 1f64 [
+  1f64 -> true,
+  _    -> false,
+];
+
+test def wtf16_of := if "" [
+  "" -> true,
+  _  -> false,
+];
+
 test def if_var := if true [
   x -> x,
 ];

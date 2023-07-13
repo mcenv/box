@@ -278,8 +278,38 @@ object Resolved {
       override val range: Range,
     ) : Pattern()
 
+    data class I8Of(
+      val value: Byte,
+      override val range: Range,
+    ) : Pattern()
+
+    data class I16Of(
+      val value: Short,
+      override val range: Range,
+    ) : Pattern()
+
     data class I32Of(
       val value: Int,
+      override val range: Range,
+    ) : Pattern()
+
+    data class I64Of(
+      val value: Long,
+      override val range: Range,
+    ) : Pattern()
+
+    data class F32Of(
+      val value: Float,
+      override val range: Range,
+    ) : Pattern()
+
+    data class F64Of(
+      val value: Double,
+      override val range: Range,
+    ) : Pattern()
+
+    data class Wtf16Of(
+      val value: String,
       override val range: Range,
     ) : Pattern()
 

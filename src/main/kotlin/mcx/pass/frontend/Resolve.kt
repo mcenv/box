@@ -302,7 +302,7 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.If -> {
+      is S.Term.If        -> {
         val scrutinee = resolveTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           restoring(0) {
@@ -360,8 +360,32 @@ class Resolve private constructor(
         R.Pattern.BoolOf(pattern.value, range)
       }
 
+      is S.Term.I8Of     -> {
+        R.Pattern.I8Of(pattern.value, range)
+      }
+
+      is S.Term.I16Of    -> {
+        R.Pattern.I16Of(pattern.value, range)
+      }
+
       is S.Term.I32Of    -> {
         R.Pattern.I32Of(pattern.value, range)
+      }
+
+      is S.Term.I64Of    -> {
+        R.Pattern.I64Of(pattern.value, range)
+      }
+
+      is S.Term.F32Of    -> {
+        R.Pattern.F32Of(pattern.value, range)
+      }
+
+      is S.Term.F64Of    -> {
+        R.Pattern.F64Of(pattern.value, range)
+      }
+
+      is S.Term.Wtf16Of  -> {
+        R.Pattern.Wtf16Of(pattern.value, range)
       }
 
       is S.Term.VecOf    -> {

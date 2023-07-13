@@ -302,8 +302,32 @@ object Core {
       val value: Boolean,
     ) : Pattern()
 
+    data class I8Of(
+      val value: Byte,
+    ) : Pattern()
+
+    data class I16Of(
+      val value: Short,
+    ) : Pattern()
+
     data class I32Of(
       val value: Int,
+    ) : Pattern()
+
+    data class I64Of(
+      val value: Long,
+    ) : Pattern()
+
+    data class F32Of(
+      val value: Float,
+    ) : Pattern()
+
+    data class F64Of(
+      val value: Double,
+    ) : Pattern()
+
+    data class Wtf16Of(
+      val value: String,
     ) : Pattern()
 
     data class VecOf(
