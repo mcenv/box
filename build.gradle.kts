@@ -44,7 +44,7 @@ kotlin {
   jvmToolchain(20)
 }
 
-tasks.withType<@Suppress("UnstableApiUsage") ProcessResources> {
+tasks.withType<ProcessResources> {
   filesMatching("version") {
     expand("version" to version)
   }
