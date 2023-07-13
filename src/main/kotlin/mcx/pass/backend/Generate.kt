@@ -361,16 +361,16 @@ class Generate private constructor(
       }
       is FloatTag     -> {
         when (tag.value) {
-          Float.POSITIVE_INFINITY -> append("4e38")
-          Float.NEGATIVE_INFINITY -> append("-4e38")
+          Float.POSITIVE_INFINITY -> append(INFINITY_F)
+          Float.NEGATIVE_INFINITY -> append("-$INFINITY_F")
           else                    -> append(tag.value.toString())
         }
         append('f')
       }
       is DoubleTag    -> {
         when (tag.value) {
-          Double.POSITIVE_INFINITY -> append("2e308")
-          Double.NEGATIVE_INFINITY -> append("-2e308")
+          Double.POSITIVE_INFINITY -> append(INFINITY_D)
+          Double.NEGATIVE_INFINITY -> append("-$INFINITY_D")
           else                     -> append(tag.value.toString())
         }
       }
@@ -466,6 +466,16 @@ class Generate private constructor(
   }
 
   companion object {
+    /**
+     * 40 > [jdk.internal.math.FloatingDecimal.SINGLE_MAX_DECIMAL_EXPONENT] + 1
+     */
+    private const val INFINITY_F = "1e40f"
+
+    /**
+     * 310 > [jdk.internal.math.FloatingDecimal.MAX_DECIMAL_EXPONENT] + 1
+     */
+    private const val INFINITY_D = "1e310"
+
     private fun Char.isAllowedInUnquotedString(): Boolean {
       return when (this) {
         in '0'..'9', in 'A'..'Z', in 'a'..'z', '_', '-', '.', '+' -> true
