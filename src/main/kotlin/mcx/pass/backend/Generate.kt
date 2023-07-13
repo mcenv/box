@@ -363,15 +363,20 @@ class Generate private constructor(
         when (tag.value) {
           Float.POSITIVE_INFINITY -> append(INFINITY_F)
           Float.NEGATIVE_INFINITY -> append("-$INFINITY_F")
-          else                    -> append(tag.value.toString())
+          else                    -> {
+            append(tag.value.toString())
+            append('f')
+          }
         }
-        append('f')
       }
       is DoubleTag    -> {
         when (tag.value) {
           Double.POSITIVE_INFINITY -> append(INFINITY_D)
           Double.NEGATIVE_INFINITY -> append("-$INFINITY_D")
-          else                     -> append(tag.value.toString())
+          else                     -> {
+            append(tag.value.toString())
+            append('d')
+          }
         }
       }
       is ByteArrayTag -> {
