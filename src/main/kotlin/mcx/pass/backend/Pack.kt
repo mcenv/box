@@ -50,8 +50,14 @@ class Pack private constructor(
           +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(byteStack)))
           +RemoveData(byteStack)
         } else {
+          definition.context.forEach {
+            !{ Raw("# context $it") }
+            push(it.repr, null)
+            packPattern(it)
+          }
+
           definition.params.forEach {
-            !{ Raw("# param $it") }
+            !{ Raw("# params $it") }
             push(it.repr, null)
             packPattern(it)
           }
@@ -59,9 +65,8 @@ class Pack private constructor(
           val body = definition.body!!
           packTerm(body)
 
-          val drop = L.Modifier.NO_DROP !in definition.modifiers
-          if (drop) {
-            definition.params.forEach { dropPattern(it, listOf(body.repr)) }
+          definition.params.forEach {
+            dropPattern(it, listOf(body.repr))
           }
 
           if (definition.restore != null) {
@@ -74,7 +79,7 @@ class Pack private constructor(
             stacks.forEach { stack ->
               !{ Raw("# ${stack.key.toString().padEnd(10)}: ${stack.value.joinToString(", ", "[", "]")}") }
             }
-            val remaining = if (drop) listOf(body.repr) else definition.params.map { it.repr } + body.repr
+            val remaining = listOf(body.repr)
             remaining.forEach {
               drop(it, relevant = false)
             }
@@ -90,7 +95,6 @@ class Pack private constructor(
     modifier: L.Modifier,
   ): P.Modifier? {
     return when (modifier) {
-      L.Modifier.NO_DROP -> null
       L.Modifier.BUILTIN -> null
       L.Modifier.TEST    -> P.Modifier.TEST
       L.Modifier.TOP     -> null
@@ -250,10 +254,9 @@ class Pack private constructor(
           +Execute.ConditionalScoreMatches(true, R0, MAIN, exact(1), Execute.Run(RunFunction(packDefinitionLocation(name))))
         }
 
-        // account for the result of the branch
+        // adjust stacks
+        drop(term.scrutinee.repr, relevant = false)
         push(term.repr, null)
-        // drop the scrutinee under the result
-        drop(term.scrutinee.repr, listOf(term.repr))
       }
 
       is L.Term.Var     -> {
@@ -313,6 +316,7 @@ class Pack private constructor(
     }
   }
 
+  // ?
   private fun packPattern(
     pattern: L.Pattern,
   ) {
@@ -395,7 +399,11 @@ class Pack private constructor(
     repr: Repr,
   ): Int {
     val stack = getStack(repr)
-    return stack.indexOfLast { it == name }.also { require(it != -1) } - stack.size
+    return stack.indexOfLast { it == name }.also {
+      require(it != -1) {
+        "${definition.name}: variable '$name' not found in stack ${stack.joinToString(", ", "[", "]") { name -> name ?: "_" }}"
+      }
+    } - stack.size
   }
 
   private fun getStack(

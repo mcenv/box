@@ -24,7 +24,7 @@ class Lift private constructor(
     liftedDefinitions += when (definition) {
       is C.Definition.Def -> {
         val body = definition.body?.let { emptyCtx().liftTerm(it) }
-        L.Definition.Function(modifiers + L.Modifier.TOP, definition.name, emptyList(), body, null)
+        L.Definition.Function(modifiers + L.Modifier.TOP, definition.name, emptyList(), emptyList(), body, null)
       }
     }
     return Result(liftedDefinitions, dispatchedProcs, dispatchedFuncs)
@@ -190,7 +190,7 @@ class Lift private constructor(
             }
             val result = liftTerm(term.result)
             val tag = context.freshFuncId()
-            registerFreshFunction(emptyList(), id, binders + capture, result, tag).also {
+            registerFreshFunction(id, emptyList(), binders + capture, result, tag).also {
               dispatchedFuncs += it
             }
             val entries = freeVars.map { (name, type) -> L.Term.FuncOf.Entry(name, type) }
@@ -201,7 +201,7 @@ class Lift private constructor(
             }
             val result = liftTerm(term.result)
             val tag = context.freshProcId()
-            val function = registerFreshFunction(emptyList(), id, binders, result, tag).also {
+            val function = registerFreshFunction(id, emptyList(), binders, result, tag).also {
               dispatchedProcs += it
             }
             L.Term.ProcOf(function)
@@ -246,18 +246,16 @@ class Lift private constructor(
       is C.Term.If         -> {
         val scrutinee = liftTerm(term.scrutinee)
         val branches = term.branches.map { (binder, body) ->
-          restoring {
-            val binder = liftPattern(binder, term.scrutinee.type)
-            val body = liftTerm(body)
-            val function = registerFreshFunction(
-              listOf(L.Modifier.NO_DROP),
-              freshFunctionId++,
-              reprs.map { (name, type) -> L.Pattern.Var(name, type) } + binder,
-              body,
-              2, // the terminal state of this pattern matching state machine
-            )
-            binder to function.name
-          }
+          val binder = restoring { liftPattern(binder, term.scrutinee.type) }
+          val body = liftTerm(body)
+          val function = registerFreshFunction(
+            freshFunctionId++,
+            reprs.map { (name, type) -> L.Pattern.Var(name, type) },
+            listOf(binder),
+            body,
+            2, // the terminal state of this pattern matching state machine
+          )
+          binder to function.name
         }
         val repr = eraseToRepr(term.type)
         L.Term.If(scrutinee, branches, repr)
@@ -404,15 +402,16 @@ class Lift private constructor(
   }
 
   private fun registerFreshFunction(
-    modifiers: List<L.Modifier>,
     id: Int,
+    context: List<L.Pattern>,
     params: List<L.Pattern>,
     body: L.Term,
     restore: Int?,
   ): L.Definition.Function {
     return L.Definition.Function(
-      this.modifiers + modifiers,
+      modifiers,
       definition.name.module / "${definition.name.name}:${id}",
+      context,
       params,
       body,
       restore,

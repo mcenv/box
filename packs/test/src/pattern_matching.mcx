@@ -54,3 +54,10 @@ test def if_struct_of_nested := if {a: {b: true}} [
   {a: {b: b}} -> b,
   _           -> false,
 ];
+
+test def let_if :=
+  let x := true;
+  if {a: false} [
+    {a: a} -> x,
+    _      -> false
+  ];

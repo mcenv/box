@@ -11,6 +11,7 @@ object Lifted {
     data class Function(
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
+      val context: List<Pattern>,
       val params: List<Pattern>,
       val body: Term?,
       val restore: Int?,
@@ -18,7 +19,6 @@ object Lifted {
   }
 
   enum class Modifier {
-    NO_DROP,
     BUILTIN,
     TEST,
     TOP,
