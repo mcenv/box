@@ -21,6 +21,7 @@ object Lifted {
     NO_DROP,
     BUILTIN,
     TEST,
+    TOP,
   }
 
   sealed class Term {

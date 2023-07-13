@@ -14,17 +14,17 @@ class Lift private constructor(
   private val context: Context,
   private val definition: C.Definition,
 ) {
+  private val modifiers: List<L.Modifier> = definition.modifiers.mapNotNull { liftModifier(it) }
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
   private val dispatchedProcs: MutableList<L.Definition.Function> = mutableListOf()
   private val dispatchedFuncs: MutableList<L.Definition.Function> = mutableListOf()
   private var freshFunctionId: Int = 0
 
   private fun lift(): Result {
-    val modifiers = definition.modifiers.mapNotNull { liftModifier(it) }
     liftedDefinitions += when (definition) {
       is C.Definition.Def -> {
         val body = definition.body?.let { emptyCtx().liftTerm(it) }
-        L.Definition.Function(modifiers, definition.name, emptyList(), body, null)
+        L.Definition.Function(modifiers + L.Modifier.TOP, definition.name, emptyList(), body, null)
       }
     }
     return Result(liftedDefinitions, dispatchedProcs, dispatchedFuncs)
@@ -411,7 +411,7 @@ class Lift private constructor(
     restore: Int?,
   ): L.Definition.Function {
     return L.Definition.Function(
-      modifiers,
+      this.modifiers + modifiers,
       definition.name.module / "${definition.name.name}:${id}",
       params,
       body,

@@ -40,7 +40,10 @@ class Pack private constructor(
       is L.Definition.Function -> {
         !{ Raw("# function ${definition.name}\n") }
 
-        if (L.Modifier.TEST in definition.modifiers) {
+        if (
+          L.Modifier.TOP in definition.modifiers &&
+          L.Modifier.TEST in definition.modifiers
+        ) {
           packTerm(definition.body!!)
           +RemoveData(TEST_CELL)
           +ManipulateData(TEST_CELL, DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
@@ -89,6 +92,7 @@ class Pack private constructor(
       L.Modifier.NO_DROP -> null
       L.Modifier.BUILTIN -> null
       L.Modifier.TEST    -> P.Modifier.TEST
+      L.Modifier.TOP     -> null
     }
   }
 
