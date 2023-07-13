@@ -263,6 +263,7 @@ class Lift private constructor(
 
       is C.Term.Project    -> {
         val target = term.target as C.Term.Var
+        val projs = term.projs // TODO: use this
         val repr = eraseToRepr(term.type)
         L.Term.Var(target.name, repr)
       }
@@ -301,31 +302,52 @@ class Lift private constructor(
         L.Pattern.I8Of(pattern.value)
       }
 
-      is C.Pattern.I16Of    -> {
+      is C.Pattern.I16Of      -> {
         L.Pattern.I16Of(pattern.value)
       }
 
-      is C.Pattern.I32Of    -> {
+      is C.Pattern.I32Of      -> {
         L.Pattern.I32Of(pattern.value)
       }
 
-      is C.Pattern.I64Of    -> {
+      is C.Pattern.I64Of      -> {
         L.Pattern.I64Of(pattern.value)
       }
 
-      is C.Pattern.F32Of    -> {
+      is C.Pattern.F32Of      -> {
         L.Pattern.F32Of(pattern.value)
       }
 
-      is C.Pattern.F64Of    -> {
+      is C.Pattern.F64Of      -> {
         L.Pattern.F64Of(pattern.value)
       }
 
-      is C.Pattern.Wtf16Of  -> {
+      is C.Pattern.Wtf16Of    -> {
         L.Pattern.Wtf16Of(pattern.value)
       }
 
-      is C.Pattern.VecOf    -> {
+      is C.Pattern.I8ArrayOf  -> {
+        val elements = pattern.elements.map { element ->
+          liftPattern(element, C.Term.I8)
+        }
+        L.Pattern.I8ArrayOf(elements)
+      }
+
+      is C.Pattern.I32ArrayOf -> {
+        val elements = pattern.elements.map { element ->
+          liftPattern(element, C.Term.I32)
+        }
+        L.Pattern.I32ArrayOf(elements)
+      }
+
+      is C.Pattern.I64ArrayOf -> {
+        val elements = pattern.elements.map { element ->
+          liftPattern(element, C.Term.I64)
+        }
+        L.Pattern.I64ArrayOf(elements)
+      }
+
+      is C.Pattern.VecOf      -> {
         val type = type as C.Term.Vec
         val elementType = type.element
         val elements = pattern.elements.map { element ->
@@ -334,7 +356,7 @@ class Lift private constructor(
         L.Pattern.VecOf(elements)
       }
 
-      is C.Pattern.StructOf -> {
+      is C.Pattern.StructOf   -> {
         val type = type as C.Term.Struct
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (name, element) ->
           liftPattern(element, type.elements[name]!!)
@@ -342,7 +364,7 @@ class Lift private constructor(
         L.Pattern.StructOf(elements)
       }
 
-      is C.Pattern.Var      -> {
+      is C.Pattern.Var        -> {
         val repr = eraseToRepr(type)
         bind(pattern.name, repr)
         L.Pattern.Var(pattern.name, repr)
@@ -411,19 +433,22 @@ class Lift private constructor(
 
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
-      is C.Pattern.BoolOf   -> emptySet()
-      is C.Pattern.I8Of     -> emptySet()
-      is C.Pattern.I16Of    -> emptySet()
-      is C.Pattern.I32Of    -> emptySet()
-      is C.Pattern.I64Of    -> emptySet()
-      is C.Pattern.F32Of    -> emptySet()
-      is C.Pattern.F64Of    -> emptySet()
-      is C.Pattern.Wtf16Of  -> emptySet()
-      is C.Pattern.VecOf    -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
-      is C.Pattern.StructOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
-      is C.Pattern.Var      -> setOf(pattern.name)
-      is C.Pattern.Drop     -> emptySet()
-      is C.Pattern.Hole     -> unexpectedPattern(pattern)
+      is C.Pattern.BoolOf     -> emptySet()
+      is C.Pattern.I8Of       -> emptySet()
+      is C.Pattern.I16Of      -> emptySet()
+      is C.Pattern.I32Of      -> emptySet()
+      is C.Pattern.I64Of      -> emptySet()
+      is C.Pattern.F32Of      -> emptySet()
+      is C.Pattern.F64Of      -> emptySet()
+      is C.Pattern.Wtf16Of    -> emptySet()
+      is C.Pattern.I8ArrayOf  -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.I32ArrayOf -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.I64ArrayOf -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.VecOf      -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.StructOf   -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.Var        -> setOf(pattern.name)
+      is C.Pattern.Drop       -> emptySet()
+      is C.Pattern.Hole       -> unexpectedPattern(pattern)
     }
   }
 

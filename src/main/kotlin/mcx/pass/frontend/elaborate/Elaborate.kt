@@ -587,31 +587,58 @@ class Elaborate private constructor(
           C.Pattern.I8Of(pattern.value) to Value.I8
         }
 
-        pattern is R.Pattern.I16Of && synth(type)                  -> {
+        pattern is R.Pattern.I16Of && synth(type)                      -> {
           C.Pattern.I16Of(pattern.value) to Value.I16
         }
 
-        pattern is R.Pattern.I32Of && synth(type)                  -> {
+        pattern is R.Pattern.I32Of && synth(type)                      -> {
           C.Pattern.I32Of(pattern.value) to Value.I32
         }
 
-        pattern is R.Pattern.I64Of && synth(type)                  -> {
+        pattern is R.Pattern.I64Of && synth(type)                      -> {
           C.Pattern.I64Of(pattern.value) to Value.I64
         }
 
-        pattern is R.Pattern.F32Of && synth(type)                  -> {
+        pattern is R.Pattern.F32Of && synth(type)                      -> {
           C.Pattern.F32Of(pattern.value) to Value.F32
         }
 
-        pattern is R.Pattern.F64Of && synth(type)                  -> {
+        pattern is R.Pattern.F64Of && synth(type)                      -> {
           C.Pattern.F64Of(pattern.value) to Value.F64
         }
 
-        pattern is R.Pattern.Wtf16Of && synth(type)                -> {
+        pattern is R.Pattern.Wtf16Of && synth(type)                    -> {
           C.Pattern.Wtf16Of(pattern.value) to Value.Wtf16
         }
 
-        pattern is R.Pattern.VecOf && match<Value.Vec>(type)       -> {
+        pattern is R.Pattern.I8ArrayOf && match<Value.I8Array>(type)   -> {
+          val elements = pattern.elements.mapIndexed { index, element ->
+            val (element, _) = bind(element, phase, Value.I8, projs + Proj.I8ArrayOf(index))
+            element
+          }
+          val type = type ?: Value.I8Array
+          C.Pattern.I8ArrayOf(elements) to type
+        }
+
+        pattern is R.Pattern.I32ArrayOf && match<Value.I32Array>(type) -> {
+          val elements = pattern.elements.mapIndexed { index, element ->
+            val (element, _) = bind(element, phase, Value.I32, projs + Proj.I32ArrayOf(index))
+            element
+          }
+          val type = type ?: Value.I32Array
+          C.Pattern.I32ArrayOf(elements) to type
+        }
+
+        pattern is R.Pattern.I64ArrayOf && match<Value.I64Array>(type) -> {
+          val elements = pattern.elements.mapIndexed { index, element ->
+            val (element, _) = bind(element, phase, Value.I64, projs + Proj.I64ArrayOf(index))
+            element
+          }
+          val type = type ?: Value.I64Array
+          C.Pattern.I64ArrayOf(elements) to type
+        }
+
+        pattern is R.Pattern.VecOf && match<Value.Vec>(type)           -> {
           val elementType = type?.element?.value ?: meta.freshValue(pattern.range)
           val elements = pattern.elements.mapIndexed { index, element ->
             val (element, _) = bind(element, phase, elementType, projs + Proj.VecOf(index))
@@ -621,7 +648,7 @@ class Elaborate private constructor(
           C.Pattern.VecOf(elements) to type
         }
 
-        pattern is R.Pattern.StructOf && match<Value.Struct>(type) -> {
+        pattern is R.Pattern.StructOf && match<Value.Struct>(type)     -> {
           val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
             val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
             val (element, elementType) = bind(element, phase, type, projs + Proj.StructOf(name.value))

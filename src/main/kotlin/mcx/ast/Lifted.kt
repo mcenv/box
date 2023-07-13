@@ -206,6 +206,24 @@ object Lifted {
       override val repr: Repr get() = Repr.STRING
     }
 
+    data class I8ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.BYTE_ARRAY
+    }
+
+    data class I32ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.INT_ARRAY
+    }
+
+    data class I64ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern() {
+      override val repr: Repr get() = Repr.LONG_ARRAY
+    }
+
     data class VecOf(
       val elements: List<Pattern>,
     ) : Pattern() {

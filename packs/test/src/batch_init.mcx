@@ -7,15 +7,15 @@ def def_of_i32 : i32 := 1i32;
 def def_of_i64 : i64 := 1i64;
 
 test def i8_array_of :=
-  let _ := [i8; 0i8, 1i8, def_of_i8];
+  let [i8; a, b, c] := [i8; 0i8, 1i8, def_of_i8];
   true;
 
 test def i32_array_of :=
-  let _ := [i32; 0i32, 1i32, def_of_i32];
+  let [i32; a, b, c] := [i32; 0i32, 1i32, def_of_i32];
   true;
 
 test def i64_array_of :=
-  let _ := [i64; 0i64, 1i64, def_of_i64];
+  let [i64; a, b, c] := [i64; 0i64, 1i64, def_of_i64];
   true;
 
 # test def vec_of_nested :=

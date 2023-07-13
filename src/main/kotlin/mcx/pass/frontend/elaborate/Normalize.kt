@@ -574,35 +574,71 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
-    is Pattern.I64Of    -> {
+    is Pattern.I64Of      -> {
       when (val value = value.value) {
         is Value.I64Of -> value.value == this.value
         else           -> false
       }
     }
 
-    is Pattern.F32Of    -> {
+    is Pattern.F32Of      -> {
       when (val value = value.value) {
         is Value.F32Of -> value.value == this.value // NaN?
         else           -> false
       }
     }
 
-    is Pattern.F64Of    -> {
+    is Pattern.F64Of      -> {
       when (val value = value.value) {
         is Value.F64Of -> value.value == this.value // NaN?
         else           -> false
       }
     }
 
-    is Pattern.Wtf16Of  -> {
+    is Pattern.Wtf16Of    -> {
       when (val value = value.value) {
         is Value.Wtf16Of -> value.value == this.value
         else             -> false
       }
     }
 
-    is Pattern.VecOf    -> {
+    is Pattern.I8ArrayOf  -> {
+      when (val value = value.value) {
+        is Value.I8ArrayOf -> {
+          elements.size == value.elements.size &&
+          (elements zip value.elements).all { (pattern, value) ->
+            pattern matches value
+          }
+        }
+        else               -> false
+      }
+    }
+
+    is Pattern.I32ArrayOf -> {
+      when (val value = value.value) {
+        is Value.I32ArrayOf -> {
+          elements.size == value.elements.size &&
+          (elements zip value.elements).all { (pattern, value) ->
+            pattern matches value
+          }
+        }
+        else                -> false
+      }
+    }
+
+    is Pattern.I64ArrayOf -> {
+      when (val value = value.value) {
+        is Value.I64ArrayOf -> {
+          elements.size == value.elements.size &&
+          (elements zip value.elements).all { (pattern, value) ->
+            pattern matches value
+          }
+        }
+        else                -> false
+      }
+    }
+
+    is Pattern.VecOf      -> {
       when (val value = value.value) {
         is Value.VecOf -> {
           elements.size == value.elements.size &&
@@ -614,7 +650,7 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
-    is Pattern.StructOf -> {
+    is Pattern.StructOf   -> {
       when (val value = value.value) {
         is Value.StructOf -> {
           elements.all { (name, pattern) ->

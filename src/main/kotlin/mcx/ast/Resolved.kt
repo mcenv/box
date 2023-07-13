@@ -313,6 +313,21 @@ object Resolved {
       override val range: Range,
     ) : Pattern()
 
+    data class I8ArrayOf(
+      val elements: List<Pattern>,
+      override val range: Range,
+    ) : Pattern()
+
+    data class I32ArrayOf(
+      val elements: List<Pattern>,
+      override val range: Range,
+    ) : Pattern()
+
+    data class I64ArrayOf(
+      val elements: List<Pattern>,
+      override val range: Range,
+    ) : Pattern()
+
     data class VecOf(
       val elements: List<Pattern>,
       override val range: Range,

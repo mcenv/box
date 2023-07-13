@@ -330,6 +330,18 @@ object Core {
       val value: String,
     ) : Pattern()
 
+    data class I8ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern()
+
+    data class I32ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern()
+
+    data class I64ArrayOf(
+      val elements: List<Pattern>,
+    ) : Pattern()
+
     data class VecOf(
       val elements: List<Pattern>,
     ) : Pattern()

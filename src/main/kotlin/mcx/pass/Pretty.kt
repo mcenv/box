@@ -70,19 +70,22 @@ fun prettyPattern(
   pattern: Pattern,
 ): String {
   return when (pattern) {
-    is Pattern.BoolOf   -> pattern.value.toString()
-    is Pattern.I8Of     -> "${pattern.value}i8"
-    is Pattern.I16Of    -> "${pattern.value}i16"
-    is Pattern.I32Of    -> "${pattern.value}i32"
-    is Pattern.I64Of    -> "${pattern.value}i64"
-    is Pattern.F32Of    -> "${pattern.value}f32"
-    is Pattern.F64Of    -> "${pattern.value}f64"
-    is Pattern.Wtf16Of  -> pattern.value.quoted('"')
-    is Pattern.VecOf    -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
-    is Pattern.StructOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
-    is Pattern.Var      -> pattern.name
-    is Pattern.Drop     -> "_"
-    is Pattern.Hole     -> "??"
+    is Pattern.BoolOf     -> pattern.value.toString()
+    is Pattern.I8Of       -> "${pattern.value}i8"
+    is Pattern.I16Of      -> "${pattern.value}i16"
+    is Pattern.I32Of      -> "${pattern.value}i32"
+    is Pattern.I64Of      -> "${pattern.value}i64"
+    is Pattern.F32Of      -> "${pattern.value}f32"
+    is Pattern.F64Of      -> "${pattern.value}f64"
+    is Pattern.Wtf16Of    -> pattern.value.quoted('"')
+    is Pattern.I8ArrayOf  -> pattern.elements.joinToString(", ", "[i8; ", "]") { prettyPattern(it) }
+    is Pattern.I32ArrayOf -> pattern.elements.joinToString(", ", "[i32; ", "]") { prettyPattern(it) }
+    is Pattern.I64ArrayOf -> pattern.elements.joinToString(", ", "[i64; ", "]") { prettyPattern(it) }
+    is Pattern.VecOf      -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
+    is Pattern.StructOf   -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
+    is Pattern.Var        -> pattern.name
+    is Pattern.Drop       -> "_"
+    is Pattern.Hole       -> "??"
   }
 }
 
@@ -90,8 +93,11 @@ fun prettyProjection(
   proj: Proj,
 ): String {
   return when (proj) {
-    is Proj.VecOf    -> "[${proj.index}]"
-    is Proj.StructOf -> proj.name
+    is Proj.I8ArrayOf  -> "[${proj.index}]"
+    is Proj.I32ArrayOf -> "[${proj.index}]"
+    is Proj.I64ArrayOf -> "[${proj.index}]"
+    is Proj.VecOf      -> "[${proj.index}]"
+    is Proj.StructOf   -> proj.name
   }
 }
 

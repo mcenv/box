@@ -364,41 +364,56 @@ class Resolve private constructor(
         R.Pattern.I8Of(pattern.value, range)
       }
 
-      is S.Term.I16Of    -> {
+      is S.Term.I16Of      -> {
         R.Pattern.I16Of(pattern.value, range)
       }
 
-      is S.Term.I32Of    -> {
+      is S.Term.I32Of      -> {
         R.Pattern.I32Of(pattern.value, range)
       }
 
-      is S.Term.I64Of    -> {
+      is S.Term.I64Of      -> {
         R.Pattern.I64Of(pattern.value, range)
       }
 
-      is S.Term.F32Of    -> {
+      is S.Term.F32Of      -> {
         R.Pattern.F32Of(pattern.value, range)
       }
 
-      is S.Term.F64Of    -> {
+      is S.Term.F64Of      -> {
         R.Pattern.F64Of(pattern.value, range)
       }
 
-      is S.Term.Wtf16Of  -> {
+      is S.Term.Wtf16Of    -> {
         R.Pattern.Wtf16Of(pattern.value, range)
       }
 
-      is S.Term.VecOf    -> {
+      is S.Term.I8ArrayOf  -> {
+        val elements = pattern.elements.map { resolvePattern(it) }
+        R.Pattern.I8ArrayOf(elements, range)
+      }
+
+      is S.Term.I32ArrayOf -> {
+        val elements = pattern.elements.map { resolvePattern(it) }
+        R.Pattern.I32ArrayOf(elements, range)
+      }
+
+      is S.Term.I64ArrayOf -> {
+        val elements = pattern.elements.map { resolvePattern(it) }
+        R.Pattern.I64ArrayOf(elements, range)
+      }
+
+      is S.Term.VecOf      -> {
         val elements = pattern.elements.map { resolvePattern(it) }
         R.Pattern.VecOf(elements, range)
       }
 
-      is S.Term.StructOf -> {
+      is S.Term.StructOf   -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
         R.Pattern.StructOf(elements, range)
       }
 
-      is S.Term.Var      -> {
+      is S.Term.Var        -> {
         when (pattern.name) {
           "_"  -> R.Pattern.Drop(range)
           else -> {
@@ -408,13 +423,13 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.As       -> {
+      is S.Term.As         -> {
         val type = resolveTerm(pattern.type)
         val element = resolvePattern(pattern.element)
         R.Pattern.As(element, type, range)
       }
 
-      is S.Term.Hole     -> {
+      is S.Term.Hole       -> {
         R.Pattern.Hole(range)
       }
 
