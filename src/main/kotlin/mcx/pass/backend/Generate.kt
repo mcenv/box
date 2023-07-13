@@ -408,9 +408,9 @@ class Generate private constructor(
         // TODO: benchmark to see if it is faster to be parsed when not quoted (not likely due to cascading regex matching)
         append(tag.value.quoted())
       }
-      is ListTag<*>   -> {
+      is ListTag      -> {
         append('[')
-        tag.tags.forEachSeparated(
+        tag.forEachSeparated(
           separate = { append(',') },
           action = { generateNbt(it) },
         )

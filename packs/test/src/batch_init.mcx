@@ -1,0 +1,27 @@
+def def_of_true : bool := true;
+
+def def_of_i8 : i8 := 1i8;
+
+def def_of_i32 : i32 := 1i32;
+
+def def_of_i64 : i64 := 1i64;
+
+test def i8_array_of :=
+  let _ := [i8; 0i8, 1i8, def_of_i8];
+  true;
+
+test def i32_array_of :=
+  let _ := [i32; 0i32, 1i32, def_of_i32];
+  true;
+
+test def i64_array_of :=
+  let _ := [i64; 0i64, 1i64, def_of_i64];
+  true;
+
+# test def vec_of_nested :=
+#   let [[a], [b]] := [[true], [def_of_true]];
+#   a;
+
+test def struct_of_nested :=
+  let {a: {b: b}, c: {d: d}} := {a: {b: true}, c: {d: def_of_true}};
+  b;

@@ -21,6 +21,7 @@ import mcx.pass.Context
 import mcx.pass.core
 import mcx.util.green
 import mcx.util.nbt.*
+import mcx.util.unreachable
 import mcx.ast.Lifted as L
 import mcx.ast.Packed as P
 
@@ -129,7 +130,7 @@ class Pack private constructor(
         push(Repr.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
       }
 
-      is L.Term.Wtf16Of -> {
+      is L.Term.Wtf16Of    -> {
         push(Repr.STRING, SourceProvider.Value(StringTag(term.value)))
       }
 
@@ -139,58 +140,46 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I8Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
+            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
             drop(Repr.BYTE)
           }
         }
       }
 
       is L.Term.I32ArrayOf -> {
-        val elements = term.elements.map { (it as? L.Term.I32Of)?.value ?: 0 }
-        push(Repr.INT_ARRAY, SourceProvider.Value(IntArrayTag(elements)))
+        push(Repr.INT_ARRAY, SourceProvider.Value(IntArrayTag(term.elements.map { (it as? L.Term.I32Of)?.value ?: 0 })))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I32Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.INT_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(INT_TOP)))
+            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.INT_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(INT_TOP)))
             drop(Repr.INT)
           }
         }
       }
 
       is L.Term.I64ArrayOf -> {
-        val elements = term.elements.map { (it as? L.Term.I64Of)?.value ?: 0 }
-        push(Repr.LONG_ARRAY, SourceProvider.Value(LongArrayTag(elements)))
+        push(Repr.LONG_ARRAY, SourceProvider.Value(LongArrayTag(term.elements.map { (it as? L.Term.I64Of)?.value ?: 0L })))
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I64Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LONG_ARRAY.id)(-1)(index)), DataManipulator.Set(SourceProvider.From(LONG_TOP)))
+            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LONG_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(LONG_TOP)))
             drop(Repr.LONG)
           }
         }
       }
 
       is L.Term.VecOf      -> {
-        push(Repr.LIST, SourceProvider.Value(buildByteListTag { } /* TODO: use end list tag */))
-        if (term.elements.isNotEmpty()) {
-          val elementRepr = term.elements.first().repr
-          term.elements.forEach { element ->
-            packTerm(element)
-            val index = if (elementRepr == Repr.LIST) -2 else -1
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
-            drop(elementRepr)
-          }
-        }
+        val initializers = mutableListOf<() -> Unit>()
+        val template = buildVecOf(term, nbtPath, initializers)
+        push(Repr.LIST, SourceProvider.Value(template))
+        initializers.forEach { it() }
       }
 
       is L.Term.StructOf   -> {
-        push(Repr.COMPOUND, SourceProvider.Value(buildCompoundTag { }))
-        term.elements.forEach { (key, element) ->
-          packTerm(element)
-          val elementRepr = element.repr
-          val index = if (elementRepr == Repr.COMPOUND) -2 else -1
-          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(index)(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(elementRepr.id)(-1)))))
-          drop(elementRepr)
-        }
+        val initializers = mutableListOf<() -> Unit>()
+        val template = buildStructOf(term, nbtPath, initializers)
+        push(Repr.COMPOUND, SourceProvider.Value(template))
+        initializers.forEach { it() }
       }
 
       is L.Term.ProcOf     -> {
@@ -201,11 +190,11 @@ class Pack private constructor(
         push(Repr.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
         term.entries.forEach { (name, repr) ->
           val index = this[name, repr]
-          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index)))))
+          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index)))))
         }
       }
 
-      is L.Term.Apply   -> {
+      is L.Term.Apply      -> {
         term.args.forEach { packTerm(it) }
         val func = term.func
         when {
@@ -226,12 +215,12 @@ class Pack private constructor(
         term.args.forEach { drop(it.repr, keeps, false) }
       }
 
-      is L.Term.Command -> {
+      is L.Term.Command    -> {
         +Raw(term.element)
         push(term.repr, null)
       }
 
-      is L.Term.Let     -> {
+      is L.Term.Let        -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -239,7 +228,7 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
-      is L.Term.If      -> {
+      is L.Term.If         -> {
         packTerm(term.scrutinee)
 
         // TODO: optimize this using function tree
@@ -259,15 +248,95 @@ class Pack private constructor(
         push(term.repr, null)
       }
 
-      is L.Term.Var     -> {
+      is L.Term.Var        -> {
         val repr = term.repr
         val index = this[term.name, term.repr]
         push(repr, SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index))))
       }
 
-      is L.Term.Def     -> {
+      is L.Term.Def        -> {
         +RunFunction(packDefinitionLocation(term.name))
         push(term.repr, null)
+      }
+    }
+  }
+
+  private fun buildDefault(term: L.Term): Tag {
+    return when (term.repr) {
+      Repr.END        -> unreachable()
+      Repr.BYTE       -> ByteTag(0)
+      Repr.SHORT      -> ShortTag(0)
+      Repr.INT        -> IntTag(0)
+      Repr.LONG       -> LongTag(0L)
+      Repr.FLOAT      -> FloatTag(0.0f)
+      Repr.DOUBLE     -> DoubleTag(0.0)
+      Repr.STRING     -> StringTag("")
+      Repr.BYTE_ARRAY -> ByteArrayTag(emptyList())
+      Repr.INT_ARRAY  -> IntArrayTag(emptyList())
+      Repr.LONG_ARRAY -> LongArrayTag(emptyList())
+      Repr.LIST       -> buildListTag { }
+      Repr.COMPOUND   -> buildCompoundTag { }
+    }
+  }
+
+  private fun buildVecOf(
+    term: L.Term.VecOf,
+    target: PersistentList<NbtNode>,
+    initializers: MutableList<() -> Unit>,
+  ): Tag {
+    return buildListTag {
+      term.elements.forEachIndexed { index, element ->
+        when (element) {
+          is L.Term.I8Of     -> add(ByteTag(element.value))
+          is L.Term.I16Of    -> add(ShortTag(element.value))
+          is L.Term.I32Of    -> add(IntTag(element.value))
+          is L.Term.I64Of    -> add(LongTag(element.value))
+          is L.Term.F32Of    -> add(FloatTag(element.value))
+          is L.Term.F64Of    -> add(DoubleTag(element.value))
+          is L.Term.Wtf16Of  -> add(StringTag(element.value))
+          is L.Term.VecOf    -> add(buildVecOf(element, target(index), initializers))
+          is L.Term.StructOf -> add(buildStructOf(element, target(index), initializers))
+          else               -> {
+            add(buildDefault(element))
+            initializers += {
+              packTerm(element)
+              val targetIndex = if (element.repr == Repr.LIST) -2 else LAST
+              +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(targetIndex) + target(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath(element.repr.id)(LAST)))))
+              drop(element.repr)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private fun buildStructOf(
+    term: L.Term.StructOf,
+    target: PersistentList<NbtNode>,
+    initializers: MutableList<() -> Unit>,
+  ): Tag {
+    return buildCompoundTag {
+      term.elements.forEach { (key, element) ->
+        when (element) {
+          is L.Term.I8Of     -> put(key, ByteTag(element.value))
+          is L.Term.I16Of    -> put(key, ShortTag(element.value))
+          is L.Term.I32Of    -> put(key, IntTag(element.value))
+          is L.Term.I64Of    -> put(key, LongTag(element.value))
+          is L.Term.F32Of    -> put(key, FloatTag(element.value))
+          is L.Term.F64Of    -> put(key, DoubleTag(element.value))
+          is L.Term.Wtf16Of  -> put(key, StringTag(element.value))
+          is L.Term.VecOf    -> put(key, buildVecOf(element, target(key), initializers))
+          is L.Term.StructOf -> put(key, buildStructOf(element, target(key), initializers))
+          else               -> {
+            put(key, buildDefault(element))
+            initializers += {
+              packTerm(element)
+              val targetIndex = if (element.repr == Repr.COMPOUND) -2 else LAST
+              +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(targetIndex) + target(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(element.repr.id)(LAST)))))
+              drop(element.repr)
+            }
+          }
+        }
       }
     }
   }
@@ -372,13 +441,13 @@ class Pack private constructor(
       is L.Pattern.Wtf16Of  -> {}
       is L.Pattern.VecOf    -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(-1)(index)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(LAST)(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.StructOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)(name)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)(name)))) // ?
           packPattern(element)
         }
       }
@@ -476,6 +545,8 @@ class Pack private constructor(
   }
 
   companion object {
+    private const val LAST: Int = -1
+
     private val nbtPath: PersistentList<NbtNode> = persistentListOf()
 
     val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":init"))
@@ -494,9 +565,9 @@ class Pack private constructor(
     private const val REGISTER_PATH: String = "register"
     private val REGISTER: DataAccessor = DataAccessor(MCX, nbtPath(REGISTER_PATH))
 
-    private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.BYTE.id)(-1))
-    private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.INT.id)(-1))
-    private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.LONG.id)(-1))
+    private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.BYTE.id)(LAST))
+    private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.INT.id)(LAST))
+    private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.LONG.id)(LAST))
     private val TEST_CELL: DataAccessor = DataAccessor(MCX_TEST, nbtPath("test"))
 
     fun packDefinitionLocation(
@@ -565,14 +636,14 @@ class Pack private constructor(
       procs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_PROC, run {
-        val proc = DataAccessor(MCX, nbtPath(NbtType.INT.id)(-1))
+        val proc = DataAccessor(MCX, nbtPath(NbtType.INT.id)(LAST))
         listOf(
           Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(proc))),
           RemoveData(proc),
         )
       } + procs.sortedBy { it.restore }.map { function ->
         val tag = function.restore!!
-        Execute.ConditionalScoreMatches(true, R0, MAIN, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+        Execute.ConditionalScoreMatches(true, R0, MAIN, exact(tag), Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
@@ -581,11 +652,11 @@ class Pack private constructor(
       funcs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_FUNC, listOf(
-        Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1)("_"))))),
-        RemoveData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(-1))),
+        Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)("_"))))),
+        RemoveData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST))),
       ) + funcs.sortedBy { it.restore }.map { function ->
         val tag = function.restore!!
-        Execute.ConditionalScoreMatches(true, R0, MAIN, tag..tag, Execute.Run(RunFunction(packDefinitionLocation(function.name))))
+        Execute.ConditionalScoreMatches(true, R0, MAIN, exact(tag), Execute.Run(RunFunction(packDefinitionLocation(function.name))))
       })
     }
 
