@@ -346,14 +346,15 @@ class Pack private constructor(
     scrutinee: PersistentList<NbtNode>,
   ) {
     when (pattern) {
-      is L.Pattern.BoolOf   -> {
+      is L.Pattern.UnitOf     -> {}
+      is L.Pattern.BoolOf     -> {
         +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
         +Execute.ConditionalScoreMatches(
           true, R1, MAIN, if (pattern.value) until(0) else from(1),
           Execute.Run(SetScore(R0, MAIN, 0))
         )
       }
-      is L.Pattern.I8Of     -> {
+      is L.Pattern.I8Of       -> {
         +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, scrutinee))))
         +Execute.ConditionalScoreMatches(
           false, R1, MAIN, exact(pattern.value.toInt()),
@@ -476,15 +477,16 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.BoolOf     -> {}
-      is L.Pattern.I8Of       -> {}
-      is L.Pattern.I16Of      -> {}
-      is L.Pattern.I32Of      -> {}
-      is L.Pattern.I64Of      -> {}
-      is L.Pattern.F32Of      -> {}
-      is L.Pattern.F64Of      -> {}
-      is L.Pattern.Wtf16Of    -> {}
-      is L.Pattern.I8ArrayOf  -> {
+      is L.Pattern.UnitOf    -> {}
+      is L.Pattern.BoolOf    -> {}
+      is L.Pattern.I8Of      -> {}
+      is L.Pattern.I16Of     -> {}
+      is L.Pattern.I32Of     -> {}
+      is L.Pattern.I64Of     -> {}
+      is L.Pattern.F32Of     -> {}
+      is L.Pattern.F64Of     -> {}
+      is L.Pattern.Wtf16Of   -> {}
+      is L.Pattern.I8ArrayOf -> {
         pattern.elements.forEachIndexed { index, element ->
           push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(LAST)(index)))) // ?
           packPattern(element)
@@ -524,15 +526,16 @@ class Pack private constructor(
     keeps: List<Repr>,
   ) {
     when (pattern) {
-      is L.Pattern.BoolOf     -> drop(Repr.BYTE, keeps)
-      is L.Pattern.I8Of       -> drop(Repr.BYTE, keeps)
-      is L.Pattern.I16Of      -> drop(Repr.SHORT, keeps)
-      is L.Pattern.I32Of      -> drop(Repr.INT, keeps)
-      is L.Pattern.I64Of      -> drop(Repr.LONG, keeps)
-      is L.Pattern.F32Of      -> drop(Repr.FLOAT, keeps)
-      is L.Pattern.F64Of      -> drop(Repr.DOUBLE, keeps)
-      is L.Pattern.Wtf16Of    -> drop(Repr.STRING, keeps)
-      is L.Pattern.I8ArrayOf  -> {
+      is L.Pattern.UnitOf    -> drop(Repr.BYTE, keeps)
+      is L.Pattern.BoolOf    -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I8Of      -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I16Of     -> drop(Repr.SHORT, keeps)
+      is L.Pattern.I32Of     -> drop(Repr.INT, keeps)
+      is L.Pattern.I64Of     -> drop(Repr.LONG, keeps)
+      is L.Pattern.F32Of     -> drop(Repr.FLOAT, keeps)
+      is L.Pattern.F64Of     -> drop(Repr.DOUBLE, keeps)
+      is L.Pattern.Wtf16Of   -> drop(Repr.STRING, keeps)
+      is L.Pattern.I8ArrayOf -> {
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
         drop(Repr.BYTE_ARRAY, keeps)
       }

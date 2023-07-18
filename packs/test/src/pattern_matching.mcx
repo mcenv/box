@@ -1,3 +1,8 @@
+test def unit_of := if () [
+  () -> true,
+  _  -> false,
+];
+
 test def bool_of := if true [
   true -> true,
   _    -> false,

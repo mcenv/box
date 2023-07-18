@@ -113,7 +113,7 @@ class Resolve private constructor(
   ): R.Term {
     val range = term.range
     return when (term) {
-      is S.Term.Tag        -> {
+      is S.Term.Tag       -> {
         R.Term.Tag(term.range)
       }
 
@@ -124,6 +124,14 @@ class Resolve private constructor(
       is S.Term.Type      -> {
         val tag = resolveTerm(term.element)
         R.Term.Type(tag, range)
+      }
+
+      is S.Term.Unit      -> {
+        R.Term.Unit(range)
+      }
+
+      is S.Term.UnitOf    -> {
+        R.Term.UnitOf(range)
       }
 
       is S.Term.Bool      -> {
@@ -356,27 +364,31 @@ class Resolve private constructor(
   ): R.Pattern {
     val range = pattern.range
     return when (pattern) {
-      is S.Term.BoolOf   -> {
+      is S.Term.UnitOf -> {
+        R.Pattern.UnitOf(range)
+      }
+
+      is S.Term.BoolOf -> {
         R.Pattern.BoolOf(pattern.value, range)
       }
 
-      is S.Term.I8Of     -> {
+      is S.Term.I8Of   -> {
         R.Pattern.I8Of(pattern.value, range)
       }
 
-      is S.Term.I16Of      -> {
+      is S.Term.I16Of  -> {
         R.Pattern.I16Of(pattern.value, range)
       }
 
-      is S.Term.I32Of      -> {
+      is S.Term.I32Of  -> {
         R.Pattern.I32Of(pattern.value, range)
       }
 
-      is S.Term.I64Of      -> {
+      is S.Term.I64Of  -> {
         R.Pattern.I64Of(pattern.value, range)
       }
 
-      is S.Term.F32Of      -> {
+      is S.Term.F32Of  -> {
         R.Pattern.F32Of(pattern.value, range)
       }
 
@@ -433,7 +445,7 @@ class Resolve private constructor(
         R.Pattern.Hole(range)
       }
 
-      else               -> {
+      else             -> {
         diagnose(unexpectedPattern(range))
         R.Pattern.Hole(range)
       }

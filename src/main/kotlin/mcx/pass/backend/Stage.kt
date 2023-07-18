@@ -46,38 +46,46 @@ class Stage private constructor() {
     phase: Phase,
   ): Value {
     return when (term) {
-      is Term.Tag        -> {
+      is Term.Tag     -> {
         requireConst(term, phase)
         Value.Tag
       }
 
-      is Term.TagOf      -> {
+      is Term.TagOf   -> {
         requireConst(term, phase)
         Value.TagOf(term.repr)
       }
 
-      is Term.Type       -> {
+      is Term.Type    -> {
         val tag = lazy { evalTerm(term.element, Phase.CONST) }
         Value.Type(tag)
       }
 
-      is Term.Bool       -> {
+      is Term.Unit    -> {
+        Value.Unit
+      }
+
+      is Term.UnitOf  -> {
+        Value.UnitOf
+      }
+
+      is Term.Bool    -> {
         Value.Bool
       }
 
-      is Term.BoolOf     -> {
+      is Term.BoolOf  -> {
         Value.BoolOf(term.value)
       }
 
-      is Term.I8         -> {
+      is Term.I8      -> {
         Value.I8
       }
 
-      is Term.I8Of       -> {
+      is Term.I8Of    -> {
         Value.I8Of(term.value)
       }
 
-      is Term.I16        -> {
+      is Term.I16     -> {
         Value.I16
       }
 
@@ -261,7 +269,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.If -> {
+      is Term.If      -> {
         when (phase) {
           Phase.WORLD -> {
             val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
@@ -366,36 +374,44 @@ class Stage private constructor() {
     phase: Phase,
   ): Term {
     return when (value) {
-      is Value.Tag        -> {
+      is Value.Tag     -> {
         Term.Tag
       }
 
-      is Value.TagOf      -> {
+      is Value.TagOf   -> {
         Term.TagOf(value.repr)
       }
 
-      is Value.Type       -> {
+      is Value.Type    -> {
         val tag = quoteValue(value.element.value, Phase.CONST)
         Term.Type(tag)
       }
 
-      is Value.Bool       -> {
+      is Value.Unit    -> {
+        Term.Unit
+      }
+
+      is Value.UnitOf  -> {
+        Term.UnitOf
+      }
+
+      is Value.Bool    -> {
         Term.Bool
       }
 
-      is Value.BoolOf     -> {
+      is Value.BoolOf  -> {
         Term.BoolOf(value.value)
       }
 
-      is Value.I8         -> {
+      is Value.I8      -> {
         Term.I8
       }
 
-      is Value.I8Of       -> {
+      is Value.I8Of    -> {
         Term.I8Of(value.value)
       }
 
-      is Value.I16        -> {
+      is Value.I16     -> {
         Term.I16
       }
 
@@ -565,7 +581,7 @@ class Stage private constructor() {
         Term.Let(value.binder, init, body, type)
       }
 
-      is Value.If -> {
+      is Value.If      -> {
         val scrutinee = quoteValue(value.scrutinee.value, phase)
         val branches = value.branches.map { (pattern, body) ->
           val body = (this + 1).quoteValue(body.value, phase)

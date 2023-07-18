@@ -158,6 +158,10 @@ object Lifted {
   sealed class Pattern {
     abstract val repr: Repr
 
+    data object UnitOf : Pattern() {
+      override val repr: Repr get() = Repr.BYTE
+    }
+
     data class BoolOf(
       val value: Boolean,
     ) : Pattern() {

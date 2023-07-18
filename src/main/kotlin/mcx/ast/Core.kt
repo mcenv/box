@@ -68,6 +68,14 @@ object Core {
       }
     }
 
+    data object Unit : Term() {
+      override val type: Term get() = Type.BYTE
+    }
+
+    data object UnitOf : Term() {
+      override val type: Term get() = Unit
+    }
+
     data object Bool : Term() {
       override val type: Term get() = Type.BYTE
     }
@@ -298,6 +306,8 @@ object Core {
    * A well-typed pattern.
    */
   sealed class Pattern {
+    data object UnitOf : Pattern()
+
     data class BoolOf(
       val value: Boolean,
     ) : Pattern()

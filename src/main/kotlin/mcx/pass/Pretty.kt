@@ -19,6 +19,8 @@ fun prettyTerm(
       is Term.Tag        -> "tag"
       is Term.TagOf      -> prettyRepr(term.repr)
       is Term.Type       -> "(type ${go(term.element)})"
+      is Term.Unit       -> "unit"
+      is Term.UnitOf     -> "()"
       is Term.Bool       -> "bool"
       is Term.BoolOf     -> term.value.toString()
       is Term.I8         -> "i8"
@@ -70,6 +72,7 @@ fun prettyPattern(
   pattern: Pattern,
 ): String {
   return when (pattern) {
+    is Pattern.UnitOf     -> "()"
     is Pattern.BoolOf     -> pattern.value.toString()
     is Pattern.I8Of       -> "${pattern.value}i8"
     is Pattern.I16Of      -> "${pattern.value}i16"

@@ -116,36 +116,44 @@ class Elaborate private constructor(
   ): Pair<C.Term, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      term is R.Term.Tag && phase == Phase.CONST && synth(type)                  -> {
+      term is R.Term.Tag && phase == Phase.CONST && synth(type)   -> {
         C.Term.Tag to Value.Type.END
       }
 
-      term is R.Term.TagOf && phase == Phase.CONST && synth(type)                -> {
+      term is R.Term.TagOf && phase == Phase.CONST && synth(type) -> {
         C.Term.TagOf(term.repr) to Value.Tag
       }
 
-      term is R.Term.Type && synth(type)                                         -> {
+      term is R.Term.Type && synth(type)                          -> {
         val tag = checkTerm(term.element, Phase.CONST, Value.Tag)
         C.Term.Type(tag) to Value.Type.BYTE
       }
 
-      term is R.Term.Bool && synth(type)                                         -> {
+      term is R.Term.Unit && synth(type)                          -> {
+        C.Term.Unit to Value.Type.BYTE
+      }
+
+      term is R.Term.UnitOf && synth(type)                        -> {
+        C.Term.UnitOf to Value.Unit
+      }
+
+      term is R.Term.Bool && synth(type)                          -> {
         C.Term.Bool to Value.Type.BYTE
       }
 
-      term is R.Term.BoolOf && synth(type)                                       -> {
+      term is R.Term.BoolOf && synth(type)                        -> {
         C.Term.BoolOf(term.value) to Value.Bool
       }
 
-      term is R.Term.I8 && synth(type)                                           -> {
+      term is R.Term.I8 && synth(type)                            -> {
         C.Term.I8 to Value.Type.BYTE
       }
 
-      term is R.Term.I8Of && synth(type)                                         -> {
+      term is R.Term.I8Of && synth(type)                          -> {
         C.Term.I8Of(term.value) to Value.I8
       }
 
-      term is R.Term.I16 && synth(type)                                          -> {
+      term is R.Term.I16 && synth(type)                           -> {
         C.Term.I16 to Value.Type.SHORT
       }
 
@@ -579,27 +587,31 @@ class Elaborate private constructor(
     ): Pair<C.Pattern, Value> {
       val type = type?.let { meta.forceValue(type) }
       return when {
-        pattern is R.Pattern.BoolOf && synth(type)                 -> {
+        pattern is R.Pattern.UnitOf && synth(type)      -> {
+          C.Pattern.UnitOf to Value.Unit
+        }
+
+        pattern is R.Pattern.BoolOf && synth(type)      -> {
           C.Pattern.BoolOf(pattern.value) to Value.Bool
         }
 
-        pattern is R.Pattern.I8Of && synth(type)                   -> {
+        pattern is R.Pattern.I8Of && synth(type)        -> {
           C.Pattern.I8Of(pattern.value) to Value.I8
         }
 
-        pattern is R.Pattern.I16Of && synth(type)                      -> {
+        pattern is R.Pattern.I16Of && synth(type)       -> {
           C.Pattern.I16Of(pattern.value) to Value.I16
         }
 
-        pattern is R.Pattern.I32Of && synth(type)                      -> {
+        pattern is R.Pattern.I32Of && synth(type)       -> {
           C.Pattern.I32Of(pattern.value) to Value.I32
         }
 
-        pattern is R.Pattern.I64Of && synth(type)                      -> {
+        pattern is R.Pattern.I64Of && synth(type)       -> {
           C.Pattern.I64Of(pattern.value) to Value.I64
         }
 
-        pattern is R.Pattern.F32Of && synth(type)                      -> {
+        pattern is R.Pattern.F32Of && synth(type)       -> {
           C.Pattern.F32Of(pattern.value) to Value.F32
         }
 
@@ -659,7 +671,7 @@ class Elaborate private constructor(
           C.Pattern.StructOf(elements) to type
         }
 
-        pattern is R.Pattern.Var && match<Value>(type)             -> {
+        pattern is R.Pattern.Var && match<Value>(type)  -> {
           val type = type ?: meta.freshValue(pattern.range)
           val value = if (projs.isEmpty()) {
             Value.Var(pattern.name, next(), lazyOf(typeOfVar))
@@ -670,25 +682,25 @@ class Elaborate private constructor(
           C.Pattern.Var(pattern.name) to type
         }
 
-        pattern is R.Pattern.Drop && match<Value>(type)            -> {
+        pattern is R.Pattern.Drop && match<Value>(type) -> {
           val type = type ?: meta.freshValue(pattern.range)
           C.Pattern.Drop to type
         }
 
-        pattern is R.Pattern.As && synth(type)                     -> {
+        pattern is R.Pattern.As && synth(type)          -> {
           val type = env.evalTerm(checkTerm(pattern.type, phase, meta.freshType(pattern.type.range)))
           bind(pattern.element, phase, type, projs)
         }
 
-        pattern is R.Pattern.Hole && match<Value>(type)            -> {
+        pattern is R.Pattern.Hole && match<Value>(type) -> {
           C.Pattern.Hole to Value.Hole
         }
 
-        synth(type)                                                -> {
+        synth(type)                                     -> {
           invalidPattern(cannotSynthesize(pattern.range))
         }
 
-        check<Value>(type)                                         -> {
+        check<Value>(type)                              -> {
           val synth = bind(pattern, phase, null, projs)
           if (next().sub(synth.second, type)) {
             synth
@@ -697,7 +709,7 @@ class Elaborate private constructor(
           }
         }
 
-        else                                                       -> {
+        else                                            -> {
           unreachable()
         }
       }.also { (_, type) ->

@@ -44,35 +44,43 @@ class Lift private constructor(
 
   private fun Ctx.liftTerm(term: C.Term): L.Term {
     return when (term) {
-      is C.Term.Tag        -> {
+      is C.Term.Tag    -> {
         unexpectedTerm(term)
       }
 
-      is C.Term.TagOf      -> {
+      is C.Term.TagOf  -> {
         UNIT
       }
 
-      is C.Term.Type       -> {
+      is C.Term.Type   -> {
         UNIT
       }
 
-      is C.Term.Bool       -> {
+      is C.Term.Unit   -> {
         UNIT
       }
 
-      is C.Term.BoolOf     -> {
+      is C.Term.UnitOf -> {
+        UNIT
+      }
+
+      is C.Term.Bool   -> {
+        UNIT
+      }
+
+      is C.Term.BoolOf -> {
         L.Term.I8Of(if (term.value) 1 else 0)
       }
 
-      is C.Term.I8         -> {
+      is C.Term.I8     -> {
         UNIT
       }
 
-      is C.Term.I8Of       -> {
+      is C.Term.I8Of   -> {
         L.Term.I8Of(term.value)
       }
 
-      is C.Term.I16        -> {
+      is C.Term.I16    -> {
         UNIT
       }
 
@@ -294,27 +302,31 @@ class Lift private constructor(
     type: C.Term,
   ): L.Pattern {
     return when (pattern) {
-      is C.Pattern.BoolOf   -> {
+      is C.Pattern.UnitOf -> {
+        L.Pattern.UnitOf
+      }
+
+      is C.Pattern.BoolOf -> {
         L.Pattern.BoolOf(pattern.value)
       }
 
-      is C.Pattern.I8Of     -> {
+      is C.Pattern.I8Of   -> {
         L.Pattern.I8Of(pattern.value)
       }
 
-      is C.Pattern.I16Of      -> {
+      is C.Pattern.I16Of  -> {
         L.Pattern.I16Of(pattern.value)
       }
 
-      is C.Pattern.I32Of      -> {
+      is C.Pattern.I32Of  -> {
         L.Pattern.I32Of(pattern.value)
       }
 
-      is C.Pattern.I64Of      -> {
+      is C.Pattern.I64Of  -> {
         L.Pattern.I64Of(pattern.value)
       }
 
-      is C.Pattern.F32Of      -> {
+      is C.Pattern.F32Of  -> {
         L.Pattern.F32Of(pattern.value)
       }
 
@@ -370,12 +382,12 @@ class Lift private constructor(
         L.Pattern.Var(pattern.name, repr)
       }
 
-      is C.Pattern.Drop     -> {
+      is C.Pattern.Drop   -> {
         val repr = eraseToRepr(type)
         L.Pattern.Drop(repr)
       }
 
-      is C.Pattern.Hole     -> {
+      is C.Pattern.Hole   -> {
         unexpectedPattern(pattern)
       }
     }
@@ -386,6 +398,8 @@ class Lift private constructor(
       is C.Term.Tag        -> unexpectedTerm(term)
       is C.Term.TagOf      -> linkedMapOf()
       is C.Term.Type       -> freeVars(term.element)
+      is C.Term.Unit       -> linkedMapOf()
+      is C.Term.UnitOf     -> linkedMapOf()
       is C.Term.Bool       -> linkedMapOf()
       is C.Term.BoolOf     -> linkedMapOf()
       is C.Term.I8         -> linkedMapOf()
@@ -433,6 +447,7 @@ class Lift private constructor(
 
   private fun boundVars(pattern: C.Pattern): Set<String> {
     return when (pattern) {
+      is C.Pattern.UnitOf     -> emptySet()
       is C.Pattern.BoolOf     -> emptySet()
       is C.Pattern.I8Of       -> emptySet()
       is C.Pattern.I16Of      -> emptySet()

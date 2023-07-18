@@ -30,36 +30,44 @@ fun Env.next(): Lvl {
  */
 fun Env.evalTerm(term: Term): Value {
   return when (term) {
-    is Term.Tag        -> {
+    is Term.Tag     -> {
       Value.Tag
     }
 
-    is Term.TagOf      -> {
+    is Term.TagOf   -> {
       Value.TagOf(term.repr)
     }
 
-    is Term.Type       -> {
+    is Term.Type    -> {
       val tag = lazy { evalTerm(term.element) }
       Value.Type(tag)
     }
 
-    is Term.Bool       -> {
+    is Term.Unit    -> {
+      Value.Unit
+    }
+
+    is Term.UnitOf  -> {
+      Value.UnitOf
+    }
+
+    is Term.Bool    -> {
       Value.Bool
     }
 
-    is Term.BoolOf     -> {
+    is Term.BoolOf  -> {
       Value.BoolOf(term.value)
     }
 
-    is Term.I8         -> {
+    is Term.I8      -> {
       Value.I8
     }
 
-    is Term.I8Of       -> {
+    is Term.I8Of    -> {
       Value.I8Of(term.value)
     }
 
-    is Term.I16        -> {
+    is Term.I16     -> {
       Value.I16
     }
 
@@ -298,36 +306,44 @@ fun Env.evalTerm(term: Term): Value {
  */
 fun Lvl.quoteValue(value: Value): Term {
   return when (value) {
-    is Value.Tag        -> {
+    is Value.Tag     -> {
       Term.Tag
     }
 
-    is Value.TagOf      -> {
+    is Value.TagOf   -> {
       Term.TagOf(value.repr)
     }
 
-    is Value.Type       -> {
+    is Value.Type    -> {
       val tag = quoteValue(value.element.value)
       Term.Type(tag)
     }
 
-    is Value.Bool       -> {
+    is Value.Unit    -> {
+      Term.Unit
+    }
+
+    is Value.UnitOf  -> {
+      Term.UnitOf
+    }
+
+    is Value.Bool    -> {
       Term.Bool
     }
 
-    is Value.BoolOf     -> {
+    is Value.BoolOf  -> {
       Term.BoolOf(value.value)
     }
 
-    is Value.I8         -> {
+    is Value.I8      -> {
       Term.I8
     }
 
-    is Value.I8Of       -> {
+    is Value.I8Of    -> {
       Term.I8Of(value.value)
     }
 
-    is Value.I16        -> {
+    is Value.I16     -> {
       Term.I16
     }
 
@@ -546,28 +562,35 @@ fun Closure.open(
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {
   return when (this) {
-    is Pattern.BoolOf   -> {
+    is Pattern.UnitOf -> {
+      when (value.value) {
+        is Value.UnitOf -> true
+        else            -> false
+      }
+    }
+
+    is Pattern.BoolOf -> {
       when (val value = value.value) {
         is Value.BoolOf -> value.value == this.value
         else            -> false
       }
     }
 
-    is Pattern.I8Of     -> {
+    is Pattern.I8Of   -> {
       when (val value = value.value) {
         is Value.I8Of -> value.value == this.value
         else          -> false
       }
     }
 
-    is Pattern.I16Of    -> {
+    is Pattern.I16Of  -> {
       when (val value = value.value) {
         is Value.I16Of -> value.value == this.value
         else           -> false
       }
     }
 
-    is Pattern.I32Of    -> {
+    is Pattern.I32Of  -> {
       when (val value = value.value) {
         is Value.I32Of -> value.value == this.value
         else           -> false
@@ -661,10 +684,10 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
-    is Pattern.Drop     -> true
+    is Pattern.Drop   -> true
 
-    is Pattern.Var      -> true
+    is Pattern.Var    -> true
 
-    is Pattern.Hole     -> false
+    is Pattern.Hole   -> false
   }
 }

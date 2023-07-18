@@ -52,36 +52,44 @@ class Meta {
 
   fun Lvl.zonkTerm(term: Term): Term {
     return when (term) {
-      is Term.Tag        -> {
+      is Term.Tag      -> {
         term
       }
 
-      is Term.TagOf      -> {
+      is Term.TagOf    -> {
         term
       }
 
-      is Term.Type       -> {
+      is Term.Type     -> {
         val tag = zonkTerm(term.element)
         Term.Type(tag)
       }
 
-      is Term.Bool       -> {
+      is Term.Unit     -> {
         term
       }
 
-      is Term.BoolOf     -> {
+      is Term.UnitOf   -> {
         term
       }
 
-      is Term.I8         -> {
+      is Term.Bool     -> {
         term
       }
 
-      is Term.I8Of       -> {
+      is Term.BoolOf   -> {
         term
       }
 
-      is Term.I16        -> {
+      is Term.I8       -> {
+        term
+      }
+
+      is Term.I8Of     -> {
+        term
+      }
+
+      is Term.I16      -> {
         term
       }
 
@@ -244,7 +252,7 @@ class Meta {
         Term.Let(term.binder, init, body, type)
       }
 
-      is Term.If -> {
+      is Term.If       -> {
         val scrutinee = zonkTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           val body = zonkTerm(body)
@@ -316,6 +324,8 @@ class Meta {
       value1 is Value.Tag && value2 is Value.Tag               -> true
       value1 is Value.TagOf && value2 is Value.TagOf           -> value1.repr == value2.repr
       value1 is Value.Type && value2 is Value.Type             -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Unit && value2 is Value.Unit             -> true
+      value1 is Value.UnitOf && value2 is Value.UnitOf         -> true
       value1 is Value.Bool && value2 is Value.Bool             -> true
       value1 is Value.BoolOf && value2 is Value.BoolOf         -> value1.value == value2.value
       value1 is Value.I8 && value2 is Value.I8                 -> true

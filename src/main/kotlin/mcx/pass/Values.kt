@@ -63,6 +63,16 @@ sealed class Value {
     }
   }
 
+  data object Unit : Value() {
+    override val type: Lazy<Value> get() = Type.BYTE_LAZY
+
+    val LAZY: Lazy<Unit> = lazyOf(Unit)
+  }
+
+  data object UnitOf : Value() {
+    override val type: Lazy<Value> get() = Unit.LAZY
+  }
+
   data object Bool : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
 

@@ -28,6 +28,10 @@ const def tag_of_compound : tag := %compound;
 
 def type : type %byte := type %byte;
 
+def unit : type %byte := unit;
+
+def unit_of : unit := ();
+
 def bool : type %byte := bool;
 
 def bool_of_false : bool := false;

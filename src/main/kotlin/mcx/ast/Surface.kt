@@ -59,6 +59,14 @@ object Surface {
       override val range: Range,
     ) : Term()
 
+    data class Unit(
+      override val range: Range,
+    ) : Term()
+
+    data class UnitOf(
+      override val range: Range,
+    ) : Term()
+
     data class Bool(
       override val range: Range,
     ) : Term()

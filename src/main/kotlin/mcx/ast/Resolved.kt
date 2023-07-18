@@ -59,6 +59,14 @@ object Resolved {
       override val range: Range,
     ) : Term()
 
+    data class Unit(
+      override val range: Range,
+    ) : Term()
+
+    data class UnitOf(
+      override val range: Range,
+    ) : Term()
+
     data class Bool(
       override val range: Range,
     ) : Term()
@@ -272,6 +280,10 @@ object Resolved {
    */
   sealed class Pattern {
     abstract val range: Range
+
+    data class UnitOf(
+      override val range: Range,
+    ) : Pattern()
 
     data class BoolOf(
       val value: Boolean,
