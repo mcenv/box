@@ -534,13 +534,13 @@ class Elaborate private constructor(
           } else if (value2 is Value.Point) {
             val element1 = env.evalTerm(synth)
             val element2 = value2.element.value
-            with(meta) { next().unifyValue(element1, element2) }.also {
+            with(meta) { next().unifyValue(element2, element1) }.also {
               if (!it) {
-                diagnostic = lazy { next().typeMismatch(element1, element2, term.range) }
+                diagnostic = lazy { next().typeMismatch(element2, element1, term.range) }
               }
             }
           } else {
-            diagnostic = lazy { next().typeMismatch(value1, value2, term.range) }
+            diagnostic = lazy { next().typeMismatch(value2, value1, term.range) }
             false
           }
         }
