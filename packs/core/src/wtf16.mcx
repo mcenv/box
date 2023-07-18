@@ -6,8 +6,8 @@ import {
 }
 
 export builtin def !=(wtf16, wtf16) : bool :=
-  let _ as nothing := /"data modify storage mcx: byte append value 0b";
-  let _ as nothing := /"data modify storage mcx: string append from storage mcx: string[-2]";
+  let _ as end := /"data modify storage mcx: byte append value 0b";
+  let _ as end := /"data modify storage mcx: string append from storage mcx: string[-2]";
   /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: string[-1] set from storage mcx: string[-2]";
 
 export def =(a : wtf16, b : wtf16) : bool := !(a != b);
@@ -15,20 +15,20 @@ export def =(a : wtf16, b : wtf16) : bool := !(a != b);
 export def to_wtf16(self : wtf16) : wtf16 := self;
 
 export builtin def size(wtf16) : i32 :=
-  let _ as nothing := /"data modify storage mcx: int append value 0";
+  let _ as end := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: string[-1]";
 
 export def is_empty(a : wtf16) : bool := size(a) i32::= 0;
 
 export const def from(self : code wtf16, start_index : i32) : code wtf16 := `(
   let _ := $self;
-  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  let _ as end := /"data modify storage mcx: string append value \"\"";
   /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_wtf16(start_index) }"
 );
 
 export const def between(self : code wtf16, start_index : i32, end_index : i32) : code wtf16 := `(
   let _ := $self;
-  let _ as nothing := /"data modify storage mcx: string append value \"\"";
+  let _ as end := /"data modify storage mcx: string append value \"\"";
   /"data modify storage mcx: string[-1] set string storage mcx: string[-2] #{ i32::to_wtf16(start_index) } #{ i32::to_wtf16(end_index) }"
 );
 

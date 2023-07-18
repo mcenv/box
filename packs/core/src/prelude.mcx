@@ -1,6 +1,6 @@
 export builtin const def ++(left : wtf16, right : wtf16) : wtf16;
 
-export def nothing : type %end := union {};
+export def end : type %end := union {};
 
 export const def identity : proc (τ : tag) -> code (proc (α : type τ) -> proc (a : α) -> α) :=
   \(τ) -> `(\(α) -> \(a) -> a);

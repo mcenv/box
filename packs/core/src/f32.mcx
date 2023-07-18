@@ -7,8 +7,8 @@ export def min_value : f32 := 1.4e-45f32;
 export def max_value : f32 := 3.4028235e38f32;
 
 export builtin def !=(f32, f32) : bool :=
-  let _ as nothing := /"data modify storage mcx: byte append value 0b";
-  let _ as nothing := /"data modify storage mcx: float append from storage mcx: float[-2]";
+  let _ as end := /"data modify storage mcx: byte append value 0b";
+  let _ as end := /"data modify storage mcx: float append from storage mcx: float[-2]";
   /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: float[-1] set from storage mcx: float[-2]";
 
 export def =(a : f32, b : f32) : bool := !(a != b);

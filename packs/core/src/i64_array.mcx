@@ -4,7 +4,7 @@ import {
 }
 
 export builtin def size(i64_array) : i32 :=
-  let _ as nothing := /"data modify storage mcx: int append value 0";
+  let _ as end := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: long_array[-1]";
 
 export def is_empty(a : i64_array) : bool := size(a) = 0;

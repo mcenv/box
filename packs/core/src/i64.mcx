@@ -3,8 +3,8 @@ import {
 }
 
 export builtin def !=(i64, i64) : bool :=
-  let _ as nothing := /"data modify storage mcx: byte append value 0b";
-  let _ as nothing := /"data modify storage mcx: long append from storage mcx: long[-2]";
+  let _ as end := /"data modify storage mcx: byte append value 0b";
+  let _ as end := /"data modify storage mcx: long append from storage mcx: long[-2]";
   /"execute store success storage mcx: byte[-1] byte 1 run data modify storage mcx: long[-1] set from storage mcx: long[-2]";
 
 export def =(a : i64, b : i64) : bool := !(a != b);

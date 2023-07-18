@@ -3,31 +3,31 @@ export def min_value : i8 := -128i8;
 export def max_value : i8 := 127i8;
 
 export builtin def =(i8, i8) : bool :=
-  let _ as nothing := /"execute store result score \#0 mcx run data get storage mcx: byte[-2]";
-  let _ as nothing := /"execute store result score \#1 mcx run data get storage mcx: byte[-1]";
-  let _ as nothing := /"data modify storage mcx: byte append value 0b";
+  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: byte[-2]";
+  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: byte[-1]";
+  let _ as end := /"data modify storage mcx: byte append value 0b";
   /"execute if score \#0 mcx = \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
 
 export def to_i8(self : i8) : i8 := self;
 
 export builtin def to_i16(i8) : i16 :=
-  let _ as nothing := /"data modify storage mcx: short append value 0s";
+  let _ as end := /"data modify storage mcx: short append value 0s";
   /"execute store result storage mcx: short[-1] short 1 run data get storage mcx: byte[-1]";
 
 export builtin def to_i32(i8) : i32 :=
-  let _ as nothing := /"data modify storage mcx: int append value 0";
+  let _ as end := /"data modify storage mcx: int append value 0";
   /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: byte[-1]";
 
 export builtin def to_i64(i8) : i64 :=
-  let _ as nothing := /"data modify storage mcx: long append value 0l";
+  let _ as end := /"data modify storage mcx: long append value 0l";
   /"execute store result storage mcx: long[-1] long 1 run data get storage mcx: byte[-1]";
 
 export builtin def to_f32(i8) : f32 :=
-  let _ as nothing := /"data modify storage mcx: float append value 0f";
+  let _ as end := /"data modify storage mcx: float append value 0f";
   /"execute store result storage mcx: float[-1] float 1 run data get storage mcx: byte[-1]";
 
 export builtin def to_f64(i8) : f64 :=
-  let _ as nothing := /"data modify storage mcx: double append value 0d";
+  let _ as end := /"data modify storage mcx: double append value 0d";
   /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: byte[-1]";
 
 export builtin def to_wtf16(i8) : wtf16 :=
