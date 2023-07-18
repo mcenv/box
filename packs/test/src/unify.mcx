@@ -1,4 +1,4 @@
-def meta≤end : nothing := /"";
+def meta≤end : end := /"";
 
 def unify_tag : i32 := $(identity(_))(i32)(0);
 
