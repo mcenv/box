@@ -161,7 +161,7 @@ object Core {
     }
 
     data class I8ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
     ) : Term() {
       override val type: Term get() = I8Array
     }
@@ -171,7 +171,7 @@ object Core {
     }
 
     data class I32ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
     ) : Term() {
       override val type: Term get() = I32Array
     }
@@ -181,29 +181,29 @@ object Core {
     }
 
     data class I64ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
     ) : Term() {
       override val type: Term get() = I64Array
     }
 
-    data class Vec(
+    data class List(
       val element: Term,
     ) : Term() {
       override val type: Term get() = Type.LIST
     }
 
-    data class VecOf(
-      val elements: List<Term>,
+    data class ListOf(
+      val elements: kotlin.collections.List<Term>,
       override val type: Term,
     ) : Term()
 
-    data class Struct(
+    data class Compound(
       val elements: LinkedHashMap<String, Term>,
     ) : Term() {
       override val type: Term get() = Type.COMPOUND
     }
 
-    data class StructOf(
+    data class CompoundOf(
       val elements: LinkedHashMap<String, Term>,
       override val type: Term,
     ) : Term()
@@ -214,13 +214,13 @@ object Core {
     ) : Term()
 
     data class Union(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
       override val type: Term,
     ) : Term()
 
     data class Func(
       val open: Boolean,
-      val params: List<Pair<Pattern, Term>>,
+      val params: kotlin.collections.List<Pair<Pattern, Term>>,
       val result: Term,
     ) : Term() {
       override val type: Term = Type.COMPOUND
@@ -228,7 +228,7 @@ object Core {
 
     data class FuncOf(
       val open: Boolean,
-      val params: List<Pattern>,
+      val params: kotlin.collections.List<Pattern>,
       val result: Term,
       override val type: Term,
     ) : Term()
@@ -236,7 +236,7 @@ object Core {
     data class Apply(
       val open: Boolean,
       val func: Term,
-      val args: List<Term>,
+      val args: kotlin.collections.List<Term>,
       override val type: Term,
     ) : Term()
 
@@ -270,13 +270,13 @@ object Core {
 
     data class If(
       val scrutinee: Term,
-      val branches: List<Pair<Pattern, Term>>,
+      val branches: kotlin.collections.List<Pair<Pattern, Term>>,
       override val type: Term,
     ) : Term()
 
     data class Project(
       val target: Term,
-      val projs: List<Proj>,
+      val projs: kotlin.collections.List<Proj>,
       override val type: Term,
     ) : Term()
 
@@ -352,11 +352,11 @@ object Core {
       val elements: List<Pattern>,
     ) : Pattern()
 
-    data class VecOf(
+    data class ListOf(
       val elements: List<Pattern>,
     ) : Pattern()
 
-    data class StructOf(
+    data class CompoundOf(
       val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern()
 

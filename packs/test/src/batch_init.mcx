@@ -18,10 +18,10 @@ test def i64_array_of :=
   let [i64; a, b, c] := [i64; 0i64, 1i64, def_of_i64];
   true;
 
-# test def vec_of_nested :=
+# test def list_of_nested :=
 #   let [[a], [b]] := [[true], [def_of_true]];
 #   a;
 
-test def struct_of_nested :=
+test def compound_of_nested :=
   let {a: {b: b}, c: {d: d}} := {a: {b: true}, c: {d: def_of_true}};
   b;

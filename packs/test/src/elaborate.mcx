@@ -78,13 +78,13 @@ def i64_array : type %long_array := i64_array;
 
 def i64_array_of : i64_array := [i64;];
 
-def vec : type %list := vec i32;
+def list : type %list := list i32;
 
-def vec_of : vec i32 := [];
+def list_of : list i32 := [];
 
-def struct : type %compound := struct {};
+def compound : type %compound := compound {};
 
-def struct_of : struct {} := {};
+def compound_of : compound {} := {};
 
 def point : type %int := point 1;
 

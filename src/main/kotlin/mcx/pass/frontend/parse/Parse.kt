@@ -252,7 +252,7 @@ class Parse private constructor(
             skipTrivia()
             if (canRead() && peek() == ']') {
               skip()
-              S.Term.VecOf(emptyList(), until())
+              S.Term.ListOf(emptyList(), until())
             } else {
               val first = parseTerm()
               skipTrivia()
@@ -260,7 +260,7 @@ class Parse private constructor(
                 when (peek()) {
                   ']'  -> {
                     skip()
-                    S.Term.VecOf(listOf(first), until())
+                    S.Term.ListOf(listOf(first), until())
                   }
                   ';'  -> {
                     when (first) {
@@ -281,7 +281,7 @@ class Parse private constructor(
                   }
                   ','  -> {
                     val tail = parseList(',', ',', ']') { parseTerm() }
-                    S.Term.VecOf(listOf(first) + tail, until())
+                    S.Term.ListOf(listOf(first) + tail, until())
                   }
                   else -> null
                 }
@@ -298,7 +298,7 @@ class Parse private constructor(
               val element = parseTerm()
               key to element
             }
-            S.Term.StructOf(elements, until())
+            S.Term.CompoundOf(elements, until())
           }
           '\\' -> {
             skip()
@@ -346,23 +346,23 @@ class Parse private constructor(
               "unit"         -> S.Term.Unit(until())
               "bool"         -> S.Term.Bool(until())
               "false"        -> S.Term.BoolOf(false, until())
-              "true"         -> S.Term.BoolOf(true, until())
-              "i8"           -> S.Term.I8(until())
-              "i16"          -> S.Term.I16(until())
-              "i32"          -> S.Term.I32(until())
-              "i64"          -> S.Term.I64(until())
-              "f32"          -> S.Term.F32(until())
-              "f64"          -> S.Term.F64(until())
-              "wtf16"        -> S.Term.Wtf16(until())
-              "i8_array"     -> S.Term.I8Array(until())
-              "i32_array"    -> S.Term.I32Array(until())
-              "i64_array"    -> S.Term.I64Array(until())
-              "vec"          -> {
+              "true"      -> S.Term.BoolOf(true, until())
+              "i8"        -> S.Term.I8(until())
+              "i16"       -> S.Term.I16(until())
+              "i32"       -> S.Term.I32(until())
+              "i64"       -> S.Term.I64(until())
+              "f32"       -> S.Term.F32(until())
+              "f64"       -> S.Term.F64(until())
+              "wtf16"     -> S.Term.Wtf16(until())
+              "i8_array"  -> S.Term.I8Array(until())
+              "i32_array" -> S.Term.I32Array(until())
+              "i64_array" -> S.Term.I64Array(until())
+              "list"      -> {
                 skipTrivia()
                 val element = parseTerm0()
-                S.Term.Vec(element, until())
+                S.Term.List(element, until())
               }
-              "struct"       -> {
+              "compound"  -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -371,14 +371,14 @@ class Parse private constructor(
                   val value = parseTerm()
                   key to value
                 }
-                S.Term.Struct(elements, until())
+                S.Term.Compound(elements, until())
               }
-              "point"        -> {
+              "point"     -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Point(element, until())
               }
-              "union"        -> {
+              "union"     -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())

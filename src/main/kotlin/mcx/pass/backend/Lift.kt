@@ -1,5 +1,6 @@
 package mcx.pass.backend
 
+import mcx.ast.Core
 import mcx.ast.common.Modifier
 import mcx.ast.common.Repr
 import mcx.pass.Context
@@ -155,22 +156,22 @@ class Lift private constructor(
         L.Term.I64ArrayOf(elements)
       }
 
-      is C.Term.Vec        -> {
+      is Core.Term.List    -> {
         UNIT
       }
 
-      is C.Term.VecOf      -> {
+      is C.Term.ListOf     -> {
         val elements = term.elements.map { liftTerm(it) }
-        L.Term.VecOf(elements)
+        L.Term.ListOf(elements)
       }
 
-      is C.Term.Struct     -> {
+      is C.Term.Compound   -> {
         UNIT
       }
 
-      is C.Term.StructOf   -> {
+      is C.Term.CompoundOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
-        L.Term.StructOf(elements)
+        L.Term.CompoundOf(elements)
       }
 
       is C.Term.Point      -> {
@@ -192,7 +193,7 @@ class Lift private constructor(
         with(emptyCtx()) {
           if (term.open) {
             val freeVars = freeVars(term)
-            val capture = L.Pattern.StructOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
+            val capture = L.Pattern.CompoundOf(freeVars.mapValuesTo(linkedMapOf()) { (name, type) -> L.Pattern.Var(name, type) })
             val binders = (term.params zip (term.type as C.Term.Func).params).map { (pattern, type) ->
               liftPattern(pattern, type.second)
             }
@@ -359,21 +360,21 @@ class Lift private constructor(
         L.Pattern.I64ArrayOf(elements)
       }
 
-      is C.Pattern.VecOf      -> {
-        val type = type as C.Term.Vec
+      is C.Pattern.ListOf     -> {
+        val type = type as Core.Term.List
         val elementType = type.element
         val elements = pattern.elements.map { element ->
           liftPattern(element, elementType)
         }
-        L.Pattern.VecOf(elements)
+        L.Pattern.ListOf(elements)
       }
 
-      is C.Pattern.StructOf   -> {
-        val type = type as C.Term.Struct
+      is C.Pattern.CompoundOf -> {
+        val type = type as C.Term.Compound
         val elements = pattern.elements.mapValuesTo(linkedMapOf()) { (name, element) ->
           liftPattern(element, type.elements[name]!!)
         }
-        L.Pattern.StructOf(elements)
+        L.Pattern.CompoundOf(elements)
       }
 
       is C.Pattern.Var        -> {
@@ -422,10 +423,10 @@ class Lift private constructor(
       is C.Term.I32ArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.I64Array   -> linkedMapOf()
       is C.Term.I64ArrayOf -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Vec        -> freeVars(term.element)
-      is C.Term.VecOf      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.Struct     -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
-      is C.Term.StructOf   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is Core.Term.List    -> freeVars(term.element)
+      is C.Term.ListOf     -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.Compound   -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
+      is C.Term.CompoundOf -> term.elements.values.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Point      -> freeVars(term.element)
       is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
@@ -459,8 +460,8 @@ class Lift private constructor(
       is C.Pattern.I8ArrayOf  -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.I32ArrayOf -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.I64ArrayOf -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
-      is C.Pattern.VecOf      -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
-      is C.Pattern.StructOf   -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.ListOf     -> pattern.elements.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
+      is C.Pattern.CompoundOf -> pattern.elements.values.fold(hashSetOf()) { acc, element -> acc.also { it += boundVars(element) } }
       is C.Pattern.Var        -> setOf(pattern.name)
       is C.Pattern.Drop       -> emptySet()
       is C.Pattern.Hole       -> unexpectedPattern(pattern)

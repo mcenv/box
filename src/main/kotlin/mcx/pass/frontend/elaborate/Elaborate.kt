@@ -4,6 +4,7 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentList
+import mcx.ast.Resolved
 import mcx.ast.common.*
 import mcx.ast.common.Annotation
 import mcx.lsp.Instruction
@@ -228,15 +229,15 @@ class Elaborate private constructor(
         C.Term.I64ArrayOf(elements) to Value.I64Array
       }
 
-      term is R.Term.Vec && synth(type)                                          -> {
+      term is Resolved.Term.List && synth(type)                -> {
         val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
-        C.Term.Vec(element) to Value.Type.LIST
+        C.Term.List(element) to Value.Type.LIST
       }
 
-      term is R.Term.VecOf && match<Value.Vec>(type)                             -> {
+      term is R.Term.ListOf && match<Value.List>(type)         -> {
         val elementType = type?.element?.value
         val (elements, elementsTypes) = term.elements.map { elaborateTerm(it, phase, elementType) }.unzip()
-        val type = type ?: Value.Vec(lazyOf(
+        val type = type ?: Value.List(lazyOf(
           // TODO: perform more sophisticated normalization
           if (elementsTypes.size == 1) {
             elementsTypes.first()
@@ -245,19 +246,19 @@ class Elaborate private constructor(
           }
         ))
         typed(type) {
-          C.Term.VecOf(elements, it)
+          C.Term.ListOf(elements, it)
         }
       }
 
-      term is R.Term.Struct && synth(type)                                       -> {
+      term is R.Term.Compound && synth(type)                   -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
         }
-        C.Term.Struct(elements) to Value.Type.COMPOUND
+        C.Term.Compound(elements) to Value.Type.COMPOUND
       }
 
-      term is R.Term.StructOf && synth(type)                                     -> {
+      term is R.Term.CompoundOf && synth(type)                 -> {
         val elements = linkedMapOf<String, C.Term>()
         val elementsTypes = linkedMapOf<String, Lazy<Value>>()
         term.elements.forEach { (key, element) ->
@@ -265,19 +266,19 @@ class Elaborate private constructor(
           elements[key.value] = element
           elementsTypes[key.value] = lazyOf(elementType)
         }
-        val type = Value.Struct(elementsTypes)
+        val type = Value.Compound(elementsTypes)
         typed(type) {
-          C.Term.StructOf(elements, it)
+          C.Term.CompoundOf(elements, it)
         }
       }
 
-      term is R.Term.StructOf && check<Value.Struct>(type)                       -> {
+      term is R.Term.CompoundOf && check<Value.Compound>(type) -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (name, element) ->
           val (element, _) = elaborateTerm(element, phase, type.elements[name.value]?.value)
           name.value to element
         }
         typed(type) {
-          C.Term.StructOf(elements, it)
+          C.Term.CompoundOf(elements, it)
         }
       }
 
@@ -650,25 +651,25 @@ class Elaborate private constructor(
           C.Pattern.I64ArrayOf(elements) to type
         }
 
-        pattern is R.Pattern.VecOf && match<Value.Vec>(type)           -> {
+        pattern is R.Pattern.ListOf && match<Value.List>(type)         -> {
           val elementType = type?.element?.value ?: meta.freshValue(pattern.range)
           val elements = pattern.elements.mapIndexed { index, element ->
-            val (element, _) = bind(element, phase, elementType, projs + Proj.VecOf(index))
+            val (element, _) = bind(element, phase, elementType, projs + Proj.ListOf(index))
             element
           }
-          val type = type ?: Value.Vec(lazyOf(elementType))
-          C.Pattern.VecOf(elements) to type
+          val type = type ?: Value.List(lazyOf(elementType))
+          C.Pattern.ListOf(elements) to type
         }
 
-        pattern is R.Pattern.StructOf && match<Value.Struct>(type)     -> {
+        pattern is R.Pattern.CompoundOf && match<Value.Compound>(type) -> {
           val results = pattern.elements.associateTo(linkedMapOf()) { (name, element) ->
             val type = type?.elements?.get(name.value)?.value ?: invalidTerm(unknownKey(name.value, name.range)).second
-            val (element, elementType) = bind(element, phase, type, projs + Proj.StructOf(name.value))
+            val (element, elementType) = bind(element, phase, type, projs + Proj.CompoundOf(name.value))
             name.value to (element to elementType)
           }
           val elements = results.mapValuesTo(linkedMapOf()) { it.value.first }
-          val type = type ?: Value.Struct(results.mapValuesTo(linkedMapOf()) { lazyOf(it.value.second) })
-          C.Pattern.StructOf(elements) to type
+          val type = type ?: Value.Compound(results.mapValuesTo(linkedMapOf()) { lazyOf(it.value.second) })
+          C.Pattern.CompoundOf(elements) to type
         }
 
         pattern is R.Pattern.Var && match<Value>(type)  -> {
@@ -729,11 +730,11 @@ class Elaborate private constructor(
     val value1 = meta.forceValue(value1)
     val value2 = meta.forceValue(value2)
     return when {
-      value1 is Value.Vec && value2 is Value.Vec       -> {
+      value1 is Value.List && value2 is Value.List         -> {
         sub(value1.element.value, value2.element.value)
       }
 
-      value1 is Value.Struct && value2 is Value.Struct -> {
+      value1 is Value.Compound && value2 is Value.Compound -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> sub(element1.value, element2.value) } ?: false

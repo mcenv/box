@@ -25,8 +25,8 @@ private val wtf16: ModuleLocation = ModuleLocation(core, "wtf16")
 private val i8_array: ModuleLocation = ModuleLocation(core, "i8_array")
 private val i32_array: ModuleLocation = ModuleLocation(core, "i32_array")
 private val i64_array: ModuleLocation = ModuleLocation(core, "i64_array")
-private val vec: ModuleLocation = ModuleLocation(core, "vec")
-private val struct: ModuleLocation = ModuleLocation(core, "struct")
+private val list: ModuleLocation = ModuleLocation(core, "list")
+private val compound: ModuleLocation = ModuleLocation(core, "compound")
 
 private val builtins: Map<DefinitionLocation, Builtin> = listOf(
   object : Builtin(prelude / "++") {

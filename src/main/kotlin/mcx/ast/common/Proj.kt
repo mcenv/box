@@ -13,11 +13,11 @@ sealed class Proj {
     val index: Int,
   ) : Proj()
 
-  data class VecOf(
+  data class ListOf(
     val index: Int,
   ) : Proj()
 
-  data class StructOf(
+  data class CompoundOf(
     val name: String,
   ) : Proj()
 }

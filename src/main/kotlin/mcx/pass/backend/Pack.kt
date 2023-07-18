@@ -168,16 +168,16 @@ class Pack private constructor(
         }
       }
 
-      is L.Term.VecOf      -> {
+      is L.Term.ListOf     -> {
         val initializers = mutableListOf<() -> Unit>()
-        val template = buildVecOf(term, nbtPath, initializers)
+        val template = buildListOf(term, nbtPath, initializers)
         push(Repr.LIST, SourceProvider.Value(template))
         initializers.forEach { it() }
       }
 
-      is L.Term.StructOf   -> {
+      is L.Term.CompoundOf -> {
         val initializers = mutableListOf<() -> Unit>()
-        val template = buildStructOf(term, nbtPath, initializers)
+        val template = buildCompoundOf(term, nbtPath, initializers)
         push(Repr.COMPOUND, SourceProvider.Value(template))
         initializers.forEach { it() }
       }
@@ -279,24 +279,24 @@ class Pack private constructor(
     }
   }
 
-  private fun buildVecOf(
-    term: L.Term.VecOf,
+  private fun buildListOf(
+    term: L.Term.ListOf,
     target: PersistentList<NbtNode>,
     initializers: MutableList<() -> Unit>,
   ): Tag {
     return buildListTag {
       term.elements.forEachIndexed { index, element ->
         when (element) {
-          is L.Term.I8Of     -> add(ByteTag(element.value))
-          is L.Term.I16Of    -> add(ShortTag(element.value))
-          is L.Term.I32Of    -> add(IntTag(element.value))
-          is L.Term.I64Of    -> add(LongTag(element.value))
-          is L.Term.F32Of    -> add(FloatTag(element.value))
-          is L.Term.F64Of    -> add(DoubleTag(element.value))
-          is L.Term.Wtf16Of  -> add(StringTag(element.value))
-          is L.Term.VecOf    -> add(buildVecOf(element, target(index), initializers))
-          is L.Term.StructOf -> add(buildStructOf(element, target(index), initializers))
-          else               -> {
+          is L.Term.I8Of       -> add(ByteTag(element.value))
+          is L.Term.I16Of      -> add(ShortTag(element.value))
+          is L.Term.I32Of      -> add(IntTag(element.value))
+          is L.Term.I64Of      -> add(LongTag(element.value))
+          is L.Term.F32Of      -> add(FloatTag(element.value))
+          is L.Term.F64Of      -> add(DoubleTag(element.value))
+          is L.Term.Wtf16Of    -> add(StringTag(element.value))
+          is L.Term.ListOf     -> add(buildListOf(element, target(index), initializers))
+          is L.Term.CompoundOf -> add(buildCompoundOf(element, target(index), initializers))
+          else                 -> {
             add(buildDefault(element))
             initializers += {
               packTerm(element)
@@ -310,24 +310,24 @@ class Pack private constructor(
     }
   }
 
-  private fun buildStructOf(
-    term: L.Term.StructOf,
+  private fun buildCompoundOf(
+    term: L.Term.CompoundOf,
     target: PersistentList<NbtNode>,
     initializers: MutableList<() -> Unit>,
   ): Tag {
     return buildCompoundTag {
       term.elements.forEach { (key, element) ->
         when (element) {
-          is L.Term.I8Of     -> put(key, ByteTag(element.value))
-          is L.Term.I16Of    -> put(key, ShortTag(element.value))
-          is L.Term.I32Of    -> put(key, IntTag(element.value))
-          is L.Term.I64Of    -> put(key, LongTag(element.value))
-          is L.Term.F32Of    -> put(key, FloatTag(element.value))
-          is L.Term.F64Of    -> put(key, DoubleTag(element.value))
-          is L.Term.Wtf16Of  -> put(key, StringTag(element.value))
-          is L.Term.VecOf    -> put(key, buildVecOf(element, target(key), initializers))
-          is L.Term.StructOf -> put(key, buildStructOf(element, target(key), initializers))
-          else               -> {
+          is L.Term.I8Of       -> put(key, ByteTag(element.value))
+          is L.Term.I16Of      -> put(key, ShortTag(element.value))
+          is L.Term.I32Of      -> put(key, IntTag(element.value))
+          is L.Term.I64Of      -> put(key, LongTag(element.value))
+          is L.Term.F32Of      -> put(key, FloatTag(element.value))
+          is L.Term.F64Of      -> put(key, DoubleTag(element.value))
+          is L.Term.Wtf16Of    -> put(key, StringTag(element.value))
+          is L.Term.ListOf     -> put(key, buildListOf(element, target(key), initializers))
+          is L.Term.CompoundOf -> put(key, buildCompoundOf(element, target(key), initializers))
+          else                 -> {
             put(key, buildDefault(element))
             initializers += {
               packTerm(element)
@@ -448,7 +448,7 @@ class Pack private constructor(
           matchPattern(element, scrutinee(index))
         }
       }
-      is L.Pattern.VecOf      -> {
+      is L.Pattern.ListOf     -> {
         if (pattern.elements.isNotEmpty()) {
           +Execute.CheckMatchingData(
             false, DataAccessor(MCX, scrutinee(pattern.elements.lastIndex)),
@@ -463,7 +463,7 @@ class Pack private constructor(
           matchPattern(element, scrutinee(index))
         }
       }
-      is L.Pattern.StructOf   -> {
+      is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (key, element) ->
           matchPattern(element, scrutinee(key))
         }
@@ -486,7 +486,7 @@ class Pack private constructor(
       is L.Pattern.F32Of     -> {}
       is L.Pattern.F64Of     -> {}
       is L.Pattern.Wtf16Of   -> {}
-      is L.Pattern.I8ArrayOf -> {
+      is L.Pattern.I8ArrayOf  -> {
         pattern.elements.forEachIndexed { index, element ->
           push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(LAST)(index)))) // ?
           packPattern(element)
@@ -504,13 +504,13 @@ class Pack private constructor(
           packPattern(element)
         }
       }
-      is L.Pattern.VecOf      -> {
+      is L.Pattern.ListOf     -> {
         pattern.elements.forEachIndexed { index, element ->
           push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(LAST)(index)))) // ?
           packPattern(element)
         }
       }
-      is L.Pattern.StructOf   -> {
+      is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
           push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)(name)))) // ?
           packPattern(element)
@@ -533,9 +533,9 @@ class Pack private constructor(
       is L.Pattern.I32Of     -> drop(Repr.INT, keeps)
       is L.Pattern.I64Of     -> drop(Repr.LONG, keeps)
       is L.Pattern.F32Of     -> drop(Repr.FLOAT, keeps)
-      is L.Pattern.F64Of     -> drop(Repr.DOUBLE, keeps)
-      is L.Pattern.Wtf16Of   -> drop(Repr.STRING, keeps)
-      is L.Pattern.I8ArrayOf -> {
+      is L.Pattern.F64Of      -> drop(Repr.DOUBLE, keeps)
+      is L.Pattern.Wtf16Of    -> drop(Repr.STRING, keeps)
+      is L.Pattern.I8ArrayOf  -> {
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
         drop(Repr.BYTE_ARRAY, keeps)
       }
@@ -547,11 +547,11 @@ class Pack private constructor(
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
         drop(Repr.LONG_ARRAY, keeps)
       }
-      is L.Pattern.VecOf      -> {
+      is L.Pattern.ListOf     -> {
         pattern.elements.reversed().forEach { element -> dropPattern(element, keeps) }
         drop(Repr.LIST, keeps)
       }
-      is L.Pattern.StructOf   -> {
+      is L.Pattern.CompoundOf -> {
         pattern.elements.entries.reversed().forEach { (_, element) -> dropPattern(element, keeps) }
         drop(Repr.COMPOUND, keeps)
       }

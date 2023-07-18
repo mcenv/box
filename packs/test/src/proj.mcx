@@ -2,48 +2,48 @@ import {
   core::bool::&,
 }
 
-def proj_struct_of : point 1 :=
+def proj_compound_of : point 1 :=
   let {a: a} := {a: 1};
   a;
 
-error def proj_struct_of_unknown_key : point 1 :=
+error def proj_compound_of_unknown_key : point 1 :=
   let {x: a} := {a: 1};
   a;
 
-def proj_struct_of_nested : point 1 :=
+def proj_compound_of_nested : point 1 :=
   let {a: {b: b}} := {a: {b: 1}};
   b;
 
-error def proj_struct_of_nested_unknown_key : point 1 :=
+error def proj_compound_of_nested_unknown_key : point 1 :=
   let {x: {b: b}} := {a: {b: 1}};
   b;
 
-error def proj_struct_of_nested_unknown_key' : point 1 :=
+error def proj_compound_of_nested_unknown_key' : point 1 :=
   let {a: {x: b}} := {a: {b: 1}};
   b;
 
-test def test_proj_struct_of :=
+test def test_proj_compound_of :=
   let {a: a} := {a: true};
   a;
 
-test def test_proj_struct_of_nested :=
+test def test_proj_compound_of_nested :=
   let {a: {b: b}} := {a: {b: true}};
   b;
 
-test def test_proj_struct_of_multiple :=
+test def test_proj_compound_of_multiple :=
   let {a: a, b: b} := {a: true, b: true};
   a & b;
 
 # todo: disallow possibly unmatched patterns
 
-test def test_proj_vec_of :=
+test def test_proj_list_of :=
   let [a] := [true];
   a;
 
-test def test_proj_vec_of_nested :=
+test def test_proj_list_of_nested :=
   let [[a]] := [[true]];
   a;
 
-test def test_proj_vec_of_multiple :=
+test def test_proj_list_of_multiple :=
   let [a, b] := [true, true];
   a & b;

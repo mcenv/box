@@ -43,10 +43,10 @@ fun prettyTerm(
       is Term.I32ArrayOf -> term.elements.joinToString(", ", "[i32; ", "]") { go(it) }
       is Term.I64Array   -> "i64_array"
       is Term.I64ArrayOf -> term.elements.joinToString(", ", "[i64; ", "]") { go(it) }
-      is Term.Vec        -> "(vec ${go(term.element)})"
-      is Term.VecOf      -> term.elements.joinToString(", ", "[", "]") { go(it) }
-      is Term.Struct     -> term.elements.entries.joinToString(", ", "(struct {", "})") { (key, element) -> "$key : ${go(element)}" }
-      is Term.StructOf   -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
+      is Term.List       -> "(list ${go(term.element)})"
+      is Term.ListOf     -> term.elements.joinToString(", ", "[", "]") { go(it) }
+      is Term.Compound   -> term.elements.entries.joinToString(", ", "(compound {", "})") { (key, element) -> "$key : ${go(element)}" }
+      is Term.CompoundOf -> term.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${go(element)}" }
       is Term.Point      -> "(point ${prettyTerm(term.element)})"
       is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
       is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
@@ -84,8 +84,8 @@ fun prettyPattern(
     is Pattern.I8ArrayOf  -> pattern.elements.joinToString(", ", "[i8; ", "]") { prettyPattern(it) }
     is Pattern.I32ArrayOf -> pattern.elements.joinToString(", ", "[i32; ", "]") { prettyPattern(it) }
     is Pattern.I64ArrayOf -> pattern.elements.joinToString(", ", "[i64; ", "]") { prettyPattern(it) }
-    is Pattern.VecOf      -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
-    is Pattern.StructOf   -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
+    is Pattern.ListOf     -> pattern.elements.joinToString(", ", "[", "]") { prettyPattern(it) }
+    is Pattern.CompoundOf -> pattern.elements.entries.joinToString(", ", "{", "}") { (key, element) -> "$key : ${prettyPattern(element)}" }
     is Pattern.Var        -> pattern.name
     is Pattern.Drop       -> "_"
     is Pattern.Hole       -> "??"
@@ -99,8 +99,8 @@ fun prettyProjection(
     is Proj.I8ArrayOf  -> "[${proj.index}]"
     is Proj.I32ArrayOf -> "[${proj.index}]"
     is Proj.I64ArrayOf -> "[${proj.index}]"
-    is Proj.VecOf      -> "[${proj.index}]"
-    is Proj.StructOf   -> proj.name
+    is Proj.ListOf     -> "[${proj.index}]"
+    is Proj.CompoundOf -> proj.name
   }
 }
 

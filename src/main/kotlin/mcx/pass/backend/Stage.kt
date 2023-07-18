@@ -160,26 +160,26 @@ class Stage private constructor() {
         Value.I64ArrayOf(elements)
       }
 
-      is Term.Vec        -> {
+      is Term.List       -> {
         val element = lazy { evalTerm(term.element, phase) }
-        Value.Vec(element)
+        Value.List(element)
       }
 
-      is Term.VecOf      -> {
+      is Term.ListOf     -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         val type = lazy { evalTerm(term.type, phase) }
-        Value.VecOf(elements, type)
+        Value.ListOf(elements, type)
       }
 
-      is Term.Struct     -> {
+      is Term.Compound   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
-        Value.Struct(elements)
+        Value.Compound(elements)
       }
 
-      is Term.StructOf   -> {
+      is Term.CompoundOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value, phase) } }
         val type = lazy { evalTerm(term.type, phase) }
-        Value.StructOf(elements, type)
+        Value.CompoundOf(elements, type)
       }
 
       is Term.Point      -> {
@@ -304,7 +304,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Project -> {
+      is Term.Project    -> {
         val target = evalTerm(term.target, phase)
         when (phase) {
           Phase.WORLD -> {
@@ -314,9 +314,9 @@ class Stage private constructor() {
           Phase.CONST -> {
             term.projs.foldIndexed(target) { index, acc, proj ->
               when (acc) {
-                is Value.VecOf    -> acc.elements[(proj as Proj.VecOf).index].value
-                is Value.StructOf -> acc.elements[(proj as Proj.StructOf).name]!!.value
-                else              -> {
+                is Value.ListOf     -> acc.elements[(proj as Proj.ListOf).index].value
+                is Value.CompoundOf -> acc.elements[(proj as Proj.CompoundOf).name]!!.value
+                else                -> {
                   if (index == term.projs.lastIndex) {
                     acc
                   } else {
@@ -486,26 +486,26 @@ class Stage private constructor() {
         Term.I64ArrayOf(elements)
       }
 
-      is Value.Vec        -> {
+      is Value.List       -> {
         val element = quoteValue(value.element.value, phase)
-        Term.Vec(element)
+        Term.List(element)
       }
 
-      is Value.VecOf      -> {
+      is Value.ListOf     -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         val type = quoteValue(value.type.value, phase)
-        Term.VecOf(elements, type)
+        Term.ListOf(elements, type)
       }
 
-      is Value.Struct     -> {
+      is Value.Compound   -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
-        Term.Struct(elements)
+        Term.Compound(elements)
       }
 
-      is Value.StructOf   -> {
+      is Value.CompoundOf -> {
         val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value, phase) }
         val type = quoteValue(value.type.value, phase)
-        Term.StructOf(elements, type)
+        Term.CompoundOf(elements, type)
       }
 
       is Value.Point      -> {

@@ -144,7 +144,7 @@ object Surface {
     ) : Term()
 
     data class I8ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
@@ -153,7 +153,7 @@ object Surface {
     ) : Term()
 
     data class I32ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
@@ -162,27 +162,27 @@ object Surface {
     ) : Term()
 
     data class I64ArrayOf(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class Vec(
+    data class List(
       val element: Term,
       override val range: Range,
     ) : Term()
 
-    data class VecOf(
-      val elements: List<Term>,
+    data class ListOf(
+      val elements: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
-    data class Struct(
-      val elements: List<Pair<Ranged<String>, Term>>,
+    data class Compound(
+      val elements: kotlin.collections.List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term()
 
-    data class StructOf(
-      val elements: List<Pair<Ranged<String>, Term>>,
+    data class CompoundOf(
+      val elements: kotlin.collections.List<Pair<Ranged<String>, Term>>,
       override val range: Range,
     ) : Term()
 
@@ -192,27 +192,27 @@ object Surface {
     ) : Term()
 
     data class Union(
-      val elements: List<Term>,
+      val elements: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
     data class Func(
       val open: Boolean,
-      val params: List<Pair<Term, Term>>,
+      val params: kotlin.collections.List<Pair<Term, Term>>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class FuncOf(
       val open: Boolean,
-      val params: List<Term>,
+      val params: kotlin.collections.List<Term>,
       val result: Term,
       override val range: Range,
     ) : Term()
 
     data class Apply(
       val func: Term,
-      val args: List<Term>,
+      val args: kotlin.collections.List<Term>,
       override val range: Range,
     ) : Term()
 
@@ -245,7 +245,7 @@ object Surface {
 
     data class If(
       val scrutinee: Term,
-      val branches: List<Pair<Term, Term>>,
+      val branches: kotlin.collections.List<Pair<Term, Term>>,
       override val range: Range,
     ) : Term()
 

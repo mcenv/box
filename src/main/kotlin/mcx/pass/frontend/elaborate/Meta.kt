@@ -164,26 +164,26 @@ class Meta {
         Term.I64ArrayOf(elements)
       }
 
-      is Term.Vec      -> {
+      is Term.List       -> {
         val element = zonkTerm(term.element)
-        Term.Vec(element)
+        Term.List(element)
       }
 
-      is Term.VecOf    -> {
+      is Term.ListOf     -> {
         val elements = term.elements.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
-        Term.VecOf(elements, type)
+        Term.ListOf(elements, type)
       }
 
-      is Term.Struct   -> {
+      is Term.Compound   -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
-        Term.Struct(elements)
+        Term.Compound(elements)
       }
 
-      is Term.StructOf -> {
+      is Term.CompoundOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { zonkTerm(it.value) }
         val type = zonkTerm(term.type)
-        Term.StructOf(elements, type)
+        Term.CompoundOf(elements, type)
       }
 
       is Term.Point    -> {
@@ -357,18 +357,18 @@ class Meta {
         value1.elements.size == value2.elements.size &&
         (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
-      value1 is Value.Vec && value2 is Value.Vec               -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.VecOf && value2 is Value.VecOf           -> {
+      value1 is Value.List && value2 is Value.List             -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.ListOf && value2 is Value.ListOf         -> {
         value1.elements.size == value2.elements.size &&
         (value1.elements zip value2.elements).all { (element1, element2) -> unifyValue(element1.value, element2.value) }
       }
-      value1 is Value.Struct && value2 is Value.Struct         -> {
+      value1 is Value.Compound && value2 is Value.Compound     -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false
         }
       }
-      value1 is Value.StructOf && value2 is Value.StructOf     -> {
+      value1 is Value.CompoundOf && value2 is Value.CompoundOf -> {
         value1.elements.size == value2.elements.size &&
         value1.elements.all { (key1, element1) ->
           value2.elements[key1]?.let { element2 -> unifyValue(element1.value, element2.value) } ?: false

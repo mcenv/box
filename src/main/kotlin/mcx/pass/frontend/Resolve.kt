@@ -1,5 +1,6 @@
 package mcx.pass.frontend
 
+import mcx.ast.Surface
 import mcx.ast.common.*
 import mcx.lsp.Instruction
 import mcx.lsp.contains
@@ -225,24 +226,24 @@ class Resolve private constructor(
         R.Term.I64ArrayOf(elements, range)
       }
 
-      is S.Term.Vec        -> {
+      is Surface.Term.List -> {
         val element = resolveTerm(term.element)
-        R.Term.Vec(element, range)
+        R.Term.List(element, range)
       }
 
-      is S.Term.VecOf      -> {
+      is S.Term.ListOf     -> {
         val elements = term.elements.map { resolveTerm(it) }
-        R.Term.VecOf(elements, range)
+        R.Term.ListOf(elements, range)
       }
 
-      is S.Term.Struct     -> {
+      is S.Term.Compound   -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
-        R.Term.Struct(elements, range)
+        R.Term.Compound(elements, range)
       }
 
-      is S.Term.StructOf   -> {
+      is S.Term.CompoundOf -> {
         val elements = term.elements.map { (key, element) -> key to resolveTerm(element) }
-        R.Term.StructOf(elements, range)
+        R.Term.CompoundOf(elements, range)
       }
 
       is S.Term.Point      -> {
@@ -415,14 +416,14 @@ class Resolve private constructor(
         R.Pattern.I64ArrayOf(elements, range)
       }
 
-      is S.Term.VecOf      -> {
+      is S.Term.ListOf     -> {
         val elements = pattern.elements.map { resolvePattern(it) }
-        R.Pattern.VecOf(elements, range)
+        R.Pattern.ListOf(elements, range)
       }
 
-      is S.Term.StructOf   -> {
+      is S.Term.CompoundOf -> {
         val elements = pattern.elements.map { (key, element) -> key to resolvePattern(element) }
-        R.Pattern.StructOf(elements, range)
+        R.Pattern.CompoundOf(elements, range)
       }
 
       is S.Term.Var        -> {

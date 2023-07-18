@@ -52,50 +52,50 @@ test def if_true_var := if true [
   x     -> x,
 ];
 
-test def if_vec_of := if [] [
+test def if_list_of := if [] [
   [] -> true,
   _  -> false,
 ];
 
-test def if_vec_of_true := if [true] [
+test def if_list_of_true := if [true] [
   []  -> false,
   [x] -> x,
   _   -> false,
 ];
 
-test def if_vec_of_true_match := if [true] [
+test def if_list_of_true_match := if [true] [
   [true] -> true,
   _     -> false,
 ];
 
-test def if_vec_of_nested := if [[]] [
+test def if_list_of_nested := if [[]] [
   []   -> false,
   [[]] -> true,
   _    -> false,
 ];
 
-test def if_struct_of := if {} [
+test def if_compound_of := if {} [
   {} -> true,
   _  -> false,
 ];
 
-test def if_struct_of_true := if {a: true} [
+test def if_compound_of_true := if {a: true} [
   {a: a} -> a,
   _      -> false,
 ];
 
-test def if_struct_of_true_match := if {a: true} [
+test def if_compound_of_true_match := if {a: true} [
   {a: true} -> true,
   _         -> false,
 ];
 
-test def if_struct_of_empty := if {a: false} [
+test def if_compound_of_empty := if {a: false} [
   {}     -> true,
   {a: a} -> a,
   _      -> false,
 ];
 
-test def if_struct_of_nested := if {a: {b: true}} [
+test def if_compound_of_nested := if {a: {b: true}} [
   {a: {b: b}} -> b,
   _           -> false,
 ];

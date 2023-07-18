@@ -87,13 +87,13 @@ object Lifted {
       override val repr: Repr get() = Repr.LONG_ARRAY
     }
 
-    data class VecOf(
+    data class ListOf(
       val elements: List<Term>,
     ) : Term() {
       override val repr: Repr get() = Repr.LIST
     }
 
-    data class StructOf(
+    data class CompoundOf(
       val elements: LinkedHashMap<String, Term>,
     ) : Term() {
       override val repr: Repr get() = Repr.COMPOUND
@@ -228,13 +228,13 @@ object Lifted {
       override val repr: Repr get() = Repr.LONG_ARRAY
     }
 
-    data class VecOf(
+    data class ListOf(
       val elements: List<Pattern>,
     ) : Pattern() {
       override val repr: Repr get() = Repr.LIST
     }
 
-    data class StructOf(
+    data class CompoundOf(
       val elements: LinkedHashMap<String, Pattern>,
     ) : Pattern() {
       override val repr: Repr get() = Repr.COMPOUND

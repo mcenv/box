@@ -176,7 +176,7 @@ sealed class Value {
   }
 
   data class I8ArrayOf(
-    val elements: List<Lazy<Value>>,
+    val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value() {
     override val type: Lazy<Value> get() = I8Array.LAZY
   }
@@ -188,7 +188,7 @@ sealed class Value {
   }
 
   data class I32ArrayOf(
-    val elements: List<Lazy<Value>>,
+    val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value() {
     override val type: Lazy<Value> get() = I32Array.LAZY
   }
@@ -200,29 +200,29 @@ sealed class Value {
   }
 
   data class I64ArrayOf(
-    val elements: List<Lazy<Value>>,
+    val elements: kotlin.collections.List<Lazy<Value>>,
   ) : Value() {
     override val type: Lazy<Value> get() = I64Array.LAZY
   }
 
-  data class Vec(
+  data class List(
     val element: Lazy<Value>,
   ) : Value() {
     override val type: Lazy<Value> get() = Type.LIST_LAZY
   }
 
-  data class VecOf(
-    val elements: List<Lazy<Value>>,
+  data class ListOf(
+    val elements: kotlin.collections.List<Lazy<Value>>,
     override val type: Lazy<Value>,
   ) : Value()
 
-  data class Struct(
+  data class Compound(
     val elements: LinkedHashMap<String, Lazy<Value>>,
   ) : Value() {
     override val type: Lazy<Value> get() = Type.COMPOUND_LAZY
   }
 
-  data class StructOf(
+  data class CompoundOf(
     val elements: LinkedHashMap<String, Lazy<Value>>,
     override val type: Lazy<Value>,
   ) : Value()
@@ -233,13 +233,13 @@ sealed class Value {
   ) : Value()
 
   data class Union(
-    val elements: List<Lazy<Value>>,
+    val elements: kotlin.collections.List<Lazy<Value>>,
     override val type: Lazy<Value>,
   ) : Value()
 
   data class Func(
     val open: Boolean,
-    val params: List<Pair<Pattern, Lazy<Value>>>,
+    val params: kotlin.collections.List<Pair<Pattern, Lazy<Value>>>,
     val result: Closure,
   ) : Value() {
     override val type: Lazy<Value> get() = Type.COMPOUND_LAZY
@@ -247,7 +247,7 @@ sealed class Value {
 
   data class FuncOf(
     val open: Boolean,
-    val params: List<Pattern>,
+    val params: kotlin.collections.List<Pattern>,
     val result: Closure,
     override val type: Lazy<Value>,
   ) : Value()
@@ -255,7 +255,7 @@ sealed class Value {
   data class Apply(
     val open: Boolean,
     val func: Value,
-    val args: List<Lazy<Value>>,
+    val args: kotlin.collections.List<Lazy<Value>>,
     override val type: Lazy<Value>,
   ) : Value()
 
@@ -289,13 +289,13 @@ sealed class Value {
 
   data class If(
     val scrutinee: Lazy<Value>,
-    val branches: List<Pair<Pattern, Lazy<Value>>>,
+    val branches: kotlin.collections.List<Pair<Pattern, Lazy<Value>>>,
     override val type: Lazy<Value>,
   ) : Value()
 
   data class Project(
     val target: Value,
-    val projs: List<Proj>,
+    val projs: kotlin.collections.List<Proj>,
     override val type: Lazy<Value>,
   ) : Value()
 

@@ -1,11 +1,11 @@
-export def pack : type compound := struct {
+export def pack : type %compound := compound {
   name: wtf16,
   description: wtf16,
-  debug: struct {
+  debug: compound {
     verbose: bool,
   },
   # todo: dependencies
-  properties: struct {
+  properties: compound {
     eula: bool,
     level-name: wtf16,
     server-port: i32,

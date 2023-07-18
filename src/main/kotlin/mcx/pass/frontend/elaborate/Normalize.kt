@@ -142,26 +142,26 @@ fun Env.evalTerm(term: Term): Value {
       Value.I64ArrayOf(elements)
     }
 
-    is Term.Vec        -> {
+    is Term.List       -> {
       val element = lazy { evalTerm(term.element) }
-      Value.Vec(element)
+      Value.List(element)
     }
 
-    is Term.VecOf      -> {
+    is Term.ListOf     -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       val type = lazy { evalTerm(term.type) }
-      Value.VecOf(elements, type)
+      Value.ListOf(elements, type)
     }
 
-    is Term.Struct     -> {
+    is Term.Compound   -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
-      Value.Struct(elements)
+      Value.Compound(elements)
     }
 
-    is Term.StructOf   -> {
+    is Term.CompoundOf -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
       val type = lazy { evalTerm(term.type) }
-      Value.StructOf(elements, type)
+      Value.CompoundOf(elements, type)
     }
 
     is Term.Point      -> {
@@ -259,13 +259,13 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Project -> {
+    is Term.Project    -> {
       val target = evalTerm(term.target)
       term.projs.foldIndexed(target) { index, acc, proj ->
         when (acc) {
-          is Value.VecOf    -> acc.elements[(proj as Proj.VecOf).index].value
-          is Value.StructOf -> acc.elements[(proj as Proj.StructOf).name]!!.value
-          else              -> {
+          is Value.ListOf     -> acc.elements[(proj as Proj.ListOf).index].value
+          is Value.CompoundOf -> acc.elements[(proj as Proj.CompoundOf).name]!!.value
+          else                -> {
             if (index == term.projs.lastIndex) {
               acc
             } else {
@@ -418,26 +418,26 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.I64ArrayOf(elements)
     }
 
-    is Value.Vec        -> {
+    is Value.List       -> {
       val element = quoteValue(value.element.value)
-      Term.Vec(element)
+      Term.List(element)
     }
 
-    is Value.VecOf      -> {
+    is Value.ListOf     -> {
       val elements = value.elements.map { quoteValue(it.value) }
       val type = quoteValue(value.type.value)
-      Term.VecOf(elements, type)
+      Term.ListOf(elements, type)
     }
 
-    is Value.Struct     -> {
+    is Value.Compound   -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
-      Term.Struct(elements)
+      Term.Compound(elements)
     }
 
-    is Value.StructOf   -> {
+    is Value.CompoundOf -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
       val type = quoteValue(value.type.value)
-      Term.StructOf(elements, type)
+      Term.CompoundOf(elements, type)
     }
 
     is Value.Point      -> {
@@ -661,26 +661,26 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
-    is Pattern.VecOf      -> {
+    is Pattern.ListOf     -> {
       when (val value = value.value) {
-        is Value.VecOf -> {
+        is Value.ListOf -> {
           elements.size == value.elements.size &&
           (elements zip value.elements).all { (pattern, value) ->
             pattern matches value
           }
         }
-        else           -> false
+        else            -> false
       }
     }
 
-    is Pattern.StructOf   -> {
+    is Pattern.CompoundOf -> {
       when (val value = value.value) {
-        is Value.StructOf -> {
+        is Value.CompoundOf -> {
           elements.all { (name, pattern) ->
             value.elements[name]?.let { pattern matches it } ?: false
           }
         }
-        else              -> false
+        else                -> false
       }
     }
 
