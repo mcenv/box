@@ -451,7 +451,7 @@ class Pack private constructor(
         +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
         +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `STRING{-1}`))))
       }
-      else            -> error("Unknown builtin: ${builtin.name}")
+      else            -> error("Undefined builtin: ${builtin.name}")
     }
   }
 
