@@ -40,10 +40,10 @@ class Meta {
 
   fun checkSolved(
     diagnostics: MutableList<Diagnostic>,
-    vararg terms: Term?,
-  ): List<Term?> {
+    vararg terms: Term,
+  ): List<Term> {
     unsolvedMetas.clear()
-    val zonkedTerms = terms.map { it?.let { Lvl(0).zonkTerm(it) } }
+    val zonkedTerms = terms.map { Lvl(0).zonkTerm(it) }
     unsolvedMetas.forEach { (index, source) ->
       diagnostics += unsolvedMeta(index, source)
     }
@@ -52,112 +52,66 @@ class Meta {
 
   fun Lvl.zonkTerm(term: Term): Term {
     return when (term) {
-      is Term.Tag      -> {
-        term
-      }
+      is Term.Tag      -> term
 
-      is Term.TagOf    -> {
-        term
-      }
+      is Term.TagOf    -> term
 
       is Term.Type     -> {
         val tag = zonkTerm(term.element)
         Term.Type(tag)
       }
 
-      is Term.Unit     -> {
-        term
-      }
+      is Term.Unit     -> term
 
-      is Term.UnitOf   -> {
-        term
-      }
+      is Term.UnitOf   -> term
 
-      is Term.Bool     -> {
-        term
-      }
+      is Term.Bool     -> term
 
-      is Term.BoolOf   -> {
-        term
-      }
+      is Term.BoolOf   -> term
 
-      is Term.I8       -> {
-        term
-      }
+      is Term.I8       -> term
 
-      is Term.I8Of     -> {
-        term
-      }
+      is Term.I8Of     -> term
 
-      is Term.I16      -> {
-        term
-      }
+      is Term.I16      -> term
 
-      is Term.I16Of      -> {
-        term
-      }
+      is Term.I16Of    -> term
 
-      is Term.I32        -> {
-        term
-      }
+      is Term.I32      -> term
 
-      is Term.I32Of      -> {
-        term
-      }
+      is Term.I32Of    -> term
 
-      is Term.I64        -> {
-        term
-      }
+      is Term.I64      -> term
 
-      is Term.I64Of      -> {
-        term
-      }
+      is Term.I64Of    -> term
 
-      is Term.F32        -> {
-        term
-      }
+      is Term.F32      -> term
 
-      is Term.F32Of      -> {
-        term
-      }
+      is Term.F32Of    -> term
 
-      is Term.F64        -> {
-        term
-      }
+      is Term.F64      -> term
 
-      is Term.F64Of      -> {
-        term
-      }
+      is Term.F64Of    -> term
 
-      is Term.Wtf16    -> {
-        term
-      }
+      is Term.Wtf16    -> term
 
-      is Term.Wtf16Of  -> {
-        term
-      }
+      is Term.Wtf16Of  -> term
 
-      is Term.I8Array    -> {
-        term
-      }
+      is Term.I8Array  -> term
 
       is Term.I8ArrayOf  -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I8ArrayOf(elements)
       }
 
-      is Term.I32Array   -> {
-        term
-      }
+      is Term.I32Array -> term
 
       is Term.I32ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I32ArrayOf(elements)
       }
 
-      is Term.I64Array   -> {
-        term
-      }
+      is Term.I64Array -> term
 
       is Term.I64ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
@@ -290,9 +244,9 @@ class Meta {
         }
       }
 
-      is Term.Hole     -> {
-        term
-      }
+      is Term.Builtin  -> Term.Builtin(term.builtin)
+
+      is Term.Hole     -> term
     }
   }
 
@@ -394,20 +348,21 @@ class Meta {
           value2.result.open(this, (value2.type.value as Value.Func).params.map { it.second }),
         )
       }
-      value1 is Value.Apply && value2 is Value.Apply           -> {
+      value1 is Value.Apply && value2 is Value.Apply     -> {
         unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code             -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf         -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice         -> unifyValue(value1.element, value2.element)
-      value1 is Value.Command && value2 is Value.Command       -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.If && value2 is Value.If                 -> false // TODO
-      value1 is Value.Var && value2 is Value.Var               -> value1.lvl == value2.lvl
-      value1 is Value.Def && value2 is Value.Def               -> value1.def.name == value2.def.name // TODO: check body
-      value1 is Value.Hole || value2 is Value.Hole             -> true // ?
-      else                                                     -> false
+      value1 is Value.Code && value2 is Value.Code       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf   -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice   -> unifyValue(value1.element, value2.element)
+      value1 is Value.Command && value2 is Value.Command -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.If && value2 is Value.If           -> false // TODO
+      value1 is Value.Var && value2 is Value.Var         -> value1.lvl == value2.lvl
+      value1 is Value.Def && value2 is Value.Def         -> value1.def.name == value2.def.name // TODO: check body
+      value1 is Value.Builtin && value2 is Value.Builtin -> value1.builtin === value2.builtin
+      value1 is Value.Hole || value2 is Value.Hole       -> true // ?
+      else                                               -> false
     }
   }
 

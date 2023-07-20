@@ -6,17 +6,22 @@ import kotlinx.collections.immutable.plus
 import mcx.ast.Packed
 import mcx.ast.Packed.Command
 import mcx.ast.Packed.Command.*
+import mcx.ast.Packed.Command.Execute.ConditionalScore.Comparator.*
 import mcx.ast.Packed.Command.Execute.Mode.RESULT
+import mcx.ast.Packed.Command.Execute.Mode.SUCCESS
+import mcx.ast.Packed.Command.Execute.StoreStorage.Type
 import mcx.ast.Packed.DataAccessor
 import mcx.ast.Packed.DataManipulator
 import mcx.ast.Packed.NbtNode
 import mcx.ast.Packed.NbtNode.*
+import mcx.ast.Packed.Operation.*
 import mcx.ast.Packed.SourceProvider
 import mcx.ast.common.DefinitionLocation
 import mcx.ast.common.ModuleLocation
 import mcx.ast.common.Repr
 import mcx.data.NbtType
 import mcx.data.ResourceLocation
+import mcx.pass.Builtin
 import mcx.pass.Context
 import mcx.pass.core
 import mcx.util.green
@@ -106,33 +111,19 @@ class Pack private constructor(
     term: L.Term,
   ) {
     when (term) {
-      is L.Term.I8Of       -> {
-        push(Repr.BYTE, SourceProvider.Value(ByteTag(term.value)))
-      }
+      is L.Term.I8Of       -> push(Repr.BYTE, SourceProvider.Value(ByteTag(term.value)))
 
-      is L.Term.I16Of      -> {
-        push(Repr.SHORT, SourceProvider.Value(ShortTag(term.value)))
-      }
+      is L.Term.I16Of      -> push(Repr.SHORT, SourceProvider.Value(ShortTag(term.value)))
 
-      is L.Term.I32Of      -> {
-        push(Repr.INT, SourceProvider.Value(IntTag(term.value)))
-      }
+      is L.Term.I32Of      -> push(Repr.INT, SourceProvider.Value(IntTag(term.value)))
 
-      is L.Term.I64Of      -> {
-        push(Repr.LONG, SourceProvider.Value(LongTag(term.value)))
-      }
+      is L.Term.I64Of      -> push(Repr.LONG, SourceProvider.Value(LongTag(term.value)))
 
-      is L.Term.F32Of      -> {
-        push(Repr.FLOAT, SourceProvider.Value(FloatTag(term.value)))
-      }
+      is L.Term.F32Of      -> push(Repr.FLOAT, SourceProvider.Value(FloatTag(term.value)))
 
-      is L.Term.F64Of      -> {
-        push(Repr.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
-      }
+      is L.Term.F64Of      -> push(Repr.DOUBLE, SourceProvider.Value(DoubleTag(term.value)))
 
-      is L.Term.Wtf16Of    -> {
-        push(Repr.STRING, SourceProvider.Value(StringTag(term.value)))
-      }
+      is L.Term.Wtf16Of    -> push(Repr.STRING, SourceProvider.Value(StringTag(term.value)))
 
       is L.Term.I8ArrayOf  -> {
         val elements = term.elements.map { (it as? L.Term.I8Of)?.value ?: 0 }
@@ -140,7 +131,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I8Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(BYTE_TOP)))
+            +ManipulateData(DataAccessor(MCX, `BYTE_ARRAY{-1}`(index)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `BYTE{-1}`))))
             drop(Repr.BYTE)
           }
         }
@@ -151,7 +142,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I32Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.INT_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(INT_TOP)))
+            +ManipulateData(DataAccessor(MCX, `INT_ARRAY{-1}`(index)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `INT{-1}`))))
             drop(Repr.INT)
           }
         }
@@ -162,7 +153,7 @@ class Pack private constructor(
         term.elements.forEachIndexed { index, element ->
           if (element !is L.Term.I64Of) {
             packTerm(element)
-            +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LONG_ARRAY.id)(LAST)(index)), DataManipulator.Set(SourceProvider.From(LONG_TOP)))
+            +ManipulateData(DataAccessor(MCX, `LONG_ARRAY{-1}`(index)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `LONG{-1}`))))
             drop(Repr.LONG)
           }
         }
@@ -182,15 +173,13 @@ class Pack private constructor(
         initializers.forEach { it() }
       }
 
-      is L.Term.ProcOf     -> {
-        push(Repr.INT, SourceProvider.Value(IntTag(term.function.restore!!)))
-      }
+      is L.Term.ProcOf     -> push(Repr.INT, SourceProvider.Value(IntTag(term.function.restore!!)))
 
       is L.Term.FuncOf     -> {
         push(Repr.COMPOUND, SourceProvider.Value(buildCompoundTag { put("_", term.tag) }))
         term.entries.forEach { (name, repr) ->
           val index = this[name, repr]
-          +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index)))))
+          +ManipulateData(DataAccessor(MCX, `COMPOUND{-1}`(name)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index)))))
         }
       }
 
@@ -258,6 +247,211 @@ class Pack private constructor(
         +RunFunction(packDefinitionLocation(term.name))
         push(term.repr, null)
       }
+
+      is L.Term.Builtin    -> {
+        !{ Raw("# builtin ${term.builtin.name}") }
+        packBuiltin(term.builtin)
+        push(term.repr, null)
+      }
+    }
+  }
+
+  private fun packBuiltin(builtin: Builtin) {
+    when (builtin.name) {
+      "prelude::++"   -> unreachable()
+      "i8::="         -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, EQ, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i8::to_i16"    -> {
+        +ManipulateData(DataAccessor(MCX, SHORT), DataManipulator.Append(SourceProvider.Value(ShortTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `SHORT{-1}`), Type.SHORT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i8::to_i32"    -> {
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i8::to_i64"    -> {
+        +ManipulateData(DataAccessor(MCX, LONG), DataManipulator.Append(SourceProvider.Value(LongTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `LONG{-1}`), Type.LONG, 1.0, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i8::to_f32"    -> {
+        +ManipulateData(DataAccessor(MCX, FLOAT), DataManipulator.Append(SourceProvider.Value(FloatTag(0.0f))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `FLOAT{-1}`), Type.FLOAT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i8::to_f64"    -> {
+        +ManipulateData(DataAccessor(MCX, DOUBLE), DataManipulator.Append(SourceProvider.Value(DoubleTag(0.0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `DOUBLE{-1}`), Type.DOUBLE, 1.0, Execute.Run(GetData(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i8::to_wtf16"  -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `BYTE{-1}`))))
+      }
+      "i16::="        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, EQ, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i16::to_i8"    -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i16::to_i32"   -> {
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i16::to_i64"   -> {
+        +ManipulateData(DataAccessor(MCX, LONG), DataManipulator.Append(SourceProvider.Value(LongTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `LONG{-1}`), Type.LONG, 1.0, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i16::to_f32"   -> {
+        +ManipulateData(DataAccessor(MCX, FLOAT), DataManipulator.Append(SourceProvider.Value(FloatTag(0.0f))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `FLOAT{-1}`), Type.FLOAT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i16::to_f64"   -> {
+        +ManipulateData(DataAccessor(MCX, DOUBLE), DataManipulator.Append(SourceProvider.Value(DoubleTag(0.0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `DOUBLE{-1}`), Type.DOUBLE, 1.0, Execute.Run(GetData(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i16::to_wtf16" -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `SHORT{-1}`))))
+      }
+      "i32::+"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, ADD, R1, MAIN)))
+      }
+      "i32::-"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, SUB, R1, MAIN)))
+      }
+      "i32::*"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, MUL, R1, MAIN)))
+      }
+      "i32::/"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, DIV, R1, MAIN)))
+      }
+      "i32::%"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, MOD, R1, MAIN)))
+      }
+      "i32::min"      -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, MIN, R1, MAIN)))
+      }
+      "i32::max"      -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(PerformOperation(R0, MAIN, MAX, R1, MAIN)))
+      }
+      "i32::="        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, EQ, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i32::<"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, LT, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i32::<="       -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, LE, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i32::>"        -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, GT, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i32::>="       -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.ConditionalScore(true, R0, MAIN, GE, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(1))))))
+      }
+      "i32::!="       -> {
+        +Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-2}`))))
+        +Execute.StoreScore(RESULT, R1, MAIN, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(1))))
+        +Execute.ConditionalScore(true, R0, MAIN, EQ, R1, MAIN, Execute.Run(ManipulateData(DataAccessor(MCX, `BYTE{-1}`), DataManipulator.Set(SourceProvider.Value(ByteTag(0))))))
+      }
+      "i32::to_i8"    -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i32::to_i16"   -> {
+        +ManipulateData(DataAccessor(MCX, SHORT), DataManipulator.Append(SourceProvider.Value(ShortTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `SHORT{-1}`), Type.SHORT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i32::to_i64"   -> {
+        +ManipulateData(DataAccessor(MCX, LONG), DataManipulator.Append(SourceProvider.Value(LongTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `LONG{-1}`), Type.LONG, 1.0, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i32::to_f32"   -> {
+        +ManipulateData(DataAccessor(MCX, FLOAT), DataManipulator.Append(SourceProvider.Value(LongTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `FLOAT{-1}`), Type.FLOAT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i32::to_f64"   -> {
+        +ManipulateData(DataAccessor(MCX, DOUBLE), DataManipulator.Append(SourceProvider.Value(LongTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `DOUBLE{-1}`), Type.DOUBLE, 1.0, Execute.Run(GetData(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i32::to_wtf16" -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `INT{-1}`))))
+      }
+      "i64::!="       -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +ManipulateData(DataAccessor(MCX, LONG), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, `LONG{-2}`))))
+        +Execute.StoreStorage(SUCCESS, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(ManipulateData(DataAccessor(MCX, `LONG{-1}`), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `LONG{-2}`))))))
+      }
+      "i64::to_wtf16" -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `LONG{-1}`))))
+      }
+      "f32::!="       -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +ManipulateData(DataAccessor(MCX, FLOAT), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, `FLOAT{-2}`))))
+        +Execute.StoreStorage(SUCCESS, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(ManipulateData(DataAccessor(MCX, `FLOAT{-1}`), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `FLOAT{-2}`))))))
+      }
+      "f32::to_wtf16" -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `FLOAT{-1}`))))
+      }
+      "f64::!="       -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +ManipulateData(DataAccessor(MCX, DOUBLE), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, `DOUBLE{-2}`))))
+        +Execute.StoreStorage(SUCCESS, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(ManipulateData(DataAccessor(MCX, `DOUBLE{-1}`), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `DOUBLE{-2}`))))))
+      }
+      "f64::to_wtf16" -> {
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.String(DataAccessor(MCX, `DOUBLE{-1}`))))
+      }
+      "wtf16::!="     -> {
+        +ManipulateData(DataAccessor(MCX, BYTE), DataManipulator.Append(SourceProvider.Value(ByteTag(0))))
+        +ManipulateData(DataAccessor(MCX, STRING), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, `STRING{-2}`))))
+        +Execute.StoreStorage(SUCCESS, DataAccessor(MCX, `BYTE{-1}`), Type.BYTE, 1.0, Execute.Run(ManipulateData(DataAccessor(MCX, `STRING{-1}`), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `STRING{-2}`))))))
+      }
+      "wtf16::size"   -> {
+        +ManipulateData(DataAccessor(MCX, INT), DataManipulator.Append(SourceProvider.Value(IntTag(0))))
+        +Execute.StoreStorage(RESULT, DataAccessor(MCX, `INT{-1}`), Type.INT, 1.0, Execute.Run(GetData(DataAccessor(MCX, `STRING{-1}`))))
+      }
+      else            -> error("Unknown builtin: ${builtin.name}")
     }
   }
 
@@ -300,8 +494,8 @@ class Pack private constructor(
             add(buildDefault(element))
             initializers += {
               packTerm(element)
-              val targetIndex = if (element.repr == Repr.LIST) -2 else LAST
-              +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(targetIndex) + target(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, nbtPath(element.repr.id)(LAST)))))
+              val targetIndex = if (element.repr == Repr.LIST) -2 else -1
+              +ManipulateData(DataAccessor(MCX, LIST(targetIndex) + target(index)), DataManipulator.Append(SourceProvider.From(DataAccessor(MCX, `LIST{-1}`))))
               drop(element.repr)
             }
           }
@@ -331,8 +525,8 @@ class Pack private constructor(
             put(key, buildDefault(element))
             initializers += {
               packTerm(element)
-              val targetIndex = if (element.repr == Repr.COMPOUND) -2 else LAST
-              +ManipulateData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(targetIndex) + target(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, nbtPath(element.repr.id)(LAST)))))
+              val targetIndex = if (element.repr == Repr.COMPOUND) -2 else -1
+              +ManipulateData(DataAccessor(MCX, COMPOUND(targetIndex) + target(key)), DataManipulator.Set(SourceProvider.From(DataAccessor(MCX, `COMPOUND{-1}`))))
               drop(element.repr)
             }
           }
@@ -477,42 +671,42 @@ class Pack private constructor(
     pattern: L.Pattern,
   ) {
     when (pattern) {
-      is L.Pattern.UnitOf    -> {}
-      is L.Pattern.BoolOf    -> {}
-      is L.Pattern.I8Of      -> {}
-      is L.Pattern.I16Of     -> {}
-      is L.Pattern.I32Of     -> {}
-      is L.Pattern.I64Of     -> {}
-      is L.Pattern.F32Of     -> {}
-      is L.Pattern.F64Of     -> {}
-      is L.Pattern.Wtf16Of   -> {}
+      is L.Pattern.UnitOf     -> {}
+      is L.Pattern.BoolOf     -> {}
+      is L.Pattern.I8Of       -> {}
+      is L.Pattern.I16Of      -> {}
+      is L.Pattern.I32Of      -> {}
+      is L.Pattern.I64Of      -> {}
+      is L.Pattern.F32Of      -> {}
+      is L.Pattern.F64Of      -> {}
+      is L.Pattern.Wtf16Of    -> {}
       is L.Pattern.I8ArrayOf  -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.BYTE_ARRAY.id)(LAST)(index)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, `BYTE_ARRAY{-1}`(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.I32ArrayOf -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.INT_ARRAY.id)(LAST)(index)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, `INT_ARRAY{-1}`(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.I64ArrayOf -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LONG_ARRAY.id)(LAST)(index)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, `LONG_ARRAY{-1}`(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.ListOf     -> {
         pattern.elements.forEachIndexed { index, element ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.LIST.id)(LAST)(index)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, `LIST{-1}`(index)))) // ?
           packPattern(element)
         }
       }
       is L.Pattern.CompoundOf -> {
         pattern.elements.forEach { (name, element) ->
-          push(element.repr, SourceProvider.From(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)(name)))) // ?
+          push(element.repr, SourceProvider.From(DataAccessor(MCX, `COMPOUND{-1}`(name)))) // ?
           packPattern(element)
         }
       }
@@ -526,13 +720,13 @@ class Pack private constructor(
     keeps: List<Repr>,
   ) {
     when (pattern) {
-      is L.Pattern.UnitOf    -> drop(Repr.BYTE, keeps)
-      is L.Pattern.BoolOf    -> drop(Repr.BYTE, keeps)
-      is L.Pattern.I8Of      -> drop(Repr.BYTE, keeps)
-      is L.Pattern.I16Of     -> drop(Repr.SHORT, keeps)
-      is L.Pattern.I32Of     -> drop(Repr.INT, keeps)
-      is L.Pattern.I64Of     -> drop(Repr.LONG, keeps)
-      is L.Pattern.F32Of     -> drop(Repr.FLOAT, keeps)
+      is L.Pattern.UnitOf     -> drop(Repr.BYTE, keeps)
+      is L.Pattern.BoolOf     -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I8Of       -> drop(Repr.BYTE, keeps)
+      is L.Pattern.I16Of      -> drop(Repr.SHORT, keeps)
+      is L.Pattern.I32Of      -> drop(Repr.INT, keeps)
+      is L.Pattern.I64Of      -> drop(Repr.LONG, keeps)
+      is L.Pattern.F32Of      -> drop(Repr.FLOAT, keeps)
       is L.Pattern.F64Of      -> drop(Repr.DOUBLE, keeps)
       is L.Pattern.Wtf16Of    -> drop(Repr.STRING, keeps)
       is L.Pattern.I8ArrayOf  -> {
@@ -623,29 +817,56 @@ class Pack private constructor(
   }
 
   companion object {
-    private const val LAST: Int = -1
-
     private val nbtPath: PersistentList<NbtNode> = persistentListOf()
 
     val INIT: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":init"))
     private val DISPATCH_PROC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_proc"))
     private val DISPATCH_FUNC: ResourceLocation = packDefinitionLocation(DefinitionLocation(ModuleLocation(core), ":dispatch_func"))
 
-    private val MAIN: Packed.Objective = Packed.Objective("mcx")
+    val MAIN: Packed.Objective = Packed.Objective("mcx")
 
-    private val R0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
-    private val R1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
+    val R0: Packed.ScoreHolder = Packed.ScoreHolder("#0")
+    val R1: Packed.ScoreHolder = Packed.ScoreHolder("#1")
 
-    private val MCX: ResourceLocation = ResourceLocation("mcx", "")
+    val MCX: ResourceLocation = ResourceLocation("mcx", "")
     private val MCX_DATA: ResourceLocation = ResourceLocation("mcx_data", "")
     private val MCX_TEST: ResourceLocation = ResourceLocation("mcx_test", "")
 
     private const val REGISTER_PATH: String = "register"
     private val REGISTER: DataAccessor = DataAccessor(MCX, nbtPath(REGISTER_PATH))
 
-    private val BYTE_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.BYTE.id)(LAST))
-    private val INT_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.INT.id)(LAST))
-    private val LONG_TOP: DataAccessor = DataAccessor(MCX, nbtPath(NbtType.LONG.id)(LAST))
+    private val BYTE: PersistentList<NbtNode> = nbtPath(NbtType.BYTE.id)
+    private val `BYTE{-1}`: PersistentList<NbtNode> = BYTE(-1)
+    private val `BYTE{-2}`: PersistentList<NbtNode> = BYTE(-2)
+    private val SHORT: PersistentList<NbtNode> = nbtPath(NbtType.SHORT.id)
+    private val `SHORT{-1}`: PersistentList<NbtNode> = SHORT(-1)
+    private val `SHORT{-2}`: PersistentList<NbtNode> = SHORT(-2)
+    private val INT: PersistentList<NbtNode> = nbtPath(NbtType.INT.id)
+    private val `INT{-1}`: PersistentList<NbtNode> = INT(-1)
+    private val `INT{-2}`: PersistentList<NbtNode> = INT(-2)
+    private val LONG: PersistentList<NbtNode> = nbtPath(NbtType.LONG.id)
+    private val `LONG{-1}`: PersistentList<NbtNode> = LONG(-1)
+    private val `LONG{-2}`: PersistentList<NbtNode> = LONG(-2)
+    private val FLOAT: PersistentList<NbtNode> = nbtPath(NbtType.FLOAT.id)
+    private val `FLOAT{-1}`: PersistentList<NbtNode> = FLOAT(-1)
+    private val `FLOAT{-2}`: PersistentList<NbtNode> = FLOAT(-2)
+    private val DOUBLE: PersistentList<NbtNode> = nbtPath(NbtType.DOUBLE.id)
+    private val `DOUBLE{-1}`: PersistentList<NbtNode> = DOUBLE(-1)
+    private val `DOUBLE{-2}`: PersistentList<NbtNode> = DOUBLE(-2)
+    private val BYTE_ARRAY: PersistentList<NbtNode> = nbtPath(NbtType.BYTE_ARRAY.id)
+    private val `BYTE_ARRAY{-1}`: PersistentList<NbtNode> = BYTE_ARRAY(-1)
+    private val STRING: PersistentList<NbtNode> = nbtPath(NbtType.STRING.id)
+    private val `STRING{-1}`: PersistentList<NbtNode> = STRING(-1)
+    private val `STRING{-2}`: PersistentList<NbtNode> = STRING(-2)
+    private val LIST: PersistentList<NbtNode> = nbtPath(NbtType.LIST.id)
+    private val `LIST{-1}`: PersistentList<NbtNode> = LIST(-1)
+    private val COMPOUND: PersistentList<NbtNode> = nbtPath(NbtType.COMPOUND.id)
+    private val `COMPOUND{-1}`: PersistentList<NbtNode> = COMPOUND(-1)
+    private val INT_ARRAY: PersistentList<NbtNode> = nbtPath(NbtType.INT_ARRAY.id)
+    private val `INT_ARRAY{-1}`: PersistentList<NbtNode> = INT_ARRAY(-1)
+    private val LONG_ARRAY: PersistentList<NbtNode> = nbtPath(NbtType.LONG_ARRAY.id)
+    private val `LONG_ARRAY{-1}`: PersistentList<NbtNode> = LONG_ARRAY(-1)
+
     private val TEST_CELL: DataAccessor = DataAccessor(MCX_TEST, nbtPath("test"))
 
     fun packDefinitionLocation(
@@ -714,7 +935,7 @@ class Pack private constructor(
       procs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_PROC, run {
-        val proc = DataAccessor(MCX, nbtPath(NbtType.INT.id)(LAST))
+        val proc = DataAccessor(MCX, `INT{-1}`)
         listOf(
           Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(proc))),
           RemoveData(proc),
@@ -730,8 +951,8 @@ class Pack private constructor(
       funcs: List<L.Definition.Function>,
     ): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_FUNC, listOf(
-        Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST)("_"))))),
-        RemoveData(DataAccessor(MCX, nbtPath(NbtType.COMPOUND.id)(LAST))),
+        Execute.StoreScore(RESULT, R0, MAIN, Execute.Run(GetData(DataAccessor(MCX, `COMPOUND{-1}`("_"))))),
+        RemoveData(DataAccessor(MCX, `COMPOUND{-1}`)),
       ) + funcs.sortedBy { it.restore }.map { function ->
         val tag = function.restore!!
         Execute.ConditionalScoreMatches(true, R0, MAIN, exact(tag), Execute.Run(RunFunction(packDefinitionLocation(function.name))))

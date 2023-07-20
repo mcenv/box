@@ -153,6 +153,11 @@ object Lifted {
       val name: DefinitionLocation,
       override val repr: Repr,
     ) : Term()
+
+    data class Builtin(
+      val builtin: mcx.pass.Builtin,
+      override val repr: Repr,
+    ) : Term()
   }
 
   sealed class Pattern {

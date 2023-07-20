@@ -23,7 +23,7 @@ object Core {
       override val modifiers: List<Modifier>,
       override val name: DefinitionLocation,
       val type: Term,
-      val body: Term?,
+      val body: Term,
     ) : Definition()
   }
 
@@ -296,6 +296,12 @@ object Core {
       val source: Range,
       override val type: Term,
     ) : Term()
+
+    data class Builtin(
+      val builtin: mcx.pass.Builtin,
+    ) : Term() {
+      override val type: Func get() = builtin.type
+    }
 
     data object Hole : Term() {
       override val type: Term get() = Hole

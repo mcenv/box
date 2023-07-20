@@ -1,7 +1,6 @@
 package mcx.ast.common
 
 enum class Modifier(val id: String) {
-  BUILTIN("builtin"),
   EXPORT("export"),
   REC("rec"),
   DIRECT("direct"),

@@ -2,33 +2,18 @@ export def min_value : i16 := -32768i16;
 
 export def max_value : i16 := 32767i16;
 
-export builtin def =(i16, i16) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: short[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: short[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx = \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def = : proc(i16, i16) -> bool := builtin i16::=;
 
-export builtin def to_i8(i16) : i8 :=
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: short[-1]";
+export def to_i8 : proc(i16) -> i8 := builtin i16::to_i8;
 
 export def to_i16(self : i16) : i16 := self;
 
-export builtin def to_i32(i16) : i32 :=
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run data get storage mcx: short[-1]";
+export def to_i32 : proc(i16) -> i32 := builtin i16::to_i32;
 
-export builtin def to_i64(i16) : i64 :=
-  let _ as end := /"data modify storage mcx: long append value 0l";
-  /"execute store result storage mcx: long[-1] long 1 run data get storage mcx: short[-1]";
+export def to_i64 : proc(i16) -> i64 := builtin i16::to_i64;
 
-export builtin def to_f32(i16) : f32 :=
-  let _ as end := /"data modify storage mcx: float append value 0f";
-  /"execute store result storage mcx: float[-1] float 1 run data get storage mcx: short[-1]";
+export def to_f32 : proc(i16) -> f32 := builtin i16::to_f32;
 
-export builtin def to_f64(i16) : f64 :=
-  let _ as end := /"data modify storage mcx: double append value 0d";
-  /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: short[-1]";
+export def to_f64 : proc(i16) -> f64 := builtin i16::to_f64;
 
-export builtin def to_wtf16(i16) : wtf16 :=
-  /"data modify storage mcx: string append string storage mcx: short[-1]";
+export def to_wtf16 : proc(i16) -> wtf16 := builtin i16::to_wtf16;

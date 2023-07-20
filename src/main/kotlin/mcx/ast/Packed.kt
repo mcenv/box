@@ -156,6 +156,7 @@ object Packed {
   sealed class SourceProvider {
     data class Value(val value: Tag) : SourceProvider()
     data class From(val source: DataAccessor) : SourceProvider()
+    data class String(val source: DataAccessor) : SourceProvider()
   }
 
   data class ScoreHolder(val name: String)

@@ -91,12 +91,7 @@ class Parse private constructor(
                 skip()
                 skipTrivia()
                 val type = parseTerm()
-                val body = if (
-                  modifiers.find { it.value == Modifier.BUILTIN } != null &&
-                  modifiers.find { it.value == Modifier.CONST } != null
-                ) {
-                  null
-                } else {
+                val body = run {
                   expect(":=")
                   skipTrivia()
                   parseTerm()
@@ -122,12 +117,7 @@ class Parse private constructor(
                   val result = parseTerm()
                   S.Term.Func(false, params, result, until())
                 }
-                val body = if (
-                  modifiers.find { it.value == Modifier.BUILTIN } != null &&
-                  modifiers.find { it.value == Modifier.CONST } != null
-                ) {
-                  null
-                } else {
+                val body = run {
                   expect(":=")
                   skipTrivia()
                   val body = parseTerm()
@@ -195,7 +185,6 @@ class Parse private constructor(
       val start = cursor
       modifiers += ranging {
         when (val word = readWord()) {
-          "builtin" -> Ranged(Modifier.BUILTIN, until())
           "export"  -> Ranged(Modifier.EXPORT, until())
           "rec"     -> Ranged(Modifier.REC, until())
           "const"   -> Ranged(Modifier.CONST, until())
@@ -408,7 +397,7 @@ class Parse private constructor(
                 val element = parseTerm0()
                 S.Term.Code(element, until())
               }
-              "let"          -> {
+              "let"     -> {
                 skipTrivia()
                 val name = parseTerm()
                 expect(":=")
@@ -419,7 +408,7 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              "if"           -> {
+              "if"      -> {
                 skipTrivia()
                 val scrutinee = parseTerm()
                 val branches = parseList(',', '[', ']') {
@@ -431,7 +420,12 @@ class Parse private constructor(
                 }
                 S.Term.If(scrutinee, branches, until())
               }
-              else           -> {
+              "builtin" -> {
+                skipTrivia()
+                val name = readLocation()
+                S.Term.Builtin(name, until())
+              }
+              else      -> {
                 val name = word.value
                 when {
                   name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }

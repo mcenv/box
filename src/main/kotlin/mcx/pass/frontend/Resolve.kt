@@ -97,12 +97,8 @@ class Resolve private constructor(
     location = name.value
     return when (definition) {
       is S.Definition.Def  -> {
-        val builtin = definition.modifiers.find { it.value == Modifier.BUILTIN }
-        if (builtin != null && lookupBuiltin(name.value) == null) {
-          diagnose(undefinedBuiltin(name.value, builtin.range))
-        }
         val type = emptyEnv().resolveTerm(definition.type)
-        val body = definition.body?.let { emptyEnv().resolveTerm(it) }
+        val body = definition.body.let { emptyEnv().resolveTerm(it) }
         R.Definition.Def(definition.doc, definition.annotations, definition.modifiers, name, type, body, range)
       }
       is S.Definition.Hole -> unreachable()
@@ -323,7 +319,7 @@ class Resolve private constructor(
         R.Term.If(scrutinee, branches, range)
       }
 
-      is S.Term.Var        -> {
+      is S.Term.Var       -> {
         when (term.name) {
           "_"  -> R.Term.Meta(range)
           else -> {
@@ -348,13 +344,25 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.As         -> {
+      is S.Term.As        -> {
         val element = resolveTerm(term.element)
         val type = resolveTerm(term.type)
         R.Term.As(element, type, range)
       }
 
-      is S.Term.Hole       -> {
+      is S.Term.Builtin   -> {
+        when (val builtin = lookupBuiltin(term.name)) {
+          null -> {
+            diagnose(undefinedBuiltin(term.name, range))
+            R.Term.Hole(range)
+          }
+          else -> {
+            R.Term.Builtin(builtin, range)
+          }
+        }
+      }
+
+      is S.Term.Hole      -> {
         R.Term.Hole(range)
       }
     }
@@ -584,7 +592,7 @@ class Resolve private constructor(
   }
 
   private fun undefinedBuiltin(
-    name: DefinitionLocation,
+    name: String,
     range: Range,
   ): Diagnostic {
     return diagnostic(

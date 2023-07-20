@@ -78,16 +78,16 @@ class Elaborate private constructor(
     location = name
     return when (definition) {
       is R.Definition.Def  -> {
-        val modifiers = if (definition.body.let { it is R.Term.FuncOf && !it.open }) modifiers + Modifier.DIRECT else modifiers
+        val modifiers = if (definition.body.let { (it is R.Term.FuncOf && !it.open) || (it is R.Term.Builtin) }) modifiers + Modifier.DIRECT else modifiers
         val ctx = emptyCtx()
         val phase = getPhase(modifiers)
         val type = ctx.checkTerm(definition.type, phase, meta.freshType(definition.type.range))
         if (Modifier.REC in modifiers) {
-          definitions[name] = C.Definition.Def(doc, annotations, modifiers, name, type, null)
+          definitions[name] = C.Definition.Def(doc, annotations, modifiers, name, type, C.Term.Hole)
         }
-        val body = definition.body?.let { ctx.checkTerm(it, phase, ctx.env.evalTerm(type)) }
+        val body = definition.body.let { ctx.checkTerm(it, phase, ctx.env.evalTerm(type)) }
         val (zonkedType, zonkedBody) = meta.checkSolved(diagnostics.computeIfAbsent(location) { mutableListOf() }, type, body)
-        C.Definition.Def(doc, annotations, modifiers, name, zonkedType!!, zonkedBody).also {
+        C.Definition.Def(doc, annotations, modifiers, name, zonkedType, zonkedBody).also {
           hoverDef(definition.name.range, it)
         }
       }
@@ -229,12 +229,12 @@ class Elaborate private constructor(
         C.Term.I64ArrayOf(elements) to Value.I64Array
       }
 
-      term is Resolved.Term.List && synth(type)                -> {
+      term is Resolved.Term.List && synth(type)                   -> {
         val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
         C.Term.List(element) to Value.Type.LIST
       }
 
-      term is R.Term.ListOf && match<Value.List>(type)         -> {
+      term is R.Term.ListOf && match<Value.List>(type)            -> {
         val elementType = type?.element?.value
         val (elements, elementsTypes) = term.elements.map { elaborateTerm(it, phase, elementType) }.unzip()
         val type = type ?: Value.List(lazyOf(
@@ -250,7 +250,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Compound && synth(type)                   -> {
+      term is R.Term.Compound && synth(type)                      -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
@@ -258,7 +258,7 @@ class Elaborate private constructor(
         C.Term.Compound(elements) to Value.Type.COMPOUND
       }
 
-      term is R.Term.CompoundOf && synth(type)                 -> {
+      term is R.Term.CompoundOf && synth(type)                    -> {
         val elements = linkedMapOf<String, C.Term>()
         val elementsTypes = linkedMapOf<String, Lazy<Value>>()
         term.elements.forEach { (key, element) ->
@@ -272,7 +272,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.CompoundOf && check<Value.Compound>(type) -> {
+      term is R.Term.CompoundOf && check<Value.Compound>(type)    -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (name, element) ->
           val (element, _) = elaborateTerm(element, phase, type.elements[name.value]?.value)
           name.value to element
@@ -473,7 +473,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Def && synth(type)                                          -> {
+      term is R.Term.Def && synth(type)                           -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             hoverDef(term.range, definition)
@@ -503,29 +503,34 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Meta && match<Value>(type)                                  -> {
+      term is R.Term.Meta && match<Value>(type)                   -> {
         val type = type ?: meta.freshValue(term.range)
         next().quoteValue(meta.freshValue(term.range)) to type
       }
 
-      term is R.Term.As && synth(type)                                           -> {
+      term is R.Term.As && synth(type)                            -> {
         val type = env.evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
 
-      term is R.Term.Hole && match<Value>(type)                                  -> {
+      term is R.Term.Builtin && synth(type)                       -> {
+        val type = env.evalTerm(term.builtin.type)
+        C.Term.Builtin(term.builtin) to type
+      }
+
+      term is R.Term.Hole && match<Value>(type)                   -> {
         C.Term.Hole to Value.Hole
       }
 
-      synth(type) && phase == Phase.WORLD                                        -> {
+      synth(type) && phase == Phase.WORLD                         -> {
         invalidTerm(phaseMismatch(Phase.CONST, phase, term.range))
       }
 
-      synth(type)                                                                -> {
+      synth(type)                                                 -> {
         invalidTerm(cannotSynthesize(term.range))
       }
 
-      check<Value>(type)                                                         -> {
+      check<Value>(type)                                          -> {
         val (synth, synthType) = synthTerm(term, phase)
         lateinit var diagnostic: Lazy<Diagnostic>
 
@@ -741,15 +746,15 @@ class Elaborate private constructor(
         }
       }
 
-      value1 is Value.Point && value2 !is Value.Point  -> {
+      value1 is Value.Point && value2 !is Value.Point -> {
         sub(value1.element.value.type.value, value2)
       }
 
-      value1 is Value.Union                            -> {
+      value1 is Value.Union                           -> {
         value1.elements.all { sub(it.value, value2) }
       }
 
-      value2 is Value.Union                            -> {
+      value2 is Value.Union                           -> {
         // TODO: implement subtyping with unification that has lower bound and upper bound
         if (value1 is Value.Meta && value2.elements.isEmpty()) {
           with(meta) { unifyValue(value1, value2) }
@@ -758,7 +763,7 @@ class Elaborate private constructor(
         }
       }
 
-      value1 is Value.Func && value2 is Value.Func     -> {
+      value1 is Value.Func && value2 is Value.Func    -> {
         value1.open == value2.open &&
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) ->
@@ -770,11 +775,11 @@ class Elaborate private constructor(
         )
       }
 
-      value1 is Value.Code && value2 is Value.Code     -> {
+      value1 is Value.Code && value2 is Value.Code    -> {
         sub(value1.element.value, value2.element.value)
       }
 
-      else                                             -> {
+      else                                            -> {
         with(meta) { unifyValue(value1, value2) }
       }
     }
@@ -1048,12 +1053,7 @@ class Elaborate private constructor(
       input: Resolve.Result,
       instruction: Instruction?,
     ): Result {
-      try {
-        return Elaborate(dependencies, input, instruction).elaborate()
-      } catch (e: Exception) {
-        println(input.module.name)
-        throw e
-      }
+      return Elaborate(dependencies, input, instruction).elaborate()
     }
   }
 }

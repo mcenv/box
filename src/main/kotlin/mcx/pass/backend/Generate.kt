@@ -240,12 +240,16 @@ class Generate private constructor(
     provider: P.SourceProvider,
   ) {
     when (provider) {
-      is P.SourceProvider.Value -> {
+      is P.SourceProvider.Value  -> {
         append("value ")
         generateNbt(provider.value)
       }
-      is P.SourceProvider.From  -> {
+      is P.SourceProvider.From   -> {
         append("from ")
+        generateDataAccessor(provider.source)
+      }
+      is P.SourceProvider.String -> {
+        append("string ")
         generateDataAccessor(provider.source)
       }
     }

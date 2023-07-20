@@ -21,7 +21,7 @@ class Stage private constructor() {
           null
         } else {
           val type = stageTerm(definition.type)
-          val body = definition.body?.let { stageTerm(it) }
+          val body = stageTerm(definition.body)
           Definition.Def(definition.doc, definition.annotations, definition.modifiers, definition.name, type, body)
         }
       }
@@ -46,114 +46,72 @@ class Stage private constructor() {
     phase: Phase,
   ): Value {
     return when (term) {
-      is Term.Tag     -> {
+      is Term.Tag      -> {
         requireConst(term, phase)
         Value.Tag
       }
 
-      is Term.TagOf   -> {
+      is Term.TagOf    -> {
         requireConst(term, phase)
         Value.TagOf(term.repr)
       }
 
-      is Term.Type    -> {
+      is Term.Type     -> {
         val tag = lazy { evalTerm(term.element, Phase.CONST) }
         Value.Type(tag)
       }
 
-      is Term.Unit    -> {
-        Value.Unit
-      }
+      is Term.Unit     -> Value.Unit
 
-      is Term.UnitOf  -> {
-        Value.UnitOf
-      }
+      is Term.UnitOf   -> Value.UnitOf
 
-      is Term.Bool    -> {
-        Value.Bool
-      }
+      is Term.Bool     -> Value.Bool
 
-      is Term.BoolOf  -> {
-        Value.BoolOf(term.value)
-      }
+      is Term.BoolOf   -> Value.BoolOf(term.value)
 
-      is Term.I8      -> {
-        Value.I8
-      }
+      is Term.I8       -> Value.I8
 
-      is Term.I8Of    -> {
-        Value.I8Of(term.value)
-      }
+      is Term.I8Of     -> Value.I8Of(term.value)
 
-      is Term.I16     -> {
-        Value.I16
-      }
+      is Term.I16      -> Value.I16
 
-      is Term.I16Of      -> {
-        Value.I16Of(term.value)
-      }
+      is Term.I16Of    -> Value.I16Of(term.value)
 
-      is Term.I32        -> {
-        Value.I32
-      }
+      is Term.I32      -> Value.I32
 
-      is Term.I32Of      -> {
-        Value.I32Of(term.value)
-      }
+      is Term.I32Of    -> Value.I32Of(term.value)
 
-      is Term.I64        -> {
-        Value.I64
-      }
+      is Term.I64      -> Value.I64
 
-      is Term.I64Of      -> {
-        Value.I64Of(term.value)
-      }
+      is Term.I64Of    -> Value.I64Of(term.value)
 
-      is Term.F32        -> {
-        Value.F32
-      }
+      is Term.F32      -> Value.F32
 
-      is Term.F32Of      -> {
-        Value.F32Of(term.value)
-      }
+      is Term.F32Of    -> Value.F32Of(term.value)
 
-      is Term.F64        -> {
-        Value.F64
-      }
+      is Term.F64      -> Value.F64
 
-      is Term.F64Of      -> {
-        Value.F64Of(term.value)
-      }
+      is Term.F64Of    -> Value.F64Of(term.value)
 
-      is Term.Wtf16      -> {
-        Value.Wtf16
-      }
+      is Term.Wtf16    -> Value.Wtf16
 
-      is Term.Wtf16Of    -> {
-        Value.Wtf16Of(term.value)
-      }
+      is Term.Wtf16Of  -> Value.Wtf16Of(term.value)
 
-      is Term.I8Array    -> {
-        Value.I8Array
-      }
+      is Term.I8Array  -> Value.I8Array
 
       is Term.I8ArrayOf  -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         Value.I8ArrayOf(elements)
       }
 
-      is Term.I32Array   -> {
-        Value.I32Array
-      }
+      is Term.I32Array -> Value.I32Array
 
       is Term.I32ArrayOf -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
         Value.I32ArrayOf(elements)
       }
 
-      is Term.I64Array   -> {
-        Value.I64Array
-      }
+      is Term.I64Array -> Value.I64Array
 
       is Term.I64ArrayOf -> {
         val elements = term.elements.map { lazy { evalTerm(it, phase) } }
@@ -210,16 +168,16 @@ class Stage private constructor() {
         Value.FuncOf(term.open, term.params, result, type)
       }
 
-      is Term.Apply      -> {
+      is Term.Apply    -> {
         val func = evalTerm(term.func, phase)
         val args = term.args.map { lazy { evalTerm(it, phase) } }
         when (phase) {
           Phase.WORLD -> null
           Phase.CONST -> {
             when (func) {
-              is Value.FuncOf -> func.result(args, phase)
-              is Value.Def    -> lookupBuiltin(func.def.name)!!.eval(args)
-              else            -> null
+              is Value.FuncOf  -> func.result(args, phase)
+              is Value.Builtin -> func.builtin(args)
+              else             -> null
             }
           }
         } ?: run {
@@ -247,14 +205,14 @@ class Stage private constructor() {
         element.element.value
       }
 
-      is Term.Command -> {
+      is Term.Command  -> {
         requireWorld(term, phase)
         val element = lazy { evalTerm(term.element, Phase.CONST) }
         val type = lazy { evalTerm(term.type, phase /* ? */) }
         Value.Command(element, type)
       }
 
-      is Term.Let     -> {
+      is Term.Let      -> {
         when (phase) {
           Phase.WORLD -> {
             val init = lazy { evalTerm(term.init, phase) }
@@ -269,7 +227,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.If      -> {
+      is Term.If       -> {
         when (phase) {
           Phase.WORLD -> {
             val scrutinee = lazy { evalTerm(term.scrutinee, phase) }
@@ -304,7 +262,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Project    -> {
+      is Term.Project  -> {
         val target = evalTerm(term.target, phase)
         when (phase) {
           Phase.WORLD -> {
@@ -330,7 +288,7 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Var     -> {
+      is Term.Var      -> {
         val lvl = term.idx.toLvl(next())
         when (phase) {
           Phase.WORLD -> {
@@ -343,29 +301,26 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Def     -> {
+      is Term.Def      -> {
         when (phase) {
-          Phase.WORLD -> null
-          Phase.CONST -> {
-            if (Modifier.BUILTIN in term.def.modifiers) {
-              null
-            } else {
-              term.def.body?.let { evalTerm(it, phase) }
-            }
+          Phase.WORLD -> {
+            val type = lazy { evalTerm(term.type, phase) }
+            Value.Def(term.def, type)
           }
-        } ?: run {
-          val type = lazy { evalTerm(term.type, phase) }
-          Value.Def(term.def, type)
+          Phase.CONST -> {
+            evalTerm(term.def.body, phase)
+          }
         }
       }
 
-      is Term.Meta       -> {
-        unexpectedTerm(term)
+      is Term.Meta     -> unexpectedTerm(term)
+
+      is Term.Builtin  -> {
+        val type = lazy { evalTerm(term.type, phase) }
+        Value.Builtin(term.builtin, type)
       }
 
-      is Term.Hole       -> {
-        unexpectedTerm(term)
-      }
+      is Term.Hole     -> unexpectedTerm(term)
     }
   }
 
@@ -374,112 +329,66 @@ class Stage private constructor() {
     phase: Phase,
   ): Term {
     return when (value) {
-      is Value.Tag     -> {
-        Term.Tag
-      }
+      is Value.Tag      -> Term.Tag
 
-      is Value.TagOf   -> {
-        Term.TagOf(value.repr)
-      }
+      is Value.TagOf    -> Term.TagOf(value.repr)
 
-      is Value.Type    -> {
+      is Value.Type     -> {
         val tag = quoteValue(value.element.value, Phase.CONST)
         Term.Type(tag)
       }
 
-      is Value.Unit    -> {
-        Term.Unit
-      }
+      is Value.Unit     -> Term.Unit
 
-      is Value.UnitOf  -> {
-        Term.UnitOf
-      }
+      is Value.UnitOf   -> Term.UnitOf
 
-      is Value.Bool    -> {
-        Term.Bool
-      }
+      is Value.Bool     -> Term.Bool
 
-      is Value.BoolOf  -> {
-        Term.BoolOf(value.value)
-      }
+      is Value.BoolOf   -> Term.BoolOf(value.value)
 
-      is Value.I8      -> {
-        Term.I8
-      }
+      is Value.I8       -> Term.I8
 
-      is Value.I8Of    -> {
-        Term.I8Of(value.value)
-      }
+      is Value.I8Of     -> Term.I8Of(value.value)
 
-      is Value.I16     -> {
-        Term.I16
-      }
+      is Value.I16      -> Term.I16
 
-      is Value.I16Of      -> {
-        Term.I16Of(value.value)
-      }
+      is Value.I16Of    -> Term.I16Of(value.value)
 
-      is Value.I32        -> {
-        Term.I32
-      }
+      is Value.I32      -> Term.I32
 
-      is Value.I32Of      -> {
-        Term.I32Of(value.value)
-      }
+      is Value.I32Of    -> Term.I32Of(value.value)
 
-      is Value.I64        -> {
-        Term.I64
-      }
+      is Value.I64      -> Term.I64
 
-      is Value.I64Of      -> {
-        Term.I64Of(value.value)
-      }
+      is Value.I64Of    -> Term.I64Of(value.value)
 
-      is Value.F32        -> {
-        Term.F32
-      }
+      is Value.F32      -> Term.F32
 
-      is Value.F32Of      -> {
-        Term.F32Of(value.value)
-      }
+      is Value.F32Of    -> Term.F32Of(value.value)
 
-      is Value.F64        -> {
-        Term.F64
-      }
+      is Value.F64      -> Term.F64
 
-      is Value.F64Of      -> {
-        Term.F64Of(value.value)
-      }
+      is Value.F64Of    -> Term.F64Of(value.value)
 
-      is Value.Wtf16      -> {
-        Term.Wtf16
-      }
+      is Value.Wtf16    -> Term.Wtf16
 
-      is Value.Wtf16Of    -> {
-        Term.Wtf16Of(value.value)
-      }
+      is Value.Wtf16Of  -> Term.Wtf16Of(value.value)
 
-      is Value.I8Array    -> {
-        Term.I8Array
-      }
+      is Value.I8Array  -> Term.I8Array
 
       is Value.I8ArrayOf  -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         Term.I8ArrayOf(elements)
       }
 
-      is Value.I32Array   -> {
-        Term.I32Array
-      }
+      is Value.I32Array -> Term.I32Array
 
       is Value.I32ArrayOf -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
         Term.I32ArrayOf(elements)
       }
 
-      is Value.I64Array   -> {
-        Term.I64Array
-      }
+      is Value.I64Array -> Term.I64Array
 
       is Value.I64ArrayOf -> {
         val elements = value.elements.map { quoteValue(it.value, phase) }
@@ -562,26 +471,26 @@ class Stage private constructor() {
         Term.CodeOf(element, type)
       }
 
-      is Value.Splice  -> {
+      is Value.Splice   -> {
         val element = quoteValue(value.element, Phase.CONST)
         val type = quoteValue(value.type.value, phase)
         Term.Splice(element, type)
       }
 
-      is Value.Command -> {
+      is Value.Command  -> {
         val element = quoteValue(value.element.value, Phase.CONST)
         val type = quoteValue(value.type.value, phase)
         Term.Command(element, type)
       }
 
-      is Value.Let     -> {
+      is Value.Let      -> {
         val init = quoteValue(value.init.value, phase)
         val body = quoteValue(value.body.value, phase)
         val type = quoteValue(value.type.value, phase)
         Term.Let(value.binder, init, body, type)
       }
 
-      is Value.If      -> {
+      is Value.If       -> {
         val scrutinee = quoteValue(value.scrutinee.value, phase)
         val branches = value.branches.map { (pattern, body) ->
           val body = (this + 1).quoteValue(body.value, phase)
@@ -591,30 +500,30 @@ class Stage private constructor() {
         Term.If(scrutinee, branches, type)
       }
 
-      is Value.Project -> {
+      is Value.Project  -> {
         val target = quoteValue(value.target, phase)
         val type = quoteValue(value.type.value, phase)
         Term.Project(target, value.projs, type)
       }
 
-      is Value.Var     -> {
+      is Value.Var      -> {
         val type = quoteValue(value.type.value, phase)
         Term.Var(value.name, value.lvl.toIdx(this), type)
       }
 
-      is Value.Def     -> {
+      is Value.Def      -> {
         val type = quoteValue(value.type.value, phase)
         Term.Def(value.def, type)
       }
 
-      is Value.Meta    -> {
+      is Value.Meta     -> {
         val type = quoteValue(value.type.value, phase)
         Term.Meta(value.index, value.source, type)
       }
 
-      is Value.Hole    -> {
-        Term.Hole
-      }
+      is Value.Builtin  -> Term.Builtin(value.builtin)
+
+      is Value.Hole     -> Term.Hole
     }
   }
 

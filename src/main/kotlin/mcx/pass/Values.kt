@@ -316,6 +316,11 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
+  data class Builtin(
+    val builtin: mcx.pass.Builtin,
+    override val type: Lazy<Value>,
+  ) : Value()
+
   data object Hole : Value() {
     override val type: Lazy<Value> get() = LAZY
 

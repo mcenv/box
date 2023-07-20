@@ -24,7 +24,7 @@ class Lift private constructor(
   private fun lift(): Result {
     liftedDefinitions += when (definition) {
       is C.Definition.Def -> {
-        val body = definition.body?.let { emptyCtx().liftTerm(it) }
+        val body = emptyCtx().liftTerm(definition.body)
         L.Definition.Function(modifiers + L.Modifier.TOP, definition.name, emptyList(), emptyList(), body, null)
       }
     }
@@ -33,158 +33,99 @@ class Lift private constructor(
 
   private fun liftModifier(modifier: Modifier): L.Modifier? {
     return when (modifier) {
-      Modifier.BUILTIN -> L.Modifier.BUILTIN
-      Modifier.EXPORT  -> null
-      Modifier.REC     -> null
-      Modifier.DIRECT  -> null // ?
-      Modifier.CONST   -> error("Unexpected modifier: ${modifier.id}")
-      Modifier.TEST    -> L.Modifier.TEST
-      Modifier.ERROR   -> error("Unexpected modifier: ${modifier.id}")
+      Modifier.EXPORT -> null
+      Modifier.REC    -> null
+      Modifier.DIRECT -> null // ?
+      Modifier.CONST  -> error("Unexpected modifier: ${modifier.id}")
+      Modifier.TEST   -> L.Modifier.TEST
+      Modifier.ERROR  -> error("Unexpected modifier: ${modifier.id}")
     }
   }
 
   private fun Ctx.liftTerm(term: C.Term): L.Term {
     return when (term) {
-      is C.Term.Tag    -> {
-        unexpectedTerm(term)
-      }
+      is C.Term.Tag      -> unexpectedTerm(term)
 
-      is C.Term.TagOf  -> {
-        UNIT
-      }
+      is C.Term.TagOf    -> UNIT
 
-      is C.Term.Type   -> {
-        UNIT
-      }
+      is C.Term.Type     -> UNIT
 
-      is C.Term.Unit   -> {
-        UNIT
-      }
+      is C.Term.Unit     -> UNIT
 
-      is C.Term.UnitOf -> {
-        UNIT
-      }
+      is C.Term.UnitOf   -> UNIT
 
-      is C.Term.Bool   -> {
-        UNIT
-      }
+      is C.Term.Bool     -> UNIT
 
-      is C.Term.BoolOf -> {
-        L.Term.I8Of(if (term.value) 1 else 0)
-      }
+      is C.Term.BoolOf   -> L.Term.I8Of(if (term.value) 1 else 0)
 
-      is C.Term.I8     -> {
-        UNIT
-      }
+      is C.Term.I8       -> UNIT
 
-      is C.Term.I8Of   -> {
-        L.Term.I8Of(term.value)
-      }
+      is C.Term.I8Of     -> L.Term.I8Of(term.value)
 
-      is C.Term.I16    -> {
-        UNIT
-      }
+      is C.Term.I16      -> UNIT
 
-      is C.Term.I16Of      -> {
-        L.Term.I16Of(term.value)
-      }
+      is C.Term.I16Of    -> L.Term.I16Of(term.value)
 
-      is C.Term.I32        -> {
-        UNIT
-      }
+      is C.Term.I32      -> UNIT
 
-      is C.Term.I32Of      -> {
-        L.Term.I32Of(term.value)
-      }
+      is C.Term.I32Of    -> L.Term.I32Of(term.value)
 
-      is C.Term.I64        -> {
-        UNIT
-      }
+      is C.Term.I64      -> UNIT
 
-      is C.Term.I64Of      -> {
-        L.Term.I64Of(term.value)
-      }
+      is C.Term.I64Of    -> L.Term.I64Of(term.value)
 
-      is C.Term.F32        -> {
-        UNIT
-      }
+      is C.Term.F32      -> UNIT
 
-      is C.Term.F32Of      -> {
-        L.Term.F32Of(term.value)
-      }
+      is C.Term.F32Of    -> L.Term.F32Of(term.value)
 
-      is C.Term.F64        -> {
-        UNIT
-      }
+      is C.Term.F64      -> UNIT
 
-      is C.Term.F64Of      -> {
-        L.Term.F64Of(term.value)
-      }
+      is C.Term.F64Of    -> L.Term.F64Of(term.value)
 
-      is C.Term.Wtf16      -> {
-        UNIT
-      }
+      is C.Term.Wtf16    -> UNIT
 
-      is C.Term.Wtf16Of    -> {
-        L.Term.Wtf16Of(term.value)
-      }
+      is C.Term.Wtf16Of  -> L.Term.Wtf16Of(term.value)
 
-      is C.Term.I8Array    -> {
-        UNIT
-      }
+      is C.Term.I8Array  -> UNIT
 
       is C.Term.I8ArrayOf  -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I8ArrayOf(elements)
       }
 
-      is C.Term.I32Array   -> {
-        UNIT
-      }
+      is C.Term.I32Array -> UNIT
 
       is C.Term.I32ArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I32ArrayOf(elements)
       }
 
-      is C.Term.I64Array   -> {
-        UNIT
-      }
+      is C.Term.I64Array -> UNIT
 
       is C.Term.I64ArrayOf -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.I64ArrayOf(elements)
       }
 
-      is Core.Term.List    -> {
-        UNIT
-      }
+      is Core.Term.List  -> UNIT
 
       is C.Term.ListOf     -> {
         val elements = term.elements.map { liftTerm(it) }
         L.Term.ListOf(elements)
       }
 
-      is C.Term.Compound   -> {
-        UNIT
-      }
+      is C.Term.Compound -> UNIT
 
       is C.Term.CompoundOf -> {
         val elements = term.elements.mapValuesTo(linkedMapOf()) { liftTerm(it.value) }
         L.Term.CompoundOf(elements)
       }
 
-      is C.Term.Point      -> {
-        UNIT
-      }
+      is C.Term.Point    -> UNIT
 
-      is C.Term.Union      -> {
-        UNIT
-      }
+      is C.Term.Union    -> UNIT
 
-      is C.Term.Func       -> {
-        UNIT
-      }
+      is C.Term.Func     -> UNIT
 
       is C.Term.FuncOf     -> {
         // Generate ID before the subterms are lifted to ensure the top-level proc always gets ID 0.
@@ -225,17 +166,11 @@ class Lift private constructor(
         L.Term.Apply(term.open, func, args, repr)
       }
 
-      is C.Term.Code       -> {
-        unexpectedTerm(term)
-      }
+      is C.Term.Code     -> unexpectedTerm(term)
 
-      is C.Term.CodeOf     -> {
-        unexpectedTerm(term)
-      }
+      is C.Term.CodeOf   -> unexpectedTerm(term)
 
-      is C.Term.Splice     -> {
-        unexpectedTerm(term)
-      }
+      is C.Term.Splice   -> unexpectedTerm(term)
 
       is C.Term.Command    -> {
         val element = (term.element as C.Term.Wtf16Of).value
@@ -270,31 +205,41 @@ class Lift private constructor(
         L.Term.If(scrutinee, branches, repr)
       }
 
-      is C.Term.Project    -> {
+      is C.Term.Project  -> {
         val target = term.target as C.Term.Var
         val projs = term.projs // TODO: use this
         val repr = eraseToRepr(term.type)
         L.Term.Var(target.name, repr)
       }
 
-      is C.Term.Var        -> {
+      is C.Term.Var      -> {
         val repr = eraseToRepr(term.type)
         L.Term.Var(term.name, repr)
       }
 
-      is C.Term.Def        -> {
+      is C.Term.Def      -> {
         val direct = Modifier.DIRECT in term.def.modifiers
         val repr = eraseToRepr(term.def.type)
         L.Term.Def(direct, term.def.name, repr)
       }
 
-      is C.Term.Meta       -> {
-        unexpectedTerm(term)
+      is C.Term.Meta     -> unexpectedTerm(term)
+
+      is C.Term.Builtin  -> {
+        val id = freshFunctionId++
+        val binders = term.type.params.map { (_, type) ->
+          liftPattern(C.Pattern.Drop, type)
+        }
+        val tag = context.freshProcId()
+        val repr = eraseToRepr(term.type.result)
+        val result = L.Term.Builtin(term.builtin, repr)
+        val function = registerFreshFunction(id, emptyList(), binders, result, tag).also {
+          dispatchedProcs += it
+        }
+        L.Term.ProcOf(function)
       }
 
-      is C.Term.Hole       -> {
-        unexpectedTerm(term)
-      }
+      is C.Term.Hole     -> unexpectedTerm(term)
     }
   }
 
@@ -303,41 +248,23 @@ class Lift private constructor(
     type: C.Term,
   ): L.Pattern {
     return when (pattern) {
-      is C.Pattern.UnitOf -> {
-        L.Pattern.UnitOf
-      }
+      is C.Pattern.UnitOf  -> L.Pattern.UnitOf
 
-      is C.Pattern.BoolOf -> {
-        L.Pattern.BoolOf(pattern.value)
-      }
+      is C.Pattern.BoolOf  -> L.Pattern.BoolOf(pattern.value)
 
-      is C.Pattern.I8Of   -> {
-        L.Pattern.I8Of(pattern.value)
-      }
+      is C.Pattern.I8Of    -> L.Pattern.I8Of(pattern.value)
 
-      is C.Pattern.I16Of  -> {
-        L.Pattern.I16Of(pattern.value)
-      }
+      is C.Pattern.I16Of   -> L.Pattern.I16Of(pattern.value)
 
-      is C.Pattern.I32Of  -> {
-        L.Pattern.I32Of(pattern.value)
-      }
+      is C.Pattern.I32Of   -> L.Pattern.I32Of(pattern.value)
 
-      is C.Pattern.I64Of  -> {
-        L.Pattern.I64Of(pattern.value)
-      }
+      is C.Pattern.I64Of   -> L.Pattern.I64Of(pattern.value)
 
-      is C.Pattern.F32Of  -> {
-        L.Pattern.F32Of(pattern.value)
-      }
+      is C.Pattern.F32Of   -> L.Pattern.F32Of(pattern.value)
 
-      is C.Pattern.F64Of      -> {
-        L.Pattern.F64Of(pattern.value)
-      }
+      is C.Pattern.F64Of   -> L.Pattern.F64Of(pattern.value)
 
-      is C.Pattern.Wtf16Of    -> {
-        L.Pattern.Wtf16Of(pattern.value)
-      }
+      is C.Pattern.Wtf16Of -> L.Pattern.Wtf16Of(pattern.value)
 
       is C.Pattern.I8ArrayOf  -> {
         val elements = pattern.elements.map { element ->
@@ -383,14 +310,12 @@ class Lift private constructor(
         L.Pattern.Var(pattern.name, repr)
       }
 
-      is C.Pattern.Drop   -> {
+      is C.Pattern.Drop    -> {
         val repr = eraseToRepr(type)
         L.Pattern.Drop(repr)
       }
 
-      is C.Pattern.Hole   -> {
-        unexpectedPattern(pattern)
-      }
+      is C.Pattern.Hole    -> unexpectedPattern(pattern)
     }
   }
 
@@ -431,18 +356,19 @@ class Lift private constructor(
       is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
       is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code       -> unexpectedTerm(term)
-      is C.Term.CodeOf     -> unexpectedTerm(term)
-      is C.Term.Splice     -> unexpectedTerm(term)
-      is C.Term.Command    -> linkedMapOf()
-      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.If         -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Project    -> freeVars(term.target)
-      is C.Term.Var        -> linkedMapOf(term.name to eraseToRepr(term.type))
-      is C.Term.Def        -> linkedMapOf()
-      is C.Term.Meta       -> unexpectedTerm(term)
-      is C.Term.Hole       -> unexpectedTerm(term)
+      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code    -> unexpectedTerm(term)
+      is C.Term.CodeOf  -> unexpectedTerm(term)
+      is C.Term.Splice  -> unexpectedTerm(term)
+      is C.Term.Command -> linkedMapOf()
+      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.If      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Project -> freeVars(term.target)
+      is C.Term.Var     -> linkedMapOf(term.name to eraseToRepr(term.type))
+      is C.Term.Def     -> linkedMapOf()
+      is C.Term.Meta    -> unexpectedTerm(term)
+      is C.Term.Builtin -> linkedMapOf()
+      is C.Term.Hole    -> unexpectedTerm(term)
     }
   }
 

@@ -25,7 +25,7 @@ object Surface {
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<String>,
       val type: Term,
-      val body: Term?,
+      val body: Term,
       override val range: Range,
     ) : Definition()
 
@@ -257,6 +257,11 @@ object Surface {
     data class As(
       val element: Term,
       val type: Term,
+      override val range: Range,
+    ) : Term()
+
+    data class Builtin(
+      val name: String,
       override val range: Range,
     ) : Term()
 

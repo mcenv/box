@@ -25,7 +25,7 @@ object Resolved {
       override val modifiers: List<Ranged<Modifier>>,
       override val name: Ranged<DefinitionLocation>,
       val type: Term,
-      val body: Term?,
+      val body: Term,
       override val range: Range,
     ) : Definition()
 
@@ -267,6 +267,11 @@ object Resolved {
     data class As(
       val element: Term,
       val type: Term,
+      override val range: Range,
+    ) : Term()
+
+    data class Builtin(
+      val builtin: mcx.pass.Builtin,
       override val range: Range,
     ) : Term()
 

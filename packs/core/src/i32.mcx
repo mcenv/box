@@ -2,108 +2,45 @@ export def min_value : i32 := -2147483648;
 
 export def max_value : i32 := 2147483647;
 
-export builtin def +(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx += \#1 mcx";
+export def + : proc(i32, i32) -> i32 := builtin i32::+;
 
-export builtin def -(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx -= \#1 mcx";
+export def - : proc(i32, i32) -> i32 := builtin i32::-;
 
-export builtin def *(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx *= \#1 mcx";
+export def * : proc(i32, i32) -> i32 := builtin i32::*;
 
-export builtin def /(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx /= \#1 mcx";
+export def / : proc(i32, i32) -> i32 := builtin i32::/;
 
-export builtin def %(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx %= \#1 mcx";
+export def % : proc(i32, i32) -> i32 := builtin i32::%;
 
-export builtin def min(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx < \#1 mcx";
+export def min : proc(i32, i32) -> i32 := builtin i32::min;
 
-export builtin def max(i32, i32) : i32 :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: int append value 0";
-  /"execute store result storage mcx: int[-1] int 1 run scoreboard players operation \#0 mcx > \#1 mcx";
+export def max : proc(i32, i32) -> i32 := builtin i32::max;
 
-export builtin def =(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx = \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def = : proc(i32, i32) -> bool := builtin i32::=;
 
-export builtin def <(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx < \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def < : proc(i32, i32) -> bool := builtin i32::<;
 
-export builtin def <=(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx <= \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def <= : proc(i32, i32) -> bool := builtin i32::<=;
 
-export builtin def >(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx > \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def > : proc(i32, i32) -> bool := builtin i32::>;
 
-export builtin def >=(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute if score \#0 mcx >= \#1 mcx run data modify storage mcx: byte[-1] set value 1b";
+export def >= : proc(i32, i32) -> bool := builtin i32::>=;
 
-export builtin def !=(i32, i32) : bool :=
-  let _ as end := /"execute store result score \#0 mcx run data get storage mcx: int[-2]";
-  let _ as end := /"execute store result score \#1 mcx run data get storage mcx: int[-1]";
-  let _ as end := /"data modify storage mcx: byte append value 1b";
-  /"execute if score \#0 mcx = \#1 mcx run data modify storage mcx: byte[-1] set value 0b";
+export def != : proc(i32, i32) -> bool := builtin i32::!=;
 
-export builtin def to_i8(i32) : i8 :=
-  let _ as end := /"data modify storage mcx: byte append value 0b";
-  /"execute store result storage mcx: byte[-1] byte 1 run data get storage mcx: int[-1]";
+export def to_i8 : proc(i32) -> i8 := builtin i32::to_i8;
 
-export builtin def to_i16(i32) : i16 :=
-  let _ as end := /"data modify storage mcx: short append value 0s";
-  /"execute store result storage mcx: short[-1] short 1 run data get storage mcx: int[-1]";
+export def to_i16 : proc(i32) -> i16 := builtin i32::to_i16;
 
 export def to_i32(self : i32) : i32 := self;
 
-export builtin def to_i64(i32) : i64 :=
-  let _ as end := /"data modify storage mcx: long append value 0l";
-  /"execute store result storage mcx: long[-1] long 1 run data get storage mcx: int[-1]";
+export def to_i64 : proc(i32) -> i64 := builtin i32::to_i64;
 
-export builtin def to_f32(i32) : f32 :=
-  let _ as end := /"data modify storage mcx: float append value 0f";
-  /"execute store result storage mcx: float[-1] float 1 run data get storage mcx: int[-1]";
+export def to_f32 : proc(i32) -> f32 := builtin i32::to_f32;
 
-export builtin def to_f64(i32) : f64 :=
-  let _ as end := /"data modify storage mcx: double append value 0d";
-  /"execute store result storage mcx: double[-1] double 1 run data get storage mcx: int[-1]";
+export def to_f64 : proc(i32) -> f64 := builtin i32::to_f64;
 
-export builtin def to_wtf16(i32) : wtf16 :=
-  /"data modify storage mcx: string append string storage mcx: int[-1]";
+export def to_wtf16 : proc(i32) -> wtf16 := builtin i32::to_wtf16;
 
 test def 1_+_2_=_3 := (1 + 2) = 3;
 

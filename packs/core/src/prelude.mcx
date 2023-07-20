@@ -1,4 +1,4 @@
-export builtin const def ++(left : wtf16, right : wtf16) : wtf16;
+export const def ++ : proc(wtf16, wtf16) -> wtf16 := builtin prelude::++;
 
 export def end : type %end := union {};
 
