@@ -292,6 +292,9 @@ class Stage private constructor() {
           Phase.CONST -> {
             term.projs.foldIndexed(target) { index, acc, proj ->
               when (acc) {
+                is Value.I8ArrayOf  -> acc.elements[(proj as Proj.I8ArrayOf).index].value
+                is Value.I32ArrayOf -> acc.elements[(proj as Proj.I32ArrayOf).index].value
+                is Value.I64ArrayOf -> acc.elements[(proj as Proj.I64ArrayOf).index].value
                 is Value.ListOf     -> acc.elements[(proj as Proj.ListOf).index].value
                 is Value.CompoundOf -> acc.elements[(proj as Proj.CompoundOf).name]!!.value
                 else                -> {
