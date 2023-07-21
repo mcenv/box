@@ -22,4 +22,3 @@
   - [Articles](./references/articles.md)
   - [Issues](./references/issues.md)
   - [Quotes](./references/quotes.md)
-- [Formal Definitions](./formal-definitions.md)
