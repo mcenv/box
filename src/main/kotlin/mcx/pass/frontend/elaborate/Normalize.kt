@@ -161,12 +161,12 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Code       -> {
+    is Term.Code     -> {
       val element = lazy { evalTerm(term.element) }
       Value.Code(element)
     }
 
-    is Term.CodeOf     -> {
+    is Term.CodeOf   -> {
       val element = lazy { evalTerm(term.element) }
       val type = lazy { evalTerm(term.type) }
       Value.CodeOf(element, type)
@@ -179,6 +179,25 @@ fun Env.evalTerm(term: Term): Value {
           val type = lazy { evalTerm(term.type) }
           Value.Splice(element, type)
         }
+      }
+    }
+
+    is Term.Path     -> {
+      val element = lazy { evalTerm(term.element) }
+      Value.Path(element)
+    }
+
+    is Term.PathOf   -> {
+      val element = lazy { evalTerm(term.element) }
+      val type = lazy { evalTerm(term.type) }
+      Value.PathOf(element, type)
+    }
+
+    is Term.Get      -> {
+      val type = lazy { evalTerm(term.type) }
+      when (val element = evalTerm(term.element)) {
+        is Value.PathOf -> element.element.value
+        else            -> Value.Get(element, type)
       }
     }
 
@@ -373,14 +392,14 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.FuncOf(value.open, value.params, result, type)
     }
 
-    is Value.Apply      -> {
+    is Value.Apply    -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
       val type = quoteValue(value.type.value)
       Term.Apply(value.open, func, args, type)
     }
 
-    is Value.Code       -> {
+    is Value.Code     -> {
       val element = quoteValue(value.element.value)
       Term.Code(element)
     }
@@ -395,6 +414,23 @@ fun Lvl.quoteValue(value: Value): Term {
       val element = quoteValue(value.element)
       val type = quoteValue(value.type.value)
       Term.Splice(element, type)
+    }
+
+    is Value.Path     -> {
+      val element = quoteValue(value.element.value)
+      Term.Path(element)
+    }
+
+    is Value.PathOf   -> {
+      val element = quoteValue(value.element.value)
+      val type = quoteValue(value.type.value)
+      Term.PathOf(element, type)
+    }
+
+    is Value.Get      -> {
+      val element = quoteValue(value.element)
+      val type = quoteValue(value.type.value)
+      Term.Get(element, type)
     }
 
     is Value.Command  -> {

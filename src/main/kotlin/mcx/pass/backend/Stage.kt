@@ -186,23 +186,43 @@ class Stage private constructor() {
         }
       }
 
-      is Term.Code       -> {
+      is Term.Code     -> {
         requireConst(term, phase)
         val element = lazy { evalTerm(term.element, Phase.WORLD) }
         Value.Code(element)
       }
 
-      is Term.CodeOf     -> {
+      is Term.CodeOf   -> {
         requireConst(term, phase)
         val element = lazy { evalTerm(term.element, Phase.WORLD) }
         val type = lazy { evalTerm(term.type, phase) }
         Value.CodeOf(element, type)
       }
 
-      is Term.Splice     -> {
+      is Term.Splice   -> {
         requireWorld(term, phase)
         val element = evalTerm(term.element, Phase.CONST) as Value.CodeOf
         element.element.value
+      }
+
+      is Term.Path     -> {
+        requireConst(term, phase)
+        val element = lazy { evalTerm(term.element, Phase.WORLD) }
+        Value.Path(element)
+      }
+
+      is Term.PathOf   -> {
+        requireConst(term, phase)
+        val element = lazy { evalTerm(term.element, Phase.WORLD) }
+        val type = lazy { evalTerm(term.type, phase) }
+        Value.PathOf(element, type)
+      }
+
+      is Term.Get      -> {
+        requireWorld(term, phase)
+        val type = lazy { evalTerm(term.type, phase) }
+        val element = evalTerm(term.element, Phase.CONST)
+        Value.Get(element, type)
       }
 
       is Term.Command  -> {
@@ -453,19 +473,19 @@ class Stage private constructor() {
         Term.FuncOf(value.open, value.params, result, type)
       }
 
-      is Value.Apply      -> {
+      is Value.Apply    -> {
         val func = quoteValue(value.func, phase)
         val args = value.args.map { quoteValue(it.value, phase) }
         val type = quoteValue(value.type.value, phase)
         Term.Apply(value.open, func, args, type)
       }
 
-      is Value.Code       -> {
+      is Value.Code     -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
         Term.Code(element)
       }
 
-      is Value.CodeOf     -> {
+      is Value.CodeOf   -> {
         val element = quoteValue(value.element.value, Phase.WORLD)
         val type = quoteValue(value.type.value, phase)
         Term.CodeOf(element, type)
@@ -475,6 +495,23 @@ class Stage private constructor() {
         val element = quoteValue(value.element, Phase.CONST)
         val type = quoteValue(value.type.value, phase)
         Term.Splice(element, type)
+      }
+
+      is Value.Path     -> {
+        val element = quoteValue(value.element.value, Phase.WORLD)
+        Term.Path(element)
+      }
+
+      is Value.PathOf   -> {
+        val element = quoteValue(value.element.value, Phase.WORLD)
+        val type = quoteValue(value.type.value, phase)
+        Term.PathOf(element, type)
+      }
+
+      is Value.Get      -> {
+        val element = quoteValue(value.element, Phase.CONST)
+        val type = quoteValue(value.type.value, phase)
+        Term.Get(element, type)
       }
 
       is Value.Command  -> {

@@ -1,0 +1,5 @@
+test def reduce := *&true;
+
+const def get_path_of(x : path bool) : code bool := `*x;
+
+test def use_get_path_of := $(get_path_of(&true));

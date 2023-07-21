@@ -231,6 +231,21 @@ object Surface {
       override val range: Range,
     ) : Term()
 
+    data class Path(
+      val element: Term,
+      override val range: Range,
+    ) : Term()
+
+    data class PathOf(
+      val element: Term,
+      override val range: Range,
+    ) : Term()
+
+    data class Get(
+      val element: Term,
+      override val range: Range,
+    ) : Term()
+
     data class Command(
       val element: Term,
       override val range: Range,

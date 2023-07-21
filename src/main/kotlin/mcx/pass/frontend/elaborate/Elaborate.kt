@@ -117,44 +117,44 @@ class Elaborate private constructor(
   ): Pair<C.Term, Value> {
     val type = type?.let { meta.forceValue(type) }
     return when {
-      term is R.Term.Tag && phase == Phase.CONST && synth(type)   -> {
+      term is R.Term.Tag && phase == Phase.CONST && synth(type)                -> {
         C.Term.Tag to Value.Type.END
       }
 
-      term is R.Term.TagOf && phase == Phase.CONST && synth(type) -> {
+      term is R.Term.TagOf && phase == Phase.CONST && synth(type)              -> {
         C.Term.TagOf(term.repr) to Value.Tag
       }
 
-      term is R.Term.Type && synth(type)                          -> {
+      term is R.Term.Type && synth(type)                                       -> {
         val tag = checkTerm(term.element, Phase.CONST, Value.Tag)
         C.Term.Type(tag) to Value.Type.BYTE
       }
 
-      term is R.Term.Unit && synth(type)                          -> {
+      term is R.Term.Unit && synth(type)                                       -> {
         C.Term.Unit to Value.Type.BYTE
       }
 
-      term is R.Term.UnitOf && synth(type)                        -> {
+      term is R.Term.UnitOf && synth(type)                                     -> {
         C.Term.UnitOf to Value.Unit
       }
 
-      term is R.Term.Bool && synth(type)                          -> {
+      term is R.Term.Bool && synth(type)                                       -> {
         C.Term.Bool to Value.Type.BYTE
       }
 
-      term is R.Term.BoolOf && synth(type)                        -> {
+      term is R.Term.BoolOf && synth(type)                                     -> {
         C.Term.BoolOf(term.value) to Value.Bool
       }
 
-      term is R.Term.I8 && synth(type)                            -> {
+      term is R.Term.I8 && synth(type)                                         -> {
         C.Term.I8 to Value.Type.BYTE
       }
 
-      term is R.Term.I8Of && synth(type)                          -> {
+      term is R.Term.I8Of && synth(type)                                       -> {
         C.Term.I8Of(term.value) to Value.I8
       }
 
-      term is R.Term.I16 && synth(type)                           -> {
+      term is R.Term.I16 && synth(type)                                        -> {
         C.Term.I16 to Value.Type.SHORT
       }
 
@@ -229,12 +229,12 @@ class Elaborate private constructor(
         C.Term.I64ArrayOf(elements) to Value.I64Array
       }
 
-      term is Resolved.Term.List && synth(type)                   -> {
+      term is Resolved.Term.List && synth(type)                                -> {
         val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
         C.Term.List(element) to Value.Type.LIST
       }
 
-      term is R.Term.ListOf && match<Value.List>(type)            -> {
+      term is R.Term.ListOf && match<Value.List>(type)                         -> {
         val elementType = type?.element?.value
         val (elements, elementsTypes) = term.elements.map { elaborateTerm(it, phase, elementType) }.unzip()
         val type = type ?: Value.List(lazyOf(
@@ -250,7 +250,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Compound && synth(type)                      -> {
+      term is R.Term.Compound && synth(type)                                   -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (key, element) ->
           val element = checkTerm(element, phase, meta.freshType(element.range))
           key.value to element
@@ -258,7 +258,7 @@ class Elaborate private constructor(
         C.Term.Compound(elements) to Value.Type.COMPOUND
       }
 
-      term is R.Term.CompoundOf && synth(type)                    -> {
+      term is R.Term.CompoundOf && synth(type)                                 -> {
         val elements = linkedMapOf<String, C.Term>()
         val elementsTypes = linkedMapOf<String, Lazy<Value>>()
         term.elements.forEach { (key, element) ->
@@ -272,7 +272,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.CompoundOf && check<Value.Compound>(type)    -> {
+      term is R.Term.CompoundOf && check<Value.Compound>(type)                 -> {
         val elements = term.elements.associateTo(linkedMapOf()) { (name, element) ->
           val (element, _) = elaborateTerm(element, phase, type.elements[name.value]?.value)
           name.value to element
@@ -371,20 +371,20 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Code && phase == Phase.CONST && synth(type)                 -> {
-        val element = checkTerm(term.element, phase, meta.freshType(term.element.range))
+      term is R.Term.Code && phase == Phase.CONST && synth(type)               -> {
+        val element = checkTerm(term.element, Phase.WORLD, meta.freshType(term.element.range))
         C.Term.Code(element) to Value.Type.END
       }
 
-      term is R.Term.CodeOf && phase == Phase.CONST && match<Value.Code>(type)   -> {
-        val (element, elementType) = elaborateTerm(term.element, phase, type?.element?.value)
+      term is R.Term.CodeOf && phase == Phase.CONST && match<Value.Code>(type) -> {
+        val (element, elementType) = elaborateTerm(term.element, Phase.WORLD, type?.element?.value)
         val type = type ?: Value.Code(lazyOf(elementType))
         typed(type) {
           C.Term.CodeOf(element, it)
         }
       }
 
-      term is R.Term.Splice && match<Value>(type)                                -> {
+      term is R.Term.Splice && phase == Phase.WORLD && match<Value>(type)      -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.Code(lazyOf(type)))
         typed(type) {
@@ -392,7 +392,28 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Command && match<Value>(type)                               -> {
+      term is R.Term.Path && phase == Phase.CONST && synth(type)               -> {
+        val element = checkTerm(term.element, Phase.WORLD, meta.freshType(term.element.range))
+        C.Term.Path(element) to Value.Type.END
+      }
+
+      term is R.Term.PathOf && phase == Phase.CONST && match<Value.Path>(type) -> {
+        val (element, elementType) = elaborateTerm(term.element, Phase.WORLD, type?.element?.value)
+        val type = type ?: Value.Path(lazyOf(elementType))
+        typed(type) {
+          C.Term.PathOf(element, it)
+        }
+      }
+
+      term is R.Term.Get && phase == Phase.WORLD && match<Value>(type)         -> {
+        val type = type ?: meta.freshValue(term.range)
+        val element = checkTerm(term.element, Phase.CONST, Value.Path(lazyOf(type)))
+        typed(type) {
+          C.Term.Get(element, it)
+        }
+      }
+
+      term is R.Term.Command && match<Value>(type)                             -> {
         val type = type ?: meta.freshValue(term.range)
         val element = checkTerm(term.element, Phase.CONST, Value.Wtf16)
         typed(type) {
@@ -400,7 +421,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Let && match<Value>(type)                                   -> {
+      term is R.Term.Let && match<Value>(type)                                 -> {
         val (init, initType) = synthTerm(term.init, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
           if (next().sub(initType, binderType)) {
@@ -473,7 +494,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Def && synth(type)                           -> {
+      term is R.Term.Def && synth(type)                                        -> {
         when (val definition = definitions[term.name]) {
           is C.Definition.Def -> {
             hoverDef(term.range, definition)
@@ -503,34 +524,34 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Meta && match<Value>(type)                   -> {
+      term is R.Term.Meta && match<Value>(type)                                -> {
         val type = type ?: meta.freshValue(term.range)
         next().quoteValue(meta.freshValue(term.range)) to type
       }
 
-      term is R.Term.As && synth(type)                            -> {
+      term is R.Term.As && synth(type)                                         -> {
         val type = env.evalTerm(checkTerm(term.type, phase, meta.freshType(term.type.range)))
         checkTerm(term.element, phase, type) to type
       }
 
-      term is R.Term.Builtin && synth(type)                       -> {
+      term is R.Term.Builtin && synth(type)                                    -> {
         val type = env.evalTerm(term.builtin.type)
         C.Term.Builtin(term.builtin) to type
       }
 
-      term is R.Term.Hole && match<Value>(type)                   -> {
+      term is R.Term.Hole && match<Value>(type)                                -> {
         C.Term.Hole to Value.Hole
       }
 
-      synth(type) && phase == Phase.WORLD                         -> {
+      synth(type) && phase == Phase.WORLD                                      -> {
         invalidTerm(phaseMismatch(Phase.CONST, phase, term.range))
       }
 
-      synth(type)                                                 -> {
+      synth(type)                                                              -> {
         invalidTerm(cannotSynthesize(term.range))
       }
 
-      check<Value>(type)                                          -> {
+      check<Value>(type)                                                       -> {
         val (synth, synthType) = synthTerm(term, phase)
         lateinit var diagnostic: Lazy<Diagnostic>
 
@@ -776,6 +797,10 @@ class Elaborate private constructor(
       }
 
       value1 is Value.Code && value2 is Value.Code    -> {
+        sub(value1.element.value, value2.element.value)
+      }
+
+      value1 is Value.Path && value2 is Value.Path    -> {
         sub(value1.element.value, value2.element.value)
       }
 

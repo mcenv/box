@@ -127,7 +127,7 @@ class Lift private constructor(
 
       is C.Term.Func     -> UNIT
 
-      is C.Term.FuncOf     -> {
+      is C.Term.FuncOf   -> {
         // Generate ID before the subterms are lifted to ensure the top-level proc always gets ID 0.
         val id = freshFunctionId++
 
@@ -159,7 +159,7 @@ class Lift private constructor(
         }
       }
 
-      is C.Term.Apply      -> {
+      is C.Term.Apply    -> {
         val func = liftTerm(term.func)
         val args = term.args.map { liftTerm(it) }
         val repr = eraseToRepr(term.type)
@@ -172,13 +172,32 @@ class Lift private constructor(
 
       is C.Term.Splice   -> unexpectedTerm(term)
 
-      is C.Term.Command    -> {
+      is C.Term.Path     -> unexpectedTerm(term)
+
+      is C.Term.PathOf   -> {
+        TODO()
+      }
+
+      is C.Term.Get      -> {
+        // TODO: optimize: do not generate let
+        val target = (term.element as C.Term.PathOf).element
+        val init = liftTerm(target)
+        val name = "x"
+        restoring {
+          val binder = liftPattern(C.Pattern.Var(name), target.type)
+          val repr = eraseToRepr(target.type)
+          val body = L.Term.Get(name, repr)
+          L.Term.Let(binder, init, body)
+        }
+      }
+
+      is C.Term.Command  -> {
         val element = (term.element as C.Term.Wtf16Of).value
         val repr = eraseToRepr(term.type)
         L.Term.Command(element, repr)
       }
 
-      is C.Term.Let        -> {
+      is C.Term.Let      -> {
         val init = liftTerm(term.init)
         restoring {
           val binder = liftPattern(term.binder, term.init.type)
@@ -187,7 +206,7 @@ class Lift private constructor(
         }
       }
 
-      is C.Term.If         -> {
+      is C.Term.If       -> {
         val scrutinee = liftTerm(term.scrutinee)
         val branches = term.branches.map { (binder, body) ->
           val binder = restoring { liftPattern(binder, term.scrutinee.type) }
@@ -356,19 +375,22 @@ class Lift private constructor(
       is C.Term.Union      -> term.elements.fold(linkedMapOf()) { acc, element -> acc.also { it += freeVars(element) } }
       is C.Term.Func       -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it.first) } }
       is C.Term.FuncOf     -> freeVars(term.result).also { result -> term.params.forEach { result -= boundVars(it) } }
-      is C.Term.Apply   -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
-      is C.Term.Code    -> unexpectedTerm(term)
-      is C.Term.CodeOf  -> unexpectedTerm(term)
-      is C.Term.Splice  -> unexpectedTerm(term)
-      is C.Term.Command -> linkedMapOf()
-      is C.Term.Let     -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
-      is C.Term.If      -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
-      is C.Term.Project -> freeVars(term.target)
-      is C.Term.Var     -> linkedMapOf(term.name to eraseToRepr(term.type))
-      is C.Term.Def     -> linkedMapOf()
-      is C.Term.Meta    -> unexpectedTerm(term)
-      is C.Term.Builtin -> linkedMapOf()
-      is C.Term.Hole    -> unexpectedTerm(term)
+      is C.Term.Apply      -> freeVars(term.func).also { func -> term.args.forEach { func += freeVars(it) } }
+      is C.Term.Code       -> unexpectedTerm(term)
+      is C.Term.CodeOf     -> unexpectedTerm(term)
+      is C.Term.Splice     -> unexpectedTerm(term)
+      is C.Term.Path       -> unexpectedTerm(term)
+      is C.Term.PathOf     -> freeVars(term.element)
+      is C.Term.Get        -> freeVars(term.element)
+      is C.Term.Command    -> linkedMapOf()
+      is C.Term.Let        -> freeVars(term.init).also { it += freeVars(term.body); it -= boundVars(term.binder) }
+      is C.Term.If         -> term.branches.fold(freeVars(term.scrutinee)) { acc, (pattern, body) -> acc.also { it += freeVars(body); it -= boundVars(pattern) } }
+      is C.Term.Project    -> freeVars(term.target)
+      is C.Term.Var        -> linkedMapOf(term.name to eraseToRepr(term.type))
+      is C.Term.Def        -> linkedMapOf()
+      is C.Term.Meta       -> unexpectedTerm(term)
+      is C.Term.Builtin    -> linkedMapOf()
+      is C.Term.Hole       -> unexpectedTerm(term)
     }
   }
 

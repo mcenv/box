@@ -272,33 +272,48 @@ class Resolve private constructor(
         }
       }
 
-      is S.Term.Apply      -> {
+      is S.Term.Apply     -> {
         val func = resolveTerm(term.func)
         val args = term.args.map { resolveTerm(it) }
         R.Term.Apply(func, args, range)
       }
 
-      is S.Term.Code       -> {
+      is S.Term.Code      -> {
         val element = resolveTerm(term.element)
-        R.Term.Code(element, term.range)
+        R.Term.Code(element, range)
       }
 
-      is S.Term.CodeOf     -> {
+      is S.Term.CodeOf    -> {
         val element = resolveTerm(term.element)
-        R.Term.CodeOf(element, term.range)
+        R.Term.CodeOf(element, range)
       }
 
-      is S.Term.Splice     -> {
+      is S.Term.Splice    -> {
         val element = resolveTerm(term.element)
-        R.Term.Splice(element, term.range)
+        R.Term.Splice(element, range)
       }
 
-      is S.Term.Command    -> {
+      is S.Term.Path      -> {
         val element = resolveTerm(term.element)
-        R.Term.Command(element, term.range)
+        R.Term.Path(element, range)
       }
 
-      is S.Term.Let        -> {
+      is S.Term.PathOf    -> {
+        val element = resolveTerm(term.element)
+        R.Term.PathOf(element, range)
+      }
+
+      is S.Term.Get       -> {
+        val element = resolveTerm(term.element)
+        R.Term.Get(element, range)
+      }
+
+      is S.Term.Command   -> {
+        val element = resolveTerm(term.element)
+        R.Term.Command(element, range)
+      }
+
+      is S.Term.Let       -> {
         val init = resolveTerm(term.init)
         restoring(0) {
           val binder = resolvePattern(term.binder)

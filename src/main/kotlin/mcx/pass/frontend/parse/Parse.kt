@@ -322,6 +322,18 @@ class Parse private constructor(
             val element = parseTerm0()
             S.Term.Command(element, until())
           }
+          '&'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.PathOf(element, until())
+          }
+          '*'  -> {
+            skip()
+            skipTrivia()
+            val element = parseTerm0()
+            S.Term.Get(element, until())
+          }
           else -> {
             val word = parseRanged { readLocation() }
             when (word.value) {
@@ -335,13 +347,13 @@ class Parse private constructor(
               "unit"         -> S.Term.Unit(until())
               "bool"         -> S.Term.Bool(until())
               "false"        -> S.Term.BoolOf(false, until())
-              "true"      -> S.Term.BoolOf(true, until())
-              "i8"        -> S.Term.I8(until())
-              "i16"       -> S.Term.I16(until())
-              "i32"       -> S.Term.I32(until())
-              "i64"       -> S.Term.I64(until())
-              "f32"       -> S.Term.F32(until())
-              "f64"       -> S.Term.F64(until())
+              "true"         -> S.Term.BoolOf(true, until())
+              "i8"           -> S.Term.I8(until())
+              "i16"          -> S.Term.I16(until())
+              "i32"          -> S.Term.I32(until())
+              "i64"          -> S.Term.I64(until())
+              "f32"          -> S.Term.F32(until())
+              "f64"          -> S.Term.F64(until())
               "wtf16"     -> S.Term.Wtf16(until())
               "i8_array"  -> S.Term.I8Array(until())
               "i32_array" -> S.Term.I32Array(until())
@@ -397,7 +409,12 @@ class Parse private constructor(
                 val element = parseTerm0()
                 S.Term.Code(element, until())
               }
-              "let"     -> {
+              "path"         -> {
+                skipTrivia()
+                val element = parseTerm0()
+                S.Term.Path(element, until())
+              }
+              "let"          -> {
                 skipTrivia()
                 val name = parseTerm()
                 expect(":=")
@@ -408,7 +425,7 @@ class Parse private constructor(
                 val body = parseTerm()
                 S.Term.Let(name, init, body, until())
               }
-              "if"      -> {
+              "if"           -> {
                 skipTrivia()
                 val scrutinee = parseTerm()
                 val branches = parseList(',', '[', ']') {

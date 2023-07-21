@@ -256,6 +256,22 @@ object Core {
       override val type: Term,
     ) : Term()
 
+    data class Path(
+      val element: Term,
+    ) : Term() {
+      override val type: Term get() = Type.END
+    }
+
+    data class PathOf(
+      val element: Term,
+      override val type: Term,
+    ) : Term()
+
+    data class Get(
+      val element: Term,
+      override val type: Term,
+    ) : Term()
+
     data class Command(
       val element: Term,
       override val type: Term,

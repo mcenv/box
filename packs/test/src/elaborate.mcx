@@ -106,6 +106,12 @@ const def code_of : code i32 := `1;
 
 def splice : i32 := $`1;
 
+const def path : type %end := path i32;
+
+const def path_of : path i32 := &1;
+
+def get : i32 := *path_of;
+
 def command : i32 := /"";
 
 def let : i32 := let _ := 1; 2;

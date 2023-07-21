@@ -124,6 +124,11 @@ object Lifted {
       override val repr: Repr,
     ) : Term()
 
+    data class Get(
+      val name: String,
+      override val repr: Repr,
+    ) : Term()
+
     data class Command(
       val element: String,
       override val repr: Repr,

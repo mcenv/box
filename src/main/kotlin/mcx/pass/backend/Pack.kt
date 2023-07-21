@@ -183,7 +183,7 @@ class Pack private constructor(
         }
       }
 
-      is L.Term.Apply      -> {
+      is L.Term.Apply   -> {
         term.args.forEach { packTerm(it) }
         val func = term.func
         when {
@@ -204,12 +204,18 @@ class Pack private constructor(
         term.args.forEach { drop(it.repr, keeps, false) }
       }
 
-      is L.Term.Command    -> {
+      is L.Term.Get     -> {
+        val repr = term.repr
+        val index = this[term.name, term.repr]
+        push(repr, SourceProvider.From(DataAccessor(MCX, nbtPath(repr.id)(index))))
+      }
+
+      is L.Term.Command -> {
         +Raw(term.element)
         push(term.repr, null)
       }
 
-      is L.Term.Let        -> {
+      is L.Term.Let     -> {
         packTerm(term.init)
         packPattern(term.binder)
         packTerm(term.body)
@@ -217,7 +223,7 @@ class Pack private constructor(
         dropPattern(term.binder, listOf(term.body.repr))
       }
 
-      is L.Term.If         -> {
+      is L.Term.If      -> {
         packTerm(term.scrutinee)
 
         // TODO: optimize this using function tree

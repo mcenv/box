@@ -169,19 +169,19 @@ class Meta {
         Term.FuncOf(term.open, params, result, type)
       }
 
-      is Term.Apply      -> {
+      is Term.Apply    -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
         Term.Apply(term.open, func, args, type)
       }
 
-      is Term.Code       -> {
+      is Term.Code     -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
 
-      is Term.CodeOf     -> {
+      is Term.CodeOf   -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.CodeOf(element, type)
@@ -191,6 +191,23 @@ class Meta {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Splice(element, type)
+      }
+
+      is Term.Path     -> {
+        val element = zonkTerm(term.element)
+        Term.Path(element)
+      }
+
+      is Term.PathOf   -> {
+        val element = zonkTerm(term.element)
+        val type = zonkTerm(term.type)
+        Term.PathOf(element, type)
+      }
+
+      is Term.Get      -> {
+        val element = zonkTerm(term.element)
+        val type = zonkTerm(term.type)
+        Term.Get(element, type)
       }
 
       is Term.Command  -> {
@@ -330,7 +347,7 @@ class Meta {
       }
       value1 is Value.Point && value2 is Value.Point           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union           -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
-      value1 is Value.Func && value2 is Value.Func             -> {
+      value1 is Value.Func && value2 is Value.Func       -> {
         value1.open == value2.open &&
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) ->
@@ -341,7 +358,7 @@ class Meta {
           value2.result.open(this, value2.params.map { it.second }),
         )
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf         -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf   -> {
         value1.open == value2.open &&
         unifyValue(
           value1.result.open(this, (value1.type.value as Value.Func).params.map { it.second }),
@@ -356,6 +373,9 @@ class Meta {
       value1 is Value.Code && value2 is Value.Code       -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.CodeOf && value2 is Value.CodeOf   -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Splice && value2 is Value.Splice   -> unifyValue(value1.element, value2.element)
+      value1 is Value.Path && value2 is Value.Path       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.PathOf && value2 is Value.PathOf   -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Get && value2 is Value.Get         -> unifyValue(value1.element, value2.element)
       value1 is Value.Command && value2 is Value.Command -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.If && value2 is Value.If           -> false // TODO
       value1 is Value.Var && value2 is Value.Var         -> value1.lvl == value2.lvl

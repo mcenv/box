@@ -275,6 +275,22 @@ sealed class Value {
     override val type: Lazy<Value>,
   ) : Value()
 
+  data class Path(
+    val element: Lazy<Value>,
+  ) : Value() {
+    override val type: Lazy<Value> get() = Type.END_LAZY
+  }
+
+  data class PathOf(
+    val element: Lazy<Value>,
+    override val type: Lazy<Value>,
+  ) : Value()
+
+  data class Get(
+    val element: Value,
+    override val type: Lazy<Value>,
+  ) : Value()
+
   data class Command(
     val element: Lazy<Value>,
     override val type: Lazy<Value>,
