@@ -45,6 +45,23 @@ jobs:
           arguments: test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Measure coverage
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: kover
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate coverage badge
+        uses: Schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.COVERAGE }}
+          gistID: 7af9a474143f247a1e0077a972afd904
+          filename: mcx-coverage-badge.json
+          label: Coverage
+          message: ${{ env.COVERAGE }}%
+          valColorRange: ${{ env.COVERAGE }}
+          minColorRange: 0
+          maxColorRange: 100
       - name: Install mcx
         uses: gradle/gradle-build-action@v2
         with:
