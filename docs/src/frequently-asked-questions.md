@@ -1,5 +1,5 @@
 # Frequently Asked Questions
 
-## Why there is no `i16_array`?
+## Why is there no `i16_array`, `f32_array`, or `f64_array`?
 
-This is because there is no `ShortArrayTag` in Minecraft's NBT.
+Because there is no `ShortArrayTag`, `FloatArrayTag`, or `DoubleArrayTag` in NBT.
