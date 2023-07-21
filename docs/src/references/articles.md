@@ -12,5 +12,6 @@
 * [Two-Level Type Theory](https://github.com/agda/agda/blob/b1647631c9287b4e64b225510ffb61e9f2aa88e6/doc/user-manual/language/two-level.lagda.rst)
 * [The Fire Triangle How to Mix Substitution, Dependent Elimination and Effects](https://www.xn--pdrot-bsa.fr/slides/popl-01-20.pdf)
 * [Notes on normalization-by-evaluation modulo monad laws for monadic language](https://gist.github.com/AndrasKovacs/44aca9b4af09ac5ceab0a86a0f21aad9)
+* [Counterexamples in Type Systems](https://counterexamples.org/)
 * [FAQ - UTF-8, UTF-16, UTF-32 & BOM](https://unicode.org/faq/utf_bom.html)
 * [The WTF-8 encoding](https://simonsapin.github.io/wtf-8/)
