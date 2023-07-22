@@ -93,6 +93,9 @@ class Resolve private constructor(
       return R.Definition.Hole(range)
     }
 
+    val name = definition.name.map { input.module.name / it }
+    location = name.value
+
     run {
       var inline = false
       var rec = false
@@ -115,8 +118,6 @@ class Resolve private constructor(
       }
     }
 
-    val name = definition.name.map { input.module.name / it }
-    location = name.value
     return when (definition) {
       is S.Definition.Def  -> {
         val type = emptyEnv().resolveTerm(definition.type)
