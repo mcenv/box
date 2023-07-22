@@ -1,6 +1,6 @@
 {
   "name": "test",
-  "description": "The mcx test pack",
+  "description": "The box test pack",
   "output": "file",
   "debug": {
     "verbose": true

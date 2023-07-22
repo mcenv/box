@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "description": "The mcx core pack",
+  "description": "The box core pack",
   "output": "file",
   "debug": {
     "verbose": true

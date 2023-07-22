@@ -1,7 +1,0 @@
-def command_string_of_nothing : end := /"say command_string_of_nothing";
-
-test def command_string_of_bool := /"data modify storage mcx: byte append value 1b";
-
-const def const_string_of : wtf16 := "say string_constant";
-
-def use_const_string_of : end := /const_string_of;

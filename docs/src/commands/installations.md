@@ -1,1 +1,1 @@
-# `mcx installations`
+# `box installations`

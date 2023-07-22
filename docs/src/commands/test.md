@@ -1,1 +1,1 @@
-# `mcx test`
+# `box test`

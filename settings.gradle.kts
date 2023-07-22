@@ -1,1 +1,1 @@
-rootProject.name = "mcx"
+rootProject.name = "box"

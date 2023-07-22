@@ -2,7 +2,7 @@
 
 ## Almost Drop-in Replacement for Data Packs
 
-* There should be as few things as possible that can be done in data packs but cannot be done in mcx
+* There should be as few things as possible that can be done in data packs but cannot be done in box
 
 ## Almost Zero Runtime Cost Abstractions
 

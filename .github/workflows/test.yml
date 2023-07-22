@@ -39,7 +39,7 @@ jobs:
           java-version: "20"
       - name: Validate gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-      - name: Test mcx
+      - name: Test box
         uses: gradle/gradle-build-action@v2
         with:
           arguments: test
@@ -56,13 +56,13 @@ jobs:
         with:
           auth: ${{ secrets.COVERAGE }}
           gistID: 7af9a474143f247a1e0077a972afd904
-          filename: mcx-coverage-badge.json
+          filename: box-coverage-badge.json
           label: Coverage
           message: ${{ env.COVERAGE }}%
           valColorRange: ${{ env.COVERAGE }}
           minColorRange: 0
           maxColorRange: 100
-      - name: Install mcx
+      - name: Install box
         uses: gradle/gradle-build-action@v2
         with:
           arguments: installDist
@@ -73,28 +73,28 @@ jobs:
         uses: mcenv/setup-minecraft@v3
         with:
           version: snapshot
-      - name: Setup mcx
+      - name: Setup box
         run: |
-          echo "${{ github.workspace }}/build/install/mcx/bin" >> $GITHUB_PATH
-          mkdir -p ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
-          mv $MINECRAFT ~/.mcx/versions/${{ steps.minecraft.outputs.version }}
+          echo "${{ github.workspace }}/build/install/box/bin" >> $GITHUB_PATH
+          mkdir -p ~/.box/versions/${{ steps.minecraft.outputs.version }}
+          mv $MINECRAFT ~/.box/versions/${{ steps.minecraft.outputs.version }}
       - name: Test test pack
         run: |
           cd ./packs/test
-          mcx dependencies install
-          mcx test ${{ steps.minecraft.outputs.version }} --nogui
+          box dependencies install
+          box test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Test core pack
         run: |
           cd ./packs/core
-          mcx dependencies install
-          mcx test ${{ steps.minecraft.outputs.version }} --nogui
+          box dependencies install
+          box test ${{ steps.minecraft.outputs.version }} --nogui
       - name: Upload data packs
         uses: actions/upload-artifact@v3
         with:
           name: datapacks
           path: |
-            ./packs/core/.mcx/world/datapacks/core_main.zip
-            ./packs/core/.mcx/world/datapacks/core_test.zip
-            ./packs/test/.mcx/world/datapacks/test_main.zip
-            ./packs/test/.mcx/world/datapacks/test_test.zip
+            ./packs/core/.box/world/datapacks/core_main.zip
+            ./packs/core/.box/world/datapacks/core_test.zip
+            ./packs/test/.box/world/datapacks/test_main.zip
+            ./packs/test/.box/world/datapacks/test_test.zip
           if-no-files-found: error

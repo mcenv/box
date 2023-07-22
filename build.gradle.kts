@@ -30,7 +30,7 @@ sourceSets {
   main {
     resources {
       srcDirs("packs")
-      exclude("core/.mcx", "pack/.mcx", "test")
+      exclude("core/.box", "pack/.box", "test")
     }
   }
   test {
@@ -51,7 +51,7 @@ tasks.withType<ProcessResources> {
 }
 
 application {
-  mainClass.set("mcx.util.CliKt")
+  mainClass.set("box.util.CliKt")
 }
 
 tasks.test {

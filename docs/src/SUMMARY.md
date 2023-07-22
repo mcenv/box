@@ -3,13 +3,13 @@
 [Introduction](./introduction.md)
 
 - [Commands](./commands.md)
-  - [mcx build](./commands/build.md)
-  - [mcx dependencies](./commands/dependencies.md)
-  - [mcx help](./commands/help.md)
-  - [mcx installations](./commands/installations.md)
-  - [mcx lsp](./commands/lsp.md)
-  - [mcx test](./commands/test.md)
-  - [mcx version](./commands/version.md)
+  - [box build](./commands/build.md)
+  - [box dependencies](./commands/dependencies.md)
+  - [box help](./commands/help.md)
+  - [box installations](./commands/installations.md)
+  - [box lsp](./commands/lsp.md)
+  - [box test](./commands/test.md)
+  - [box version](./commands/version.md)
 - [Frequently Asked Questions](./frequently-asked-questions.md)
 
 # Internals

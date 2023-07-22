@@ -1,1 +1,1 @@
-# `mcx lsp`
+# `box lsp`

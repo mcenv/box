@@ -1,5 +1,5 @@
 [book]
-title = "mcx"
+title = "box"
 authors = ["intsuc"]
 src = "src"
 language = "en"
@@ -7,5 +7,4 @@ multilingual = false
 
 [output.html]
 mathjax-support = true
-git-repository-url = "https://github.com/mcenv/mcx"
-
+git-repository-url = "https://github.com/mcenv/box"

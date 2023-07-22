@@ -1,1 +1,1 @@
-# `mcx version`
+# `box version`
