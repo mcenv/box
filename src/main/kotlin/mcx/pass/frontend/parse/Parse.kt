@@ -185,12 +185,13 @@ class Parse private constructor(
       val start = cursor
       modifiers += ranging {
         when (val word = readWord()) {
-          "export"  -> Ranged(Modifier.EXPORT, until())
-          "rec"     -> Ranged(Modifier.REC, until())
-          "const"   -> Ranged(Modifier.CONST, until())
-          "test"    -> Ranged(Modifier.TEST, until())
-          "error"   -> Ranged(Modifier.ERROR, until())
-          else      -> return modifiers to word
+          "export" -> Ranged(Modifier.EXPORT, until())
+          "inline" -> Ranged(Modifier.INLINE, until())
+          "rec"    -> Ranged(Modifier.REC, until())
+          "const"  -> Ranged(Modifier.CONST, until())
+          "test"   -> Ranged(Modifier.TEST, until())
+          "error"  -> Ranged(Modifier.ERROR, until())
+          else     -> return modifiers to word
         }
       }
       if (start == cursor) {
@@ -354,16 +355,16 @@ class Parse private constructor(
               "i64"          -> S.Term.I64(until())
               "f32"          -> S.Term.F32(until())
               "f64"          -> S.Term.F64(until())
-              "wtf16"     -> S.Term.Wtf16(until())
-              "i8_array"  -> S.Term.I8Array(until())
-              "i32_array" -> S.Term.I32Array(until())
-              "i64_array" -> S.Term.I64Array(until())
-              "list"      -> {
+              "wtf16"        -> S.Term.Wtf16(until())
+              "i8_array"     -> S.Term.I8Array(until())
+              "i32_array"    -> S.Term.I32Array(until())
+              "i64_array"    -> S.Term.I64Array(until())
+              "list"         -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.List(element, until())
               }
-              "compound"  -> {
+              "compound"     -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') {
                   val key = parseRanged { readString() }
@@ -374,12 +375,12 @@ class Parse private constructor(
                 }
                 S.Term.Compound(elements, until())
               }
-              "point"     -> {
+              "point"        -> {
                 skipTrivia()
                 val element = parseTerm0()
                 S.Term.Point(element, until())
               }
-              "union"     -> {
+              "union"        -> {
                 skipTrivia()
                 val elements = parseList(',', '{', '}') { parseTerm() }
                 S.Term.Union(elements, until())
@@ -437,12 +438,12 @@ class Parse private constructor(
                 }
                 S.Term.If(scrutinee, branches, until())
               }
-              "builtin" -> {
+              "builtin"      -> {
                 skipTrivia()
                 val name = readLocation()
                 S.Term.Builtin(name, until())
               }
-              else      -> {
+              else           -> {
                 val name = word.value
                 when {
                   name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }
@@ -860,16 +861,6 @@ class Parse private constructor(
     return diagnostic(
       range,
       "expected: term",
-      DiagnosticSeverity.Error,
-    )
-  }
-
-  private fun expectedAnnotation(
-    range: Range,
-  ): Diagnostic {
-    return diagnostic(
-      range,
-      "expected: annotation",
       DiagnosticSeverity.Error,
     )
   }

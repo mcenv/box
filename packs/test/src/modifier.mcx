@@ -1,0 +1,1 @@
+error inline rec def inline_and_rec : i32 := 0;

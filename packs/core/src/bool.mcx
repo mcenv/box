@@ -1,13 +1,13 @@
-export def !(a : bool) : bool :=
+export inline def !(a : bool) : bool :=
   if a [ true -> false, _ -> true ];
 
-export def &(a : bool, b : bool) : bool :=
+export inline def &(a : bool, b : bool) : bool :=
   if a [ true -> b, _ -> false ];
 
-export def |(a : bool, b : bool) : bool :=
+export inline def |(a : bool, b : bool) : bool :=
   if a [ true -> true, _ -> b ];
 
-export def to_wtf16(a : bool) : wtf16 :=
+export inline def to_wtf16(a : bool) : wtf16 :=
   if a [ true -> "true", _ -> "false" ];
 
 test def !_false := !(false);

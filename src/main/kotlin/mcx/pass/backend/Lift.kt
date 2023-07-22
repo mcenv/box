@@ -34,6 +34,7 @@ class Lift private constructor(
   private fun liftModifier(modifier: Modifier): L.Modifier? {
     return when (modifier) {
       Modifier.EXPORT -> null
+      Modifier.INLINE -> null
       Modifier.REC    -> null
       Modifier.DIRECT -> null // ?
       Modifier.CONST  -> error("Unexpected modifier: ${modifier.id}")

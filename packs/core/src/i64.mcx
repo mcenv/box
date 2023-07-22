@@ -2,10 +2,10 @@ import {
   core::bool::!,
 }
 
-export def != : proc(i64, i64) -> bool := builtin i64::!=;
+export inline def != : proc(i64, i64) -> bool := builtin i64::!=;
 
-export def =(a : i64, b : i64) : bool := !(a != b);
+export inline def =(a : i64, b : i64) : bool := !(a != b);
 
-export def to_i64(self : i64) : i64 := self;
+export inline def to_i64(self : i64) : i64 := self;
 
-export def to_wtf16 : proc(i64) -> wtf16 := builtin i64::to_wtf16;
+export inline def to_wtf16 : proc(i64) -> wtf16 := builtin i64::to_wtf16;

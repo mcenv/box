@@ -5,15 +5,15 @@ import {
   core::i32::to_wtf16,
 }
 
-export def != : proc(wtf16, wtf16) -> bool := builtin wtf16::!=;
+export inline def != : proc(wtf16, wtf16) -> bool := builtin wtf16::!=;
 
-export def =(a : wtf16, b : wtf16) : bool := !(a != b);
+export inline def =(a : wtf16, b : wtf16) : bool := !(a != b);
 
-export def to_wtf16(self : wtf16) : wtf16 := self;
+export inline def to_wtf16(self : wtf16) : wtf16 := self;
 
-export def size : proc(wtf16) -> i32 := builtin wtf16::size;
+export inline def size : proc(wtf16) -> i32 := builtin wtf16::size;
 
-export def is_empty(a : wtf16) : bool := size(a) i32::= 0;
+export inline def is_empty(a : wtf16) : bool := size(a) i32::= 0;
 
 # todo: remove raw commands
 export const def from(self : code wtf16, start_index : i32) : code wtf16 := `(

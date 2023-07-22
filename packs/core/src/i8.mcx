@@ -1,19 +1,19 @@
-export def min_value : i8 := -128i8;
+export inline def min_value : i8 := -128i8;
 
-export def max_value : i8 := 127i8;
+export inline def max_value : i8 := 127i8;
 
-export def = : proc(i8, i8) -> bool := builtin i8::=;
+export inline def = : proc(i8, i8) -> bool := builtin i8::=;
 
-export def to_i8(self : i8) : i8 := self;
+export inline def to_i8(self : i8) : i8 := self;
 
-export def to_i16 : proc(i8) -> i16 := builtin i8::to_i16;
+export inline def to_i16 : proc(i8) -> i16 := builtin i8::to_i16;
 
-export def to_i32 : proc(i8) -> i32 := builtin i8::to_i32;
+export inline def to_i32 : proc(i8) -> i32 := builtin i8::to_i32;
 
-export def to_i64 : proc(i8) -> i64 := builtin i8::to_i64;
+export inline def to_i64 : proc(i8) -> i64 := builtin i8::to_i64;
 
-export def to_f32 : proc(i8) -> f32 := builtin i8::to_f32;
+export inline def to_f32 : proc(i8) -> f32 := builtin i8::to_f32;
 
-export def to_f64 : proc(i8) -> f64 := builtin i8::to_f64;
+export inline def to_f64 : proc(i8) -> f64 := builtin i8::to_f64;
 
-export def to_wtf16 : proc(i8) -> wtf16 := builtin i8::to_wtf16;
+export inline def to_wtf16 : proc(i8) -> wtf16 := builtin i8::to_wtf16;

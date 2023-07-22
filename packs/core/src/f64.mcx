@@ -2,14 +2,14 @@ import {
   core::bool::!,
 }
 
-export def min_value : f64 := 4.9e-324f64;
+export inline def min_value : f64 := 4.9e-324f64;
 
-export def max_value : f64 := 1.7976931348623157e308f64;
+export inline def max_value : f64 := 1.7976931348623157e308f64;
 
-export def != : proc(f64, f64) -> bool := builtin f64::!=;
+export inline def != : proc(f64, f64) -> bool := builtin f64::!=;
 
-export def =(a : f64, b : f64) : bool := !(a != b);
+export inline def =(a : f64, b : f64) : bool := !(a != b);
 
-export def to_f64(self : f64) : f64 := self;
+export inline def to_f64(self : f64) : f64 := self;
 
-export def to_wtf16 : proc(f64) -> wtf16 := builtin f64::to_wtf16;
+export inline def to_wtf16 : proc(f64) -> wtf16 := builtin f64::to_wtf16;

@@ -2,14 +2,14 @@ import {
   core::bool::!,
 }
 
-export def min_value : f32 := 1.4e-45f32;
+export inline def min_value : f32 := 1.4e-45f32;
 
-export def max_value : f32 := 3.4028235e38f32;
+export inline def max_value : f32 := 3.4028235e38f32;
 
-export def != : proc(f32, f32) -> bool := builtin f32::!=;
+export inline def != : proc(f32, f32) -> bool := builtin f32::!=;
 
-export def =(a : f32, b : f32) : bool := !(a != b);
+export inline def =(a : f32, b : f32) : bool := !(a != b);
 
-export def to_f32(self : f32) : f32 := self;
+export inline def to_f32(self : f32) : f32 := self;
 
-export def to_wtf16 : proc(f32) -> wtf16 := builtin f32::to_wtf16;
+export inline def to_wtf16 : proc(f32) -> wtf16 := builtin f32::to_wtf16;

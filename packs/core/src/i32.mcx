@@ -1,46 +1,46 @@
-export def min_value : i32 := -2147483648;
+export inline def min_value : i32 := -2147483648;
 
-export def max_value : i32 := 2147483647;
+export inline def max_value : i32 := 2147483647;
 
-export def + : proc(i32, i32) -> i32 := builtin i32::+;
+export inline def + : proc(i32, i32) -> i32 := builtin i32::+;
 
-export def - : proc(i32, i32) -> i32 := builtin i32::-;
+export inline def - : proc(i32, i32) -> i32 := builtin i32::-;
 
-export def * : proc(i32, i32) -> i32 := builtin i32::*;
+export inline def * : proc(i32, i32) -> i32 := builtin i32::*;
 
-export def / : proc(i32, i32) -> i32 := builtin i32::/;
+export inline def / : proc(i32, i32) -> i32 := builtin i32::/;
 
-export def % : proc(i32, i32) -> i32 := builtin i32::%;
+export inline def % : proc(i32, i32) -> i32 := builtin i32::%;
 
-export def min : proc(i32, i32) -> i32 := builtin i32::min;
+export inline def min : proc(i32, i32) -> i32 := builtin i32::min;
 
-export def max : proc(i32, i32) -> i32 := builtin i32::max;
+export inline def max : proc(i32, i32) -> i32 := builtin i32::max;
 
-export def = : proc(i32, i32) -> bool := builtin i32::=;
+export inline def = : proc(i32, i32) -> bool := builtin i32::=;
 
-export def < : proc(i32, i32) -> bool := builtin i32::<;
+export inline def < : proc(i32, i32) -> bool := builtin i32::<;
 
-export def <= : proc(i32, i32) -> bool := builtin i32::<=;
+export inline def <= : proc(i32, i32) -> bool := builtin i32::<=;
 
-export def > : proc(i32, i32) -> bool := builtin i32::>;
+export inline def > : proc(i32, i32) -> bool := builtin i32::>;
 
-export def >= : proc(i32, i32) -> bool := builtin i32::>=;
+export inline def >= : proc(i32, i32) -> bool := builtin i32::>=;
 
-export def != : proc(i32, i32) -> bool := builtin i32::!=;
+export inline def != : proc(i32, i32) -> bool := builtin i32::!=;
 
-export def to_i8 : proc(i32) -> i8 := builtin i32::to_i8;
+export inline def to_i8 : proc(i32) -> i8 := builtin i32::to_i8;
 
-export def to_i16 : proc(i32) -> i16 := builtin i32::to_i16;
+export inline def to_i16 : proc(i32) -> i16 := builtin i32::to_i16;
 
-export def to_i32(self : i32) : i32 := self;
+export inline def to_i32(self : i32) : i32 := self;
 
-export def to_i64 : proc(i32) -> i64 := builtin i32::to_i64;
+export inline def to_i64 : proc(i32) -> i64 := builtin i32::to_i64;
 
-export def to_f32 : proc(i32) -> f32 := builtin i32::to_f32;
+export inline def to_f32 : proc(i32) -> f32 := builtin i32::to_f32;
 
-export def to_f64 : proc(i32) -> f64 := builtin i32::to_f64;
+export inline def to_f64 : proc(i32) -> f64 := builtin i32::to_f64;
 
-export def to_wtf16 : proc(i32) -> wtf16 := builtin i32::to_wtf16;
+export inline def to_wtf16 : proc(i32) -> wtf16 := builtin i32::to_wtf16;
 
 test def 1_+_2_=_3 := (1 + 2) = 3;
 

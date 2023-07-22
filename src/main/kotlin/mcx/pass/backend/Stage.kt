@@ -327,8 +327,13 @@ class Stage private constructor() {
       is Term.Def      -> {
         when (phase) {
           Phase.WORLD -> {
-            val type = lazy { evalTerm(term.type, phase) }
-            Value.Def(term.def, type)
+            when (Modifier.INLINE) {
+              in term.def.modifiers -> evalTerm(term.def.body, phase)
+              else                  -> {
+                val type = lazy { evalTerm(term.type, phase) }
+                Value.Def(term.def, type)
+              }
+            }
           }
           Phase.CONST -> {
             evalTerm(term.def.body, phase)

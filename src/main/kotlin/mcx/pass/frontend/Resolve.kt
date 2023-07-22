@@ -93,6 +93,28 @@ class Resolve private constructor(
       return R.Definition.Hole(range)
     }
 
+    run {
+      var inline = false
+      var rec = false
+      definition.modifiers.forEach {
+        when (it.value) {
+          Modifier.INLINE -> {
+            inline = true
+            if (rec) {
+              diagnose(inlineAndRecCannotBeMixed(it.range))
+            }
+          }
+          Modifier.REC    -> {
+            rec = true
+            if (inline) {
+              diagnose(inlineAndRecCannotBeMixed(it.range))
+            }
+          }
+          else            -> {}
+        }
+      }
+    }
+
     val name = definition.name.map { input.module.name / it }
     location = name.value
     return when (definition) {
@@ -623,6 +645,16 @@ class Resolve private constructor(
     return diagnostic(
       range,
       "unexpected pattern",
+      DiagnosticSeverity.Error,
+    )
+  }
+
+  private fun inlineAndRecCannotBeMixed(
+    range: Range,
+  ): Diagnostic {
+    return diagnostic(
+      range,
+      "inline and rec cannot be mixed",
       DiagnosticSeverity.Error,
     )
   }
