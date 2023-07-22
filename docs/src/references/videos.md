@@ -1,13 +1,13 @@
 # Videos
 
-* [Type theory elaboration 1: bidirectional type checking](https://youtu.be/_K5Yt-cmKcY)
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/_K5Yt-cmKcY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-* [Type theory elaboration 8: comparison of De Bruijn, non-shadowing and fresh variable conventions](https://youtu.be/ZKu1oNSbZ9I)
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/ZKu1oNSbZ9I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+* [Type theory elaboration implementation](https://youtube.com/playlist?list=PL2ZpyLROj5FOt99f_KCxARvd1hDqKns5b)
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?controls=0&amp;list=PL2ZpyLROj5FOt99f_KCxARvd1hDqKns5b" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 * [Memory layout control and staged compilation](https://youtube.com/playlist?list=PL2ZpyLROj5FNeUJh7m6IB1wTPa75JUTzL)
   <iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PL2ZpyLROj5FNeUJh7m6IB1wTPa75JUTzL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+* [First thoughts on partial evaluation in effectful intermediate languages](https://youtu.be/GkQqX8ZRT-s)
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/GkQqX8ZRT-s?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 * [[ICFP'22] Staged Compilation with Two-Level Type Theory](https://youtu.be/0BOQE48_qOM)
   <iframe width="560" height="315" src="https://www.youtube.com/embed/0BOQE48_qOM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
