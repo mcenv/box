@@ -65,56 +65,38 @@ sealed class Value {
 
   data object Unit : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
-
-    val LAZY: Lazy<Unit> = lazyOf(Unit)
   }
 
   data object Bool : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
-
-    val LAZY: Lazy<Bool> = lazyOf(Bool)
   }
 
   data object I8 : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
-
-    val LAZY: Lazy<I8> = lazyOf(I8)
   }
 
   data object I16 : Value() {
     override val type: Lazy<Value> get() = Type.SHORT_LAZY
-
-    val LAZY: Lazy<I16> = lazyOf(I16)
   }
 
   data object I32 : Value() {
     override val type: Lazy<Value> get() = Type.INT_LAZY
-
-    val LAZY: Lazy<I32> = lazyOf(I32)
   }
 
   data object I64 : Value() {
     override val type: Lazy<Value> get() = Type.LONG_LAZY
-
-    val LAZY: Lazy<I64> = lazyOf(I64)
   }
 
   data object F32 : Value() {
     override val type: Lazy<Value> get() = Type.FLOAT_LAZY
-
-    val LAZY: Lazy<F32> = lazyOf(F32)
   }
 
   data object F64 : Value() {
     override val type: Lazy<Value> get() = Type.DOUBLE_LAZY
-
-    val LAZY: Lazy<F64> = lazyOf(F64)
   }
 
   data object Wtf16 : Value() {
     override val type: Lazy<Value> get() = Type.STRING_LAZY
-
-    val LAZY: Lazy<Wtf16> = lazyOf(Wtf16)
   }
 
   data class ConstOf<out T>(
