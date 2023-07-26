@@ -52,66 +52,50 @@ class Meta {
 
   fun Lvl.zonkTerm(term: Term): Term {
     return when (term) {
-      is Term.Tag      -> term
+      is Term.Tag        -> term
 
-      is Term.TagOf    -> term
+      is Term.TagOf      -> term
 
-      is Term.Type     -> {
+      is Term.Type       -> {
         val tag = zonkTerm(term.element)
         Term.Type(tag)
       }
 
-      is Term.Unit     -> term
+      is Term.Unit       -> term
 
-      is Term.UnitOf   -> term
+      is Term.Bool       -> term
 
-      is Term.Bool     -> term
+      is Term.I8         -> term
 
-      is Term.BoolOf   -> term
+      is Term.I16        -> term
 
-      is Term.I8       -> term
+      is Term.I32        -> term
 
-      is Term.I8Of     -> term
+      is Term.I64        -> term
 
-      is Term.I16      -> term
+      is Term.F32        -> term
 
-      is Term.I16Of    -> term
+      is Term.F64        -> term
 
-      is Term.I32      -> term
+      is Term.Wtf16      -> term
 
-      is Term.I32Of    -> term
+      is Term.ConstOf<*> -> term
 
-      is Term.I64      -> term
-
-      is Term.I64Of    -> term
-
-      is Term.F32      -> term
-
-      is Term.F32Of    -> term
-
-      is Term.F64      -> term
-
-      is Term.F64Of    -> term
-
-      is Term.Wtf16    -> term
-
-      is Term.Wtf16Of  -> term
-
-      is Term.I8Array  -> term
+      is Term.I8Array    -> term
 
       is Term.I8ArrayOf  -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I8ArrayOf(elements)
       }
 
-      is Term.I32Array -> term
+      is Term.I32Array   -> term
 
       is Term.I32ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
         Term.I32ArrayOf(elements)
       }
 
-      is Term.I64Array -> term
+      is Term.I64Array   -> term
 
       is Term.I64ArrayOf -> {
         val elements = term.elements.map { zonkTerm(it) }
@@ -140,19 +124,19 @@ class Meta {
         Term.CompoundOf(elements, type)
       }
 
-      is Term.Point    -> {
+      is Term.Point      -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Point(element, type)
       }
 
-      is Term.Union    -> {
+      is Term.Union      -> {
         val elements = term.elements.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
         Term.Union(elements, type)
       }
 
-      is Term.Func     -> {
+      is Term.Func       -> {
         val (lvl, params) = term.params.mapWith(this) { transform, (param, type) ->
           val type = zonkTerm(type)
           transform(this + 1)
@@ -169,61 +153,61 @@ class Meta {
         Term.FuncOf(term.open, params, result, type)
       }
 
-      is Term.Apply    -> {
+      is Term.Apply      -> {
         val func = zonkTerm(term.func)
         val args = term.args.map { zonkTerm(it) }
         val type = zonkTerm(term.type)
         Term.Apply(term.open, func, args, type)
       }
 
-      is Term.Code     -> {
+      is Term.Code       -> {
         val element = zonkTerm(term.element)
         Term.Code(element)
       }
 
-      is Term.CodeOf   -> {
+      is Term.CodeOf     -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.CodeOf(element, type)
       }
 
-      is Term.Splice   -> {
+      is Term.Splice     -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Splice(element, type)
       }
 
-      is Term.Path     -> {
+      is Term.Path       -> {
         val element = zonkTerm(term.element)
         Term.Path(element)
       }
 
-      is Term.PathOf   -> {
+      is Term.PathOf     -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.PathOf(element, type)
       }
 
-      is Term.Get      -> {
+      is Term.Get        -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Get(element, type)
       }
 
-      is Term.Command  -> {
+      is Term.Command    -> {
         val element = zonkTerm(term.element)
         val type = zonkTerm(term.type)
         Term.Command(element, type)
       }
 
-      is Term.Let      -> {
+      is Term.Let        -> {
         val init = zonkTerm(term.init)
         val body = zonkTerm(term.body)
         val type = zonkTerm(term.type)
         Term.Let(term.binder, init, body, type)
       }
 
-      is Term.If       -> {
+      is Term.If         -> {
         val scrutinee = zonkTerm(term.scrutinee)
         val branches = term.branches.map { (pattern, body) ->
           val body = zonkTerm(body)
@@ -233,23 +217,23 @@ class Meta {
         Term.If(scrutinee, branches, type)
       }
 
-      is Term.Project  -> {
+      is Term.Project    -> {
         val target = zonkTerm(term.target)
         val type = zonkTerm(term.type)
         Term.Project(target, term.projs, type)
       }
 
-      is Term.Var      -> {
+      is Term.Var        -> {
         val type = zonkTerm(term.type)
         Term.Var(term.name, term.idx, type)
       }
 
-      is Term.Def      -> {
+      is Term.Def        -> {
         val type = zonkTerm(term.type)
         Term.Def(term.def, type)
       }
 
-      is Term.Meta     -> {
+      is Term.Meta       -> {
         val solution = values.getOrNull(term.index)
         if (solution == null || (solution is Value.Meta && term.index == solution.index)) {
           val type = zonkTerm(term.type)
@@ -261,9 +245,9 @@ class Meta {
         }
       }
 
-      is Term.Builtin  -> Term.Builtin(term.builtin)
+      is Term.Builtin    -> Term.Builtin(term.builtin)
 
-      is Term.Hole     -> term
+      is Term.Hole       -> term
     }
   }
 
@@ -296,23 +280,15 @@ class Meta {
       value1 is Value.TagOf && value2 is Value.TagOf           -> value1.repr == value2.repr
       value1 is Value.Type && value2 is Value.Type             -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Unit && value2 is Value.Unit             -> true
-      value1 is Value.UnitOf && value2 is Value.UnitOf         -> true
       value1 is Value.Bool && value2 is Value.Bool             -> true
-      value1 is Value.BoolOf && value2 is Value.BoolOf         -> value1.value == value2.value
       value1 is Value.I8 && value2 is Value.I8                 -> true
-      value1 is Value.I8Of && value2 is Value.I8Of             -> value1.value == value2.value
       value1 is Value.I16 && value2 is Value.I16               -> true
-      value1 is Value.I16Of && value2 is Value.I16Of           -> value1.value == value2.value
       value1 is Value.I32 && value2 is Value.I32               -> true
-      value1 is Value.I32Of && value2 is Value.I32Of           -> value1.value == value2.value
       value1 is Value.I64 && value2 is Value.I64               -> true
-      value1 is Value.I64Of && value2 is Value.I64Of           -> value1.value == value2.value
       value1 is Value.F32 && value2 is Value.F32               -> true
-      value1 is Value.F32Of && value2 is Value.F32Of           -> value1.value == value2.value
       value1 is Value.F64 && value2 is Value.F64               -> true
-      value1 is Value.F64Of && value2 is Value.F64Of           -> value1.value == value2.value
       value1 is Value.Wtf16 && value2 is Value.Wtf16           -> true
-      value1 is Value.Wtf16Of && value2 is Value.Wtf16Of       -> value1.value == value2.value
+      value1 is Value.ConstOf<*> && value2 is Value.ConstOf<*> -> value1.value == value2.value
       value1 is Value.I8Array && value2 is Value.I8Array       -> true
       value1 is Value.I8ArrayOf && value2 is Value.I8ArrayOf   -> {
         value1.elements.size == value2.elements.size &&
@@ -347,7 +323,7 @@ class Meta {
       }
       value1 is Value.Point && value2 is Value.Point           -> unifyValue(value1.element.value, value2.element.value)
       value1 is Value.Union && value2 is Value.Union           -> value1.elements.isEmpty() && value2.elements.isEmpty() // TODO
-      value1 is Value.Func && value2 is Value.Func       -> {
+      value1 is Value.Func && value2 is Value.Func             -> {
         value1.open == value2.open &&
         value1.params.size == value2.params.size &&
         (value1.params zip value2.params).all { (param1, param2) ->
@@ -358,31 +334,31 @@ class Meta {
           value2.result.open(this, value2.params.map { it.second }),
         )
       }
-      value1 is Value.FuncOf && value2 is Value.FuncOf   -> {
+      value1 is Value.FuncOf && value2 is Value.FuncOf         -> {
         value1.open == value2.open &&
         unifyValue(
           value1.result.open(this, (value1.type.value as Value.Func).params.map { it.second }),
           value2.result.open(this, (value2.type.value as Value.Func).params.map { it.second }),
         )
       }
-      value1 is Value.Apply && value2 is Value.Apply     -> {
+      value1 is Value.Apply && value2 is Value.Apply           -> {
         unifyValue(value1.func, value2.func) &&
         value1.args.size == value2.args.size &&
         (value1.args zip value2.args).all { (arg1, arg2) -> unifyValue(arg1.value, arg2.value) }
       }
-      value1 is Value.Code && value2 is Value.Code       -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.CodeOf && value2 is Value.CodeOf   -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Splice && value2 is Value.Splice   -> unifyValue(value1.element, value2.element)
-      value1 is Value.Path && value2 is Value.Path       -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.PathOf && value2 is Value.PathOf   -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.Get && value2 is Value.Get         -> unifyValue(value1.element, value2.element)
-      value1 is Value.Command && value2 is Value.Command -> unifyValue(value1.element.value, value2.element.value)
-      value1 is Value.If && value2 is Value.If           -> false // TODO
-      value1 is Value.Var && value2 is Value.Var         -> value1.lvl == value2.lvl
-      value1 is Value.Def && value2 is Value.Def         -> value1.def.name == value2.def.name // TODO: check body
-      value1 is Value.Builtin && value2 is Value.Builtin -> value1.builtin === value2.builtin
-      value1 is Value.Hole || value2 is Value.Hole       -> true // ?
-      else                                               -> false
+      value1 is Value.Code && value2 is Value.Code             -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.CodeOf && value2 is Value.CodeOf         -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Splice && value2 is Value.Splice         -> unifyValue(value1.element, value2.element)
+      value1 is Value.Path && value2 is Value.Path             -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.PathOf && value2 is Value.PathOf         -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.Get && value2 is Value.Get               -> unifyValue(value1.element, value2.element)
+      value1 is Value.Command && value2 is Value.Command       -> unifyValue(value1.element.value, value2.element.value)
+      value1 is Value.If && value2 is Value.If                 -> false // TODO
+      value1 is Value.Var && value2 is Value.Var               -> value1.lvl == value2.lvl
+      value1 is Value.Def && value2 is Value.Def               -> value1.def.name == value2.def.name // TODO: check body
+      value1 is Value.Builtin && value2 is Value.Builtin       -> value1.builtin === value2.builtin
+      value1 is Value.Hole || value2 is Value.Hole             -> true // ?
+      else                                                     -> false
     }
   }
 

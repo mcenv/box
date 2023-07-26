@@ -2,6 +2,7 @@ package box.ast
 
 import box.ast.common.*
 import box.ast.common.Annotation
+import box.util.unreachable
 import org.eclipse.lsp4j.Range
 
 object Core {
@@ -72,88 +73,53 @@ object Core {
       override val type: Term get() = Type.BYTE
     }
 
-    data object UnitOf : Term() {
-      override val type: Term get() = Unit
-    }
-
     data object Bool : Term() {
       override val type: Term get() = Type.BYTE
-    }
-
-    data class BoolOf(
-      val value: Boolean,
-    ) : Term() {
-      override val type: Term get() = Bool
     }
 
     data object I8 : Term() {
       override val type: Term get() = Type.BYTE
     }
 
-    data class I8Of(
-      val value: Byte,
-    ) : Term() {
-      override val type: Term get() = I8
-    }
-
     data object I16 : Term() {
       override val type: Term get() = Type.SHORT
-    }
-
-    data class I16Of(
-      val value: Short,
-    ) : Term() {
-      override val type: Term get() = I16
     }
 
     data object I32 : Term() {
       override val type: Term get() = Type.INT
     }
 
-    data class I32Of(
-      val value: Int,
-    ) : Term() {
-      override val type: Term get() = I32
-    }
-
     data object I64 : Term() {
       override val type: Term get() = Type.LONG
-    }
-
-    data class I64Of(
-      val value: Long,
-    ) : Term() {
-      override val type: Term get() = I64
     }
 
     data object F32 : Term() {
       override val type: Term get() = Type.FLOAT
     }
 
-    data class F32Of(
-      val value: Float,
-    ) : Term() {
-      override val type: Term get() = F32
-    }
-
     data object F64 : Term() {
       override val type: Term get() = Type.DOUBLE
-    }
-
-    data class F64Of(
-      val value: Double,
-    ) : Term() {
-      override val type: Term get() = F64
     }
 
     data object Wtf16 : Term() {
       override val type: Term get() = Type.STRING
     }
 
-    data class Wtf16Of(
-      val value: String,
+    data class ConstOf<out T>(
+      val value: T & Any,
     ) : Term() {
-      override val type: Term get() = Wtf16
+      override val type: Term = when (value) {
+        is kotlin.Unit -> Unit
+        is Boolean     -> Bool
+        is Byte        -> I8
+        is Short       -> I16
+        is Int         -> I32
+        is Long        -> I64
+        is Float       -> F32
+        is Double      -> F64
+        is String      -> Wtf16
+        else           -> unreachable()
+      }
     }
 
     data object I8Array : Term() {
@@ -328,38 +294,8 @@ object Core {
    * A well-typed pattern.
    */
   sealed class Pattern {
-    data object UnitOf : Pattern()
-
-    data class BoolOf(
-      val value: Boolean,
-    ) : Pattern()
-
-    data class I8Of(
-      val value: Byte,
-    ) : Pattern()
-
-    data class I16Of(
-      val value: Short,
-    ) : Pattern()
-
-    data class I32Of(
-      val value: Int,
-    ) : Pattern()
-
-    data class I64Of(
-      val value: Long,
-    ) : Pattern()
-
-    data class F32Of(
-      val value: Float,
-    ) : Pattern()
-
-    data class F64Of(
-      val value: Double,
-    ) : Pattern()
-
-    data class Wtf16Of(
-      val value: String,
+    data class ConstOf(
+      val value: Any,
     ) : Pattern()
 
     data class I8ArrayOf(

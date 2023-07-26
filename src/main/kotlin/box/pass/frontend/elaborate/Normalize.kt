@@ -2,8 +2,6 @@
 
 package box.pass.frontend.elaborate
 
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.plus
 import box.ast.Core.Pattern
 import box.ast.Core.Term
 import box.ast.common.Lvl
@@ -14,6 +12,8 @@ import box.pass.Closure
 import box.pass.Env
 import box.pass.Value
 import box.util.collections.mapWith
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.plus
 
 /**
  * Creates an empty [Env].
@@ -32,66 +32,50 @@ fun Env.next(): Lvl {
  */
 fun Env.evalTerm(term: Term): Value {
   return when (term) {
-    is Term.Tag      -> Value.Tag
+    is Term.Tag        -> Value.Tag
 
-    is Term.TagOf    -> Value.TagOf(term.repr)
+    is Term.TagOf      -> Value.TagOf(term.repr)
 
-    is Term.Type     -> {
+    is Term.Type       -> {
       val tag = lazy { evalTerm(term.element) }
       Value.Type(tag)
     }
 
-    is Term.Unit     -> Value.Unit
+    is Term.Unit       -> Value.Unit
 
-    is Term.UnitOf   -> Value.UnitOf
+    is Term.Bool       -> Value.Bool
 
-    is Term.Bool     -> Value.Bool
+    is Term.I8         -> Value.I8
 
-    is Term.BoolOf   -> Value.BoolOf(term.value)
+    is Term.I16        -> Value.I16
 
-    is Term.I8       -> Value.I8
+    is Term.I32        -> Value.I32
 
-    is Term.I8Of     -> Value.I8Of(term.value)
+    is Term.I64        -> Value.I64
 
-    is Term.I16      -> Value.I16
+    is Term.F32        -> Value.F32
 
-    is Term.I16Of    -> Value.I16Of(term.value)
+    is Term.F64        -> Value.F64
 
-    is Term.I32      -> Value.I32
+    is Term.Wtf16      -> Value.Wtf16
 
-    is Term.I32Of    -> Value.I32Of(term.value)
+    is Term.ConstOf<*> -> Value.ConstOf(term.value)
 
-    is Term.I64      -> Value.I64
-
-    is Term.I64Of    -> Value.I64Of(term.value)
-
-    is Term.F32      -> Value.F32
-
-    is Term.F32Of    -> Value.F32Of(term.value)
-
-    is Term.F64      -> Value.F64
-
-    is Term.F64Of    -> Value.F64Of(term.value)
-
-    is Term.Wtf16    -> Value.Wtf16
-
-    is Term.Wtf16Of  -> Value.Wtf16Of(term.value)
-
-    is Term.I8Array  -> Value.I8Array
+    is Term.I8Array    -> Value.I8Array
 
     is Term.I8ArrayOf  -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.I8ArrayOf(elements)
     }
 
-    is Term.I32Array -> Value.I32Array
+    is Term.I32Array   -> Value.I32Array
 
     is Term.I32ArrayOf -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
       Value.I32ArrayOf(elements)
     }
 
-    is Term.I64Array -> Value.I64Array
+    is Term.I64Array   -> Value.I64Array
 
     is Term.I64ArrayOf -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
@@ -148,7 +132,7 @@ fun Env.evalTerm(term: Term): Value {
       Value.FuncOf(term.open, term.params, result, type)
     }
 
-    is Term.Apply    -> {
+    is Term.Apply      -> {
       val func = evalTerm(term.func)
       val args = term.args.map { lazy { evalTerm(it) } }
       when (func) {
@@ -161,18 +145,18 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Code     -> {
+    is Term.Code       -> {
       val element = lazy { evalTerm(term.element) }
       Value.Code(element)
     }
 
-    is Term.CodeOf   -> {
+    is Term.CodeOf     -> {
       val element = lazy { evalTerm(term.element) }
       val type = lazy { evalTerm(term.type) }
       Value.CodeOf(element, type)
     }
 
-    is Term.Splice   -> {
+    is Term.Splice     -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
         else            -> {
@@ -182,18 +166,18 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Path     -> {
+    is Term.Path       -> {
       val element = lazy { evalTerm(term.element) }
       Value.Path(element)
     }
 
-    is Term.PathOf   -> {
+    is Term.PathOf     -> {
       val element = lazy { evalTerm(term.element) }
       val type = lazy { evalTerm(term.type) }
       Value.PathOf(element, type)
     }
 
-    is Term.Get      -> {
+    is Term.Get        -> {
       val type = lazy { evalTerm(term.type) }
       when (val element = evalTerm(term.element)) {
         is Value.PathOf -> element.element.value
@@ -201,18 +185,18 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Command  -> {
+    is Term.Command    -> {
       val element = lazy { evalTerm(term.element) }
       val type = lazy { evalTerm(term.type) }
       Value.Command(element, type)
     }
 
-    is Term.Let      -> {
+    is Term.Let        -> {
       val init = lazy { evalTerm(term.init) }
       (this + init).evalTerm(term.body)
     }
 
-    is Term.If       -> {
+    is Term.If         -> {
       val scrutinee = lazy { evalTerm(term.scrutinee) }
       var matchedIndex = -1
       val branches = term.branches.mapIndexed { index, (pattern, body) ->
@@ -234,7 +218,7 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Project  -> {
+    is Term.Project    -> {
       val target = evalTerm(term.target)
       term.projs.foldIndexed(target) { index, acc, proj ->
         when (acc) {
@@ -252,21 +236,21 @@ fun Env.evalTerm(term: Term): Value {
       }
     }
 
-    is Term.Var      -> this[term.idx.toLvl(next()).value].value
+    is Term.Var        -> this[term.idx.toLvl(next()).value].value
 
-    is Term.Def      -> evalTerm(term.def.body)
+    is Term.Def        -> evalTerm(term.def.body)
 
-    is Term.Meta     -> {
+    is Term.Meta       -> {
       val type = lazy { evalTerm(term.type) }
       Value.Meta(term.index, term.source, type)
     }
 
-    is Term.Builtin  -> {
+    is Term.Builtin    -> {
       val type = lazy { evalTerm(term.type) }
       Value.Builtin(term.builtin, type)
     }
 
-    is Term.Hole     -> Value.Hole
+    is Term.Hole       -> Value.Hole
   }
 }
 
@@ -275,66 +259,50 @@ fun Env.evalTerm(term: Term): Value {
  */
 fun Lvl.quoteValue(value: Value): Term {
   return when (value) {
-    is Value.Tag      -> Term.Tag
+    is Value.Tag        -> Term.Tag
 
-    is Value.TagOf    -> Term.TagOf(value.repr)
+    is Value.TagOf      -> Term.TagOf(value.repr)
 
-    is Value.Type     -> {
+    is Value.Type       -> {
       val tag = quoteValue(value.element.value)
       Term.Type(tag)
     }
 
-    is Value.Unit     -> Term.Unit
+    is Value.Unit       -> Term.Unit
 
-    is Value.UnitOf   -> Term.UnitOf
+    is Value.Bool       -> Term.Bool
 
-    is Value.Bool     -> Term.Bool
+    is Value.I8         -> Term.I8
 
-    is Value.BoolOf   -> Term.BoolOf(value.value)
+    is Value.I16        -> Term.I16
 
-    is Value.I8       -> Term.I8
+    is Value.I32        -> Term.I32
 
-    is Value.I8Of     -> Term.I8Of(value.value)
+    is Value.I64        -> Term.I64
 
-    is Value.I16      -> Term.I16
+    is Value.F32        -> Term.F32
 
-    is Value.I16Of    -> Term.I16Of(value.value)
+    is Value.F64        -> Term.F64
 
-    is Value.I32      -> Term.I32
+    is Value.Wtf16      -> Term.Wtf16
 
-    is Value.I32Of    -> Term.I32Of(value.value)
+    is Value.ConstOf<*> -> Term.ConstOf(value.value)
 
-    is Value.I64      -> Term.I64
-
-    is Value.I64Of    -> Term.I64Of(value.value)
-
-    is Value.F32      -> Term.F32
-
-    is Value.F32Of    -> Term.F32Of(value.value)
-
-    is Value.F64      -> Term.F64
-
-    is Value.F64Of    -> Term.F64Of(value.value)
-
-    is Value.Wtf16    -> Term.Wtf16
-
-    is Value.Wtf16Of  -> Term.Wtf16Of(value.value)
-
-    is Value.I8Array  -> Term.I8Array
+    is Value.I8Array    -> Term.I8Array
 
     is Value.I8ArrayOf  -> {
       val elements = value.elements.map { quoteValue(it.value) }
       Term.I8ArrayOf(elements)
     }
 
-    is Value.I32Array -> Term.I32Array
+    is Value.I32Array   -> Term.I32Array
 
     is Value.I32ArrayOf -> {
       val elements = value.elements.map { quoteValue(it.value) }
       Term.I32ArrayOf(elements)
     }
 
-    is Value.I64Array -> Term.I64Array
+    is Value.I64Array   -> Term.I64Array
 
     is Value.I64ArrayOf -> {
       val elements = value.elements.map { quoteValue(it.value) }
@@ -392,59 +360,59 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.FuncOf(value.open, value.params, result, type)
     }
 
-    is Value.Apply    -> {
+    is Value.Apply      -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
       val type = quoteValue(value.type.value)
       Term.Apply(value.open, func, args, type)
     }
 
-    is Value.Code     -> {
+    is Value.Code       -> {
       val element = quoteValue(value.element.value)
       Term.Code(element)
     }
 
-    is Value.CodeOf   -> {
+    is Value.CodeOf     -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type.value)
       Term.CodeOf(element, type)
     }
 
-    is Value.Splice   -> {
+    is Value.Splice     -> {
       val element = quoteValue(value.element)
       val type = quoteValue(value.type.value)
       Term.Splice(element, type)
     }
 
-    is Value.Path     -> {
+    is Value.Path       -> {
       val element = quoteValue(value.element.value)
       Term.Path(element)
     }
 
-    is Value.PathOf   -> {
+    is Value.PathOf     -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type.value)
       Term.PathOf(element, type)
     }
 
-    is Value.Get      -> {
+    is Value.Get        -> {
       val element = quoteValue(value.element)
       val type = quoteValue(value.type.value)
       Term.Get(element, type)
     }
 
-    is Value.Command  -> {
+    is Value.Command    -> {
       val element = quoteValue(value.element.value)
       val type = quoteValue(value.type.value)
       Term.Command(element, type)
     }
 
-    is Value.Let      -> {
+    is Value.Let        -> {
       // TODO: glued evaluation
       error("Unexpected value: $value")
     }
 
-    is Value.If       -> {
+    is Value.If         -> {
       val scrutinee = quoteValue(value.scrutinee.value)
       val branches = value.branches.map { (pattern, body) ->
         val body = (this + 1).quoteValue(body.value)
@@ -454,30 +422,30 @@ fun Lvl.quoteValue(value: Value): Term {
       Term.If(scrutinee, branches, type)
     }
 
-    is Value.Project  -> {
+    is Value.Project    -> {
       val target = quoteValue(value.target)
       val type = quoteValue(value.type.value)
       Term.Project(target, value.projs, type)
     }
 
-    is Value.Var      -> {
+    is Value.Var        -> {
       val type = quoteValue(value.type.value)
       Term.Var(value.name, value.lvl.toIdx(this), type)
     }
 
-    is Value.Def      -> {
+    is Value.Def        -> {
       val type = quoteValue(value.type.value)
       Term.Def(value.def, type)
     }
 
-    is Value.Meta     -> {
+    is Value.Meta       -> {
       val type = quoteValue(value.type.value)
       Term.Meta(value.index, value.source, type)
     }
 
-    is Value.Builtin  -> Term.Builtin(value.builtin)
+    is Value.Builtin    -> Term.Builtin(value.builtin)
 
-    is Value.Hole     -> Term.Hole
+    is Value.Hole       -> Term.Hole
   }
 }
 
@@ -502,66 +470,10 @@ fun Closure.open(
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {
   return when (this) {
-    is Pattern.UnitOf -> {
-      when (value.value) {
-        is Value.UnitOf -> true
-        else            -> false
-      }
-    }
-
-    is Pattern.BoolOf -> {
+    is Pattern.ConstOf -> {
       when (val value = value.value) {
-        is Value.BoolOf -> value.value == this.value
-        else            -> false
-      }
-    }
-
-    is Pattern.I8Of   -> {
-      when (val value = value.value) {
-        is Value.I8Of -> value.value == this.value
-        else          -> false
-      }
-    }
-
-    is Pattern.I16Of  -> {
-      when (val value = value.value) {
-        is Value.I16Of -> value.value == this.value
-        else           -> false
-      }
-    }
-
-    is Pattern.I32Of  -> {
-      when (val value = value.value) {
-        is Value.I32Of -> value.value == this.value
-        else           -> false
-      }
-    }
-
-    is Pattern.I64Of      -> {
-      when (val value = value.value) {
-        is Value.I64Of -> value.value == this.value
-        else           -> false
-      }
-    }
-
-    is Pattern.F32Of      -> {
-      when (val value = value.value) {
-        is Value.F32Of -> value.value == this.value // NaN?
-        else           -> false
-      }
-    }
-
-    is Pattern.F64Of      -> {
-      when (val value = value.value) {
-        is Value.F64Of -> value.value == this.value // NaN?
-        else           -> false
-      }
-    }
-
-    is Pattern.Wtf16Of    -> {
-      when (val value = value.value) {
-        is Value.Wtf16Of -> value.value == this.value
-        else             -> false
+        is Value.ConstOf<*> -> value.value == this.value
+        else                -> false
       }
     }
 
@@ -624,10 +536,10 @@ infix fun Pattern.matches(value: Lazy<Value>): Boolean {
       }
     }
 
-    is Pattern.Drop   -> true
+    is Pattern.Drop    -> true
 
-    is Pattern.Var    -> true
+    is Pattern.Var     -> true
 
-    is Pattern.Hole   -> false
+    is Pattern.Hole    -> false
   }
 }

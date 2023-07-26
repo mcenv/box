@@ -209,7 +209,7 @@ class Parse private constructor(
             skip()
             if (canRead() && peek() == ')') {
               skip()
-              S.Term.UnitOf(until())
+              S.Term.ConstOf(Unit, until())
             } else {
               skipTrivia()
               val term = parseTerm()
@@ -347,8 +347,8 @@ class Parse private constructor(
               }
               "unit"         -> S.Term.Unit(until())
               "bool"         -> S.Term.Bool(until())
-              "false"        -> S.Term.BoolOf(false, until())
-              "true"         -> S.Term.BoolOf(true, until())
+              "false"        -> S.Term.ConstOf(false, until())
+              "true"         -> S.Term.ConstOf(true, until())
               "i8"           -> S.Term.I8(until())
               "i16"          -> S.Term.I16(until())
               "i32"          -> S.Term.I32(until())
@@ -446,14 +446,14 @@ class Parse private constructor(
               else           -> {
                 val name = word.value
                 when {
-                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.I8Of(it, until()) }
-                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.I16Of(it, until()) }
-                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.I32Of(it, until()) }
-                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.I64Of(it, until()) }
-                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.F32Of(it, until()) }
-                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.F64Of(it, until()) }
-                  else                 -> name.toIntOrNull()?.let { S.Term.I32Of(it, until()) }
-                                          ?: name.toDoubleOrNull()?.let { S.Term.F64Of(it, until()) }
+                  name.endsWith("i8")  -> name.dropLast("i8".length).toByteOrNull()?.let { S.Term.ConstOf(it, until()) }
+                  name.endsWith("i16") -> name.dropLast("i16".length).toShortOrNull()?.let { S.Term.ConstOf(it, until()) }
+                  name.endsWith("i32") -> name.dropLast("i32".length).toIntOrNull()?.let { S.Term.ConstOf(it, until()) }
+                  name.endsWith("i64") -> name.dropLast("i64".length).toLongOrNull()?.let { S.Term.ConstOf(it, until()) }
+                  name.endsWith("f32") -> name.dropLast("f32".length).toFloatOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0f == 0 }?.let { S.Term.ConstOf(it, until()) }
+                  name.endsWith("f64") -> name.dropLast("f64".length).toDoubleOrNull()?.takeUnless { it.isNaN() || it compareTo -0.0 == 0 }?.let { S.Term.ConstOf(it, until()) }
+                  else                 -> name.toIntOrNull()?.let { S.Term.ConstOf(it, until()) }
+                                          ?: name.toDoubleOrNull()?.let { S.Term.ConstOf(it, until()) }
                 } ?: S.Term.Var(name, until())
               }
             }
@@ -656,7 +656,7 @@ class Parse private constructor(
           '"'  -> break
           '#'  -> {
             if (builder.isNotEmpty()) {
-              parts += S.Term.Wtf16Of(builder.toString(), start..here())
+              parts += S.Term.ConstOf(builder.toString(), start..here())
             }
 
             skip()
@@ -678,12 +678,12 @@ class Parse private constructor(
     expect('"')
 
     if (builder.isNotEmpty()) {
-      parts += S.Term.Wtf16Of(builder.toString(), start..here())
+      parts += S.Term.ConstOf(builder.toString(), start..here())
     }
     return parts.reduceOrNull { acc, term ->
       // TODO: keep string interpolation until resolve phase
       S.Term.Apply(S.Term.Var("++", acc.range.end..term.range.start), listOf(acc, term), acc.range.start..term.range.end)
-    } ?: S.Term.Wtf16Of("", start..here())
+    } ?: S.Term.ConstOf("", start..here())
   }
 
   private fun readLocation(): String {

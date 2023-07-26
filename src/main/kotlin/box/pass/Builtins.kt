@@ -19,6 +19,7 @@ abstract class Builtin(val name: String) {
 const val core: String = "core"
 val prelude: ModuleLocation = ModuleLocation(core, "prelude")
 
+@Suppress("UNCHECKED_CAST")
 private val builtins: Map<String, Builtin> = listOf(
   object : Builtin("prelude::++") {
     override val type: C.Term.Func = C.Term.Func(
@@ -28,9 +29,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.Wtf16Of ?: return null
-      val b = args[1].value as? Value.Wtf16Of ?: return null
-      return Value.Wtf16Of(a.value + b.value)
+      val a = args[0].value as? Value.ConstOf<String> ?: return null
+      val b = args[1].value as? Value.ConstOf<String> ?: return null
+      return Value.ConstOf(a.value + b.value)
     }
   },
 
@@ -42,9 +43,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      val b = args[1].value as? Value.I8Of ?: return null
-      return Value.BoolOf(a.value == b.value)
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      val b = args[1].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value == b.value)
     }
   },
 
@@ -56,8 +57,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.I16Of(a.value.toShort())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toShort())
     }
   },
 
@@ -69,8 +70,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.I32Of(a.value.toInt())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toInt())
     }
   },
 
@@ -82,8 +83,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.I64Of(a.value.toLong())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toLong())
     }
   },
 
@@ -95,8 +96,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.F32Of(a.value.toFloat())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toFloat())
     }
   },
 
@@ -108,8 +109,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.F64Of(a.value.toDouble())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toDouble())
     }
   },
 
@@ -121,8 +122,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I8Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Byte> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -134,9 +135,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      val b = args[1].value as? Value.I16Of ?: return null
-      return Value.BoolOf(a.value == b.value)
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      val b = args[1].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value == b.value)
     }
   },
 
@@ -148,8 +149,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.I8Of(a.value.toByte())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toByte())
     }
   },
 
@@ -161,8 +162,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.I32Of(a.value.toInt())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toInt())
     }
   },
 
@@ -174,8 +175,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.I64Of(a.value.toLong())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toLong())
     }
   },
 
@@ -187,8 +188,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.F32Of(a.value.toFloat())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toFloat())
     }
   },
 
@@ -200,8 +201,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.F64Of(a.value.toDouble())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toDouble())
     }
   },
 
@@ -213,8 +214,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I16Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Short> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -226,9 +227,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.I32Of(a.value + b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value + b.value)
     }
   },
 
@@ -240,9 +241,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.I32Of(a.value - b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value - b.value)
     }
   },
 
@@ -254,9 +255,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.I32Of(a.value * b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value * b.value)
     }
   },
 
@@ -268,12 +269,12 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val b = args[1].value as? Value.I32Of ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
       return if (b.value == 0) {
-        Value.I32Of(0)
+        Value.ConstOf(0)
       } else {
-        val a = args[0].value as? Value.I32Of ?: return null
-        Value.I32Of(Math.floorDiv(a.value, b.value))
+        val a = args[0].value as? Value.ConstOf<Int> ?: return null
+        Value.ConstOf(Math.floorDiv(a.value, b.value))
       }
     }
   },
@@ -286,12 +287,12 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val b = args[1].value as? Value.I32Of ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
       return if (b.value == 0) {
-        Value.I32Of(0)
+        Value.ConstOf(0)
       } else {
-        val a = args[0].value as? Value.I32Of ?: return null
-        Value.I32Of(Math.floorMod(a.value, b.value))
+        val a = args[0].value as? Value.ConstOf<Int> ?: return null
+        Value.ConstOf(Math.floorMod(a.value, b.value))
       }
     }
   },
@@ -304,9 +305,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.I32Of(min(a.value, b.value))
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(min(a.value, b.value))
     }
   },
 
@@ -318,9 +319,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.I32Of(max(a.value, b.value))
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(max(a.value, b.value))
     }
   },
 
@@ -332,9 +333,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value == b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value == b.value)
     }
   },
 
@@ -346,9 +347,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value < b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value < b.value)
     }
   },
 
@@ -360,9 +361,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value <= b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value <= b.value)
     }
   },
 
@@ -374,9 +375,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value > b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value > b.value)
     }
   },
 
@@ -388,9 +389,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value >= b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value >= b.value)
     }
   },
 
@@ -402,9 +403,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      val b = args[1].value as? Value.I32Of ?: return null
-      return Value.BoolOf(a.value != b.value)
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      val b = args[1].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value != b.value)
     }
   },
 
@@ -416,8 +417,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.I8Of(a.value.toByte())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toByte())
     }
   },
 
@@ -429,8 +430,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.I16Of(a.value.toShort())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toShort())
     }
   },
 
@@ -442,8 +443,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.I64Of(a.value.toLong())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toLong())
     }
   },
 
@@ -455,8 +456,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.F32Of(a.value.toFloat())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toFloat())
     }
   },
 
@@ -468,8 +469,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.F64Of(a.value.toDouble())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toDouble())
     }
   },
 
@@ -481,8 +482,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I32Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Int> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -494,9 +495,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I64Of ?: return null
-      val b = args[1].value as? Value.I64Of ?: return null
-      return Value.BoolOf(a.value != b.value)
+      val a = args[0].value as? Value.ConstOf<Long> ?: return null
+      val b = args[1].value as? Value.ConstOf<Long> ?: return null
+      return Value.ConstOf(a.value != b.value)
     }
   },
 
@@ -508,8 +509,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.I64Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Long> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -521,9 +522,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.F32Of ?: return null
-      val b = args[1].value as? Value.F32Of ?: return null
-      return Value.BoolOf(a.value != b.value)
+      val a = args[0].value as? Value.ConstOf<Float> ?: return null
+      val b = args[1].value as? Value.ConstOf<Float> ?: return null
+      return Value.ConstOf(a.value != b.value)
     }
   },
 
@@ -535,8 +536,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.F32Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Float> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -548,9 +549,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.F64Of ?: return null
-      val b = args[1].value as? Value.F64Of ?: return null
-      return Value.BoolOf(a.value != b.value)
+      val a = args[0].value as? Value.ConstOf<Double> ?: return null
+      val b = args[1].value as? Value.ConstOf<Double> ?: return null
+      return Value.ConstOf(a.value != b.value)
     }
   },
 
@@ -562,8 +563,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.F64Of ?: return null
-      return Value.Wtf16Of(a.value.toString())
+      val a = args[0].value as? Value.ConstOf<Double> ?: return null
+      return Value.ConstOf(a.value.toString())
     }
   },
 
@@ -575,9 +576,9 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.Wtf16Of ?: return null
-      val b = args[1].value as? Value.Wtf16Of ?: return null
-      return Value.BoolOf(a.value != b.value)
+      val a = args[0].value as? Value.ConstOf<String> ?: return null
+      val b = args[1].value as? Value.ConstOf<String> ?: return null
+      return Value.ConstOf(a.value != b.value)
     }
   },
 
@@ -589,8 +590,8 @@ private val builtins: Map<String, Builtin> = listOf(
     )
 
     override fun invoke(args: List<Lazy<Value>>): Value? {
-      val a = args[0].value as? Value.Wtf16Of ?: return null
-      return Value.I32Of(a.value.length)
+      val a = args[0].value as? Value.ConstOf<String> ?: return null
+      return Value.ConstOf(a.value.length)
     }
   },
 ).associateBy { it.name }

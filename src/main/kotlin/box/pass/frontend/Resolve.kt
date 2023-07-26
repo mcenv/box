@@ -150,72 +150,40 @@ class Resolve private constructor(
         R.Term.Unit(range)
       }
 
-      is S.Term.UnitOf    -> {
-        R.Term.UnitOf(range)
-      }
-
       is S.Term.Bool      -> {
         R.Term.Bool(range)
-      }
-
-      is S.Term.BoolOf    -> {
-        R.Term.BoolOf(term.value, range)
       }
 
       is S.Term.I8        -> {
         R.Term.I8(range)
       }
 
-      is S.Term.I8Of      -> {
-        R.Term.I8Of(term.value, range)
-      }
-
       is S.Term.I16       -> {
         R.Term.I16(range)
-      }
-
-      is S.Term.I16Of     -> {
-        R.Term.I16Of(term.value, range)
       }
 
       is S.Term.I32       -> {
         R.Term.I32(range)
       }
 
-      is S.Term.I32Of     -> {
-        R.Term.I32Of(term.value, range)
-      }
-
       is S.Term.I64       -> {
         R.Term.I64(range)
-      }
-
-      is S.Term.I64Of     -> {
-        R.Term.I64Of(term.value, range)
       }
 
       is S.Term.F32       -> {
         R.Term.F32(range)
       }
 
-      is S.Term.F32Of     -> {
-        R.Term.F32Of(term.value, range)
-      }
-
       is S.Term.F64       -> {
         R.Term.F64(range)
-      }
-
-      is S.Term.F64Of     -> {
-        R.Term.F64Of(term.value, range)
       }
 
       is S.Term.Wtf16     -> {
         R.Term.Wtf16(range)
       }
 
-      is S.Term.Wtf16Of   -> {
-        R.Term.Wtf16Of(term.value, range)
+      is S.Term.ConstOf   -> {
+        R.Term.ConstOf(term.value, range)
       }
 
       is S.Term.I8Array   -> {
@@ -411,40 +379,8 @@ class Resolve private constructor(
   ): R.Pattern {
     val range = pattern.range
     return when (pattern) {
-      is S.Term.UnitOf -> {
-        R.Pattern.UnitOf(range)
-      }
-
-      is S.Term.BoolOf -> {
-        R.Pattern.BoolOf(pattern.value, range)
-      }
-
-      is S.Term.I8Of   -> {
-        R.Pattern.I8Of(pattern.value, range)
-      }
-
-      is S.Term.I16Of  -> {
-        R.Pattern.I16Of(pattern.value, range)
-      }
-
-      is S.Term.I32Of  -> {
-        R.Pattern.I32Of(pattern.value, range)
-      }
-
-      is S.Term.I64Of  -> {
-        R.Pattern.I64Of(pattern.value, range)
-      }
-
-      is S.Term.F32Of  -> {
-        R.Pattern.F32Of(pattern.value, range)
-      }
-
-      is S.Term.F64Of      -> {
-        R.Pattern.F64Of(pattern.value, range)
-      }
-
-      is S.Term.Wtf16Of    -> {
-        R.Pattern.Wtf16Of(pattern.value, range)
+      is S.Term.ConstOf    -> {
+        R.Pattern.ConstOf(pattern.value, range)
       }
 
       is S.Term.I8ArrayOf  -> {

@@ -6,6 +6,7 @@ import box.ast.common.Proj
 import box.ast.common.Repr
 import box.util.quoted
 import box.util.toSubscript
+import box.util.unreachable
 
 // TODO: Remove redundant parentheses.
 
@@ -20,23 +21,26 @@ fun prettyTerm(
       is Term.TagOf      -> prettyRepr(term.repr)
       is Term.Type       -> "(type ${go(term.element)})"
       is Term.Unit       -> "unit"
-      is Term.UnitOf     -> "()"
       is Term.Bool       -> "bool"
-      is Term.BoolOf     -> term.value.toString()
       is Term.I8         -> "i8"
-      is Term.I8Of       -> "${term.value}i8"
       is Term.I16        -> "i16"
-      is Term.I16Of      -> "${term.value}i16"
       is Term.I32        -> "i32"
-      is Term.I32Of      -> "${term.value}i32"
       is Term.I64        -> "i64"
-      is Term.I64Of      -> "${term.value}i64"
       is Term.F32        -> "f32"
-      is Term.F32Of      -> "${term.value}f32"
       is Term.F64        -> "f64"
-      is Term.F64Of      -> "${term.value}f64"
       is Term.Wtf16      -> "wtf16"
-      is Term.Wtf16Of    -> term.value.quoted('"')
+      is Term.ConstOf<*> -> when (term.value) {
+        is Unit    -> "()"
+        is Boolean -> term.value.toString()
+        is Byte    -> "${term.value}i8"
+        is Short   -> "${term.value}i16"
+        is Int     -> "${term.value}i32"
+        is Long    -> "${term.value}i64"
+        is Float   -> "${term.value}f32"
+        is Double  -> "${term.value}f64"
+        is String  -> term.value.quoted('"')
+        else       -> unreachable()
+      }
       is Term.I8Array    -> "i8_array"
       is Term.I8ArrayOf  -> term.elements.joinToString(", ", "[i8; ", "]") { go(it) }
       is Term.I32Array   -> "i32_array"
@@ -76,15 +80,18 @@ fun prettyPattern(
   pattern: Pattern,
 ): String {
   return when (pattern) {
-    is Pattern.UnitOf     -> "()"
-    is Pattern.BoolOf     -> pattern.value.toString()
-    is Pattern.I8Of       -> "${pattern.value}i8"
-    is Pattern.I16Of      -> "${pattern.value}i16"
-    is Pattern.I32Of      -> "${pattern.value}i32"
-    is Pattern.I64Of      -> "${pattern.value}i64"
-    is Pattern.F32Of      -> "${pattern.value}f32"
-    is Pattern.F64Of      -> "${pattern.value}f64"
-    is Pattern.Wtf16Of    -> pattern.value.quoted('"')
+    is Pattern.ConstOf    -> when (pattern.value) {
+      is Unit    -> "()"
+      is Boolean -> pattern.value.toString()
+      is Byte    -> "${pattern.value}i8"
+      is Short   -> "${pattern.value}i16"
+      is Int     -> "${pattern.value}i32"
+      is Long    -> "${pattern.value}i64"
+      is Float   -> "${pattern.value}f32"
+      is Double  -> "${pattern.value}f64"
+      is String  -> pattern.value.quoted('"')
+      else       -> unreachable()
+    }
     is Pattern.I8ArrayOf  -> pattern.elements.joinToString(", ", "[i8; ", "]") { prettyPattern(it) }
     is Pattern.I32ArrayOf -> pattern.elements.joinToString(", ", "[i32; ", "]") { prettyPattern(it) }
     is Pattern.I64ArrayOf -> pattern.elements.joinToString(", ", "[i64; ", "]") { prettyPattern(it) }

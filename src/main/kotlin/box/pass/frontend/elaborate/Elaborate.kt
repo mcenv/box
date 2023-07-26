@@ -118,72 +118,52 @@ class Elaborate private constructor(
         C.Term.Unit.of(Value.Type.BYTE)
       }
 
-      term is R.Term.UnitOf && synth(type)                                       -> {
-        C.Term.UnitOf.of(Value.Unit)
-      }
-
       term is R.Term.Bool && synth(type)                                         -> {
         C.Term.Bool.of(Value.Type.BYTE)
-      }
-
-      term is R.Term.BoolOf && synth(type)                                       -> {
-        C.Term.BoolOf(term.value).of(Value.Bool)
       }
 
       term is R.Term.I8 && synth(type)                                           -> {
         C.Term.I8.of(Value.Type.BYTE)
       }
 
-      term is R.Term.I8Of && synth(type)                                         -> {
-        C.Term.I8Of(term.value).of(Value.I8)
-      }
-
       term is R.Term.I16 && synth(type)                                          -> {
         C.Term.I16.of(Value.Type.SHORT)
-      }
-
-      term is R.Term.I16Of && synth(type)                                        -> {
-        C.Term.I16Of(term.value).of(Value.I16)
       }
 
       term is R.Term.I32 && synth(type)                                          -> {
         C.Term.I32.of(Value.Type.INT)
       }
 
-      term is R.Term.I32Of && synth(type)                                        -> {
-        C.Term.I32Of(term.value).of(Value.I32)
-      }
-
       term is R.Term.I64 && synth(type)                                          -> {
         C.Term.I64.of(Value.Type.LONG)
-      }
-
-      term is R.Term.I64Of && synth(type)                                        -> {
-        C.Term.I64Of(term.value).of(Value.I64)
       }
 
       term is R.Term.F32 && synth(type)                                          -> {
         C.Term.F32.of(Value.Type.FLOAT)
       }
 
-      term is R.Term.F32Of && synth(type)                                        -> {
-        C.Term.F32Of(term.value).of(Value.F32)
-      }
-
       term is R.Term.F64 && synth(type)                                          -> {
         C.Term.F64.of(Value.Type.DOUBLE)
-      }
-
-      term is R.Term.F64Of && synth(type)                                        -> {
-        C.Term.F64Of(term.value).of(Value.F64)
       }
 
       term is R.Term.Wtf16 && synth(type)                                        -> {
         C.Term.Wtf16.of(Value.Type.STRING)
       }
 
-      term is R.Term.Wtf16Of && synth(type)                                      -> {
-        C.Term.Wtf16Of(term.value).of(Value.Wtf16)
+      term is R.Term.ConstOf && synth(type)                                      -> {
+        val type = when (term.value) {
+          is Unit    -> Value.Unit
+          is Boolean -> Value.Bool
+          is Byte    -> Value.I8
+          is Short   -> Value.I16
+          is Int     -> Value.I32
+          is Long    -> Value.I64
+          is Float   -> Value.F32
+          is Double  -> Value.F64
+          is String  -> Value.Wtf16
+          else       -> unreachable()
+        }
+        C.Term.ConstOf(term.value).of(type)
       }
 
       term is R.Term.I8Array && synth(type)                                      -> {
@@ -601,40 +581,20 @@ class Elaborate private constructor(
     ): Pair<C.Pattern, Value> {
       val type = type?.let { meta.forceValue(type) }
       return when {
-        pattern is R.Pattern.UnitOf && synth(type)                     -> {
-          C.Pattern.UnitOf to Value.Unit
-        }
-
-        pattern is R.Pattern.BoolOf && synth(type)                     -> {
-          C.Pattern.BoolOf(pattern.value) to Value.Bool
-        }
-
-        pattern is R.Pattern.I8Of && synth(type)                       -> {
-          C.Pattern.I8Of(pattern.value) to Value.I8
-        }
-
-        pattern is R.Pattern.I16Of && synth(type)                      -> {
-          C.Pattern.I16Of(pattern.value) to Value.I16
-        }
-
-        pattern is R.Pattern.I32Of && synth(type)                      -> {
-          C.Pattern.I32Of(pattern.value) to Value.I32
-        }
-
-        pattern is R.Pattern.I64Of && synth(type)                      -> {
-          C.Pattern.I64Of(pattern.value) to Value.I64
-        }
-
-        pattern is R.Pattern.F32Of && synth(type)                      -> {
-          C.Pattern.F32Of(pattern.value) to Value.F32
-        }
-
-        pattern is R.Pattern.F64Of && synth(type)                      -> {
-          C.Pattern.F64Of(pattern.value) to Value.F64
-        }
-
-        pattern is R.Pattern.Wtf16Of && synth(type)                    -> {
-          C.Pattern.Wtf16Of(pattern.value) to Value.Wtf16
+        pattern is R.Pattern.ConstOf && synth(type)                    -> {
+          val type = when (pattern.value) {
+            is Unit    -> Value.Unit
+            is Boolean -> Value.Bool
+            is Byte    -> Value.I8
+            is Short   -> Value.I16
+            is Int     -> Value.I32
+            is Long    -> Value.I64
+            is Float   -> Value.F32
+            is Double  -> Value.F64
+            is String  -> Value.Wtf16
+            else       -> unreachable()
+          }
+          C.Pattern.ConstOf(pattern.value) to type
         }
 
         pattern is R.Pattern.I8ArrayOf && match<Value.I8Array>(type)   -> {

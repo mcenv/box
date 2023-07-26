@@ -1,12 +1,13 @@
 package box.pass
 
-import kotlinx.collections.immutable.PersistentList
 import box.ast.Core.Definition
 import box.ast.Core.Pattern
 import box.ast.Core.Term
 import box.ast.common.Lvl
 import box.ast.common.Proj
 import box.ast.common.Repr
+import box.util.unreachable
+import kotlinx.collections.immutable.PersistentList
 import org.eclipse.lsp4j.Range
 
 /**
@@ -69,20 +70,10 @@ sealed class Value {
     val LAZY: Lazy<Unit> = lazyOf(Unit)
   }
 
-  data object UnitOf : Value() {
-    override val type: Lazy<Value> get() = Unit.LAZY
-  }
-
   data object Bool : Value() {
     override val type: Lazy<Value> get() = Type.BYTE_LAZY
 
     val LAZY: Lazy<Bool> = lazyOf(Bool)
-  }
-
-  data class BoolOf(
-    val value: Boolean,
-  ) : Value() {
-    override val type: Lazy<Value> get() = Bool.LAZY
   }
 
   data object I8 : Value() {
@@ -91,22 +82,10 @@ sealed class Value {
     val LAZY: Lazy<I8> = lazyOf(I8)
   }
 
-  data class I8Of(
-    val value: Byte,
-  ) : Value() {
-    override val type: Lazy<Value> get() = I8.LAZY
-  }
-
   data object I16 : Value() {
     override val type: Lazy<Value> get() = Type.SHORT_LAZY
 
     val LAZY: Lazy<I16> = lazyOf(I16)
-  }
-
-  data class I16Of(
-    val value: Short,
-  ) : Value() {
-    override val type: Lazy<Value> get() = I16.LAZY
   }
 
   data object I32 : Value() {
@@ -115,22 +94,10 @@ sealed class Value {
     val LAZY: Lazy<I32> = lazyOf(I32)
   }
 
-  data class I32Of(
-    val value: Int,
-  ) : Value() {
-    override val type: Lazy<Value> get() = I32.LAZY
-  }
-
   data object I64 : Value() {
     override val type: Lazy<Value> get() = Type.LONG_LAZY
 
     val LAZY: Lazy<I64> = lazyOf(I64)
-  }
-
-  data class I64Of(
-    val value: Long,
-  ) : Value() {
-    override val type: Lazy<Value> get() = I64.LAZY
   }
 
   data object F32 : Value() {
@@ -139,22 +106,10 @@ sealed class Value {
     val LAZY: Lazy<F32> = lazyOf(F32)
   }
 
-  data class F32Of(
-    val value: Float,
-  ) : Value() {
-    override val type: Lazy<Value> get() = F32.LAZY
-  }
-
   data object F64 : Value() {
     override val type: Lazy<Value> get() = Type.DOUBLE_LAZY
 
     val LAZY: Lazy<F64> = lazyOf(F64)
-  }
-
-  data class F64Of(
-    val value: Double,
-  ) : Value() {
-    override val type: Lazy<Value> get() = F64.LAZY
   }
 
   data object Wtf16 : Value() {
@@ -163,10 +118,23 @@ sealed class Value {
     val LAZY: Lazy<Wtf16> = lazyOf(Wtf16)
   }
 
-  data class Wtf16Of(
-    val value: String,
+  data class ConstOf<out T>(
+    val value: T & Any,
   ) : Value() {
-    override val type: Lazy<Value> get() = Wtf16.LAZY
+    override val type: Lazy<Value> = lazy {
+      when (value) {
+        is kotlin.Unit -> Unit
+        is Boolean     -> Bool
+        is Byte        -> I8
+        is Short       -> I16
+        is Int         -> I32
+        is Long        -> I64
+        is Float       -> F32
+        is Double      -> F64
+        is String      -> Wtf16
+        else           -> unreachable()
+      }
+    }
   }
 
   data object I8Array : Value() {

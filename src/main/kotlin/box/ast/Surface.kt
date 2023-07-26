@@ -63,16 +63,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class UnitOf(
-      override val range: Range,
-    ) : Term()
-
     data class Bool(
-      override val range: Range,
-    ) : Term()
-
-    data class BoolOf(
-      val value: Boolean,
       override val range: Range,
     ) : Term()
 
@@ -80,17 +71,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class I8Of(
-      val value: Byte,
-      override val range: Range,
-    ) : Term()
-
     data class I16(
-      override val range: Range,
-    ) : Term()
-
-    data class I16Of(
-      val value: Short,
       override val range: Range,
     ) : Term()
 
@@ -98,17 +79,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class I32Of(
-      val value: Int,
-      override val range: Range,
-    ) : Term()
-
     data class I64(
-      override val range: Range,
-    ) : Term()
-
-    data class I64Of(
-      val value: Long,
       override val range: Range,
     ) : Term()
 
@@ -116,17 +87,7 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class F32Of(
-      val value: Float,
-      override val range: Range,
-    ) : Term()
-
     data class F64(
-      override val range: Range,
-    ) : Term()
-
-    data class F64Of(
-      val value: Double,
       override val range: Range,
     ) : Term()
 
@@ -134,8 +95,8 @@ object Surface {
       override val range: Range,
     ) : Term()
 
-    data class Wtf16Of(
-      val value: String,
+    data class ConstOf(
+      val value: Any,
       override val range: Range,
     ) : Term()
 
