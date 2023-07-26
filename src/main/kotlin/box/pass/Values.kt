@@ -2,7 +2,6 @@ package box.pass
 
 import box.ast.Core.Definition
 import box.ast.Core.Pattern
-import box.ast.Core.Term
 import box.ast.common.Lvl
 import box.ast.common.Proj
 import box.ast.common.Repr
@@ -312,9 +311,6 @@ sealed class Value {
   }
 }
 
-typealias Env = PersistentList<Lazy<Value>>
+typealias Closure = ((List<Lazy<Value>>) -> Value)
 
-data class Closure(
-  val env: Env,
-  val body: Term,
-)
+typealias Env = PersistentList<Lazy<Value>>

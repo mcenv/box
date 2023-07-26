@@ -142,12 +142,12 @@ class Stage private constructor() {
           modify(this + lazyOf(Value.Var("#${next()}", next(), type)))
           param to type
         }
-        val result = Closure(this, term.result)
+        val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result, phase) }
         Value.Func(term.open, params, result)
       }
 
       is Term.FuncOf     -> {
-        val result = Closure(this, term.result)
+        val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result, phase) }
         val type = lazy { evalTerm(term.type, phase) }
         Value.FuncOf(term.open, term.params, result, type)
       }
@@ -159,7 +159,7 @@ class Stage private constructor() {
           Phase.WORLD -> null
           Phase.CONST -> {
             when (func) {
-              is Value.FuncOf  -> func.result(args, phase)
+              is Value.FuncOf  -> func.result(args)
               is Value.Builtin -> func.builtin(args)
               else             -> null
             }
@@ -430,7 +430,7 @@ class Stage private constructor() {
           pattern to (this + i).quoteValue(type.value, phase)
         }
         val result = (this + value.params.size).quoteValue(
-          value.result.open(this, value.params.map { (_, type) -> type }, phase),
+          value.result.open(this, value.params.map { (_, type) -> type }),
           phase,
         )
         Term.Func(value.open, params, result)
@@ -441,7 +441,6 @@ class Stage private constructor() {
           value.result.open(
             this,
             (value.type.value as Value.Func /* TODO: unify */).params.map { (_, type) -> type },
-            phase,
           ),
           phase,
         )
@@ -540,21 +539,13 @@ class Stage private constructor() {
     }
   }
 
-  private operator fun Closure.invoke(
-    args: List<Lazy<Value>>,
-    phase: Phase,
-  ): Value {
-    return (env + args).evalTerm(body, phase)
-  }
-
   private fun Closure.open(
     next: Lvl,
     types: List<Lazy<Value>>,
-    phase: Phase,
   ): Value {
     return this(types.mapIndexed { i, type ->
       lazyOf(Value.Var("#${next + i}", next + i, type))
-    }, phase)
+    })
   }
 
   companion object {

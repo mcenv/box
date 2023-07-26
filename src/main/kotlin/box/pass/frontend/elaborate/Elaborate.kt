@@ -7,8 +7,11 @@ import box.lsp.Instruction
 import box.lsp.contains
 import box.lsp.diagnostic
 import box.lsp.rangeTo
-import box.pass.*
+import box.pass.Env
+import box.pass.Phase
+import box.pass.Value
 import box.pass.frontend.Resolve
+import box.pass.prettyTerm
 import box.util.collections.mapWith
 import box.util.unreachable
 import kotlinx.collections.immutable.PersistentList
@@ -288,7 +291,7 @@ class Elaborate private constructor(
           }
         }
         val (result, resultType) = ctx.elaborateTerm(term.result, null, phase)
-        val type = Value.Func(term.open, params, Closure(env, next().quoteValue(resultType)))
+        val type = Value.Func(term.open, params) { args -> (env + args).evalTerm(next().quoteValue(resultType)) }
         typed(type) {
           C.Term.FuncOf(term.open, params.map { param -> param.first }, result, it)
         }

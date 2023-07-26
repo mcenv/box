@@ -122,12 +122,12 @@ fun Env.evalTerm(term: Term): Value {
         modify(this + lazyOf(Value.Var("#${next()}", next(), type)))
         param to type
       }
-      val result = Closure(this, term.result)
+      val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
       Value.Func(term.open, params, result)
     }
 
     is Term.FuncOf     -> {
-      val result = Closure(this, term.result)
+      val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
       val type = lazy { evalTerm(term.type) }
       Value.FuncOf(term.open, term.params, result, type)
     }
@@ -450,14 +450,7 @@ fun Lvl.quoteValue(value: Value): Term {
 }
 
 /**
- * Applies [this] [Closure] closure to [args] and returns the result [Value].
- */
-operator fun Closure.invoke(args: List<Lazy<Value>>): Value {
-  return (env + args).evalTerm(body)
-}
-
-/**
- * Converts [this] [Closure] closure to an open [Value] with the free variables of [types] under the context of the [size].
+ * Converts [this] closure to an open [Value] with the free variables of [types] under the context of the [size].
  */
 fun Closure.open(
   size: Lvl,
