@@ -210,12 +210,10 @@ class Elaborate private constructor(
           if (elementsTypes.size == 1) {
             elementsTypes.first()
           } else {
-            Value.Union(elementsTypes.map { lazyOf(it) }, elementsTypes.firstOrNull()?.type ?: Value.Type.END_LAZY)
+            Value.Union(elementsTypes.map { lazyOf(it) })
           }
         ))
-        typed(type) {
-          C.Term.ListOf(elements, it)
-        }
+        C.Term.ListOf(elements).of(type)
       }
 
       term is R.Term.Compound && synth(type)                                     -> {
@@ -235,9 +233,7 @@ class Elaborate private constructor(
           elementsTypes[key.value] = lazyOf(elementType)
         }
         val type = Value.Compound(elementsTypes)
-        typed(type) {
-          C.Term.CompoundOf(elements, it)
-        }
+        C.Term.CompoundOf(elements).of(type)
       }
 
       term is R.Term.CompoundOf && check<Value.Compound>(type)                   -> {
@@ -245,32 +241,26 @@ class Elaborate private constructor(
           val (element, _) = elaborateTerm(element, type.elements[name.value]?.value, phase)
           name.value to element
         }
-        typed(type) {
-          C.Term.CompoundOf(elements, it)
-        }
+        C.Term.CompoundOf(elements).of(type)
       }
 
       term is R.Term.Point && synth(type)                                        -> { // TODO: unify tags
         val (element, elementType) = elaborateTerm(term.element, null, phase)
-        val type = elementType.type.value
-        typed(type) {
-          C.Term.Point(element, it)
-        }
+        val type = type ?: meta.freshType(term.range)
+        C.Term.Point(next().quoteValue(elementType), element).of(type)
       }
 
       term is R.Term.Union && match<Value.Type>(type)                            -> {
         val type = type ?: meta.freshType(term.range)
         val elements = term.elements.map { elaborateTerm(it, type, phase).term }
-        typed(type) {
-          C.Term.Union(elements, it)
-        }
+        C.Term.Union(elements).of(type)
       }
 
       term is R.Term.Func && synth(type)                                         -> {
         val (ctx, params) = term.params.mapWith(this) { transform, (pattern, term) ->
           val term = elaborateTerm(term, meta.freshType(term.range), phase).term
           val vTerm = env.evalTerm(term)
-          elaboratePattern(pattern, phase, vTerm, lazyOf(Value.Var("#${next()}", next(), lazyOf(vTerm)))) { (pattern, _) ->
+          elaboratePattern(pattern, phase, vTerm, lazyOf(Value.Var("#${next()}", next()))) { (pattern, _) ->
             transform(this)
             pattern to term
           }
@@ -283,31 +273,27 @@ class Elaborate private constructor(
       term is R.Term.FuncOf && synth(type)                                       -> {
         val (ctx, params) = term.params.mapWith(this) { transform, param ->
           val paramType = meta.freshValue(param.range)
-          elaboratePattern(param, phase, paramType, lazyOf(Value.Var("#${next()}", next(), lazyOf(paramType)))) { (pattern, patternType) ->
+          elaboratePattern(param, phase, paramType, lazyOf(Value.Var("#${next()}", next()))) { (pattern, patternType) ->
             transform(this)
             pattern to lazyOf(patternType)
           }
         }
         val (result, resultType) = ctx.elaborateTerm(term.result, null, phase)
         val type = Value.Func(term.open, params) { args -> (env + args).evalTerm(next().quoteValue(resultType)) }
-        typed(type) {
-          C.Term.FuncOf(term.open, params.map { param -> param.first }, result, it)
-        }
+        C.Term.FuncOf(term.open, params.map { param -> param.first }, result).of(type)
       }
 
       term is R.Term.FuncOf && check<Value.Func>(type) && term.open == type.open -> {
         if (type.params.size == term.params.size) {
           val (ctx, params) = (term.params zip type.params).mapWith(this) { transform, (pattern, term) ->
             val paramType = term.second.value
-            elaboratePattern(pattern, phase, paramType, lazyOf(Value.Var("#${next()}", next(), lazyOf(paramType)))) {
+            elaboratePattern(pattern, phase, paramType, lazyOf(Value.Var("#${next()}", next()))) {
               transform(this)
               it
             }
           }
-          val result = ctx.elaborateTerm(term.result, type.result.open(next(), params.map { lazyOf(it.second) }), phase).term
-          typed(type) {
-            C.Term.FuncOf(term.open, params.map { param -> param.first }, result, it)
-          }
+          val result = ctx.elaborateTerm(term.result, type.result.open(next(), params.size), phase).term
+          C.Term.FuncOf(term.open, params.map { param -> param.first }, result).of(type)
         } else {
           invalidTerm(arityMismatch(type.params.size, term.params.size, term.range))
         }
@@ -334,9 +320,7 @@ class Elaborate private constructor(
           vArg
         }
         val type = funcType.result(vArgs)
-        typed(type) {
-          C.Term.Apply(funcType.open, func, args, it)
-        }
+        C.Term.Apply(funcType.open, func, args).of(type)
       }
 
       term is R.Term.Code && phase == Phase.CONST && synth(type)                 -> {
@@ -347,17 +331,13 @@ class Elaborate private constructor(
       term is R.Term.CodeOf && phase == Phase.CONST && match<Value.Code>(type)   -> {
         val (element, elementType) = elaborateTerm(term.element, type?.element?.value, Phase.WORLD)
         val type = type ?: Value.Code(lazyOf(elementType))
-        typed(type) {
-          C.Term.CodeOf(element, it)
-        }
+        C.Term.CodeOf(element).of(type)
       }
 
-      term is R.Term.Splice && phase == Phase.WORLD && match<Value>(type)        -> {
+      term is R.Term.Splice && phase == Phase.WORLD                              -> {
         val type = type ?: meta.freshValue(term.range)
         val element = elaborateTerm(term.element, Value.Code(lazyOf(type)), Phase.CONST).term
-        typed(type) {
-          C.Term.Splice(element, it)
-        }
+        C.Term.Splice(element).of(type)
       }
 
       term is R.Term.Path && phase == Phase.CONST && synth(type)                 -> {
@@ -368,43 +348,35 @@ class Elaborate private constructor(
       term is R.Term.PathOf && phase == Phase.CONST && match<Value.Path>(type)   -> {
         val (element, elementType) = elaborateTerm(term.element, type?.element?.value, Phase.WORLD)
         val type = type ?: Value.Path(lazyOf(elementType))
-        typed(type) {
-          C.Term.PathOf(element, it)
-        }
+        C.Term.PathOf(element).of(type)
       }
 
-      term is R.Term.Get && phase == Phase.WORLD && match<Value>(type)           -> {
+      term is R.Term.Get && phase == Phase.WORLD                                 -> {
         val type = type ?: meta.freshValue(term.range)
         val element = elaborateTerm(term.element, Value.Path(lazyOf(type)), Phase.CONST).term
-        typed(type) {
-          C.Term.Get(element, it)
-        }
+        C.Term.Get(element).of(type)
       }
 
-      term is R.Term.Command && match<Value>(type)                               -> {
+      term is R.Term.Command                                                     -> {
         val type = type ?: meta.freshValue(term.range)
         val element = elaborateTerm(term.element, Value.Wtf16, Phase.CONST).term
-        typed(type) {
-          C.Term.Command(element, it)
-        }
+        C.Term.Command(element, next().quoteValue(type)).of(type)
       }
 
-      term is R.Term.Let && match<Value>(type)                                   -> {
+      term is R.Term.Let                                                         -> {
         val (init, initType) = elaborateTerm(term.init, null, phase)
         elaboratePattern(term.binder, phase, initType, lazy { env.evalTerm(init) }) { (binder, binderType) ->
           if (next().sub(initType, binderType)) {
             val (body, bodyType) = elaborateTerm(term.body, type, phase)
             val type = type ?: bodyType
-            this@elaborateTerm.typed(type) {
-              C.Term.Let(binder, init, body, it)
-            }
+            C.Term.Let(binder, init, body).of(type)
           } else {
             invalidTerm(next().typeMismatch(initType, binderType, term.init.range))
           }
         }
       }
 
-      term is R.Term.If && match<Value>(type)                                    -> {
+      term is R.Term.If                                                          -> {
         val (scrutinee, scrutineeType) = elaborateTerm(term.scrutinee, null, phase)
         val vScrutinee = lazy { env.evalTerm(scrutinee) }
 
@@ -421,10 +393,8 @@ class Elaborate private constructor(
         }.unzip()
 
         if (exhaustive) {
-          val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) }, branchesTypes.firstOrNull()?.type ?: Value.Type.END_LAZY /* TODO: validate */)
-          typed(type) {
-            C.Term.If(scrutinee, branches, it)
-          }
+          val type = type ?: Value.Union(branchesTypes.map { lazyOf(it) })
+          C.Term.If(scrutinee, branches).of(type)
         } else {
           invalidTerm(notExhaustive(term.range.start..term.range.start))
         }
@@ -432,33 +402,18 @@ class Elaborate private constructor(
 
       term is R.Term.Var && synth(type)                                          -> {
         val entry = entries[term.idx.toLvl(Lvl(entries.size)).value]
-        if (entry.used) {
-          invalidTerm(alreadyUsed(term.range))
-        } else {
-          val type = meta.forceValue(entry.value.type.value)
-          if (false /* TODO: quantity */) {
-            entry.used = true
+        val type = meta.forceValue(entry.type)
+        when {
+          entry.phase == phase                      -> next().quoteValue(entry.value).of(type)
+          entry.phase < phase                       -> {
+            inlayHint(term.range.start, "`")
+            C.Term.CodeOf(next().quoteValue(entry.value)).of(Value.Code(lazyOf(type)))
           }
-          when {
-            entry.phase == phase                      -> {
-              next().quoteValue(entry.value).of(type)
-            }
-            entry.phase < phase                       -> {
-              inlayHint(term.range.start, "`")
-              typed(Value.Code(lazyOf(type))) {
-                C.Term.CodeOf(next().quoteValue(entry.value), it)
-              }
-            }
-            entry.phase > phase && type is Value.Code -> {
-              inlayHint(term.range.start, "$")
-              typed(type.element.value) {
-                C.Term.Splice(next().quoteValue(entry.value), it)
-              }
-            }
-            else                                      -> {
-              invalidTerm(phaseMismatch(phase, entry.phase, term.range))
-            }
+          entry.phase > phase && type is Value.Code -> {
+            inlayHint(term.range.start, "$")
+            C.Term.Splice(next().quoteValue(entry.value)).of(type.element.value)
           }
+          else                                      -> invalidTerm(phaseMismatch(phase, entry.phase, term.range))
         }
       }
 
@@ -479,9 +434,8 @@ class Elaborate private constructor(
 
             val actualPhase = getPhase(definition.modifiers)
             if (actualPhase <= phase) {
-              val def = C.Term.Def(definition, definition.type)
               val type = env.evalTerm(definition.type)
-              def.of(type)
+              C.Term.Def(definition).of(type)
             } else {
               invalidTerm(phaseMismatch(phase, actualPhase, term.range))
             }
@@ -492,7 +446,7 @@ class Elaborate private constructor(
         }
       }
 
-      term is R.Term.Meta && match<Value>(type)                                  -> {
+      term is R.Term.Meta                                                        -> {
         val type = type ?: meta.freshValue(term.range)
         next().quoteValue(meta.freshValue(term.range)).of(type)
       }
@@ -507,7 +461,7 @@ class Elaborate private constructor(
         C.Term.Builtin(term.builtin).of(type)
       }
 
-      term is R.Term.Hole && match<Value>(type)                                  -> {
+      term is R.Term.Hole                                                        -> {
         C.Term.Hole.of(Value.Hole)
       }
 
@@ -544,14 +498,10 @@ class Elaborate private constructor(
           return synth.of(type)
         } else if (type is Value.Code && sub(synthType, type.element.value)) {
           inlayHint(term.range.start, "`")
-          return typed(type) {
-            C.Term.CodeOf(synth, it)
-          }
+          return C.Term.CodeOf(synth).of(type)
         } else if (synthType is Value.Code && sub(synthType.element.value, type)) {
           inlayHint(term.range.start, "$")
-          return typed(type) {
-            C.Term.Splice(synth, it)
-          }
+          return C.Term.Splice(synth).of(type)
         }
 
         invalidTerm(diagnostic.value)
@@ -646,18 +596,18 @@ class Elaborate private constructor(
           C.Pattern.CompoundOf(elements) to type
         }
 
-        pattern is R.Pattern.Var && match<Value>(type)                 -> {
+        pattern is R.Pattern.Var  -> {
           val type = type ?: meta.freshValue(pattern.range)
           val value = if (projs.isEmpty()) {
-            Value.Var(pattern.name, next(), lazyOf(typeOfVar))
+            Value.Var(pattern.name, next())
           } else {
-            Value.Project(Value.Var(pattern.name, next(), lazyOf(typeOfVar)), projs, lazyOf(type))
+            Value.Project(Value.Var(pattern.name, next()), projs)
           }
-          entries += Ctx.Entry(pattern.name, phase, value, false)
+          entries += Ctx.Entry(pattern.name, phase, value, type)
           C.Pattern.Var(pattern.name) to type
         }
 
-        pattern is R.Pattern.Drop && match<Value>(type)                -> {
+        pattern is R.Pattern.Drop -> {
           val type = type ?: meta.freshValue(pattern.range)
           C.Pattern.Drop to type
         }
@@ -667,7 +617,7 @@ class Elaborate private constructor(
           bind(pattern.element, phase, type, projs)
         }
 
-        pattern is R.Pattern.Hole && match<Value>(type)                -> {
+        pattern is R.Pattern.Hole -> {
           C.Pattern.Hole to Value.Hole
         }
 
@@ -713,7 +663,7 @@ class Elaborate private constructor(
       }
 
       value1 is Value.Point && value2 !is Value.Point -> {
-        sub(value1.element.value.type.value, value2)
+        sub(value1.elementType.value, value2)
       }
 
       value1 is Value.Union                           -> {
@@ -736,8 +686,8 @@ class Elaborate private constructor(
           sub(param2.second.value, param1.second.value)
         } &&
         sub(
-          value1.result.open(this, value1.params.map { (_, type) -> type }),
-          value2.result.open(this, value2.params.map { (_, type) -> type }),
+          value1.result.open(this, value1.params.size),
+          value2.result.open(this, value2.params.size),
         )
       }
 
@@ -855,10 +805,6 @@ class Elaborate private constructor(
     return Elaborated(this, type)
   }
 
-  private inline fun Ctx.typed(type: Value, build: (C.Term) -> C.Term): Elaborated {
-    return build(next().quoteValue(type)).of(type)
-  }
-
   private data class Ctx(
     val entries: PersistentList<Entry>,
     val env: Env,
@@ -867,7 +813,7 @@ class Elaborate private constructor(
       val name: String,
       val phase: Phase,
       val value: Value,
-      var used: Boolean,
+      val type: Value,
     )
   }
 

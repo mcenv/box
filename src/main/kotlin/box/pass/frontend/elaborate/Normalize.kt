@@ -89,8 +89,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.ListOf     -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
-      val type = lazy { evalTerm(term.type) }
-      Value.ListOf(elements, type)
+      Value.ListOf(elements)
     }
 
     is Term.Compound   -> {
@@ -100,26 +99,24 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.CompoundOf -> {
       val elements = term.elements.mapValuesTo(linkedMapOf()) { lazy { evalTerm(it.value) } }
-      val type = lazy { evalTerm(term.type) }
-      Value.CompoundOf(elements, type)
+      Value.CompoundOf(elements)
     }
 
     is Term.Point      -> {
+      val elementType = lazy { evalTerm(term.elementType) }
       val element = lazy { evalTerm(term.element) }
-      val type = lazy { evalTerm(term.type) }
-      Value.Point(element, type)
+      Value.Point(elementType, element)
     }
 
     is Term.Union      -> {
       val elements = term.elements.map { lazy { evalTerm(it) } }
-      val type = lazy { evalTerm(term.type) }
-      Value.Union(elements, type)
+      Value.Union(elements)
     }
 
     is Term.Func       -> {
       val (_, params) = term.params.mapWith(this) { modify, (param, type) ->
         val type = lazy { evalTerm(type) }
-        modify(this + lazyOf(Value.Var("#${next()}", next(), type)))
+        modify(this + lazyOf(Value.Var("#${next()}", next())))
         param to type
       }
       val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
@@ -128,8 +125,7 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.FuncOf     -> {
       val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
-      val type = lazy { evalTerm(term.type) }
-      Value.FuncOf(term.open, term.params, result, type)
+      Value.FuncOf(term.open, term.params, result)
     }
 
     is Term.Apply      -> {
@@ -139,10 +135,7 @@ fun Env.evalTerm(term: Term): Value {
         is Value.FuncOf  -> func.result(args)
         is Value.Builtin -> func.builtin(args)
         else             -> null
-      } ?: run {
-        val type = lazy { evalTerm(term.type) }
-        Value.Apply(term.open, func, args, type)
-      }
+      } ?: Value.Apply(term.open, func, args)
     }
 
     is Term.Code       -> {
@@ -152,17 +145,13 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.CodeOf     -> {
       val element = lazy { evalTerm(term.element) }
-      val type = lazy { evalTerm(term.type) }
-      Value.CodeOf(element, type)
+      Value.CodeOf(element)
     }
 
     is Term.Splice     -> {
       when (val element = evalTerm(term.element)) {
         is Value.CodeOf -> element.element.value
-        else            -> {
-          val type = lazy { evalTerm(term.type) }
-          Value.Splice(element, type)
-        }
+        else            -> Value.Splice(element)
       }
     }
 
@@ -173,15 +162,13 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.PathOf     -> {
       val element = lazy { evalTerm(term.element) }
-      val type = lazy { evalTerm(term.type) }
-      Value.PathOf(element, type)
+      Value.PathOf(element)
     }
 
     is Term.Get        -> {
-      val type = lazy { evalTerm(term.type) }
       when (val element = evalTerm(term.element)) {
         is Value.PathOf -> element.element.value
-        else            -> Value.Get(element, type)
+        else            -> Value.Get(element)
       }
     }
 
@@ -207,10 +194,7 @@ fun Env.evalTerm(term: Term): Value {
         pattern to body
       }
       when (matchedIndex) {
-        -1   -> {
-          val type = lazy { evalTerm(term.type) }
-          Value.If(scrutinee, branches, type)
-        }
+        -1 -> Value.If(scrutinee, branches)
         else -> {
           val (_, body) = term.branches[matchedIndex]
           (this + scrutinee).evalTerm(body)
@@ -228,8 +212,7 @@ fun Env.evalTerm(term: Term): Value {
             if (index == term.projs.lastIndex) {
               acc
             } else {
-              val type = lazy { evalTerm(term.type) }
-              Value.Project(acc, term.projs.drop(index), type)
+              Value.Project(acc, term.projs.drop(index))
             }
           }
         }
@@ -240,15 +223,9 @@ fun Env.evalTerm(term: Term): Value {
 
     is Term.Def        -> evalTerm(term.def.body)
 
-    is Term.Meta       -> {
-      val type = lazy { evalTerm(term.type) }
-      Value.Meta(term.index, term.source, type)
-    }
+    is Term.Meta       -> Value.Meta(term.index, term.source)
 
-    is Term.Builtin    -> {
-      val type = lazy { evalTerm(term.type) }
-      Value.Builtin(term.builtin, type)
-    }
+    is Term.Builtin    -> Value.Builtin(term.builtin)
 
     is Term.Hole       -> Value.Hole
   }
@@ -316,8 +293,7 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.ListOf     -> {
       val elements = value.elements.map { quoteValue(it.value) }
-      val type = quoteValue(value.type.value)
-      Term.ListOf(elements, type)
+      Term.ListOf(elements)
     }
 
     is Value.Compound   -> {
@@ -327,19 +303,17 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.CompoundOf -> {
       val elements = value.elements.mapValuesTo(linkedMapOf()) { quoteValue(it.value.value) }
-      val type = quoteValue(value.type.value)
-      Term.CompoundOf(elements, type)
+      Term.CompoundOf(elements)
     }
 
     is Value.Point      -> {
+      val elementType = quoteValue(value.element.value)
       val element = quoteValue(value.element.value)
-      val type = quoteValue(value.type.value)
-      Term.Point(element, type)
+      Term.Point(elementType, element)
     }
     is Value.Union      -> {
       val elements = value.elements.map { quoteValue(it.value) }
-      val type = quoteValue(value.type.value)
-      Term.Union(elements, type)
+      Term.Union(elements)
     }
 
     is Value.Func       -> {
@@ -347,24 +321,22 @@ fun Lvl.quoteValue(value: Value): Term {
         pattern to (this + i).quoteValue(type.value)
       }
       val result = (this + value.params.size).quoteValue(
-        value.result.open(this, value.params.map { (_, type) -> type })
+        value.result.open(this, value.params.size)
       )
       Term.Func(value.open, params, result)
     }
 
     is Value.FuncOf     -> {
       val result = (this + value.params.size).quoteValue(
-        value.result.open(this, (value.type.value as Value.Func /* TODO: unify */).params.map { (_, type) -> type })
+        value.result.open(this, value.params.size)
       )
-      val type = quoteValue(value.type.value)
-      Term.FuncOf(value.open, value.params, result, type)
+      Term.FuncOf(value.open, value.params, result)
     }
 
     is Value.Apply      -> {
       val func = quoteValue(value.func)
       val args = value.args.map { quoteValue(it.value) }
-      val type = quoteValue(value.type.value)
-      Term.Apply(value.open, func, args, type)
+      Term.Apply(value.open, func, args)
     }
 
     is Value.Code       -> {
@@ -374,14 +346,12 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.CodeOf     -> {
       val element = quoteValue(value.element.value)
-      val type = quoteValue(value.type.value)
-      Term.CodeOf(element, type)
+      Term.CodeOf(element)
     }
 
     is Value.Splice     -> {
       val element = quoteValue(value.element)
-      val type = quoteValue(value.type.value)
-      Term.Splice(element, type)
+      Term.Splice(element)
     }
 
     is Value.Path       -> {
@@ -391,14 +361,12 @@ fun Lvl.quoteValue(value: Value): Term {
 
     is Value.PathOf     -> {
       val element = quoteValue(value.element.value)
-      val type = quoteValue(value.type.value)
-      Term.PathOf(element, type)
+      Term.PathOf(element)
     }
 
     is Value.Get        -> {
       val element = quoteValue(value.element)
-      val type = quoteValue(value.type.value)
-      Term.Get(element, type)
+      Term.Get(element)
     }
 
     is Value.Command    -> {
@@ -418,30 +386,19 @@ fun Lvl.quoteValue(value: Value): Term {
         val body = (this + 1).quoteValue(body.value)
         pattern to body
       }
-      val type = quoteValue(value.type.value)
-      Term.If(scrutinee, branches, type)
+      Term.If(scrutinee, branches)
     }
 
     is Value.Project    -> {
       val target = quoteValue(value.target)
-      val type = quoteValue(value.type.value)
-      Term.Project(target, value.projs, type)
+      Term.Project(target, value.projs)
     }
 
-    is Value.Var        -> {
-      val type = quoteValue(value.type.value)
-      Term.Var(value.name, value.lvl.toIdx(this), type)
-    }
+    is Value.Var        -> Term.Var(value.name, value.lvl.toIdx(this))
 
-    is Value.Def        -> {
-      val type = quoteValue(value.type.value)
-      Term.Def(value.def, type)
-    }
+    is Value.Def        -> Term.Def(value.def)
 
-    is Value.Meta       -> {
-      val type = quoteValue(value.type.value)
-      Term.Meta(value.index, value.source, type)
-    }
+    is Value.Meta       -> Term.Meta(value.index, value.source)
 
     is Value.Builtin    -> Term.Builtin(value.builtin)
 
@@ -450,12 +407,10 @@ fun Lvl.quoteValue(value: Value): Term {
 }
 
 /**
- * Converts [this] closure to an open [Value] with the free variables of [types] under the context of the [size].
+ * Converts [this] closure to an open [Value] with the free variables of [args] under the context of the [size].
  */
-fun Closure.open(size: Lvl, types: List<Lazy<Value>>): Value {
-  return this(types.mapIndexed { i, type ->
-    lazyOf(Value.Var("#${size + i}", size + i, type))
-  })
+fun Closure.open(size: Lvl, args: Int): Value {
+  return this(List(args) { i -> lazyOf(Value.Var("#${size + i}", size + i)) })
 }
 
 infix fun Pattern.matches(value: Lazy<Value>): Boolean {

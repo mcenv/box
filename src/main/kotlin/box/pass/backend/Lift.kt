@@ -1,21 +1,16 @@
 package box.pass.backend
 
-import box.ast.Core
-import box.ast.common.Modifier
-import box.ast.common.Repr
 import box.pass.Context
-import box.pass.backend.Lift.Ctx.Companion.emptyCtx
 import box.pass.prettyPattern
 import box.pass.prettyTerm
-import box.util.unreachable
 import box.ast.Core as C
 import box.ast.Lifted as L
 
-@Suppress("NAME_SHADOWING")
 class Lift private constructor(
   private val context: Context,
   private val definition: C.Definition,
 ) {
+  /*
   private val modifiers: List<L.Modifier> = definition.modifiers.mapNotNull { liftModifier(it) }
   private val liftedDefinitions: MutableList<L.Definition> = mutableListOf()
   private val dispatchedProcs: MutableList<L.Definition.Function> = mutableListOf()
@@ -173,9 +168,7 @@ class Lift private constructor(
 
       is C.Term.Path       -> unexpectedTerm(term)
 
-      is C.Term.PathOf     -> {
-        TODO()
-      }
+      is C.Term.PathOf     -> unexpectedTerm(term)
 
       is C.Term.Get        -> {
         // TODO: optimize: do not generate let
@@ -439,6 +432,7 @@ class Lift private constructor(
       }
     }
   }
+   */
 
   data class Result(
     val liftedDefinitions: List<L.Definition>,
@@ -461,7 +455,8 @@ class Lift private constructor(
       context: Context,
       definition: C.Definition,
     ): Result {
-      return Lift(context, definition).lift()
+      // return Lift(context, definition).lift()
+      TODO()
     }
   }
 }
