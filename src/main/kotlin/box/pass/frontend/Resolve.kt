@@ -63,9 +63,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun resolveModule(
-    module: S.Module,
-  ): R.Module {
+  private fun resolveModule(module: S.Module): R.Module {
     val definitions = linkedMapOf<DefinitionLocation, R.Definition>()
     module.definitions.forEach { definition ->
       val definition = resolveDefinition(definition)
@@ -85,9 +83,7 @@ class Resolve private constructor(
     return R.Module(module.name, module.imports, definitions)
   }
 
-  private fun resolveDefinition(
-    definition: S.Definition,
-  ): R.Definition {
+  private fun resolveDefinition(definition: S.Definition): R.Definition {
     val range = definition.range
     if (definition is S.Definition.Hole) {
       return R.Definition.Hole(range)
@@ -128,9 +124,7 @@ class Resolve private constructor(
     }
   }
 
-  private fun Env.resolveTerm(
-    term: S.Term,
-  ): R.Term {
+  private fun Env.resolveTerm(term: S.Term): R.Term {
     val range = term.range
     return when (term) {
       is S.Term.Tag       -> {
@@ -374,9 +368,7 @@ class Resolve private constructor(
     }
   }
 
-  private fun Env.resolvePattern(
-    pattern: S.Term,
-  ): R.Pattern {
+  private fun Env.resolvePattern(pattern: S.Term): R.Pattern {
     val range = pattern.range
     return when (pattern) {
       is S.Term.ConstOf    -> {
@@ -428,17 +420,14 @@ class Resolve private constructor(
         R.Pattern.Hole(range)
       }
 
-      else             -> {
+      else -> {
         diagnose(unexpectedPattern(range))
         R.Pattern.Hole(range)
       }
     }
   }
 
-  private fun resolveName(
-    name: String,
-    range: Range,
-  ): Map.Entry<DefinitionLocation, Range>? {
+  private fun resolveName(name: String, range: Range): Map.Entry<DefinitionLocation, Range>? {
     val expected = name.split("::").let {
       ModuleLocation(it.dropLast(1)) / it.last()
     }
@@ -462,21 +451,14 @@ class Resolve private constructor(
     }
   }
 
-  private fun definitionVar(
-    def: Range,
-    use: Range,
-  ) {
+  private fun definitionVar(def: Range, use: Range) {
     if (definition == null && instruction is Instruction.Definition && instruction.position in use) {
       definition = Location(Path(input.module.name.parts.drop(1).joinToString("/", "src/", ".box")).toUri().toString(), def)
     }
   }
 
   // TODO: support goto definitions in module
-  private fun definitionDef(
-    name: DefinitionLocation,
-    def: Range,
-    use: Range,
-  ) {
+  private fun definitionDef(name: DefinitionLocation, def: Range, use: Range) {
     if (definition == null && instruction is Instruction.Definition && instruction.position in use) {
       // TODO: goto prelude
       definition = Location(Path(name.module.parts.drop(1).joinToString("/", "src/", ".box")).toUri().toString(), def)
@@ -532,10 +514,7 @@ class Resolve private constructor(
     }
   }
 
-  private fun nameNotFound(
-    name: String,
-    range: Range,
-  ): Diagnostic {
+  private fun nameNotFound(name: String, range: Range): Diagnostic {
     return diagnostic(
       range,
       "name not found: $name",
@@ -543,10 +522,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun duplicatedName(
-    name: String,
-    range: Range,
-  ): Diagnostic {
+  private fun duplicatedName(name: String, range: Range): Diagnostic {
     return diagnostic(
       range,
       "duplicated name: $name",
@@ -554,10 +530,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun ambiguousName(
-    name: String,
-    range: Range,
-  ): Diagnostic {
+  private fun ambiguousName(name: String, range: Range): Diagnostic {
     return diagnostic(
       range,
       "ambiguous name: $name",
@@ -565,10 +538,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun undefinedBuiltin(
-    name: String,
-    range: Range,
-  ): Diagnostic {
+  private fun undefinedBuiltin(name: String, range: Range): Diagnostic {
     return diagnostic(
       range,
       "undefined builtin: $name",
@@ -576,9 +546,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun unexpectedPattern(
-    range: Range,
-  ): Diagnostic {
+  private fun unexpectedPattern(range: Range): Diagnostic {
     return diagnostic(
       range,
       "unexpected pattern",
@@ -586,9 +554,7 @@ class Resolve private constructor(
     )
   }
 
-  private fun inlineAndRecCannotBeMixed(
-    range: Range,
-  ): Diagnostic {
+  private fun inlineAndRecCannotBeMixed(range: Range): Diagnostic {
     return diagnostic(
       range,
       "inline and rec cannot be mixed",

@@ -1,11 +1,5 @@
 package box.pass
 
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
 import box.ast.Packed
 import box.ast.common.DefinitionLocation
 import box.ast.common.Modifier
@@ -23,6 +17,12 @@ import box.pass.frontend.Resolve
 import box.pass.frontend.elaborate.Elaborate
 import box.pass.frontend.parse.Parse
 import box.util.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.DiagnosticSeverity
 import java.nio.file.FileSystems
@@ -52,19 +52,14 @@ class Build(
   private val traces: ConcurrentMap<Key<*>, Trace<*>> = ConcurrentHashMap()
   private val mutexes: ConcurrentMap<Key<*>, Mutex> = ConcurrentHashMap()
 
-  suspend fun changeText(
-    location: ModuleLocation,
-    text: String,
-  ) {
+  suspend fun changeText(location: ModuleLocation, text: String) {
     val key = Key.Read(location)
     mutexes
       .computeIfAbsent(key) { Mutex() }
       .withLock { traces[key] = Trace(text, 0) }
   }
 
-  suspend fun closeText(
-    location: ModuleLocation,
-  ) {
+  suspend fun closeText(location: ModuleLocation) {
     suspend fun close(key: Key<*>) {
       mutexes[key]?.withLock {
         traces -= key

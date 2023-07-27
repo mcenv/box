@@ -24,9 +24,7 @@ class Parse private constructor(
   private var line: Int = 0
   private var character: Int = 0
 
-  private fun parseModule(
-    module: ModuleLocation,
-  ): S.Module {
+  private fun parseModule(module: ModuleLocation): S.Module {
     skipTrivia()
     val imports = if (text.startsWith("import", cursor)) {
       skip("import".length)
@@ -515,12 +513,7 @@ class Parse private constructor(
     return ranging { Ranged(parse(), until()) }
   }
 
-  private inline fun <R> parseList(
-    separator: Char,
-    prefix: Char,
-    postfix: Char,
-    parse: () -> R,
-  ): List<R> {
+  private inline fun <R> parseList(separator: Char, prefix: Char, postfix: Char, parse: () -> R): List<R> {
     if (!expect(prefix)) {
       return emptyList()
     }
@@ -813,10 +806,7 @@ class Parse private constructor(
     )
   }
 
-  private fun invalidEscape(
-    escape: Char,
-    range: Range,
-  ): Diagnostic {
+  private fun invalidEscape(escape: Char, range: Range): Diagnostic {
     return diagnostic(
       range,
       "invalid escape: \\$escape",
@@ -824,10 +814,7 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedToken(
-    token: String,
-    position: Position,
-  ): Diagnostic {
+  private fun expectedToken(token: String, position: Position): Diagnostic {
     return diagnostic(
       position..Position(position.line, position.character + 1),
       "expected: '$token'",
@@ -835,9 +822,7 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedEndOfFile(
-    position: Position,
-  ): Diagnostic {
+  private fun expectedEndOfFile(position: Position): Diagnostic {
     return diagnostic(
       position..position,
       "expected: end of file",
@@ -845,9 +830,7 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedDefinition(
-    range: Range,
-  ): Diagnostic {
+  private fun expectedDefinition(range: Range): Diagnostic {
     return diagnostic(
       range,
       "expected: definition",
@@ -855,9 +838,7 @@ class Parse private constructor(
     )
   }
 
-  private fun expectedTerm(
-    range: Range,
-  ): Diagnostic {
+  private fun expectedTerm(range: Range): Diagnostic {
     return diagnostic(
       range,
       "expected: term",

@@ -261,10 +261,7 @@ class Lift private constructor(
     }
   }
 
-  private fun Ctx.liftPattern(
-    pattern: C.Pattern,
-    type: C.Term,
-  ): L.Pattern {
+  private fun Ctx.liftPattern(pattern: C.Pattern, type: C.Term): L.Pattern {
     return when (pattern) {
       is C.Pattern.ConstOf    -> {
         when (pattern.value) {
@@ -423,10 +420,7 @@ class Lift private constructor(
     private val _reprs: MutableList<Pair<String, Repr>> = mutableListOf()
     val reprs: List<Pair<String, Repr>> get() = _reprs
 
-    fun bind(
-      name: String,
-      repr: Repr,
-    ) {
+    fun bind(name: String, repr: Repr) {
       _reprs += name to repr
     }
 

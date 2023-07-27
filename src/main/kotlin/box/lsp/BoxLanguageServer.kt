@@ -12,9 +12,7 @@ class BoxLanguageServer : LanguageServer, LanguageClientAware {
     service.connect(client)
   }
 
-  override fun initialize(
-    params: InitializeParams,
-  ): CompletableFuture<InitializeResult> {
+  override fun initialize(params: InitializeParams): CompletableFuture<InitializeResult> {
     return completedFuture(
       InitializeResult().apply {
         capabilities = ServerCapabilities().apply {

@@ -452,10 +452,7 @@ fun Lvl.quoteValue(value: Value): Term {
 /**
  * Converts [this] closure to an open [Value] with the free variables of [types] under the context of the [size].
  */
-fun Closure.open(
-  size: Lvl,
-  types: List<Lazy<Value>>,
-): Value {
+fun Closure.open(size: Lvl, types: List<Lazy<Value>>): Value {
   return this(types.mapIndexed { i, type ->
     lazyOf(Value.Var("#${size + i}", size + i, type))
   })

@@ -9,6 +9,7 @@ enum class Modifier(val id: String) {
   TEST("test"),
   ERROR("error");
 
-  override fun toString(): String =
-    id
+  override fun toString(): String {
+    return id
+  }
 }

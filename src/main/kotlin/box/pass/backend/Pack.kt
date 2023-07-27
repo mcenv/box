@@ -1,8 +1,5 @@
 package box.pass.backend
 
-import kotlinx.collections.immutable.PersistentList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.plus
 import box.ast.Packed
 import box.ast.Packed.Command
 import box.ast.Packed.Command.*
@@ -25,6 +22,9 @@ import box.pass.core
 import box.util.green
 import box.util.nbt.*
 import box.util.unreachable
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.plus
 import box.ast.Lifted as L
 import box.ast.Packed as P
 import box.ast.Packed.Command.Execute.Mode.RESULT as result
@@ -97,9 +97,7 @@ class Pack private constructor(
     }
   }
 
-  private fun packModifier(
-    modifier: L.Modifier,
-  ): P.Modifier? {
+  private fun packModifier(modifier: L.Modifier): P.Modifier? {
     return when (modifier) {
       L.Modifier.BUILTIN -> null
       L.Modifier.TEST    -> P.Modifier.TEST
@@ -107,9 +105,7 @@ class Pack private constructor(
     }
   }
 
-  private fun packTerm(
-    term: L.Term,
-  ) {
+  private fun packTerm(term: L.Term) {
     when (term) {
       is L.Term.I8Of       -> push(Repr.BYTE, value(ByteTag(term.value)))
 
@@ -479,11 +475,7 @@ class Pack private constructor(
     }
   }
 
-  private fun buildListOf(
-    term: L.Term.ListOf,
-    target: PersistentList<NbtNode>,
-    initializers: MutableList<() -> Unit>,
-  ): Tag {
+  private fun buildListOf(term: L.Term.ListOf, target: PersistentList<NbtNode>, initializers: MutableList<() -> Unit>): Tag {
     return buildListTag {
       term.elements.forEachIndexed { index, element ->
         when (element) {
@@ -510,11 +502,7 @@ class Pack private constructor(
     }
   }
 
-  private fun buildCompoundOf(
-    term: L.Term.CompoundOf,
-    target: PersistentList<NbtNode>,
-    initializers: MutableList<() -> Unit>,
-  ): Tag {
+  private fun buildCompoundOf(term: L.Term.CompoundOf, target: PersistentList<NbtNode>, initializers: MutableList<() -> Unit>): Tag {
     return buildCompoundTag {
       term.elements.forEach { (key, element) ->
         when (element) {
@@ -541,10 +529,7 @@ class Pack private constructor(
     }
   }
 
-  private fun matchPattern(
-    pattern: L.Pattern,
-    scrutinee: PersistentList<NbtNode>,
-  ) {
+  private fun matchPattern(pattern: L.Pattern, scrutinee: PersistentList<NbtNode>) {
     when (pattern) {
       is L.Pattern.UnitOf     -> {}
       is L.Pattern.BoolOf     -> {
@@ -673,9 +658,7 @@ class Pack private constructor(
     }
   }
 
-  private fun packPattern(
-    pattern: L.Pattern,
-  ) {
+  private fun packPattern(pattern: L.Pattern) {
     when (pattern) {
       is L.Pattern.UnitOf     -> {}
       is L.Pattern.BoolOf     -> {}
@@ -721,10 +704,7 @@ class Pack private constructor(
     }
   }
 
-  private fun dropPattern(
-    pattern: L.Pattern,
-    keeps: List<Repr>,
-  ) {
+  private fun dropPattern(pattern: L.Pattern, keeps: List<Repr>) {
     when (pattern) {
       is L.Pattern.UnitOf     -> drop(Repr.BYTE, keeps)
       is L.Pattern.BoolOf     -> drop(Repr.BYTE, keeps)
@@ -760,10 +740,7 @@ class Pack private constructor(
     }
   }
 
-  private fun push(
-    repr: Repr,
-    source: SourceProvider?,
-  ) {
+  private fun push(repr: Repr, source: SourceProvider?) {
     if (source != null && repr != Repr.END) {
       !{ Raw("# push ${repr.id}") }
       +(box(nbtPath(repr.id)) append source)
@@ -771,11 +748,7 @@ class Pack private constructor(
     getStack(repr) += null
   }
 
-  private fun drop(
-    drop: Repr,
-    keeps: List<Repr> = emptyList(),
-    relevant: Boolean = true,
-  ) {
+  private fun drop(drop: Repr, keeps: List<Repr> = emptyList(), relevant: Boolean = true) {
     val stack = getStack(drop)
     val index = -1 - keeps.count { it == drop }
     if (relevant && drop != Repr.END) {
@@ -785,19 +758,13 @@ class Pack private constructor(
     stack.removeAt(stack.size + index)
   }
 
-  private fun bind(
-    name: String,
-    repr: Repr,
-  ) {
+  private fun bind(name: String, repr: Repr) {
     val stack = getStack(repr)
     val index = stack.indexOfLast { it == null }
     stack[index] = name
   }
 
-  operator fun get(
-    name: String,
-    repr: Repr,
-  ): Int {
+  operator fun get(name: String, repr: Repr): Int {
     val stack = getStack(repr)
     return stack.indexOfLast { it == name }.also {
       require(it != -1) {
@@ -806,9 +773,7 @@ class Pack private constructor(
     } - stack.size
   }
 
-  private fun getStack(
-    repr: Repr,
-  ): MutableList<String?> {
+  private fun getStack(repr: Repr): MutableList<String?> {
     return stacks[repr]!!
   }
 
@@ -883,15 +848,11 @@ class Pack private constructor(
     private val `0d`: DoubleTag = DoubleTag(0.0)
     private val `""`: StringTag = StringTag("")
 
-    fun packDefinitionLocation(
-      location: DefinitionLocation,
-    ): ResourceLocation {
+    fun packDefinitionLocation(location: DefinitionLocation): ResourceLocation {
       return ResourceLocation(location.module.parts.first(), (location.module.parts.drop(1) + escape(location.name)).joinToString("/"))
     }
 
-    private fun escape(
-      string: String,
-    ): String {
+    private fun escape(string: String): String {
       return string.encodeToByteArray().joinToString("") {
         when (val char = it.toInt().toChar()) {
           in 'a'..'z', in '0'..'9', '_', '-' -> char.toString()
@@ -969,9 +930,7 @@ class Pack private constructor(
     }
 
     // TODO: specialize dispatcher by type
-    fun packDispatchProcs(
-      procs: List<L.Definition.Function>,
-    ): P.Definition.Function {
+    fun packDispatchProcs(procs: List<L.Definition.Function>): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_PROC, run {
         val proc = box(`int{-1}`)
         listOf(
@@ -985,9 +944,7 @@ class Pack private constructor(
     }
 
     // TODO: specialize dispatcher by type
-    fun packDispatchFuncs(
-      funcs: List<L.Definition.Function>,
-    ): P.Definition.Function {
+    fun packDispatchFuncs(funcs: List<L.Definition.Function>): P.Definition.Function {
       return P.Definition.Function(emptyList(), DISPATCH_FUNC, listOf(
         Execute.StoreScore(result, R0, MAIN, Execute.Run(GetData(box(`compound{-1}`("_"))))),
         RemoveData(box(`compound{-1}`)),

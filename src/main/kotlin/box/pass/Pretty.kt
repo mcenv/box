@@ -10,12 +10,8 @@ import box.util.unreachable
 
 // TODO: Remove redundant parentheses.
 
-fun prettyTerm(
-  term: Term,
-): String {
-  fun go(
-    term: Term,
-  ): String {
+fun prettyTerm(term: Term): String {
+  fun go(term: Term): String {
     return when (term) {
       is Term.Tag        -> "tag"
       is Term.TagOf      -> prettyRepr(term.repr)
@@ -76,9 +72,7 @@ fun prettyTerm(
   return go(term)
 }
 
-fun prettyPattern(
-  pattern: Pattern,
-): String {
+fun prettyPattern(pattern: Pattern): String {
   return when (pattern) {
     is Pattern.ConstOf    -> when (pattern.value) {
       is Unit    -> "()"
@@ -103,9 +97,7 @@ fun prettyPattern(
   }
 }
 
-fun prettyProjection(
-  proj: Proj,
-): String {
+fun prettyProjection(proj: Proj): String {
   return when (proj) {
     is Proj.I8ArrayOf  -> "[${proj.index}]"
     is Proj.I32ArrayOf -> "[${proj.index}]"
@@ -115,9 +107,7 @@ fun prettyProjection(
   }
 }
 
-fun prettyRepr(
-  repr: Repr,
-): String {
+fun prettyRepr(repr: Repr): String {
   return when (repr) {
     Repr.END        -> "%end"
     Repr.BYTE       -> "%byte"

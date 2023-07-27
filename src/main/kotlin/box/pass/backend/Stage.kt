@@ -12,9 +12,7 @@ import kotlinx.collections.immutable.plus
 
 @Suppress("NAME_SHADOWING")
 class Stage private constructor() {
-  private fun stageDefinition(
-    definition: Definition,
-  ): Definition? {
+  private fun stageDefinition(definition: Definition): Definition? {
     return when (definition) {
       is Definition.Def -> {
         if (Modifier.CONST in definition.modifiers) {
@@ -28,23 +26,15 @@ class Stage private constructor() {
     }
   }
 
-  private fun stageTerm(
-    term: Term,
-  ): Term {
+  private fun stageTerm(term: Term): Term {
     return emptyEnv().normalizeTerm(term, Phase.WORLD)
   }
 
-  private fun Env.normalizeTerm(
-    term: Term,
-    phase: Phase,
-  ): Term {
+  private fun Env.normalizeTerm(term: Term, phase: Phase): Term {
     return next().quoteValue(evalTerm(term, phase), phase)
   }
 
-  private fun Env.evalTerm(
-    term: Term,
-    phase: Phase,
-  ): Value {
+  private fun Env.evalTerm(term: Term, phase: Phase): Value {
     return when (term) {
       is Term.Tag        -> {
         requireConst(term, phase)
@@ -336,10 +326,7 @@ class Stage private constructor() {
     }
   }
 
-  private fun Lvl.quoteValue(
-    value: Value,
-    phase: Phase,
-  ): Term {
+  private fun Lvl.quoteValue(value: Value, phase: Phase): Term {
     return when (value) {
       is Value.Tag        -> Term.Tag
 
@@ -539,29 +526,20 @@ class Stage private constructor() {
     }
   }
 
-  private fun Closure.open(
-    next: Lvl,
-    types: List<Lazy<Value>>,
-  ): Value {
+  private fun Closure.open(next: Lvl, types: List<Lazy<Value>>): Value {
     return this(types.mapIndexed { i, type ->
       lazyOf(Value.Var("#${next + i}", next + i, type))
     })
   }
 
   companion object {
-    private fun requireWorld(
-      term: Term,
-      phase: Phase,
-    ) {
+    private fun requireWorld(term: Term, phase: Phase) {
       if (phase != Phase.WORLD) {
         unexpectedTerm(term)
       }
     }
 
-    private fun requireConst(
-      term: Term,
-      phase: Phase,
-    ) {
+    private fun requireConst(term: Term, phase: Phase) {
       if (phase != Phase.CONST) {
         unexpectedTerm(term)
       }

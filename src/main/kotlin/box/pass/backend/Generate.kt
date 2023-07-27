@@ -12,15 +12,11 @@ import box.ast.Packed as P
 class Generate private constructor(
   private val context: Context,
 ) {
-  private fun generate(
-    definition: P.Definition,
-  ): Pair<String, String> {
+  private fun generate(definition: P.Definition): Pair<String, String> {
     return "data/${definition.location.namespace}/functions/${definition.location.path}.mcfunction" to generateDefinition(definition)
   }
 
-  private fun generateDefinition(
-    definition: P.Definition,
-  ): String {
+  private fun generateDefinition(definition: P.Definition): String {
     return when (definition) {
       is Packed.Definition.Function -> {
         StringBuilder().apply {
@@ -42,9 +38,7 @@ class Generate private constructor(
     }.toString()
   }
 
-  private fun StringBuilder.generateCommand(
-    command: P.Command,
-  ) {
+  private fun StringBuilder.generateCommand(command: P.Command) {
     when (command) {
       is P.Command.Execute          -> {
         append("execute ")
@@ -114,9 +108,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateCommandExecute(
-    execute: P.Command.Execute,
-  ) {
+  private fun StringBuilder.generateCommandExecute(execute: P.Command.Execute) {
     when (execute) {
       is P.Command.Execute.Run                     -> {
         append("run ")
@@ -183,9 +175,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateType(
-    type: P.Command.Execute.StoreStorage.Type,
-  ) {
+  private fun StringBuilder.generateType(type: P.Command.Execute.StoreStorage.Type) {
     when (type) {
       P.Command.Execute.StoreStorage.Type.BYTE   -> append("byte")
       P.Command.Execute.StoreStorage.Type.SHORT  -> append("short")
@@ -196,9 +186,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateComparator(
-    comparator: P.Command.Execute.ConditionalScore.Comparator,
-  ) {
+  private fun StringBuilder.generateComparator(comparator: P.Command.Execute.ConditionalScore.Comparator) {
     when (comparator) {
       P.Command.Execute.ConditionalScore.Comparator.EQ -> append("=")
       P.Command.Execute.ConditionalScore.Comparator.LT -> append("<")
@@ -208,27 +196,21 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateMode(
-    mode: P.Command.Execute.Mode,
-  ) {
+  private fun StringBuilder.generateMode(mode: P.Command.Execute.Mode) {
     when (mode) {
       P.Command.Execute.Mode.RESULT  -> append("result")
       P.Command.Execute.Mode.SUCCESS -> append("success")
     }
   }
 
-  private fun StringBuilder.generateDataAccessor(
-    accessor: P.DataAccessor,
-  ) {
+  private fun StringBuilder.generateDataAccessor(accessor: P.DataAccessor) {
     append("storage ")
     generateResourceLocation(accessor.target)
     space()
     generateNbtPath(accessor.path)
   }
 
-  private fun StringBuilder.generateDataManipulator(
-    manipulator: P.DataManipulator,
-  ) {
+  private fun StringBuilder.generateDataManipulator(manipulator: P.DataManipulator) {
     when (manipulator) {
       is P.DataManipulator.Append -> append("append ")
       is P.DataManipulator.Set    -> append("set ")
@@ -236,9 +218,7 @@ class Generate private constructor(
     generateSourceProvider(manipulator.source)
   }
 
-  private fun StringBuilder.generateSourceProvider(
-    provider: P.SourceProvider,
-  ) {
+  private fun StringBuilder.generateSourceProvider(provider: P.SourceProvider) {
     when (provider) {
       is P.SourceProvider.Value  -> {
         append("value ")
@@ -255,21 +235,15 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateScoreHolder(
-    holder: P.ScoreHolder,
-  ) {
+  private fun StringBuilder.generateScoreHolder(holder: P.ScoreHolder) {
     append(holder.name)
   }
 
-  private fun StringBuilder.generateObjective(
-    objective: P.Objective,
-  ) {
+  private fun StringBuilder.generateObjective(objective: P.Objective) {
     append(objective.name)
   }
 
-  private fun StringBuilder.generateOperation(
-    operation: P.Operation,
-  ) {
+  private fun StringBuilder.generateOperation(operation: P.Operation) {
     when (operation) {
       P.Operation.ASSIGN -> append('=')
       P.Operation.ADD    -> append("+=")
@@ -283,9 +257,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateNbtPath(
-    path: List<P.NbtNode>,
-  ) {
+  private fun StringBuilder.generateNbtPath(path: List<P.NbtNode>) {
     generateNbtNode(path.first())
     if (path.size > 1) {
       path.drop(1).forEach {
@@ -298,9 +270,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateNbtNode(
-    node: P.NbtNode,
-  ) {
+  private fun StringBuilder.generateNbtNode(node: P.NbtNode) {
     fun String.normalized(): String {
       return if (
         any {
@@ -343,9 +313,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateNbt(
-    tag: Tag,
-  ) {
+  private fun StringBuilder.generateNbt(tag: Tag) {
     when (tag) {
       is EndTag       -> {
         unreachable()
@@ -440,9 +408,7 @@ class Generate private constructor(
     }
   }
 
-  private fun StringBuilder.generateResourceLocation(
-    location: ResourceLocation,
-  ) {
+  private fun StringBuilder.generateResourceLocation(location: ResourceLocation) {
     if (location.namespace != "minecraft") {
       append(location.namespace)
       append(':')
@@ -450,9 +416,7 @@ class Generate private constructor(
     append(location.path)
   }
 
-  private fun StringBuilder.generateIntRange(
-    range: IntRange,
-  ) {
+  private fun StringBuilder.generateIntRange(range: IntRange) {
     if (range.first == Int.MIN_VALUE && range.last == Int.MAX_VALUE) {
       append(Int.MIN_VALUE.toString())
       append("..")

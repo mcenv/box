@@ -15,10 +15,7 @@ class Meta {
   private val values: MutableList<Value?> = mutableListOf()
   private val unsolvedMetas: MutableSet<Pair<Int, Range>> = hashSetOf()
 
-  fun freshValue(
-    source: Range,
-    type: Lazy<Value> = lazy { freshType(source) },
-  ): Value {
+  fun freshValue(source: Range, type: Lazy<Value> = lazy { freshType(source) }): Value {
     return Value.Meta(values.size, source, type).also { values += null }
   }
 
@@ -38,10 +35,7 @@ class Meta {
     }
   }
 
-  fun checkSolved(
-    diagnostics: MutableList<Diagnostic>,
-    vararg terms: Term,
-  ): List<Term> {
+  fun checkSolved(diagnostics: MutableList<Diagnostic>, vararg terms: Term): List<Term> {
     unsolvedMetas.clear()
     val zonkedTerms = terms.map { Lvl(0).zonkTerm(it) }
     unsolvedMetas.forEach { (index, source) ->
@@ -251,10 +245,7 @@ class Meta {
     }
   }
 
-  fun Lvl.unifyValue(
-    value1: Value,
-    value2: Value,
-  ): Boolean {
+  fun Lvl.unifyValue(value1: Value, value2: Value): Boolean {
     val value1 = forceValue(value1)
     val value2 = forceValue(value2)
     return when {
@@ -363,10 +354,7 @@ class Meta {
   }
 
   companion object {
-    private fun unsolvedMeta(
-      index: Int,
-      range: Range,
-    ): Diagnostic {
+    private fun unsolvedMeta(index: Int, range: Range): Diagnostic {
       return diagnostic(
         range,
         "unsolved meta: ?${index.toSubscript()}",

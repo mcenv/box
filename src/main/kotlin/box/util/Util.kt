@@ -60,17 +60,11 @@ inline fun <T, R> Lazy<T>.map(crossinline transform: (T) -> R): Lazy<R> {
   return lazy { transform(value) }
 }
 
-fun info(
-  summary: String,
-  body: String,
-) {
+fun info(summary: String, body: String) {
   return println("${green(summary)} $body")
 }
 
-fun debug(
-  summary: String,
-  body: String,
-) {
+fun debug(summary: String, body: String) {
   return println("${magenta(summary)} $body")
 }
 
@@ -87,9 +81,7 @@ inline fun <reified T> Path.encodeToJson(value: T, json: Json = Json) {
 /**
  * Quotes [this] string with a given [quote] character.
  */
-fun String.quoted(
-  quote: Char,
-): String {
+fun String.quoted(quote: Char): String {
   val builder = StringBuilder()
   builder.append(quote)
   forEach {

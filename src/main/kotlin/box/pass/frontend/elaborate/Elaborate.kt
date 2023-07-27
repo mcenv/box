@@ -50,9 +50,7 @@ class Elaborate private constructor(
     )
   }
 
-  private fun elaborateModule(
-    module: R.Module,
-  ): C.Module {
+  private fun elaborateModule(module: R.Module): C.Module {
     val imports = module.imports.map { import ->
       when (val definition = definitions[import.value]) {
         is C.Definition.Def -> hoverDef(import.range, definition)
@@ -699,10 +697,7 @@ class Elaborate private constructor(
     return ctx.block(result)
   }
 
-  private fun Lvl.sub(
-    value1: Value,
-    value2: Value,
-  ): Boolean {
+  private fun Lvl.sub(value1: Value, value2: Value): Boolean {
     val value1 = meta.forceValue(value1)
     val value2 = meta.forceValue(value2)
     return when {
@@ -791,20 +786,14 @@ class Elaborate private constructor(
     return type is V?
   }
 
-  private fun Ctx.hoverType(
-    range: Range,
-    type: Value,
-  ) {
+  private fun Ctx.hoverType(range: Range, type: Value) {
     hover(range) {
       val type = next().prettyValue(type)
       Hover(MarkupContent(MarkupKind.MARKDOWN, "```box\n$type\n```"))
     }
   }
 
-  private fun hoverDef(
-    range: Range,
-    definition: C.Definition.Def,
-  ) {
+  private fun hoverDef(range: Range, definition: C.Definition.Def) {
     hover(range) {
       val modifiers = definition.modifiers.joinToString(" ", "", " ").ifBlank { "" }
       val name = definition.name.name
@@ -814,29 +803,19 @@ class Elaborate private constructor(
     }
   }
 
-  private fun hover(
-    range: Range,
-    message: () -> Hover,
-  ) {
+  private fun hover(range: Range, message: () -> Hover) {
     if (hover == null && instruction is Instruction.Hover && instruction.position in range) {
       hover = message
     }
   }
 
-  private fun inlayHint(
-    position: Position,
-    label: String,
-  ) {
+  private fun inlayHint(position: Position, label: String) {
     if (instruction is Instruction.InlayHint && position in instruction.range) {
       inlayHints += InlayHint(position, forLeft(label))
     }
   }
 
-  private fun Lvl.typeMismatch(
-    expected: Value,
-    actual: Value,
-    range: Range,
-  ): Diagnostic {
+  private fun Lvl.typeMismatch(expected: Value, actual: Value, range: Range): Diagnostic {
     val expected = prettyValue(expected)
     val actual = prettyValue(actual)
     return diagnostic(
@@ -849,22 +828,16 @@ class Elaborate private constructor(
     )
   }
 
-  private fun Lvl.prettyValue(
-    value: Value,
-  ): String {
+  private fun Lvl.prettyValue(value: Value): String {
     return prettyTerm(with(meta) { zonkTerm(quoteValue(value)) })
   }
 
-  private fun invalidTerm(
-    diagnostic: Diagnostic,
-  ): Elaborated {
+  private fun invalidTerm(diagnostic: Diagnostic): Elaborated {
     diagnose(diagnostic)
     return C.Term.Hole.of(Value.Hole)
   }
 
-  private fun invalidPattern(
-    diagnostic: Diagnostic,
-  ): Pair<C.Pattern, Value> {
+  private fun invalidPattern(diagnostic: Diagnostic): Pair<C.Pattern, Value> {
     diagnose(diagnostic)
     return C.Pattern.Hole to Value.Hole
   }
@@ -878,16 +851,11 @@ class Elaborate private constructor(
     val type: Value,
   )
 
-  private inline fun C.Term.of(
-    type: Value,
-  ): Elaborated {
+  private inline fun C.Term.of(type: Value): Elaborated {
     return Elaborated(this, type)
   }
 
-  private inline fun Ctx.typed(
-    type: Value,
-    build: (C.Term) -> C.Term,
-  ): Elaborated {
+  private inline fun Ctx.typed(type: Value, build: (C.Term) -> C.Term): Elaborated {
     return build(next().quoteValue(type)).of(type)
   }
 
@@ -919,10 +887,7 @@ class Elaborate private constructor(
   )
 
   companion object {
-    private fun unknownKey(
-      name: String,
-      range: Range,
-    ): Diagnostic {
+    private fun unknownKey(name: String, range: Range): Diagnostic {
       return diagnostic(
         range,
         "unknown key: $name",
@@ -930,9 +895,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun notExhaustive(
-      range: Range,
-    ): Diagnostic {
+    private fun notExhaustive(range: Range): Diagnostic {
       return diagnostic(
         range,
         "not exhaustive",
@@ -940,11 +903,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun arityMismatch(
-      expected: Int,
-      actual: Int,
-      range: Range,
-    ): Diagnostic {
+    private fun arityMismatch(expected: Int, actual: Int, range: Range): Diagnostic {
       return diagnostic(
         range,
         """arity mismatch:
@@ -955,11 +914,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun phaseMismatch(
-      expected: Phase,
-      actual: Phase,
-      range: Range,
-    ): Diagnostic {
+    private fun phaseMismatch(expected: Phase, actual: Phase, range: Range): Diagnostic {
       return diagnostic(
         range,
         """phase mismatch:
@@ -970,9 +925,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun alreadyUsed(
-      range: Range,
-    ): Diagnostic {
+    private fun alreadyUsed(range: Range): Diagnostic {
       return diagnostic(
         range,
         "already used",
@@ -980,9 +933,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun expectedDef(
-      range: Range,
-    ): Diagnostic {
+    private fun expectedDef(range: Range): Diagnostic {
       return diagnostic(
         range,
         "expected definition: def",
@@ -990,9 +941,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun cannotSynthesize(
-      range: Range,
-    ): Diagnostic {
+    private fun cannotSynthesize(range: Range): Diagnostic {
       return diagnostic(
         range,
         "cannot synthesize",
@@ -1000,9 +949,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun deprecated(
-      range: Range,
-    ): Diagnostic {
+    private fun deprecated(range: Range): Diagnostic {
       return diagnostic(
         range,
         "deprecated",
@@ -1010,9 +957,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun unstable(
-      range: Range,
-    ): Diagnostic {
+    private fun unstable(range: Range): Diagnostic {
       return diagnostic(
         range,
         "unstable",
@@ -1020,9 +965,7 @@ class Elaborate private constructor(
       )
     }
 
-    private fun delicate(
-      range: Range,
-    ): Diagnostic {
+    private fun delicate(range: Range): Diagnostic {
       return diagnostic(
         range,
         "delicate",

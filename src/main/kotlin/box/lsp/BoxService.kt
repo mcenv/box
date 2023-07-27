@@ -25,7 +25,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.io.path.*
+import kotlin.io.path.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.toPath
 
 @JsonSegment("box")
 @Suppress("unused")
@@ -41,25 +44,19 @@ class BoxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     updateContext()
   }
 
-  override fun didOpen(
-    params: DidOpenTextDocumentParams,
-  ) {
+  override fun didOpen(params: DidOpenTextDocumentParams) {
     runBlocking {
       build.changeText(params.textDocument.uri.toModuleLocation(fetchContext()), params.textDocument.text)
     }
   }
 
-  override fun didChange(
-    params: DidChangeTextDocumentParams,
-  ) {
+  override fun didChange(params: DidChangeTextDocumentParams) {
     runBlocking {
       build.changeText(params.textDocument.uri.toModuleLocation(fetchContext()), params.contentChanges.last().text)
     }
   }
 
-  override fun didClose(
-    params: DidCloseTextDocumentParams,
-  ) {
+  override fun didClose(params: DidCloseTextDocumentParams) {
     runBlocking {
       diagnosticsHashes -= params.textDocument.uri
       with(build) {
@@ -69,14 +66,9 @@ class BoxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     }
   }
 
-  override fun didSave(
-    params: DidSaveTextDocumentParams,
-  ) {
-  }
+  override fun didSave(params: DidSaveTextDocumentParams) {}
 
-  override fun diagnostic(
-    params: DocumentDiagnosticParams,
-  ): CompletableFuture<DocumentDiagnosticReport> {
+  override fun diagnostic(params: DocumentDiagnosticParams): CompletableFuture<DocumentDiagnosticReport> {
     return scope.future {
       val context = fetchContext()
       val uri = params.textDocument.uri
@@ -126,14 +118,9 @@ class BoxService : TextDocumentService, WorkspaceService, LanguageClientAware {
     }
   }
 
-  override fun didChangeConfiguration(
-    params: DidChangeConfigurationParams,
-  ) {
-  }
+  override fun didChangeConfiguration(params: DidChangeConfigurationParams) {}
 
-  override fun didChangeWatchedFiles(
-    params: DidChangeWatchedFilesParams,
-  ) {
+  override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
     updateContext()
   }
 

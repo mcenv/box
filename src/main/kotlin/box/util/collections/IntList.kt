@@ -5,7 +5,7 @@ import kotlin.math.max
 
 // TODO: sort members
 @Serializable
-class IntList() : MutableList<Int> {
+class IntList : MutableList<Int> {
   private var elements: IntArray = IntArray(DEFAULT_CAPACITY)
 
   override var size: Int = 0
