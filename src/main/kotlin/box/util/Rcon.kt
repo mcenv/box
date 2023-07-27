@@ -1,4 +1,4 @@
-package box.cache
+package box.util
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -23,7 +23,6 @@ class Rcon private constructor(
     private const val AUTH: Int = 3
     private const val AUTH_RESPONSE: Int = 2
     private const val EXECCOMMAND: Int = 2
-    private const val RESPONSE_VALUE: Int = 0
     private const val AUTH_FAILURE: Int = -1
 
     suspend fun connect(
@@ -38,7 +37,7 @@ class Rcon private constructor(
       val start = System.currentTimeMillis()
       while (true) {
         try {
-          socket = Socket(hostname, port)
+          socket = withContext(Dispatchers.IO) { Socket(hostname, port) }
           break
         } catch (e: ConnectException) {
           if (System.currentTimeMillis() - start > timeout) {

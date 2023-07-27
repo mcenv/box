@@ -1,7 +1,7 @@
 package box.pass.backend
 
 import box.ast.Packed
-import box.data.ResourceLocation
+import box.codec.ResourceLocation
 import box.pass.Context
 import box.util.collections.forEachSeparated
 import box.util.nbt.*

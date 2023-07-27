@@ -1,4 +1,4 @@
-package box.data
+package box.codec
 
 /**
  * Since Minecraft 23w18a.

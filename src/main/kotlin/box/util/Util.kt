@@ -126,7 +126,6 @@ fun secureRandomString(): String {
   return Base64.encode(bytes)
 }
 
-
 inline fun unreachable(): Nothing {
   error("Unreachable")
 }

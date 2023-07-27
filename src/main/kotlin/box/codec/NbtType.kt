@@ -1,4 +1,4 @@
-package box.data
+package box.codec
 
 enum class NbtType(val id: String) {
   END("end"),

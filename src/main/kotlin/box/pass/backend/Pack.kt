@@ -17,8 +17,8 @@ import box.ast.Packed.SourceProvider
 import box.ast.common.DefinitionLocation
 import box.ast.common.ModuleLocation
 import box.ast.common.Repr
-import box.data.NbtType
-import box.data.ResourceLocation
+import box.codec.NbtType
+import box.codec.ResourceLocation
 import box.pass.Builtin
 import box.pass.Context
 import box.pass.core

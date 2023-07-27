@@ -1,8 +1,8 @@
 package box.pass
 
 import kotlinx.coroutines.runBlocking
-import box.cache.getOrCreateDependenciesPath
-import box.cache.installDependencies
+import box.util.getOrCreateDependenciesPath
+import box.util.installDependencies
 import box.lsp.diagnosticMessage
 import java.nio.file.Path
 import kotlin.io.path.Path

@@ -1,7 +1,7 @@
 package box.pass.frontend
 
 import box.ast.common.ModuleLocation
-import box.cache.getOrCreateDependenciesPath
+import box.util.getOrCreateDependenciesPath
 import box.pass.Context
 import box.util.toDependencyTripleOrNull
 import java.nio.file.InvalidPathException

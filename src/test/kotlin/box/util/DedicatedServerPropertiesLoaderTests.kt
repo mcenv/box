@@ -3,7 +3,7 @@ package box.util
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.decodeFromStringMap
-import box.data.DedicatedServerProperties
+import box.codec.DedicatedServerProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

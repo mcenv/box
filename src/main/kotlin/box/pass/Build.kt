@@ -10,9 +10,9 @@ import box.ast.Packed
 import box.ast.common.DefinitionLocation
 import box.ast.common.Modifier
 import box.ast.common.ModuleLocation
-import box.data.DATA_PACK_FORMAT
-import box.data.PackMetadata
-import box.data.PackMetadataSection
+import box.codec.DATA_PACK_FORMAT
+import box.codec.PackMetadata
+import box.codec.PackMetadataSection
 import box.lsp.Instruction
 import box.pass.backend.Generate
 import box.pass.backend.Lift

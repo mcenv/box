@@ -1,5 +1,6 @@
-package box.cache
+package box.util
 
+import box.cache.VersionManifest
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -7,10 +8,6 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.properties.Properties
 import kotlinx.serialization.properties.encodeToStringMap
 import box.pass.Config
-import box.util.decodeFromJson
-import box.util.info
-import box.util.secureRandomString
-import box.util.toDependencyTripleOrNull
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.InputStream

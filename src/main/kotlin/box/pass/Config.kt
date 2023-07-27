@@ -2,7 +2,7 @@ package box.pass
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import box.data.DedicatedServerProperties
+import box.codec.DedicatedServerProperties
 
 @Serializable
 data class Config(

@@ -1,4 +1,4 @@
-package box.data
+package box.codec
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

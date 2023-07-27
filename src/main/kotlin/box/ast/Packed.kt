@@ -1,6 +1,6 @@
 package box.ast
 
-import box.data.ResourceLocation
+import box.codec.ResourceLocation
 import box.util.nbt.CompoundTag
 import box.util.nbt.Tag
 
