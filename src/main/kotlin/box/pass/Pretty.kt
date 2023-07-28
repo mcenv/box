@@ -50,7 +50,7 @@ fun prettyTerm(term: Term): String {
       is Term.Point      -> "(point ${prettyTerm(term.element)})"
       is Term.Union      -> term.elements.joinToString(", ", "(union {", "})") { go(it) }
       is Term.Func       -> "(${if (term.open) "func" else "proc"} ${term.params.joinToString(", ", "(", ")") { (binder, type) -> "${prettyPattern(binder)} : ${go(type)}" }} -> ${go(term.result)})"
-      is Term.FuncOf     -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it) }} -> ${go(term.result)})"
+      is Term.FuncOf     -> "(\\${if (term.open) "\\" else ""}${term.params.joinToString(", ", "(", ")") { prettyPattern(it.first) }} -> ${go(term.result)})"
       is Term.Apply      -> "(${go(term.func)}${term.args.joinToString(", ", "(", ")") { go(it) }})"
       is Term.Code       -> "(code ${go(term.element)})"
       is Term.CodeOf     -> "(`${go(term.element)})"

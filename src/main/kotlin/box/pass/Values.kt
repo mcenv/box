@@ -113,7 +113,7 @@ sealed class Value {
 
   data class FuncOf(
     val open: Boolean,
-    val params: kotlin.collections.List<Pattern>,
+    val params: kotlin.collections.List<Pair<Pattern, Lazy<Value>>>,
     val result: Closure,
   ) : Value()
 

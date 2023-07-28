@@ -280,7 +280,7 @@ class Elaborate private constructor(
         }
         val (result, resultType) = ctx.elaborateTerm(term.result, null, phase)
         val type = Value.Func(term.open, params) { args -> (env + args).evalTerm(next().quoteValue(resultType)) }
-        C.Term.FuncOf(term.open, params.map { param -> param.first }, result).of(type)
+        C.Term.FuncOf(term.open, params.mapIndexed { index, (pattern, value) -> pattern to (next() + index).quoteValue(value.value) }, result).of(type)
       }
 
       term is R.Term.FuncOf && check<Value.Func>(type) && term.open == type.open -> {
@@ -293,7 +293,7 @@ class Elaborate private constructor(
             }
           }
           val result = ctx.elaborateTerm(term.result, type.result.open(next(), params.size), phase).term
-          C.Term.FuncOf(term.open, params.map { param -> param.first }, result).of(type)
+          C.Term.FuncOf(term.open, params.mapIndexed { index, (pattern, value) -> pattern to (next() + index).quoteValue(value) }, result).of(type)
         } else {
           invalidTerm(arityMismatch(type.params.size, term.params.size, term.range))
         }

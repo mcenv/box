@@ -119,13 +119,14 @@ fun Env.evalTerm(term: Term): Value {
         modify(this + lazyOf(Value.Var("#${next()}", next())))
         param to type
       }
-      val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
+      val result: Closure = { args -> (this + args).evalTerm(term.result) }
       Value.Func(term.open, params, result)
     }
 
     is Term.FuncOf     -> {
-      val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result) }
-      Value.FuncOf(term.open, term.params, result)
+      val params = term.params.map { (pattern, term) -> pattern to lazy { evalTerm(term) } }
+      val result: Closure = { args -> (this + args).evalTerm(term.result) }
+      Value.FuncOf(term.open, params, result)
     }
 
     is Term.Apply      -> {
@@ -327,10 +328,9 @@ fun Lvl.quoteValue(value: Value): Term {
     }
 
     is Value.FuncOf     -> {
-      val result = (this + value.params.size).quoteValue(
-        value.result.open(this, value.params.size)
-      )
-      Term.FuncOf(value.open, value.params, result)
+      val params = value.params.mapIndexed { index, (pattern, value) -> pattern to (this + index).quoteValue(value.value) }
+      val result = (this + value.params.size).quoteValue(value.result.open(this, value.params.size))
+      Term.FuncOf(value.open, params, result)
     }
 
     is Value.Apply      -> {

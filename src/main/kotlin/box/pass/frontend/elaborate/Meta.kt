@@ -138,7 +138,7 @@ class Meta {
       }
 
       is Term.FuncOf     -> {
-        val params = term.params
+        val params = term.params.mapIndexed { index, (pattern, term) -> pattern to (this + index).zonkTerm(term) }
         val result = (this + params.size).zonkTerm(term.result)
         Term.FuncOf(term.open, params, result)
       }

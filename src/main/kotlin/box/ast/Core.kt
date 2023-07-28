@@ -114,7 +114,7 @@ object Core {
 
     data class FuncOf(
       val open: Boolean,
-      val params: kotlin.collections.List<Pattern>,
+      val params: kotlin.collections.List<Pair<Pattern, Term>>,
       val result: Term,
     ) : Term()
 

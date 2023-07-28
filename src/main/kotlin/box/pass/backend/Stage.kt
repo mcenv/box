@@ -3,14 +3,11 @@ package box.pass.backend
 import box.ast.Core.Definition
 import box.ast.Core.Term
 import box.ast.common.*
-import box.pass.Env
-import box.pass.Phase
-import box.pass.Value
+import box.pass.*
 import box.pass.frontend.elaborate.emptyEnv
 import box.pass.frontend.elaborate.matches
 import box.pass.frontend.elaborate.next
 import box.pass.frontend.elaborate.open
-import box.pass.prettyTerm
 import box.util.collections.mapWith
 import kotlinx.collections.immutable.plus
 
@@ -133,13 +130,14 @@ class Stage private constructor() {
           modify(this + lazyOf(Value.Var("#${next()}", next())))
           param to type
         }
-        val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result, phase) }
+        val result: Closure = { args -> (this + args).evalTerm(term.result, phase) }
         Value.Func(term.open, params, result)
       }
 
       is Term.FuncOf     -> {
-        val result = { args: List<Lazy<Value>> -> (this + args).evalTerm(term.result, phase) }
-        Value.FuncOf(term.open, term.params, result)
+        val params = term.params.map { (pattern, term) -> pattern to lazy { evalTerm(term, phase) } }
+        val result: Closure = { args -> (this + args).evalTerm(term.result, phase) }
+        Value.FuncOf(term.open, params, result)
       }
 
       is Term.Apply      -> {
@@ -395,11 +393,9 @@ class Stage private constructor() {
       }
 
       is Value.FuncOf     -> {
-        val result = (this + value.params.size).quoteValue(
-          value.result.open(this, value.params.size),
-          phase,
-        )
-        Term.FuncOf(value.open, value.params, result)
+        val params = value.params.mapIndexed { index, (pattern, value) -> pattern to (this + index).quoteValue(value.value, phase) }
+        val result = (this + value.params.size).quoteValue(value.result.open(this, value.params.size), phase)
+        Term.FuncOf(value.open, params, result)
       }
 
       is Value.Apply      -> {
