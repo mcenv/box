@@ -23,7 +23,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties:1.5.1")
   testImplementation(kotlin("test"))
-  testImplementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.8")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.9")
 }
 
 sourceSets {
