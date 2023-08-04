@@ -130,7 +130,7 @@ object Lifted {
     ) : Term()
 
     data class Command(
-      val element: String,
+      val element: Term,
       override val repr: Repr,
     ) : Term()
 

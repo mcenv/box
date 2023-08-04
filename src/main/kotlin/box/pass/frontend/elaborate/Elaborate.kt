@@ -359,7 +359,7 @@ class Elaborate private constructor(
 
       term is R.Term.Command                                                     -> {
         val type = type ?: meta.freshValue(term.range)
-        val element = elaborateTerm(term.element, Value.Wtf16, Phase.CONST).term
+        val element = elaborateTerm(term.element, Value.Wtf16, phase).term
         C.Term.Command(element, next().quoteValue(type)).of(type)
       }
 

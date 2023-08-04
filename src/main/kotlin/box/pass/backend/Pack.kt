@@ -207,7 +207,8 @@ class Pack private constructor(
       }
 
       is L.Term.Command    -> {
-        +Raw(term.element)
+        packTerm(term.element)
+        // TODO: call macro $$(command)
         push(term.repr, null)
       }
 

@@ -435,7 +435,7 @@ class Stage private constructor() {
       }
 
       is Value.Command    -> {
-        val element = quoteValue(value.element.value, Phase.CONST)
+        val element = quoteValue(value.element.value, phase)
         val type = quoteValue(value.type.value, phase)
         Term.Command(element, type)
       }
