@@ -4,7 +4,7 @@ plugins {
   kotlin("jvm") version "1.9.10"
   kotlin("plugin.serialization") version "1.9.10"
   kotlin("plugin.allopen") version "1.9.10"
-  id("org.jetbrains.kotlinx.kover") version "0.7.3"
+  id("org.jetbrains.kotlinx.kover") version "0.7.4"
   id("org.jetbrains.kotlinx.benchmark") version "0.4.9"
   application
 }
